@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+src/keywordsai/__init__.py
+src/keywordsai/utils.py
+src/keywordsai.egg-info/PKG-INFO
+src/keywordsai.egg-info/SOURCES.txt
+src/keywordsai.egg-info/dependency_links.txt
+src/keywordsai.egg-info/top_level.txt

@@ -1,24 +1,21 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "keywordsai"
-version = "0.0.1"
-authors = [
-  {name = "Keywords AI", email = "team@keywordsai.co"},
-]
-description = "Keywords AI Python SDK allows you to easily interact with the Keywords AI API."
-
+version = "0.1.0"
+description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
+authors = ["Keywords AI <team@keywordsai.co>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.8"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project.urls]
 Homepage = "https://keywordsai.co"
-Repository = ""
+Repository = "https://github.com/Keywords-AI/keywordai_sdks.git"
 Documentation = "https://docs.keywordsai.co"

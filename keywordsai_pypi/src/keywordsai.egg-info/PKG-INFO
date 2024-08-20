@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: keywordsai
+Version: 0.0.1
+Summary: Keywords AI Python SDK allows you to easily interact with the Keywords AI API.
+Author-email: Keywords AI <team@keywordsai.co>
+Project-URL: Homepage, https://keywordsai.co
+Project-URL: Repository, https://github.com/Keywords-AI/keywordai_sdks.git
+Project-URL: Documentation, https://docs.keywordsai.co
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Keywords AI SDK
+Keywords AI Python SDK allows you to easily interact with the Keywords AI API.
