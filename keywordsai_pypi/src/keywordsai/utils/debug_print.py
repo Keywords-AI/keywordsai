@@ -1,7 +1,8 @@
 from .bgcolors import BgColors
 
 def print_color(color: str, text:str, *args, **kwargs):
-    print(f"{color}{text}{BgColors.ENDC}", *args, **kwargs)
+    print_function = kwargs.pop("print_func", print) or print
+    print_function(f"{color}{text}{BgColors.ENDC}", *args, **kwargs)
     
 def print_error(text, *args, **kwargs):
     print_color(color=BgColors.FAIL, text=text, *args, **kwargs)
@@ -9,8 +10,8 @@ def print_error(text, *args, **kwargs):
 def print_warning(text, *args, **kwargs):
     print_color(color=BgColors.WARNING, text=text, *args, **kwargs)
     
-def print_info(text, *args, **kwargs):
-    print_color(color=BgColors.OKBLUE, text=text, *args, **kwargs)
+def print_info(text, print_func=None, *args, **kwargs):
+    print_color(color=BgColors.OKBLUE, text=text, print_func=print_func, *args, **kwargs)
     
 def print_success(text, *args, **kwargs):
     """
@@ -24,3 +25,11 @@ def print_bold(text, *args, **kwargs):
 def print_underline(text, *args, **kwargs):
     print_color(color=BgColors.UNDERLINE, text=text, *args, **kwargs)
      
+from keywordsai import DEBUG
+def debug(func):
+    def wrapper(*args, **kwargs):
+        if DEBUG:
+            return func(*args, **kwargs)
+        else:
+            return lambda *args, **kwargs: None
+    return wrapper

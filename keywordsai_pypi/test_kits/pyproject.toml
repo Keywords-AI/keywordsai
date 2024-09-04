@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "tests"
+version = "0.1.0"
+description = "Tests for keywordai_sd"
+authors = ["Raymond Huang <1415176717@qq.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
