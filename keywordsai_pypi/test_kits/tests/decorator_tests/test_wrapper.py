@@ -1,13 +1,15 @@
 from tests.test_env import *
-from keywordsai.decorators import openai_wrapper
+from keywordsai.core import KeywordsAI
 from openai import OpenAI
 
 import pytest
 client = OpenAI()
 
+kai = KeywordsAI()
 
 def test_openai_wrapper():
-    response = openai_wrapper(client.chat.completions.create)(
+    wrapped_func = kai.logging_wrapper(client.chat.completions.create)
+    response = wrapped_func(
         messages = [
             {
                 "role": "system",
@@ -20,9 +22,9 @@ def test_openai_wrapper():
         ],
         model="gpt-3.5-turbo",
         max_tokens=100,
-        stream = True
+        stream = False
     )
-
+    
     assert response is not None
 
 if __name__ == "__main__":
