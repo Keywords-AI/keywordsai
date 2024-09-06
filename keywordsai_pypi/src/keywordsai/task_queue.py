@@ -6,29 +6,7 @@ from .utils.debug_print import print_info, debug_print, print_error
 import logging
 from .constants import *
 import atexit
-from httpx import Client
-
-
-class KeywordsAIClient(Client):
-    def __init__(self, api_key: str, base_url: str = None, path: str = None, extra_headers: dict = None):
-        super().__init__()
-        self.api_key = api_key or KEYWORDSAI_API_KEY
-        self.base_url = base_url or KEYWORDSAI_BASE_URL
-        self.path = path or KEYWORDSAI_LOGGING_PATH
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        if extra_headers:
-            self._headers.update(extra_headers)
-
-    def post(self, data: dict):
-        response = super().post(
-            url=f"{self.base_url}{self.path}",
-            json=data,
-            headers=self.headers,
-        )
-        return response
+from .client import KeywordsAIClient
 
 class UploadWorker(Thread):
     state: Literal["running", "paused", "stopped"] = "running"
