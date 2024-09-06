@@ -1,29 +1,40 @@
-from .utils.debug_print import *
-from .constants import *
-from threading import Lock
-import logging
-from os import getenv
-from functools import wraps
 from asyncio import iscoroutinefunction, get_event_loop
-import time
-from packaging.version import Version
+from collections.abc import Generator
+from .constants import *
+from functools import wraps
+from os import getenv
 import openai
-import types
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion import ChatCompletion
-from collections.abc import Generator
+from packaging.version import Version
 from .task_queue import KeywordsAITaskQueue
-
+import time
+from threading import Lock
+import types
+from .utils.debug_print import *
+from .utils.type_conversion import (
+    openai_stream_chunks_to_openai_io,
+    openai_io_to_keywordsai_log,
+)
+import atexit
 
 
 class SyncGenerator:
 
     _keywordsai = None
-    def __init__(self, generator: Generator[ChatCompletionChunk, None, None], keywordsai: "KeywordsAI" = None, extra_data={}):
+
+    def __init__(
+        self,
+        generator: Generator[ChatCompletionChunk, None, None],
+        keywordsai: "KeywordsAI" = None,
+        data={},
+        keywordsai_data={},
+    ):
         self.generator = generator
         self.response_collector = []
         self._keywordsai = keywordsai
-        self.extra_data = extra_data
+        self.data = data
+        self.keywordsai_data = keywordsai_data
 
     def __iter__(self):
         try:
@@ -40,11 +51,16 @@ class SyncGenerator:
         pass
 
     def _on_finish(self):
-        data = {"collecion": self.response_collector}
-        data.update(self.extra_data)
+        constructed_response = openai_stream_chunks_to_openai_io(
+            self.response_collector
+        )
+        data = openai_io_to_keywordsai_log(
+            openai_input=self.data, openai_output=constructed_response
+        )
+        data.update(self.keywordsai_data)
         if self._keywordsai:
             self._keywordsai._log(data)
-        return self.response_collector
+        return data
 
 
 def _is_openai_v1():
@@ -58,8 +74,6 @@ def _is_streaming_response(response):
         or (_is_openai_v1() and isinstance(response, openai.Stream))
         or (_is_openai_v1() and isinstance(response, openai.AsyncStream))
     )
-
-
 
 
 class KeywordsAI:
@@ -94,15 +108,14 @@ class KeywordsAI:
             return cls._instance
         else:
             return super(KeywordsAI, cls).__new__(cls)
-        
 
     def __init__(self) -> None:
-        self._task_queue = KeywordsAITaskQueue() 
-        self._task_queue.initialize()
-            
+        self._task_queue = KeywordsAITaskQueue()
+
+        
     def _log(self, data):
         self._task_queue.add_task(data)
-        
+
     def _openai_wrapper(self, func, *args, **kwargs):
         if iscoroutinefunction(func):
 
@@ -113,29 +126,42 @@ class KeywordsAI:
                 result = await func(*args, **kwargs)
                 end_time = loop.time()
                 return result
+
         else:
+
             @wraps(func)
             def wrapped_openai(*args, **kwargs):
                 start_time = time.time()
-                result = func(*args, **kwargs)
-                end_time = time.time()
-                is_stream = _is_streaming_response(result)
-                ttft = None
-                if is_stream:
-                    ttft = end_time - start_time
-                    result: Generator[ChatCompletionChunk, None, None]
-                    return SyncGenerator(result, self, extra_data={"ttft": ttft})
-                else:
-                    latency = end_time - start_time
-                    result: ChatCompletion
-                    data = { **result.model_dump(), "latency": latency }
-                    self._log(data=data)
-                return result
+                try:
+                    result = func(*args, **kwargs)
+                    end_time = time.time()
+                    is_stream = _is_streaming_response(result)
+                    ttft = None
+                    if is_stream:
+                        ttft = end_time - start_time
+                        result: Generator[ChatCompletionChunk, None, None]
+                        return SyncGenerator(
+                            result, self, data=kwargs, keywordsai_data={"ttft": ttft}
+                        )
+                    else:
+                        latency = end_time - start_time
+                        result: ChatCompletion
+                        log_data = openai_io_to_keywordsai_log(
+                            openai_input=kwargs, openai_output=result
+                        )
+                        data = {**log_data, "latency": latency}
+                        self._log(data=data)
+                    return result
+                except Exception as e:
+                    print_error(e, print_func=debug_print)
+                    self._log(data={"error": str(e)})
+                    raise e
 
         return wrapped_openai
 
     def logging_wrapper(self, func, type=LogType.TEXT_LLM, **wrapper_kwargs):
         if type == KeywordsAI.LogType.TEXT_LLM and func:
+
             def wrapper(*args, **kwargs):
                 openai_func = self._openai_wrapper(func)
                 result = openai_func(*args, **kwargs)

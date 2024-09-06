@@ -6,8 +6,8 @@ def print_color(color: str, text: str, *args, **kwargs):
     print_function(f"{color}{text}{BgColors.ENDC}", *args, **kwargs)
 
 
-def print_error(text, *args, **kwargs):
-    print_color(color=BgColors.FAIL, text=text, *args, **kwargs)
+def print_error(text, print_func=None, *args, **kwargs):
+    print_color(color=BgColors.FAIL, text=text, print_func=print_func, *args, **kwargs)
 
 
 def print_warning(text, *args, **kwargs):

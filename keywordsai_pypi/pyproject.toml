@@ -9,8 +9,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.31.0"
-openai = "^1.41.1"
 pytest = "^8.3.2"
+typing-extensions = "^4.12.2"
+openai = "^1.43.1"
 
 
 [build-system]

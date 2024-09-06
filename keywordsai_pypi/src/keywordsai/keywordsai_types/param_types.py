@@ -1,5 +1,6 @@
 from typing import List, Literal, Optional
 from typing_extensions import Annotated
+from pydantic import BaseModel
 from ._interal_types import (Message, FunctionTool
 )
 """

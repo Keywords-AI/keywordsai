@@ -1,6 +1,8 @@
 from tests.test_env import *
 from keywordsai.keywordsai_types.param_types import KeywordsAITextLogParams
 
+from pydantic import BaseModel
+
 kai_params = KeywordsAITextLogParams(
     model = test_model,
     prompt_messages=test_messages,
@@ -8,3 +10,10 @@ kai_params = KeywordsAITextLogParams(
     latency=None
 )
 
+
+
+from typing import Optional
+class TestModel(BaseModel):
+    some_field: Optional[str] = None
+
+model = TestModel(some_field=None)

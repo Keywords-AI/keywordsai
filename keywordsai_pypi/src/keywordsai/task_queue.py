@@ -1,54 +1,103 @@
 from threading import Thread
 from typing import List, Literal
 from queue import Queue
-from .utils.debug_print import print_info, debug_print
+import queue
+from .utils.debug_print import print_info, debug_print, print_error
 import logging
 from .constants import *
 import atexit
+from httpx import Client
 
+
+class KeywordsAIClient(Client):
+    def __init__(self, api_key: str, base_url: str = None, path: str = None, extra_headers: dict = None):
+        super().__init__()
+        self.api_key = api_key or KEYWORDSAI_API_KEY
+        self.base_url = base_url or KEYWORDSAI_BASE_URL
+        self.path = path or KEYWORDSAI_LOGGING_PATH
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        if extra_headers:
+            self._headers.update(extra_headers)
+
+    def post(self, data: dict):
+        response = super().post(
+            url=f"{self.base_url}{self.path}",
+            json=data,
+            headers=self.headers,
+        )
+        return response
 
 class UploadWorker(Thread):
     state: Literal["running", "paused", "stopped"] = "running"
 
     def __init__(self, queue: Queue):
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self._queue = queue
-        
+        self._client = KeywordsAIClient()
+
+    def _get_batch(self):
+        batch = []
+        while len(batch) < KEYWORDSAI_BATCH_SIZE:
+            try:
+                data = self._queue.get(block=False)
+                if data:
+                    batch.append(data)
+            except queue.Empty:
+                break
+            except Exception as e:
+                print_error(e, print_func=logging.error)
+        return batch
+
+    def _get_item(self):
+        try:
+            item = self._queue.get(block=False)
+            return item
+        except queue.Empty:
+            return None
+
     def run(self):
         while self.state == "running":
-            data = self._queue.get(block=True)
-            if data:
-                self._send_to_keywords(data)
+            item = self._get_item()
+            if not item:
+                continue
+            try:
+                self._send_to_keywordsai(item)
+            except Exception as e:
+                print_error(e, print_func=logging.error)
+            finally:
                 self._queue.task_done()
-    
+
     def pause(self):
         self.state = "paused"
 
-    def _send_to_keywords(self, data):
-        print_info(f"Sending data to KeywordsAI: {data}", print_func=debug_print)
+    def _send_to_keywordsai(self, data):
+        response = self._client.post(data)
+        print_info(f"Response from KeywordsAI: {response}", print_func=debug_print)
 
-        
+
 class KeywordsAITaskQueue:
-    
+
     _queue = Queue()
     _workers: List[UploadWorker] = []
 
     def __init__(self):
-        for _ in range(KEYWORDSAI_NUM_THREADS):
-            self._workers.append(UploadWorker(queue=self._queue))
-        
-        atexit.register(self.teardown)
+        self.initialize()
+        atexit.register(self.join)
 
     def initialize(self):
-        for worker in self._workers:
-            if not worker.is_alive():
-                worker.start()
+
+        for _ in range(KEYWORDSAI_NUM_THREADS):
+            worker = UploadWorker(self._queue)
+            worker.start()
+            self._workers.append(worker)
         return True
 
     def add_task(self, task_data):
-        print_info(f"Adding task to queue: {task_data}", print_func=debug_print)
         self._queue.put(task_data, block=False)
-    
+
     def flush(self):
         """Waiting until all the pending uploads in the queue are finished"""
         self._queue.join()
@@ -62,13 +111,14 @@ class KeywordsAITaskQueue:
         for worker in self._workers:
             # Avoid further accepting new uploads
             worker.pause()
-
         for worker in self._workers:
             try:
                 worker.join()
             except RuntimeError:
                 # consumer thread has not started
                 pass
+            except Exception as e:
+                print_error(e, print_func=logging.error)
 
     def teardown(self):
         """Clear all the tasks in the queue and shutdown the workers"""
@@ -77,5 +127,3 @@ class KeywordsAITaskQueue:
         self.join()
 
         print_info("Shutdown success", print_func=logging.info)
-        
-        

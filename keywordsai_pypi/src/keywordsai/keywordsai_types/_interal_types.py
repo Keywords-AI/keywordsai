@@ -234,6 +234,9 @@ class BasicLLMParams(BaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+    class Config:
+        protected_namespaces = ()
+
 class StrictBasicLLMParams(BasicLLMParams):
     messages: List[Message]
     
@@ -261,6 +264,9 @@ class LoadBalanceModel(BaseModel):
         if v <= 0:
             raise ValueError("Weight has to be greater than 0")
         return v
+
+    class Config:
+        protected_namespaces = ()
 
 class Span(BaseModel):
     span_identifier: str
@@ -325,7 +331,7 @@ class KeywordsAIParams(BaseModel):
     models: Optional[List[str]] = None
     model_name_map: Optional[Dict[str, str]] = None
     posthog_integration: Optional[PostHogIntegration] = None
-    prompt: Optional[Union[PromptParam, List[WeightedPromptParam]]] = None
+    prompt: Optional[Union[PromptParam]] = None
     request_breakdown: Optional[bool] = False
     thread_identifier: Optional[Union[str, int]] = None
     fieldname: Optional[str] = ""
@@ -338,8 +344,11 @@ class KeywordsAIParams(BaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
-class KeywordsAIParamsValidation(KeywordsAIParams):
     class Config:
+        protected_namespaces = ()
+
+class KeywordsAIParamsValidation(KeywordsAIParams):
+    class Config(KeywordsAIParams.Config):
         extra = "allow"
         
 class BasicTextToSpeechParams(BaseModel):
@@ -348,6 +357,9 @@ class BasicTextToSpeechParams(BaseModel):
     voice: Literal["alloy","echo", "fable", "onyx","nova", "shimmer"] 
     speed: Optional[float] = 1
     response_format: Optional[str]="mp3"
+    
+    class Config:
+        protected_namespaces = ()
 class BasicEmbeddingParams(BaseModel):
     input: str
     model: str

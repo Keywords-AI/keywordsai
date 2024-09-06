@@ -17,5 +17,5 @@ kai_local_client = openai.OpenAI(
 test_model = "gpt-3.5-turbo"
 test_messages = [
     {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "What is the meaning of life?"},
+    {"role": "user", "content": "Hi there!"},
 ]
