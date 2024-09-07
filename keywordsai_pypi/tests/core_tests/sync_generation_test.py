@@ -1,6 +1,9 @@
-from tests.test_env import *
-from keywordsai.core import KeywordsAI, SyncGenerator
+import sys
+sys.path.append(".")
+from test_env import *
+from keywordsai.core import KeywordsAI 
 from openai.types.chat.chat_completion import ChatCompletion
+from keywordsai.integrations.openai import SyncGenerator
 
 # from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
@@ -8,7 +11,7 @@ from openai.types.chat.chat_completion import ChatCompletion
 def test_stream_generation():
     kai = KeywordsAI()
     try:
-        wrapped_creation = kai.random_wrapper(oai_client.chat.completions.create)
+        wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create)
         # wrapped_creation = oai_client.chat.completions.create
         response = wrapped_creation(
             model=test_model,
@@ -24,7 +27,7 @@ def test_stream_generation():
 def test_generation():
     kai = KeywordsAI()
     try:
-        wrapped_creation = kai.random_wrapper(oai_client.chat.completions.create, keywordsai_params={
+        wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "customer_identifier": "sdk_customer",
         })
         response = wrapped_creation(
@@ -41,15 +44,15 @@ def test_generation():
 
 if __name__ == "__main__":
     # non streaming
-    response = test_generation()
+    # response = test_generation()
 
     # streaming
-    # response = test_stream_generation()
+    response = test_stream_generation()
     # Iteration is needed in order to trigger the logging
-    # for chunk in response:
-    #     content = chunk.choices[0].delta.content
-    #     if content:
-    #         print(content, end="")
-    #     pass
+    for chunk in response:
+        content = chunk.choices[0].delta.content
+        if content:
+            print(content, end="")
+        pass
     KeywordsAI.flush()
 

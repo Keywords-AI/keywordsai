@@ -83,7 +83,8 @@ if __name__ == "__main__":
 
 Asynchronous:
 ```
-from tests.test_env import *
+import sys
+sys.path.append(".")
 from keywordsai.core import KeywordsAI, AsyncGenerator
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion

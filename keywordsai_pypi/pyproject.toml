@@ -1,10 +1,14 @@
 [tool.poetry]
 name = "keywordsai"
-version = "0.1.4"
+version = "0.1.5"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"
 readme = "README.md"
+packages = [
+    { include = "keywordsai", from = "./src" },
+    { include = "./tests"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -13,6 +17,7 @@ pytest = "^8.3.2"
 typing-extensions = "^4.12.2"
 openai = "^1.43.1"
 python-dotenv = "^1.0.1"
+
 
 
 [build-system]
