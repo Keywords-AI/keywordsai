@@ -28,6 +28,53 @@ pip install . -e
 touch .env
 ```
 Inside the .env file, you can configure the constants througout the library
+```env
+DEBUG # Default is "False", set to "True" to enable debug mode for more verbose output
+KEYWORDSAI_BASE_URL # Default is "https://api.keywordsai.co/api/", the slash at the end is important
+KEYWORDSAI_API_KEY # Your Keywords AI API Key
+```
+Change values during runtime (not recommended)
+```python
+import keywordsai.keywordsai_config as config
+config.KEYWORDSAI_BASE_URL = "some_url"
 ```
 
+### Usage
+
+#### Proxy
+With Keywords AI as a proxy, observability comes out of box.
+```python
+from openai import OpenAI
+import os
+client = OpenAI(
+    api_key=os.getenv("KEYWORDSAI_API_KEY"),
+    base_url=os.getenv("KEYWORDSAI_BASE_URL")
+)
+
+# Use the client to make requests as you would with the OpenAI SDK
 ```
+
+#### Wrapper (Beta)
+Wrap around the OpenAI completion function to automatically log the request and response
+```python
+from keywordsai import KeywordsAI
+from openai import OpenAI
+client = OpenAI()
+def test_generation():
+    kai = KeywordsAI()
+    try:
+        wrapped_creation = kai.logging_wrapper(client.chat.completions.create)
+        response = wrapped_creation(
+            model=test_model,
+            messages=test_messages,
+            stream=False,
+            extra_body={"mock_response": test_mock_response},
+        )
+        assert isinstance(response, ChatCompletion)
+    except Exception as e:
+        assert False, e
+
+
+if __name__ == "__main__":
+    generator = test_generation()
+``` 

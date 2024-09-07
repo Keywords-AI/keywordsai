@@ -1,7 +1,7 @@
 from tests.test_env import *
-from keywordsai.core import KeywordsAI
+from keywordsai import KeywordsAI
 from keywordsai.client import KeywordsAIClient
-import os
+import keywordsai.keywordsai_config as config
 
 def test_init_kai_instance():
     try:
@@ -19,5 +19,5 @@ def test_init_kai_client():
 
 if __name__ == "__main__":
     kai_client = KeywordsAIClient()
-    os.environ["KEYWORDSAI_BASE_URL"] = "random_url"
+    config.KEYWORDSAI_BASE_URL = "some_url"
     kai_client2 = KeywordsAIClient()

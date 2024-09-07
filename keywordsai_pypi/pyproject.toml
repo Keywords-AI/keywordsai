@@ -12,6 +12,7 @@ requests = "^2.31.0"
 pytest = "^8.3.2"
 typing-extensions = "^4.12.2"
 openai = "^1.43.1"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

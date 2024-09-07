@@ -1,5 +1,5 @@
 from typing import List, Literal, Optional
-from typing_extensions import Annotated
+from typing_extensions import TypedDict
 from pydantic import BaseModel
 from ._interal_types import (Message, FunctionTool
 )
@@ -15,9 +15,14 @@ Logging params types:
 3. AUDIO
 4. GENERAL_FUNCTION
 """
+class KeywordsAILogParams(BaseModel):
+    customer_identifier: Optional[str] = None
+    warnings: Optional[List[str]] = None
 
-
-class KeywordsAITextLogParams(BaseModel):
+class KeywordsAILogDict(TypedDict):
+    customer_identifier: Optional[str] = None
+    warnings: Optional[List[str]] = None
+class KeywordsAITextLogParams(KeywordsAILogParams):
     completion_message: Message
     model: str = ""
     prompt_messages: List[Message]
@@ -25,7 +30,6 @@ class KeywordsAITextLogParams(BaseModel):
     completion_tokens: Optional[int] = None
     completion_unit_price: Optional[float] = None
     cost: Optional[float] = None
-    customer_identifier: Optional[str] = None
     error_message: Optional[str] = None
     full_request: Optional[dict] = None
     generation_time: Optional[float] = None # A mask over latency. TTFT + TPOT * tokens
@@ -40,11 +44,8 @@ class KeywordsAITextLogParams(BaseModel):
     time_to_first_token: Optional[float] = None
     ttft: Optional[float] = None # A mask over time_to_first_token
     tokens_per_second: Optional[float] = None
-    warnings: Optional[List[str]] = None
 
     def __init__(self, **data):
         data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
         data["latency"] = data.get("latency", data.get("generation_time"))
         super().__init__(**data)
-
-        

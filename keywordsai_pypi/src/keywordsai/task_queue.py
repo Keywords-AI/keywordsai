@@ -4,7 +4,7 @@ from queue import Queue
 import queue
 from .utils.debug_print import print_info, debug_print, print_error
 import logging
-from .constants import *
+from .keywordsai_config import *
 import atexit
 from .client import KeywordsAIClient
 
@@ -53,7 +53,11 @@ class UploadWorker(Thread):
 
     def _send_to_keywordsai(self, data):
         response = self._client.post(data)
-        print_info(f"Response from KeywordsAI: {response}", print_func=debug_print)
+        try:
+            response_json = response.json()
+            print_info(f"Response from KeywordsAI: {response_json}", print_func=debug_print)
+        except Exception as e:
+            print_error(e, print_func=logging.error)
 
 
 class KeywordsAITaskQueue:

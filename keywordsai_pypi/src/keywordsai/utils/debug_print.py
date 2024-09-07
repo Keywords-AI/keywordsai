@@ -1,5 +1,5 @@
 from .bgcolors import BgColors
-
+from keywordsai.keywordsai_config import DEBUG
 
 def print_color(color: str, text: str, *args, **kwargs):
     print_function = kwargs.pop("print_func", print) or print
@@ -33,10 +33,6 @@ def print_bold(text, *args, **kwargs):
 
 def print_underline(text, *args, **kwargs):
     print_color(color=BgColors.UNDERLINE, text=text, *args, **kwargs)
-
-
-from keywordsai import DEBUG
-
 
 def debug_print(*args, **kwargs):
     if DEBUG:

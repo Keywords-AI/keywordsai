@@ -1,21 +1,55 @@
 from tests.test_env import *
 from keywordsai.core import KeywordsAI, SyncGenerator
+from openai.types.chat.chat_completion import ChatCompletion
+
+# from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+
+
+def test_stream_generation():
+    kai = KeywordsAI()
+    try:
+        wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create)
+        # wrapped_creation = oai_client.chat.completions.create
+        response = wrapped_creation(
+            model=test_model,
+            messages=test_messages,
+            stream=True,
+        )
+        assert isinstance(response, SyncGenerator)
+        return response
+    except Exception as e:
+        assert False, e
+
 
 def test_generation():
     kai = KeywordsAI()
-    wrapped_creation = kai.logging_wrapper(kai_local_client.chat.completions.create)
-    # wrapped_creation = oai_client.chat.completions.create
-    response = wrapped_creation(model=test_model, messages=test_messages, stream=True)
-    assert response is not None
-    return response
+    try:
+        wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
+            "customer_identifier": "sdk_customer",
+        })
+        response = wrapped_creation(
+            model=test_model,
+            messages=test_messages,
+            stream=False,
+
+        )
+        assert isinstance(response, ChatCompletion)
+        return response
+    except Exception as e:
+        assert False, e
 
 
 if __name__ == "__main__":
-    print("Running test_generation()...")   
-    generator = test_generation()
-    for chunk in generator:
+    # non streaming
+    # response = test_generation()
+
+    # streaming
+    response = test_stream_generation()
+    # Iteration is needed in order to trigger the logging
+    for chunk in response:
         content = chunk.choices[0].delta.content
         if content:
             print(content, end="")
-    print()
-    print("Finished running test_generation()")
+        pass
+    KeywordsAI.flush()
+

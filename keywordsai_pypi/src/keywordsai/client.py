@@ -1,7 +1,6 @@
-from .constants import *
+import keywordsai.keywordsai_config as config
 from httpx import Client
 from .utils.debug_print import print_info, debug_print
-import os
 
 class KeywordsAIClient(Client):
     def __init__(
@@ -12,23 +11,21 @@ class KeywordsAIClient(Client):
         extra_headers: dict = None,
     ):
         super().__init__()
-        self.api_key = api_key or KEYWORDSAI_API_KEY
-        self.base_url = base_url or KEYWORDSAI_BASE_URL
-        self.path = path or KEYWORDSAI_LOGGING_PATH
+        self.api_key = api_key or config.KEYWORDSAI_API_KEY
+        self.base_url = base_url or config.KEYWORDSAI_BASE_URL
+        self.path = path or config.KEYWORDSAI_LOGGING_PATH
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        print_info(
-            f"KeywordsAI Client initialized with base_url: {self.base_url}",
-            print_func=debug_print,
-        )
         if extra_headers:
             self._headers.update(extra_headers)
 
     def post(self, data: dict):
+        url = f"{self.base_url}{self.path}"
+        print_info(f"Posting data to KeywordsAI: {url} ", print_func=debug_print)
         response = super().post(
-            url=f"{self.base_url}{self.path}",
+            url=url,
             json=data,
             headers=self.headers,
         )

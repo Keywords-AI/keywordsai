@@ -64,12 +64,12 @@ def openai_stream_chunks_to_openai_io(
 def openai_io_to_keywordsai_log(
     openai_input: OpenAIStyledInput, openai_output: ChatCompletion
 ):
-    extra_body = openai_input.get("extra_body", {}) or {}
+    extra_body = openai_input.pop("extra_body", {}) or {}
     kai_params = KeywordsAITextLogParams(
-        model=openai_input.get("model", ""),
-        prompt_messages=openai_input.get("messages", []),
+        prompt_messages=openai_input.pop("messages", []),
         completion_message=openai_output.choices[0].message.model_dump(),
         full_request=openai_input,
+        **openai_input,
         **extra_body
     )
     usage = openai_output.usage
