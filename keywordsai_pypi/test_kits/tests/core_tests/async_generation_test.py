@@ -2,7 +2,6 @@ from tests.test_env import *
 from keywordsai.core import KeywordsAI, AsyncGenerator
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 client = AsyncOpenAI()
 
