@@ -1,12 +1,12 @@
 from functools import wraps
-from keywordsai.keywordsai_types.param_types import KeywordsAILogDict
+from keywordsai_sdk.keywordsai_types.param_types import KeywordsAILogDict
 import time
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion import ChatCompletion
 from packaging.version import Version
 import types
-from keywordsai.utils.debug_print import *
-from keywordsai.utils.type_conversion import (
+from keywordsai_sdk.utils.debug_print import *
+from keywordsai_sdk.utils.type_conversion import (
     openai_io_to_keywordsai_log,
     openai_stream_chunks_to_openai_io,
 )
@@ -15,7 +15,7 @@ from typing import Generator, AsyncGenerator as AsyncGeneratorType
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from keywordsai.core import KeywordsAI
+    from keywordsai_sdk.core import KeywordsAI
 
 
 class SyncGenerator:

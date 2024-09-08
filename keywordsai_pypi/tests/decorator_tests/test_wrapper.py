@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from test_env import *
-from keywordsai.core import KeywordsAI
+from keywordsai_sdk.core import KeywordsAI
 from openai import OpenAI
 
 import pytest

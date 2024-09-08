@@ -1,8 +1,8 @@
 import sys
 sys.path.append(".")
 from test_env import *
-from keywordsai.core import KeywordsAI
-from keywordsai.integrations.openai import SyncGenerator
+from keywordsai_sdk.core import KeywordsAI
+from keywordsai_sdk.integrations.openai import SyncGenerator
 from openai.types.chat.chat_completion import ChatCompletion
 
 # from openai.types.chat.chat_completion_chunk import ChatCompletionChunk

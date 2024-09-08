@@ -1,5 +1,5 @@
-from keywordsai.keywordsai_types.param_types import KeywordsAITextLogParams
-from keywordsai.keywordsai_types._interal_types import (
+from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
+from keywordsai_sdk.keywordsai_types._interal_types import (
     OpenAIStyledInput,
     OpenAIStyledResponse,
 )

@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 loaded = load_dotenv("./.env")
 import os
 import logging
-from keywordsai.utils.debug_print import *
-import keywordsai.keywordsai_config as config
+from keywordsai_sdk.utils.debug_print import *
+import keywordsai_sdk.keywordsai_config as config
 import openai
 import pytest
 oai_client = openai.OpenAI()

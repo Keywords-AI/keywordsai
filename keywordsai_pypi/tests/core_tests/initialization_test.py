@@ -1,7 +1,7 @@
 from tests.test_env import *
-from keywordsai import KeywordsAI
-from keywordsai.client import KeywordsAIClient
-import keywordsai.keywordsai_config as config
+from keywordsai_sdk import KeywordsAI
+from keywordsai_sdk.client import KeywordsAIClient
+import keywordsai_sdk.keywordsai_config as config
 
 def test_init_kai_instance():
     try:

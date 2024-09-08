@@ -1,7 +1,5 @@
-import sys
-sys.path.append(".")
-from test_env import *
-from keywordsai.keywordsai_types.param_types import KeywordsAITextLogParams
+from tests.test_env import *
+from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
 
 from pydantic import BaseModel
 

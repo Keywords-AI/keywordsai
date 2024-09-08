@@ -1,4 +1,4 @@
-import keywordsai.keywordsai_config as config
+import keywordsai_sdk.keywordsai_config as config
 from httpx import Client
 from .utils.debug_print import print_info, debug_print
 

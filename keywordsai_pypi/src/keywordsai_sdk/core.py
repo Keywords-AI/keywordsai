@@ -5,7 +5,7 @@ from .task_queue import KeywordsAITaskQueue
 from threading import Lock
 from .utils.debug_print import *
 from .keywordsai_types.param_types import KeywordsAILogDict
-from keywordsai.integrations.openai import (
+from keywordsai_sdk.integrations.openai import (
     sync_openai_wrapper,
     async_openai_wrapper,
 )

@@ -1,7 +1,5 @@
-import sys
-sys.path.append(".")
-from test_env import *
-from keywordsai.utils.type_conversion import (
+from tests.test_env import *
+from keywordsai_sdk.utils.type_conversion import (
     openai_stream_chunks_to_openai_io,
     openai_io_to_keywordsai_log,
 )

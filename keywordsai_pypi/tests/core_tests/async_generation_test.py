@@ -1,10 +1,8 @@
-import sys
-sys.path.append(".")
-from test_env import *
-from keywordsai.core import KeywordsAI
+from tests.test_env import *
+from keywordsai_sdk.core import KeywordsAI
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
-from keywordsai.integrations.openai import AsyncGenerator
+from keywordsai_sdk.integrations.openai import AsyncGenerator
 
 client = AsyncOpenAI()
 

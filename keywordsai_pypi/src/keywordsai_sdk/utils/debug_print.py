@@ -1,5 +1,5 @@
 from .bgcolors import BgColors
-from keywordsai.keywordsai_config import DEBUG
+from keywordsai_sdk.keywordsai_config import DEBUG
 
 def print_color(color: str, text: str, *args, **kwargs):
     print_function = kwargs.pop("print_func", print) or print

@@ -4,7 +4,7 @@ from asyncio import iscoroutinefunction, get_event_loop
 from packaging.version import Version
 import openai
 import types
-from keywordsai.utils.debug_print import debug
+from keywordsai_sdk.utils.debug_print import debug
 
 def _is_openai_v1():
     return Version(openai.__version__) >= Version("1.0.0")
