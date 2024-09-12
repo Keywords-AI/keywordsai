@@ -325,14 +325,15 @@ class KeywordsAIParams(BaseModel):
     customer_email: Optional[str] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
     customer_identifier: Optional[Union[str, int]] = None
-    delimiter: Optional[str] = "---"
+    delimiter: Optional[str] = "\n\n"
     disable_fallback: Optional[bool] = False
     disable_log: Optional[bool] = False
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
     evaluation_identifier: Optional[str] = None
     fallback_models: Optional[List[str]] = None
-    field_name: Optional[str] = ""
+    fieldname: Optional[str] = "data: "
+    for_eval: Optional[bool] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     metadata: Optional[dict] = None
@@ -342,8 +343,6 @@ class KeywordsAIParams(BaseModel):
     prompt: Optional[PromptParam] = None
     request_breakdown: Optional[bool] = False
     thread_identifier: Optional[Union[str, int]] = None
-    fieldname: Optional[str] = ""
-    for_eval: Optional[bool] = None
     response_format: Optional[TextModelResponseFormat] = None
     trace_params: Optional[Trace] = None
     # Add any additional validators if required
