@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from test_env import *
-from keywordsai_sdk.core import KeywordsAI
+from keywordsai_sdk.core import KeywordsAILogger
 from keywordsai_sdk.integrations.openai import SyncGenerator
 from openai.types.chat.chat_completion import ChatCompletion
 
@@ -9,7 +9,7 @@ from openai.types.chat.chat_completion import ChatCompletion
 
 
 def test_stream_generation():
-    kai = KeywordsAI()
+    kai = KeywordsAILogger()
     try:
         wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create)
         # wrapped_creation = oai_client.chat.completions.create
@@ -25,7 +25,7 @@ def test_stream_generation():
 
 
 def test_generation():
-    kai = KeywordsAI()
+    kai = KeywordsAILogger()
     try:
         wrapped_creation = kai.random_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "customer_identifier": "sdk_customer",
@@ -54,5 +54,5 @@ if __name__ == "__main__":
     #     if content:
     #         print(content, end="")
     #     pass
-    KeywordsAI.flush()
+    KeywordsAILogger.flush()
 

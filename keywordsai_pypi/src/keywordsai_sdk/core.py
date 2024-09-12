@@ -11,7 +11,7 @@ from keywordsai_sdk.integrations.openai import (
 )
 
 
-class KeywordsAI:
+class KeywordsAILogger:
     _lock = Lock()
     _singleton = getenv("KEYWORDS_AI_IS_SINGLETON", "True") == "True"
     _instance = None
@@ -22,7 +22,7 @@ class KeywordsAI:
         TEXT_LLM: Text-based language model (chat endpoint, text endpoint)
         AUDIO_LLM: Audio-based language model (audio endpoint)
         EMBEDDING_LLM: Embedding-based language model (embedding endpoint)
-        GENERAL_FUNCTION: General function, any input (in json serailizable format), any output (in json serializable format)
+        GENERAL_FUNCTION: General function, any input (in json serializable format), any output (in json serializable format)
         """
 
         TEXT_LLM = "TEXT_LLM"
@@ -44,10 +44,10 @@ class KeywordsAI:
         if cls._singleton:
             if not cls._instance:
                 with cls._lock:
-                    cls._instance = super(KeywordsAI, cls).__new__(cls)
+                    cls._instance = super(KeywordsAILogger, cls).__new__(cls)
             return cls._instance
         else:
-            return super(KeywordsAI, cls).__new__(cls)
+            return super(KeywordsAILogger, cls).__new__(cls)
 
     def __init__(self) -> None:
         self._task_queue = KeywordsAITaskQueue()
@@ -76,7 +76,7 @@ class KeywordsAI:
         keywordsai_params: KeywordsAILogDict = {},
         **wrapper_kwargs,
     ):
-        if type == KeywordsAI.LogType.TEXT_LLM and func:
+        if type == KeywordsAILogger.LogType.TEXT_LLM and func:
 
             def wrapper(*args, **kwargs):
                 openai_func = self._openai_wrapper(
@@ -100,7 +100,7 @@ class KeywordsAI:
         keywordsai_params: KeywordsAILogDict = {},
         **wrapper_kwargs,
     ):
-        if type == KeywordsAI.LogType.TEXT_LLM and func:
+        if type == KeywordsAILogger.LogType.TEXT_LLM and func:
 
             async def wrapper(*args, **kwargs):
                 openai_func = self._async_openai_wrapper(

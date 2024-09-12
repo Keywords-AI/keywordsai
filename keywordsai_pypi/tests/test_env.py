@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-loaded = load_dotenv("./.env")
+from pathlib import Path
+loaded = load_dotenv("./.env", override=True)
 import os
 import logging
 from keywordsai_sdk.utils.debug_print import *

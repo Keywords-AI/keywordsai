@@ -1,7 +1,11 @@
-from tests.test_env import *
+from openai import OpenAI
 from keywordsai_sdk.core import KeywordsAILogger 
-from openai.types.chat.chat_completion import ChatCompletion
-from keywordsai_sdk.integrations.openai import SyncGenerator
+oai_client = OpenAI()
+test_model = "gpt-3.5-turbo"
+test_messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hi there!"},
+]
 
 def test_stream_generation():
     kai = KeywordsAILogger()
@@ -10,13 +14,11 @@ def test_stream_generation():
             "prompt_unit_cost": 0.1,
             "completions_unit_cost": 0.1,
         })
-        # wrapped_creation = oai_client.chat.completions.create
         response = wrapped_creation(
             model=test_model,
             messages=test_messages,
             stream=True,
         )
-        assert isinstance(response, SyncGenerator)
         return response
     except Exception as e:
         assert False, e
@@ -34,7 +36,6 @@ def test_generation():
             stream=False,
 
         )
-        assert isinstance(response, ChatCompletion)
         return response
     except Exception as e:
         assert False, e
@@ -43,7 +44,6 @@ def test_generation():
 if __name__ == "__main__":
     # non streaming
     # response = test_generation()
-
     # streaming
     response = test_stream_generation()
     # Iteration is needed in order to trigger the logging
@@ -52,5 +52,6 @@ if __name__ == "__main__":
         if content:
             print(content, end="")
         pass
+    # Short living environment, Flush to ensure all logs are sent
     KeywordsAILogger.flush()
 

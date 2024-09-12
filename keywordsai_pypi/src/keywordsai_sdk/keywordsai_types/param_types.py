@@ -1,7 +1,7 @@
 from typing import List, Literal, Optional
 from typing_extensions import TypedDict
 from pydantic import BaseModel
-from ._interal_types import (Message, FunctionTool
+from ._internal_types import (Message, FunctionTool
 )
 """
 Conventions:

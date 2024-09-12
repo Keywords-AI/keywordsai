@@ -1,12 +1,12 @@
 from tests.test_env import *
-from keywordsai_sdk import KeywordsAI
+from keywordsai_sdk import KeywordsAILogger
 from keywordsai_sdk.client import KeywordsAIClient
 import keywordsai_sdk.keywordsai_config as config
 
 def test_init_kai_instance():
     try:
-        kai = KeywordsAI()
-        assert isinstance(kai, KeywordsAI)
+        kai = KeywordsAILogger()
+        assert isinstance(kai, KeywordsAILogger)
     except Exception as e:
         assert False, e
         

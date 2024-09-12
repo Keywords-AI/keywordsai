@@ -15,7 +15,7 @@ from typing import Generator, AsyncGenerator as AsyncGeneratorType
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from keywordsai_sdk.core import KeywordsAI
+    from keywordsai_sdk.core import KeywordsAILogger
 
 
 class SyncGenerator:
@@ -25,7 +25,7 @@ class SyncGenerator:
     def __init__(
         self,
         generator: Generator[ChatCompletionChunk, None, None],
-        keywordsai: "KeywordsAI" = None,
+        keywordsai: "KeywordsAILogger" = None,
         data: dict = {},
         keywordsai_data={},
     ):
@@ -70,7 +70,7 @@ class AsyncGenerator:
     def __init__(
         self,
         generator: AsyncGeneratorType[ChatCompletionChunk, None],
-        keywordsai: "KeywordsAI" = None,
+        keywordsai: "KeywordsAILogger" = None,
         data: dict = {},
         keywordsai_data={},
     ):

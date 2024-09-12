@@ -307,12 +307,19 @@ class TextModelResponseFormat(BaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+class CacheOptions(BaseModel):
+    cache_by_customer: Optional[bool] = None # Create cache for each customer_user
+    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
+
 class KeywordsAIParams(BaseModel):
     mock_response: Optional[str] = None
-    keywordsai_params: Optional[dict] = None
     cache_hit: Optional[bool] = None
     cache_enabled: Optional[bool] = None
     cache_ttl: Optional[int] = None
+    cache_options: Optional[CacheOptions] = None
     credential_override: Optional[Dict[str, dict]] = None
     customer_params: Optional[Customer] = None
     customer_email: Optional[str] = None
@@ -331,7 +338,7 @@ class KeywordsAIParams(BaseModel):
     models: Optional[List[str]] = None
     model_name_map: Optional[Dict[str, str]] = None
     posthog_integration: Optional[PostHogIntegration] = None
-    prompt: Optional[Union[PromptParam]] = None
+    prompt: Optional[PromptParam] = None
     request_breakdown: Optional[bool] = False
     thread_identifier: Optional[Union[str, int]] = None
     fieldname: Optional[str] = ""
@@ -339,7 +346,7 @@ class KeywordsAIParams(BaseModel):
     response_format: Optional[TextModelResponseFormat] = None
     trace_params: Optional[Trace] = None
     # Add any additional validators if required
-    
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
