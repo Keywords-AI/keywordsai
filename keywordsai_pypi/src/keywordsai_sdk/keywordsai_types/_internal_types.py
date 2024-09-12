@@ -332,7 +332,7 @@ class KeywordsAIParams(BaseModel):
     exclude_providers: Optional[List[str]] = None
     evaluation_identifier: Optional[str] = None
     fallback_models: Optional[List[str]] = None
-    fieldname: Optional[str] = "data: "
+    field_name: Optional[str] = "data: "
     for_eval: Optional[bool] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
