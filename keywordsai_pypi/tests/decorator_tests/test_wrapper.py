@@ -1,13 +1,13 @@
 import sys
 sys.path.append(".")
 from test_env import *
-from keywordsai_sdk.core import KeywordsAILogger
+from keywordsai_sdk.core import KeywordsAI
 from openai import OpenAI
 
 import pytest
 client = OpenAI()
 
-kai = KeywordsAILogger()
+kai = KeywordsAI()
 
 def test_openai_wrapper():
     wrapped_func = kai.logging_wrapper(client.chat.completions.create)

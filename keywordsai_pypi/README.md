@@ -30,7 +30,7 @@ touch .env
 Inside the .env file, you can configure the constants througout the library
 ```env
 DEBUG # Default is "False", set to "True" to enable debug mode for more verbose output
-KEYWORDSAI_BASE_URL # Default is "https://api.keywordsai.co/api/", the slash at the end is important
+KEYWORDSAI_BASE_URL # Default is "https://api.keywordsai.co/api"
 KEYWORDSAI_API_KEY # Your Keywords AI API Key
 ```
 Change values during runtime (not recommended)

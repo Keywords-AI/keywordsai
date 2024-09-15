@@ -6,8 +6,8 @@ SINGLETON = getenv("KEYWORDSAI_IS_SINGLETON", "True") == "True" # Whether Keywor
 
 # API Config
 KEYWORDSAI_API_KEY = getenv("KEYWORDSAI_API_KEY")
-KEYWORDSAI_BASE_URL = getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api/") # slash at the end is important
-KEYWORDSAI_LOGGING_PATH = getenv("KEYWORDSAI_LOGGING_PATH", "request-logs/create")
+KEYWORDSAI_BASE_URL = getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api") # slash at the end is important
+KEYWORDSAI_LOGGING_PATH = getenv("KEYWORDSAI_LOGGING_PATH", "/request-logs/create")
 
 KEYWORDSAI_NUM_THREADS = int(getenv("KEYWORDSAI_NUM_THREADS", 1))
 KEYWORDSAI_QUEUE_TIMEOUT = int(getenv("KEYWORDSAI_QUEUE_TIMEOUT", 0.5))

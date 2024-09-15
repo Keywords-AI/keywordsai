@@ -95,11 +95,10 @@ class ToolCall(BaseModel):
     function: ToolCallFunction
 
 
-MessageContetentType = Annotated[Union[ImageContent, TextContent], Field(discriminator="type")]
+MessageContentType = Annotated[Union[ImageContent, TextContent], Field(discriminator="type")]
 class Message(BaseModel):
     role: Literal["user", "assistant", "system", "tool", "none"]
-    # content: Union[str, List[Union[ImageContent, TextContent, str]], None] = None
-    content: Union[str, List[Union[MessageContetentType, str]], None] = None
+    content: Union[str, List[Union[MessageContentType, str]], None] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
     tool_calls: Optional[List[ToolCall]] = None
@@ -114,8 +113,7 @@ class Message(BaseModel):
     def validate_role(cls, v):
         valid_values = ["user", "assistant", "system", "tool", "none"]
         if v not in valid_values:
-            raise ValueError(
-                f"Invalid role value, must be one of {valid_values}")
+            raise ValueError(f"Invalid role value, must be one of {valid_values}")
         return v
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
@@ -208,28 +206,32 @@ class PromptParam(BaseModel):
         return super().model_dump(*args, **kwargs)
     
 class BasicLLMParams(BaseModel):
+    echo: Optional[bool] = None
+    frequency_penalty: Optional[float] = None
+    logprobs: Optional[bool] = None
+    logit_bias: Optional[Dict[str, float]] = None
     messages: List[Message] = None
     model: Optional[str] = None
     max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    max_completion_tokens: Optional[int] = None
     n: Optional[int] = None
-    timeout: Optional[float] = None
-    stream: Optional[bool] = None
-    logprobs: Optional[bool] = None
-    echo: Optional[bool] = None
-    stop: Optional[Union[List[str], str]] = None
-    presence_penalty: Optional[float] = None
-    frequency_penalty: Optional[float] = None
-    logit_bias: Optional[Dict[str, float]] = None
-    tools: Optional[List[FunctionTool]] = None
     parallel_tool_calls: Optional[bool] = None
+    presence_penalty: Optional[float] = None
+    stop: Optional[Union[List[str], str]] = None
+    stream: Optional[bool] = None
+    stream_options: Optional[dict] = None
+    temperature: Optional[float] = None
+    timeout: Optional[float] = None
+    tools: Optional[List[FunctionTool]] = None
     tool_choice: Optional[Union[Literal["auto", "none", "required"], ToolChoice]] = None
-    
+    top_logprobs: Optional[int] = None
+    top_p: Optional[float] = None
+
     @model_validator(mode="after")
     def validate_messages(cls, values):
         if not values.messages and not values.prompt:
-            raise ValueError("Either prompt or messages must be provided") 
-        
+            raise ValueError("Either prompt or messages must be provided")
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
@@ -239,7 +241,7 @@ class BasicLLMParams(BaseModel):
 
 class StrictBasicLLMParams(BasicLLMParams):
     messages: List[Message]
-    
+
     @field_validator("messages")
     def validate_messages(cls, v):
         if not v:
@@ -406,7 +408,7 @@ AssistantToolTypes = Annotated[Union[CodeInterpreterTool, FunctionTool, FileSear
 class BasicAssistantParams(BaseModel):
     model: str
     name: Optional[str] = None
-    desciprtion: Optional[str] = None
+    description: Optional[str] = None
     instructions: Optional[str] = None
     tools: Optional[List[AssistantToolTypes]] = None
     tool_resources: Optional[dict] = None # To complete
@@ -467,7 +469,7 @@ import io
 class BasicTranscriptionParams(BaseModel):
     file: io.BytesIO
     model: str
-    languange: Optional[str] = None
+    language: Optional[str] = None
     prompt: Optional[str] = None
     response_format: Optional[Literal["json", "text", "srt", "verbose_json", "vtt"]] = "json"
     temperature: Optional[float] = 0
@@ -496,7 +498,7 @@ class LLMParams(BasicLLMParams, KeywordsAIParams):
             raise ValueError("Either prompt or messages must be provided")
         return values
 
-class EanableForEnv(BaseModel):
+class EnvEnabled(BaseModel):
     test: Optional[bool] = False
     staging: Optional[bool] = False
     prod: Optional[bool] = False
@@ -504,8 +506,8 @@ class EanableForEnv(BaseModel):
 
 class AlertSettings(BaseModel):
     system: Optional[Dict[str, bool]] = None
-    api: Optional[Dict[str, EanableForEnv]] = None
-    webhook: Optional[Dict[str, EanableForEnv]] = None
+    api: Optional[Dict[str, EnvEnabled]] = None
+    webhook: Optional[Dict[str, EnvEnabled]] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -520,7 +522,7 @@ class AlertSettings(BaseModel):
 
 class AnthropicAutoToolChoice(BaseModel):
     type: Literal["auto"] = "auto"
-class AnthropicAnyToolChoie(BaseModel):
+class AnthropicAnyToolChoice(BaseModel):
     type: Literal["any"] = "any"
 
 class AnthropicToolChoice(BaseModel):
@@ -596,7 +598,7 @@ class AnthropicParams(BaseModel):
     stream: Optional[bool] = None
     system: Optional[str] = None
     temperature: Optional[float] = None
-    tool_choice: Optional[Union[AnthropicAutoToolChoice, AnthropicAnyToolChoie, AnthropicToolChoice]] = None
+    tool_choice: Optional[Union[AnthropicAutoToolChoice, AnthropicAnyToolChoice, AnthropicToolChoice]] = None
     tools: Optional[List[AnthropicTool]] = None
     top_k: Optional[int] = None
     top_p: Optional[float] = None
@@ -632,7 +634,7 @@ class AnthropicResponse(BaseModel):
 
 """
 event: message_start
-data: {"type": "message_start", "message": {"id": "msg_1nZdL29xx5MUA1yADyHTEsnR8uuvGzszyY", "type": "message", "role": "assistant", "content": [], "model": "claude-3-opus-20240229", "stop_reason": null, "stop_sequence": null, "usage": {"input_tokens": 25, "output_tokens": 1}}}
+data: {"type": "message_start", "message": {"id": "msg_id", "type": "message", "role": "assistant", "content": [], "model": "claude-3-opus-20240229", "stop_reason": null, "stop_sequence": null, "usage": {"input_tokens": 25, "output_tokens": 1}}}
 
 event: content_block_start
 data: {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}
@@ -699,111 +701,3 @@ class AnthropicStreamChunk(BaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-
-
-def anthropic_message_to_llm_message(message: AnthropicMessage) -> Message:
-    content = message.content
-    if isinstance(content, str):
-        return Message(role=message.role, content=content)
-    elif isinstance(content, list):
-        content_list = []
-        for item in content:
-            if item.type == "text":
-                content_list.append(TextContent(type="text", text=item.text))
-            elif item.type == "image":
-                content_list.append(ImageContent(
-                    type="image_url", image_url=ImageURL(url=item.source.data)))
-        return Message(role=message.role, content=content_list)
-    return Message(role=message.role)
-
-def antropic_messages_to_llm_messages(messages: List[AnthropicMessage]) -> List[Message]:
-    messages_to_return = []
-    for message in messages:
-        content = message.content
-        if isinstance(content, str):
-            messages_to_return.append(Message(role=message.role, content=content))
-        elif isinstance(content, list):
-            content_list = []
-            tool_calls = []
-            for item in content:
-                if item.type == "text":
-                    content_list.append(TextContent(type="text", text=item.text))
-                elif item.type == "image":
-                    content_list.append(ImageContent(
-                        type="image_url", image_url=ImageURL(url=item.source.data)))
-                elif item.type == "tool_use":
-                    tool_calls.append(ToolCall(
-                        id=item.id, function=ToolCallFunction(name=item.name, arguments=item.input)))
-                elif item.type == "tool_result":
-                    messages_to_return.append(Message(role="tool", content=item.content, tool_call_id=item.tool_use_id))
-            if content_list:
-                message = Message(role=message.role, content=content_list)
-                if tool_calls:
-                    message.tool_calls = tool_calls
-                messages_to_return.append(message)
-    return messages_to_return
-
-
-def anthropic_tool_to_llm_tool(tool: AnthropicTool) -> FunctionTool:
-    properties = {}
-    required = []
-    for key, value in tool.input_schema.properties.items():
-        properties[key] = Properties(
-            type=value.type, description=value.description)
-        if key in tool.input_schema.required:
-            required.append(key)
-    function_parameters = FunctionParameters(
-        type="object", properties=properties, required=required)
-    function = Function(
-        name=tool.name, description=tool.description, parameters=function_parameters)
-    return FunctionTool(type="function", function=function)
-
-
-def anthropic_params_to_llm_params(params: AnthropicParams) -> LLMParams:
-    messages = antropic_messages_to_llm_messages(params.messages)  # They have same structure
-    tools = None
-    tool_choice = None
-    keywordsai_params = {}
-    if params.tools:
-        tools = [anthropic_tool_to_llm_tool(tool) for tool in params.tools]
-    if params.tool_choice:
-        anthropic_tool_choice = params.tool_choice
-        if anthropic_tool_choice.type == "auto":
-            tool_choice = "auto"
-        elif anthropic_tool_choice.type == "any":
-            tool_choice = "required"
-        else:   
-            tool_choice = ToolChoice(
-                type=params.tool_choice.type,
-                function=ToolChoiceFunction(name=getattr(params.tool_choice, "name", ""))
-            )
-    if params.system:
-        messages.insert(0, Message(role="system", content=params.system))
-    if params.metadata:
-        keywordsai_params: dict = params.metadata.pop("keywordsai_params", {})
-        metadat_in_keywordsai_params = keywordsai_params.pop(
-            "metadata", {})  # To avoid confilc of kwargs
-        params.metadata.update(metadat_in_keywordsai_params)
-        print(params.metadata)
-
-    llm_params = LLMParams(
-        messages=messages,
-        model=params.model,
-        max_tokens=params.max_tokens,
-        temperature=params.temperature,
-        stop=params.stop_sequence,
-        stream=params.stream,
-        tools=tools,
-        tool_choice=tool_choice,
-        top_k=params.top_k,
-        top_p=params.top_p,
-        metadata=params.metadata,
-        **keywordsai_params
-    )
-    return llm_params
-
-import json
-def anthropic_stream_chunk_to_sse(chunk: AnthropicStreamChunk) -> str:
-    first_line = f"event: {chunk.type}\n"
-    second_line = f"data: {json.dumps(chunk.model_dump())}\n\n"
-    return first_line + second_line

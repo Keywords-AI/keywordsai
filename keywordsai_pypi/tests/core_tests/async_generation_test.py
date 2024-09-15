@@ -1,5 +1,5 @@
 from tests.test_env import *
-from keywordsai_sdk.core import KeywordsAILogger
+from keywordsai_sdk.core import KeywordsAI
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
 from keywordsai_sdk.integrations.openai import AsyncGenerator
@@ -7,7 +7,7 @@ from keywordsai_sdk.integrations.openai import AsyncGenerator
 client = AsyncOpenAI()
 
 async def test_stream_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.async_logging_wrapper(client.chat.completions.create)
         # wrapped_creation = oai_client.chat.completions.create
@@ -22,7 +22,7 @@ async def test_stream_generation():
         print(e)
 
 async def test_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.async_logging_wrapper(client.chat.completions.create, keywordsai_params={
             "customer_identifier": "sdk_customer",
@@ -54,5 +54,5 @@ if __name__ == "__main__":
 
     # streaming
     asyncio.run(run_stream())
-    KeywordsAILogger.flush()
+    KeywordsAI.flush()
 

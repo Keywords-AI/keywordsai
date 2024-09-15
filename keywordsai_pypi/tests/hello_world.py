@@ -1,4 +1,4 @@
-from keywordsai_sdk.core import KeywordsAILogger
+from keywordsai_sdk.core import KeywordsAI
 
 import sys
 print(sys.path)

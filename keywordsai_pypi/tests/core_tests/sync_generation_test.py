@@ -1,10 +1,10 @@
 from tests.test_env import *
-from keywordsai_sdk.core import KeywordsAILogger 
+from keywordsai_sdk.core import KeywordsAI 
 from openai.types.chat.chat_completion import ChatCompletion
 from keywordsai_sdk.integrations.openai import SyncGenerator
 
 def test_stream_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "prompt_unit_cost": 0.1,
@@ -23,7 +23,7 @@ def test_stream_generation():
 
 
 def test_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "customer_identifier": "sdk_customer",
@@ -52,5 +52,5 @@ if __name__ == "__main__":
         if content:
             print(content, end="")
         pass
-    KeywordsAILogger.flush()
+    KeywordsAI.flush()
 

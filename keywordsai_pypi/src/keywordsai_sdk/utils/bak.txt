@@ -1,0 +1,32 @@
+# def construct_attributes_dictionary(attributes):
+#     def set_nested_value(d, path_keys, value):
+#         for i, key in enumerate(path_keys[:-1]):
+#             if key.isdigit():
+#                 key = int(key)
+#                 if not isinstance(d, list):
+#                     d = []
+#                 while len(d) <= key:
+#                     d.append({})
+#                 d = d[key]
+#             else:
+#                 if key not in d:
+#                     d[key] = {} if not path_keys[i+1].isdigit() else []
+#                 d = d[key]
+        
+#         last_key = path_keys[-1]
+#         if last_key.isdigit():
+#             last_key = int(last_key)
+#             if not isinstance(d, list):
+#                 d = []
+#             while len(d) <= last_key:
+#                 d.append(None)
+#         d[last_key] = value
+
+#     result = {}
+#     for attribute in attributes:
+#         key = attribute['key']
+#         value = next(iter(attribute['value'].values()))
+#         key_parts = key.split('.')
+#         set_nested_value(result, key_parts, value)
+
+#     return result

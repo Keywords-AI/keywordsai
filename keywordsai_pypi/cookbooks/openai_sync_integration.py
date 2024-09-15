@@ -1,5 +1,5 @@
 from openai import OpenAI
-from keywordsai_sdk.core import KeywordsAILogger 
+from keywordsai_sdk.core import KeywordsAI 
 oai_client = OpenAI()
 test_model = "gpt-3.5-turbo"
 test_messages = [
@@ -8,7 +8,7 @@ test_messages = [
 ]
 
 def test_stream_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "prompt_unit_cost": 0.1,
@@ -25,7 +25,7 @@ def test_stream_generation():
 
 
 def test_generation():
-    kai = KeywordsAILogger()
+    kai = KeywordsAI()
     try:
         wrapped_creation = kai.logging_wrapper(oai_client.chat.completions.create, keywordsai_params={
             "customer_identifier": "sdk_customer",
@@ -53,5 +53,5 @@ if __name__ == "__main__":
             print(content, end="")
         pass
     # Short living environment, Flush to ensure all logs are sent
-    KeywordsAILogger.flush()
+    KeywordsAI.flush()
 

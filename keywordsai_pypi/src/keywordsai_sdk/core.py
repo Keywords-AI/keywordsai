@@ -9,9 +9,10 @@ from keywordsai_sdk.integrations.openai import (
     sync_openai_wrapper,
     async_openai_wrapper,
 )
+from traceloop.sdk import Traceloop
 
 
-class KeywordsAILogger:
+class KeywordsAI:
     _lock = Lock()
     _singleton = getenv("KEYWORDS_AI_IS_SINGLETON", "True") == "True"
     _instance = None
@@ -44,13 +45,20 @@ class KeywordsAILogger:
         if cls._singleton:
             if not cls._instance:
                 with cls._lock:
-                    cls._instance = super(KeywordsAILogger, cls).__new__(cls)
+                    cls._instance = super(KeywordsAI, cls).__new__(cls)
             return cls._instance
         else:
-            return super(KeywordsAILogger, cls).__new__(cls)
+            return super(KeywordsAI, cls).__new__(cls)
 
     def __init__(self) -> None:
+        Traceloop.init(
+            app_name="keywordsai",
+            api_endpoint=KEYWORDSAI_BASE_URL,
+            api_key=KEYWORDSAI_API_KEY,
+            
+        )
         self._task_queue = KeywordsAITaskQueue()
+    
 
     def _log(self, data):
         self._task_queue.add_task(data)
@@ -76,7 +84,7 @@ class KeywordsAILogger:
         keywordsai_params: KeywordsAILogDict = {},
         **wrapper_kwargs,
     ):
-        if type == KeywordsAILogger.LogType.TEXT_LLM and func:
+        if type == KeywordsAI.LogType.TEXT_LLM and func:
 
             def wrapper(*args, **kwargs):
                 openai_func = self._openai_wrapper(
@@ -100,7 +108,7 @@ class KeywordsAILogger:
         keywordsai_params: KeywordsAILogDict = {},
         **wrapper_kwargs,
     ):
-        if type == KeywordsAILogger.LogType.TEXT_LLM and func:
+        if type == KeywordsAI.LogType.TEXT_LLM and func:
 
             async def wrapper(*args, **kwargs):
                 openai_func = self._async_openai_wrapper(
