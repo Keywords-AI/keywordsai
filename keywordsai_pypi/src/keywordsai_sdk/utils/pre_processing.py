@@ -11,7 +11,7 @@ def separate_params(params: dict, remove_none=True):
     """
 
     keywordsai_params = {}
-    keywordsai_params["calling_model"] = params.get("calling_model", None) # We want to make a copy of the model the user is calling, not remove
+    keywordsai_params["calling_model"] = params.get("model", None) # We want to make a copy of the model the user is calling, not remove
     keywordsai_params["request_breakdown"] = params.pop("request_breakdown", None)
     keywordsai_params["ip_address"] = params.pop("ip_address", None)
     keywordsai_params["headers"] = params.pop("headers", None)
