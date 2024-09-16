@@ -4,7 +4,7 @@ from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams
 def separate_params(params: dict, remove_none=True):
     """
     Separate the params into llm_params and keywordsai_params
-    If the params are falsey, they are removed from the dictionary (no params are valid with value 0)
+    If the params are falsely, they are removed from the dictionary (no params are valid with value 0)
     Returns:
     llm_params: dict
     keywordsai_params: dict
