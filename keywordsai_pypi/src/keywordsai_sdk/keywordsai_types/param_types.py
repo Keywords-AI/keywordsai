@@ -15,9 +15,14 @@ Logging params types:
 3. AUDIO
 4. GENERAL_FUNCTION
 """
-class KeywordsAILogControlParams(BaseModel):
+class KeywordsAIAPIControlParams(BaseModel):
     block: Optional[bool] = None
-class KeywordsAILogParams(KeywordsAILogControlParams):
+
+    def model_dump(self, *args, **kwargs):
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
+    
+class KeywordsAILogParams(BaseModel):
     customer_identifier: Optional[str] = None
     evaluation_identifier: Optional[str] = None
     error_message: Optional[str] = None
@@ -26,6 +31,7 @@ class KeywordsAILogParams(KeywordsAILogControlParams):
     thread_identifier: Optional[str] = None
     trace_params: Optional[Trace] = None
     warnings: Optional[str] = None
+    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
 
 class KeywordsAILogDict(TypedDict):
     customer_identifier: Optional[str] = None
@@ -37,7 +43,7 @@ class KeywordsAITextLogParams(KeywordsAILogParams):
     model: str = ""
     prompt_messages: List[Message]
     # Optional params
-    completion_messages: List[Message] = []
+    completion_messages: List[Message] = None
     completion_tokens: Optional[int] = None
     completion_unit_price: Optional[float] = None
     cost: Optional[float] = None
