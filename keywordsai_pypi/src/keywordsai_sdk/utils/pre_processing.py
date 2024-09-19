@@ -1,7 +1,8 @@
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams
+from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams
 from pydantic import BaseModel
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIAPIControlParams
 from typing import Literal
+
 
 
 def assign_with_validation(
@@ -106,6 +107,13 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     keywordsai_params["prompt"] = params.pop("prompt", None) or None
     keywordsai_params["prompt_group_id"] = params.pop("prompt_group_id", None) or None
     keywordsai_params["request_breakdown"] = params.pop("request_breakdown", None)
+    assign_with_validation(
+        retrieve_from=params,
+        assign_to=keywordsai_params,
+        key="retry_params",
+        type=RetryParams,
+        raise_exception=raise_exception,
+    )
     keywordsai_params["thread_identifier"] = params.pop("thread_identifier", "") or None
     keywordsai_params["time_to_first_token"] = (
         params.pop("time_to_first_token", None) or None
@@ -113,14 +121,15 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     keywordsai_params["trace_params"] = params.pop("trace_params", None) or None
     keywordsai_params["ttft"] = params.pop("ttft", None) or None
     # Special case does not follow alphabetical order because it needs to override everything
-    assign_with_validation(
-        retrieve_from=params,
-        assign_to=keywordsai_params,
-        key="keywordsai_params",
-        type=KeywordsAIParams,
-        raise_exception=raise_exception,
-        mode="override",
-    )
+    if "keywordsai_params" in params:
+        assign_with_validation(
+            retrieve_from=params,
+            assign_to=keywordsai_params,
+            key="keywordsai_params",
+            type=KeywordsAIParams,
+            raise_exception=raise_exception,
+            mode="override",
+        )
 
     prompt_params = params.pop("prompt_params", {})
     llm_params = {}

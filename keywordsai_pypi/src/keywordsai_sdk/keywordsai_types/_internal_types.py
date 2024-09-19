@@ -6,11 +6,13 @@ from .chat_completion_types import ProviderCredentialType
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 
+
 class OpenAIMessage(TypedDict):
     role: str
     content: str
     tool_calls: Optional[List[dict]] = None
-    
+
+
 class OpenAIStyledInput(TypedDict):
     messages: List[OpenAIMessage] = None
     model: Optional[str] = None
@@ -27,22 +29,26 @@ class OpenAIStyledInput(TypedDict):
     logit_bias: Optional[Dict[str, float]] = None
     tools: Optional[List[dict]] = None
     parallel_tool_calls: Optional[bool] = None
-    tool_choice: Optional[Union[Literal["auto", "none", "required"], dict]] = None 
+    tool_choice: Optional[Union[Literal["auto", "none", "required"], dict]] = None
+
 
 class OpenAIStyledResponse(TypedDict):
     id: str
     model: str
+
     class OpenAIUsage(TypedDict):
         total_tokens: int
         prompt_tokens: int
         completion_tokens: int
+
     usage: Optional[OpenAIUsage] = None
     object: str
-    class OpenAIChoice(TypedDict):  
+
+    class OpenAIChoice(TypedDict):
         index: int
         message: OpenAIMessage
         finish_reason: str
-    
+
     choices: List[OpenAIChoice]
     created: int
 
@@ -74,7 +80,7 @@ class ImageContent(BaseModel):
     type: Literal["image_url"] = "image_url"
     # text: Optional[str] = None
     image_url: Union[ImageURL, str]
-    
+
     class Config:
         extra = "allow"
 
@@ -95,7 +101,11 @@ class ToolCall(BaseModel):
     function: ToolCallFunction
 
 
-MessageContentType = Annotated[Union[ImageContent, TextContent], Field(discriminator="type")]
+MessageContentType = Annotated[
+    Union[ImageContent, TextContent], Field(discriminator="type")
+]
+
+
 class Message(BaseModel):
     role: Literal["user", "assistant", "system", "tool", "none"]
     content: Union[str, List[Union[MessageContentType, str]], None] = None
@@ -136,15 +146,14 @@ class Messages(BaseModel):
 
 
 class Properties(BaseModel):
-    type: Literal["string", "number", "integer",
-                  "boolean", "array", "object"] = None
+    type: Literal["string", "number", "integer", "boolean", "array", "object"] = None
     description: Optional[str] = None
     enum: Optional[List[str]] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-    
+
     class Config:
         extra = "allow"
 
@@ -153,13 +162,14 @@ class FunctionParameters(BaseModel):
     type: Literal["object"] = "object"
     properties: Dict[str, Properties]
     required: List[str] = None
-    
+
     class Config:
         extra = "allow"
 
+
 class Function(BaseModel):
     name: str
-    description: str = None # Optional description
+    description: str = None  # Optional description
     parameters: FunctionParameters
     strict: Optional[bool] = None
 
@@ -172,21 +182,26 @@ class FunctionTool(BaseModel):
     type: Literal["function"] = "function"
     function: Function
 
+
 class CodeInterpreterTool(BaseModel):
     type: Literal["code_interpreter"] = "code_interpreter"
 
 
 class FileSearchTool(BaseModel):
     type: Literal["file_search"] = "file_search"
+
     class FileSearch(BaseModel):
         max_num_results: Optional[int] = None
-    
+
     file_search: FileSearch
+
 
 class ToolChoiceFunction(BaseModel):
     name: str
+
     class Config:
         extra = "allow"
+
 
 class ToolChoice(BaseModel):
     type: str
@@ -194,7 +209,8 @@ class ToolChoice(BaseModel):
 
     class Config:
         extra = "allow"
-        
+
+
 class PromptParam(BaseModel):
     prompt_id: Optional[str] = None
     version: Optional[int] = None
@@ -204,7 +220,8 @@ class PromptParam(BaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-    
+
+
 class BasicLLMParams(BaseModel):
     echo: Optional[bool] = None
     frequency_penalty: Optional[float] = None
@@ -239,6 +256,7 @@ class BasicLLMParams(BaseModel):
     class Config:
         protected_namespaces = ()
 
+
 class StrictBasicLLMParams(BasicLLMParams):
     messages: List[Message]
 
@@ -251,16 +269,17 @@ class StrictBasicLLMParams(BasicLLMParams):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-  
+
+
 class LoadBalanceModel(BaseModel):
     model: str
     credentials: dict = None
     weight: int
-    
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-    
+
     @field_validator("weight")
     def validate_weight(cls, v):
         if v <= 0:
@@ -270,39 +289,46 @@ class LoadBalanceModel(BaseModel):
     class Config:
         protected_namespaces = ()
 
+
 class Span(BaseModel):
     span_identifier: str
     parent_identifier: Optional[str] = None
+
 
 class Trace(BaseModel):
     trace_identifier: str
     span: Span
 
+
 class LoadBalanceGroup(BaseModel):
     group_id: str
     models: Optional[List[LoadBalanceModel]] = None
-    
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+
 class PostHogIntegration(BaseModel):
     posthog_api_key: str
     posthog_base_url: str
+
 
 class Customer(BaseModel):
     customer_identifier: str
     name: Optional[str] = None
     email: Optional[str] = None
-    
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
 
 class TextModelResponseFormat(BaseModel):
     type: str
     response_schema: Optional[dict] = None
     json_schema: Optional[dict] = None
-    
+
     class Config:
         extra = "allow"
 
@@ -310,11 +336,32 @@ class TextModelResponseFormat(BaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+
 class CacheOptions(BaseModel):
-    cache_by_customer: Optional[bool] = None # Create cache for each customer_user
+    cache_by_customer: Optional[bool] = None  # Create cache for each customer_user
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+
+class RetryParams(BaseModel):
+    num_retries: Optional[int] = 3
+    retry_after: Optional[int] = 0.2
+    retry_enabled: Optional[bool] = True
+
+    @field_validator("retry_after")
+    def validate_retry_after(cls, v):
+        if v <= 0:
+            raise ValueError("retry_after has to be greater than 0")
+        return v
+
+    @field_validator("num_retries")
+    def validate_num_retries(cls, v):
+        if v <= 0:
+            raise ValueError("num_retries has to be greater than 0")
+        return v
+
 
 class KeywordsAIParams(BaseModel):
     mock_response: Optional[str] = None
@@ -344,6 +391,7 @@ class KeywordsAIParams(BaseModel):
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
     request_breakdown: Optional[bool] = False
+    retry_params: Optional[RetryParams] = None
     thread_identifier: Optional[Union[str, int]] = None
     response_format: Optional[TextModelResponseFormat] = None
     trace_params: Optional[Trace] = None
@@ -356,23 +404,27 @@ class KeywordsAIParams(BaseModel):
     class Config:
         protected_namespaces = ()
 
+
 class KeywordsAIParamsValidation(KeywordsAIParams):
     class Config(KeywordsAIParams.Config):
         extra = "allow"
-        
+
+
 class BasicTextToSpeechParams(BaseModel):
     model: str
     input: str
-    voice: Literal["alloy","echo", "fable", "onyx","nova", "shimmer"] 
+    voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
     speed: Optional[float] = 1
-    response_format: Optional[str]="mp3"
-    
+    response_format: Optional[str] = "mp3"
+
     class Config:
         protected_namespaces = ()
+
+
 class BasicEmbeddingParams(BaseModel):
     input: str
     model: str
-    encoding_format: Optional[Literal["float","base64"]] = "float"
+    encoding_format: Optional[Literal["float", "base64"]] = "float"
     dimensions: Optional[int] = None
     user: Optional[str] = None
 
@@ -384,42 +436,54 @@ class BasicEmbeddingParams(BaseModel):
 class EmbeddingParams(BasicEmbeddingParams, KeywordsAIParams):
     pass
 
+
 class TextToSpeechParams(BasicTextToSpeechParams, KeywordsAIParams):
     pass
+
 
 # Assistant Params
 class CodeInterpreterResource(BaseModel):
     type: Literal["code_interpreter"] = "code_interpreter"
     code: str
 
+
 class TextResponseChoice(BaseModel):
     message: Message
+
+
 class TextFullResponse(BaseModel):
     choices: List[TextResponseChoice]
-    
+
     @model_validator(mode="after")
     def validate_choices(cls, values):
         if not values.choices:
             raise ValueError("Choices cannot be empty")
         return values
-    
-    
-AssistantToolTypes = Annotated[Union[CodeInterpreterTool, FunctionTool, FileSearchTool], Field(discriminator="type")]
+
+
+AssistantToolTypes = Annotated[
+    Union[CodeInterpreterTool, FunctionTool, FileSearchTool],
+    Field(discriminator="type"),
+]
+
+
 class BasicAssistantParams(BaseModel):
     model: str
     name: Optional[str] = None
     description: Optional[str] = None
     instructions: Optional[str] = None
     tools: Optional[List[AssistantToolTypes]] = None
-    tool_resources: Optional[dict] = None # To complete
+    tool_resources: Optional[dict] = None  # To complete
     metadata: Optional[dict] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
-    response_format: Optional[Union[str, dict]] = None # To complete
-    
+    response_format: Optional[Union[str, dict]] = None  # To complete
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+
 class AssistantParams(BasicAssistantParams, KeywordsAIParams):
     pass
 
@@ -427,17 +491,23 @@ class AssistantParams(BasicAssistantParams, KeywordsAIParams):
 class ThreadMessage(Message):
     attachments: Optional[List[dict]] = None
     metadata: Optional[dict] = None
+
+
 class BasicThreadParams(BaseModel):
     messages: Optional[List[ThreadMessage]] = None
     tool_resources: Optional[dict] = None
     metadata: Optional[dict] = None
 
+
 class ThreadParams(BasicThreadParams, KeywordsAIParams):
     pass
 
+
 class TruncationStrategy(BaseModel):
-    type: str  
+    type: str
     last_messages: Optional[int] = None
+
+
 class BasicRunParams(BaseModel):
     assistant_id: str
     model: Optional[str] = None
@@ -455,23 +525,30 @@ class BasicRunParams(BaseModel):
     tool_choice: Optional[ToolChoice] = None
     parallel_tool_calls: Optional[bool] = None
     response_format: Optional[Union[str, dict]] = None
-     
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+
 class RunParams(BasicRunParams, KeywordsAIParams):
     pass
+
+
 # End of Assistant Params
 
 
 import io
+
+
 class BasicTranscriptionParams(BaseModel):
     file: io.BytesIO
     model: str
     language: Optional[str] = None
     prompt: Optional[str] = None
-    response_format: Optional[Literal["json", "text", "srt", "verbose_json", "vtt"]] = "json"
+    response_format: Optional[Literal["json", "text", "srt", "verbose_json", "vtt"]] = (
+        "json"
+    )
     temperature: Optional[float] = 0
     timestamp_granularities: Optional[List[Literal["word", "segment"]]] = None
     user: Optional[str] = None
@@ -479,10 +556,9 @@ class BasicTranscriptionParams(BaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
-    
+
     class Config:
         arbitrary_types_allowed = True
-
 
 
 class LLMParams(BasicLLMParams, KeywordsAIParams):
@@ -497,6 +573,7 @@ class LLMParams(BasicLLMParams, KeywordsAIParams):
         if not values.prompt and not values.messages:
             raise ValueError("Either prompt or messages must be provided")
         return values
+
 
 class EnvEnabled(BaseModel):
     test: Optional[bool] = False
@@ -514,25 +591,26 @@ class AlertSettings(BaseModel):
         return super().model_dump(*args, **kwargs)
 
 
+# ===============anthropic==================
 
-
-
-
-#===============anthropic==================
 
 class AnthropicAutoToolChoice(BaseModel):
     type: Literal["auto"] = "auto"
+
+
 class AnthropicAnyToolChoice(BaseModel):
     type: Literal["any"] = "any"
+
 
 class AnthropicToolChoice(BaseModel):
     type: Literal["tool"] = "tool"
     name: str
 
+
 class AnthropicInputSchemaProperty(BaseModel):
     type: Literal["string", "number", "integer", "boolean", "array", "object"]
     description: str
-    
+
     class Config:
         extra = "allow"
 
@@ -578,8 +656,17 @@ class AnthropicTextContent(BaseModel):
     text: str
 
 
+AnthropicContentTypes = Annotated[
+    Union[
+        AnthropicImageContent,
+        AnthropicTextContent,
+        AnthropicToolUse,
+        AnthropicToolResult,
+    ],
+    Field(discriminator="type"),
+]
 
-AnthropicContentTypes = Annotated[Union[AnthropicImageContent, AnthropicTextContent, AnthropicToolUse, AnthropicToolResult], Field(discriminator="type")]
+
 class AnthropicMessage(BaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: Union[List[AnthropicContentTypes], str, None] = None
@@ -598,7 +685,9 @@ class AnthropicParams(BaseModel):
     stream: Optional[bool] = None
     system: Optional[str] = None
     temperature: Optional[float] = None
-    tool_choice: Optional[Union[AnthropicAutoToolChoice, AnthropicAnyToolChoice, AnthropicToolChoice]] = None
+    tool_choice: Optional[
+        Union[AnthropicAutoToolChoice, AnthropicAnyToolChoice, AnthropicToolChoice]
+    ] = None
     tools: Optional[List[AnthropicTool]] = None
     top_k: Optional[int] = None
     top_p: Optional[float] = None
@@ -626,8 +715,9 @@ class AnthropicResponse(BaseModel):
     type: Literal["message", "tool_use", "tool_result"]
     content: List[AnthropicTextResponseContent | AnthropicToolResponseContent] = []
     model: str
-    stop_reason: Literal["end_turn ", "max_tokens",
-                         "stop_sequence", "tool_use"] = "end_turn"
+    stop_reason: Literal["end_turn ", "max_tokens", "stop_sequence", "tool_use"] = (
+        "end_turn"
+    )
     stop_sequence: Union[str, None] = None
     usage: AnthropicUsage
 
@@ -658,11 +748,12 @@ event: message_stop
 data: {"type": "message_stop"}
 """
 
+
 class AnthropicStreamDelta(BaseModel):
     type: Literal["text_delta", "input_json_delta"] = "text_delta"
     text: str | None = None
     partial_json: str | None = None
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.partial_json:
@@ -672,14 +763,16 @@ class AnthropicStreamDelta(BaseModel):
         else:
             self.type = "text_delta"
             self.text = ""
-    
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+
 class AnthropicStreamContentBlock(BaseModel):
     type: Literal["text"] = "text"
     text: str = ""  # Initialize with an empty string
+
 
 class AnthropicStreamChunk(BaseModel):
     """Example chunk:
@@ -692,7 +785,16 @@ class AnthropicStreamChunk(BaseModel):
     }
     }
     """
-    type: Literal["message_start", "content_block_start", "content_block_delta", "content_block_stop", "message_delta", "message_stop", "ping"]
+
+    type: Literal[
+        "message_start",
+        "content_block_start",
+        "content_block_delta",
+        "content_block_stop",
+        "message_delta",
+        "message_stop",
+        "ping",
+    ]
     index: Union[int, None] = None
     delta: Union[AnthropicStreamDelta, None] = None
     content_block: Union[AnthropicStreamContentBlock, None] = None

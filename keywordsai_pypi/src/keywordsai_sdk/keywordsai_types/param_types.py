@@ -1,8 +1,7 @@
 from typing import List, Literal, Optional
 from typing_extensions import TypedDict
 from pydantic import BaseModel
-from ._internal_types import (Message, FunctionTool, Trace
-)
+from ._internal_types import (Message, FunctionTool, Trace, RetryParams)
 """
 Conventions:
 
@@ -22,6 +21,7 @@ class KeywordsAIAPIControlParams(BaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
     
+
 class KeywordsAILogParams(BaseModel):
     customer_identifier: Optional[str] = None
     evaluation_identifier: Optional[str] = None
@@ -32,6 +32,7 @@ class KeywordsAILogParams(BaseModel):
     trace_params: Optional[Trace] = None
     warnings: Optional[str] = None
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
+    retry_params: Optional[RetryParams] = None
 
 class KeywordsAILogDict(TypedDict):
     customer_identifier: Optional[str] = None
