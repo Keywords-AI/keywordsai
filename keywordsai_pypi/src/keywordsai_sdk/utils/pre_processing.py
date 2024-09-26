@@ -107,13 +107,15 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     keywordsai_params["prompt"] = params.pop("prompt", None) or None
     keywordsai_params["prompt_group_id"] = params.pop("prompt_group_id", None) or None
     keywordsai_params["request_breakdown"] = params.pop("request_breakdown", None)
-    assign_with_validation(
-        retrieve_from=params,
-        assign_to=keywordsai_params,
-        key="retry_params",
-        type=RetryParams,
-        raise_exception=raise_exception,
-    )
+    if "retry_params" in params:
+        assign_with_validation(
+            retrieve_from=params,
+            assign_to=keywordsai_params,
+            key="retry_params",
+            type=RetryParams,
+            raise_exception=raise_exception,
+            mode="override",
+        )
     keywordsai_params["thread_identifier"] = params.pop("thread_identifier", "") or None
     keywordsai_params["time_to_first_token"] = (
         params.pop("time_to_first_token", None) or None
