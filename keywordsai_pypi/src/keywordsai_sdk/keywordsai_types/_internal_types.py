@@ -332,9 +332,10 @@ class Customer(KeywordsAIBaseModel):
     email: Optional[str] = None
     period_start: Optional[str] = None # ISO 8601 formatted date-string YYYY-MM-DD
     period_end: Optional[str] = None # ISO 8601 formatted date-string YYYY-MM-DD
-    buget_duration: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
+    budget_duration: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
     period_budget: Optional[float] = None
     markup_percentage: Optional[float] = None # 20 -> original price * 1.2
+    total_budget: Optional[float] = None
     metadata: Optional[dict] = None
 
 
@@ -384,7 +385,10 @@ class RetryParams(KeywordsAIBaseModel):
     class Config:
         extra = "forbid"
 
-
+class EvaluationParams(KeywordsAIBaseModel):
+    evaluation_identifier: str
+    last_n_messages: Optional[int] = 1 # last n messages to consider for evaluation, 0 -> all messages
+    extra_params: Optional[dict] = None # extra params that are needed for the evaluation
 class KeywordsAIParams(KeywordsAIBaseModel):
     mock_response: Optional[str] = None
     cache_hit: Optional[bool] = None
@@ -401,6 +405,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     disable_log: Optional[bool] = False
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
+    evaluation_params: Optional[EvaluationParams] = None
     evaluation_identifier: Optional[str] = None
     fallback_models: Optional[List[str]] = None
     field_name: Optional[str] = "data: "
