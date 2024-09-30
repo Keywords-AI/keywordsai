@@ -1,4 +1,4 @@
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams
+from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams, EvaluationParams
 from pydantic import BaseModel
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIAPIControlParams
 from typing import Literal
@@ -69,6 +69,15 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     keywordsai_params["delimiter"] = params.pop("delimiter", "\n\n") or "---"
     keywordsai_params["disable_fallback"] = params.pop("disable_fallback", None)
     keywordsai_params["disable_log"] = params.pop("disable_log", None) or None
+    if "evaluation_params" in params:
+        assign_with_validation(
+            retrieve_from=params,
+            assign_to=keywordsai_params,
+            key="evaluation_params",
+            type=EvaluationParams,
+            raise_exception=raise_exception,
+            mode="assign",
+        )
     keywordsai_params["evaluation_identifier"] = (
         params.pop("evaluation_identifier", "") or None
     )

@@ -385,10 +385,16 @@ class RetryParams(KeywordsAIBaseModel):
     class Config:
         extra = "forbid"
 
+class EvaluationExtraParams(TypedDict):
+    contexts: Optional[List[str]] = None
+    ground_truth: Optional[str] = None
+    summary: Optional[str] = None
+
 class EvaluationParams(KeywordsAIBaseModel):
     evaluation_identifier: str
     last_n_messages: Optional[int] = 1 # last n messages to consider for evaluation, 0 -> all messages
-    extra_params: Optional[dict] = None # extra params that are needed for the evaluation
+    extra_params: Optional[EvaluationExtraParams] = None # extra params that are needed for the evaluation
+    sample_percentage: Optional[float] = None # percentage of messages that trigger the evaluation, default is defined in organization settings, 0 is disabled, 100 is always.
 class KeywordsAIParams(KeywordsAIBaseModel):
     mock_response: Optional[str] = None
     cache_hit: Optional[bool] = None
