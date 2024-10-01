@@ -386,6 +386,7 @@ class RetryParams(KeywordsAIBaseModel):
         extra = "forbid"
 
 class EvaluationExtraParams(TypedDict):
+    retrieved_contexts: Optional[List[str]] = None
     contexts: Optional[List[str]] = None
     ground_truth: Optional[str] = None
     summary: Optional[str] = None
