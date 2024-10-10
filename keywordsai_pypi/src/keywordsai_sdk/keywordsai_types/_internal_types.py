@@ -18,6 +18,10 @@ class KeywordsAIBaseModel(BaseModel):
     def __getitem__(self, key):
         # Allow dictionary-style access to attributes
         return getattr(self, key)
+    
+    def __setitem__(self, key, value):
+        # Allow dictionary-style assignment to attributes
+        setattr(self, key, value)
 
 class OpenAIMessage(TypedDict):
     role: str
@@ -228,6 +232,7 @@ class PromptParam(KeywordsAIBaseModel):
     version: Optional[int] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
+    override: Optional[bool] = False
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -385,19 +390,24 @@ class RetryParams(KeywordsAIBaseModel):
     class Config:
         extra = "forbid"
 
-class EvaluationExtraParams(TypedDict):
+class EvaluationExtraParams(TypedDict, total=False):
     retrieved_contexts: Optional[List[str]] = None
     contexts: Optional[List[str]] = None
     ground_truth: Optional[str] = None
     summary: Optional[str] = None
 
 class EvaluationParams(KeywordsAIBaseModel):
-    evaluation_identifier: str
+    evaluation_identifier: str = ""
     last_n_messages: Optional[int] = 1 # last n messages to consider for evaluation, 0 -> all messages
-    extra_params: Optional[EvaluationExtraParams] = None # extra params that are needed for the evaluation
+    extra_params: Optional[EvaluationExtraParams] = {} # extra params that are needed for the evaluation
     sample_percentage: Optional[float] = None # percentage of messages that trigger the evaluation, default is defined in organization settings, 0 is disabled, 100 is always.
+
+    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
+
 class KeywordsAIParams(KeywordsAIBaseModel):
-    mock_response: Optional[str] = None
+    api_key: Optional[str] = None
     cache_hit: Optional[bool] = None
     cache_enabled: Optional[bool] = None
     cache_ttl: Optional[int] = None
@@ -420,8 +430,11 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     metadata: Optional[dict] = None
+    mock_response: Optional[str] = None
     models: Optional[List[str]] = None
     model_name_map: Optional[Dict[str, str]] = None
+    organization_id: Optional[int] = None
+    organization_key_id: Optional[str] = None
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
     request_breakdown: Optional[bool] = False
@@ -429,6 +442,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_identifier: Optional[Union[str, int]] = None
     response_format: Optional[TextModelResponseFormat] = None
     trace_params: Optional[Trace] = None
+    warnings: Optional[str] = None
+    warnings_dict: Optional[Dict[str, str]] = None
     # Add any additional validators if required
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
@@ -642,7 +657,7 @@ class AnthropicToolChoice(KeywordsAIBaseModel):
 
 
 class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
-    type: Literal["string", "number", "integer", "boolean", "array", "object"]
+    type: str
     description: str
 
     class Config:
@@ -652,14 +667,17 @@ class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
 class AnthropicInputSchema(KeywordsAIBaseModel):
     type: Literal["object"] = "object"
     properties: Dict[str, AnthropicInputSchemaProperty]
-    required: List[str]
+    required: List[str] = None
+
+    class Config:
+        extra = "allow"
 
 
 class AnthropicToolUse(KeywordsAIBaseModel):
     type: Literal["tool_use"] = "tool_use"
     id: str
     name: str
-    input: Union[str, Dict]
+    input: dict
 
 
 class AnthropicTool(KeywordsAIBaseModel):
@@ -736,7 +754,7 @@ class AnthropicToolResponseContent(KeywordsAIBaseModel):
     type: Literal["tool_use"] = "tool_use"
     id: str
     name: str
-    input: str
+    input: dict
 
 
 class AnthropicUsage(KeywordsAIBaseModel):

@@ -1,7 +1,8 @@
 from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams, EvaluationParams
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIAPIControlParams
 from typing import Literal
+
 
 
 
@@ -28,6 +29,11 @@ def assign_with_validation(
             assign_to[key] = params
         elif mode == "override":
             assign_to.update(params)
+    except ValidationError as e:
+        print(f"Validation error: {e.errors(include_url=False)}")
+        if raise_exception:
+            raise e
+        return False
     except Exception as e:
         if raise_exception:
             raise e
@@ -144,8 +150,14 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
 
     prompt_params = params.pop("prompt_params", {})
     llm_params = {}
-    llm_params.update(prompt_params)
-    llm_params.update(params)
+    prompt_configs: dict | None = keywordsai_params.get("prompt", {})
+    override = prompt_configs and prompt_configs.get("override", False)
+    if override:
+        llm_params.update(params)
+        llm_params.update(prompt_params)
+    else:
+        llm_params.update(prompt_params)
+        llm_params.update(params)
 
     if remove_none:
         llm_params = {k: v for k, v in llm_params.items() if v is not None}
