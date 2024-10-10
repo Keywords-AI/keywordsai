@@ -1,6 +1,5 @@
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams, EvaluationParams
+from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams, EvaluationParams, BasicLLMParams, KeywordsAIAPIControlParams
 from pydantic import BaseModel, ValidationError
-from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIAPIControlParams
 from typing import Literal
 
 
@@ -166,3 +165,15 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
         }
 
     return llm_params, keywordsai_params
+
+def validate_and_separate_params(params: dict):
+    """
+    Validate and separate the params into llm_params and keywordsai_params using Pydantic models
+    Returns:
+    basic_llm: BasicLLMParams
+    keywords_ai: KeywordsAIParams
+    """
+    basic_llm = BasicLLMParams(**params)
+    keywords_ai = KeywordsAIParams(**params)
+
+    return basic_llm, keywords_ai

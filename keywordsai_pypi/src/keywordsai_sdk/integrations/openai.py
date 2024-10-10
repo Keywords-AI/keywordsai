@@ -1,5 +1,4 @@
 from functools import wraps
-from keywordsai_sdk.keywordsai_types.param_types import KeywordsAILogDict
 import time
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion import ChatCompletion
@@ -119,7 +118,7 @@ def _is_streaming_response(response):
 
 
 def sync_openai_wrapper(
-    func, keywordsai, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+    func, keywordsai, keywordsai_params, *args, **kwargs
 ):
 
     @wraps(func)
@@ -157,7 +156,7 @@ def sync_openai_wrapper(
 
 
 def async_openai_wrapper(
-    func, keywordsai, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+    func, keywordsai, keywordsai_params, *args, **kwargs
 ):
     @wraps(func)
     async def wrapped_openai(*args, **kwargs):
@@ -237,14 +236,14 @@ class KeywordsAIOpenAILogger:
         self._task_queue.add_task(data)
 
     def _openai_wrapper(
-        self, func, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+        self, func, keywordsai_params, *args, **kwargs
     ):
         return sync_openai_wrapper(
             func=func, keywordsai=self, keywordsai_params=keywordsai_params
         )
 
     def _async_openai_wrapper(
-        self, func, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+        self, func, keywordsai_params, *args, **kwargs
     ):
         return async_openai_wrapper(
             func=func, keywordsai=self, keywordsai_params=keywordsai_params
@@ -254,7 +253,7 @@ class KeywordsAIOpenAILogger:
         self,
         func,
         type=LogType.TEXT_LLM,
-        keywordsai_params: KeywordsAILogDict = {},
+        keywordsai_params = {},
         **wrapper_kwargs,
     ):
         if type == KeywordsAI.LogType.TEXT_LLM and func:
@@ -278,7 +277,7 @@ class KeywordsAIOpenAILogger:
         self,
         func,
         type=LogType.TEXT_LLM,
-        keywordsai_params: KeywordsAILogDict = {},
+        keywordsai_params = {},
         **wrapper_kwargs,
     ):
         if type == KeywordsAI.LogType.TEXT_LLM and func:

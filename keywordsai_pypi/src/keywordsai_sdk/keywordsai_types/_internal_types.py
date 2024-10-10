@@ -406,6 +406,13 @@ class EvaluationParams(KeywordsAIBaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
+    block: Optional[bool] = None
+
+    def model_dump(self, *args, **kwargs):
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
+
 class KeywordsAIParams(KeywordsAIBaseModel):
     api_key: Optional[str] = None
     cache_hit: Optional[bool] = None
@@ -413,6 +420,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     cache_ttl: Optional[int] = None
     cache_options: Optional[CacheOptions] = None
     credential_override: Optional[Dict[str, dict]] = None
+    custom_identifier: Optional[str] = None
     customer_params: Optional[Customer] = None
     customer_email: Optional[str] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
@@ -424,9 +432,11 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     exclude_providers: Optional[List[str]] = None
     evaluation_params: Optional[EvaluationParams] = None
     evaluation_identifier: Optional[str] = None
+    error_message: Optional[str] = None
     fallback_models: Optional[List[str]] = None
     field_name: Optional[str] = "data: "
     for_eval: Optional[bool] = None
+    full_request: Optional[dict] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     metadata: Optional[dict] = None
@@ -442,21 +452,37 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_identifier: Optional[Union[str, int]] = None
     response_format: Optional[TextModelResponseFormat] = None
     trace_params: Optional[Trace] = None
+    user_id: Optional[int] = None
     warnings: Optional[str] = None
     warnings_dict: Optional[Dict[str, str]] = None
-    # Add any additional validators if required
+    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
+    # Fields from KeywordsAITextLogParams
+    completion_message: Optional[Message] = None
+    model: str = ""
+    prompt_messages: Optional[List[Message]] = None
+    completion_messages: Optional[List[Message]] = None
+    completion_tokens: Optional[int] = None
+    completion_unit_price: Optional[float] = None
+    cost: Optional[float] = None
+    generation_time: Optional[float] = None
+    latency: Optional[float] = None
+    prompt_tokens: Optional[int] = None
+    prompt_unit_price: Optional[float] = None
+    status_code: Optional[int] = None
+    time_to_first_token: Optional[float] = None
+    ttft: Optional[float] = None
 
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
+    def __init__(self, **data):
+        data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
+        data["latency"] = data.get("latency", data.get("generation_time"))
+        super().__init__(**data)
+
+    def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
 
     class Config:
         protected_namespaces = ()
-
-
-class KeywordsAIParamsValidation(KeywordsAIParams):
-    class Config(KeywordsAIParams.Config):
-        extra = "allow"
 
 
 class BasicTextToSpeechParams(KeywordsAIBaseModel):

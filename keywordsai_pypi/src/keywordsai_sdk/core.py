@@ -4,7 +4,6 @@ from os import getenv
 from .task_queue import KeywordsAITaskQueue
 from threading import Lock
 from .utils.debug_print import *
-from .keywordsai_types.param_types import KeywordsAILogDict
 from keywordsai_sdk.integrations.openai import (
     sync_openai_wrapper,
     async_openai_wrapper,
@@ -64,14 +63,14 @@ class KeywordsAI:
         self._task_queue.add_task(data)
 
     def _openai_wrapper(
-        self, func, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+        self, func, keywordsai_params, *args, **kwargs
     ):
         return sync_openai_wrapper(
             func=func, keywordsai=self, keywordsai_params=keywordsai_params
         )
 
     def _async_openai_wrapper(
-        self, func, keywordsai_params=KeywordsAILogDict, *args, **kwargs
+        self, func, keywordsai_params, *args, **kwargs
     ):
         return async_openai_wrapper(
             func=func, keywordsai=self, keywordsai_params=keywordsai_params
@@ -81,7 +80,7 @@ class KeywordsAI:
         self,
         func,
         type=LogType.TEXT_LLM,
-        keywordsai_params: KeywordsAILogDict = {},
+        keywordsai_params = {},
         **wrapper_kwargs,
     ):
         if type == KeywordsAI.LogType.TEXT_LLM and func:
@@ -105,7 +104,7 @@ class KeywordsAI:
         self,
         func,
         type=LogType.TEXT_LLM,
-        keywordsai_params: KeywordsAILogDict = {},
+        keywordsai_params = {},
         **wrapper_kwargs,
     ):
         if type == KeywordsAI.LogType.TEXT_LLM and func:
