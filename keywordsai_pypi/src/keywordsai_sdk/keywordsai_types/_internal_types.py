@@ -394,6 +394,7 @@ class EvaluationExtraParams(TypedDict, total=False):
     retrieved_contexts: Optional[List[str]] = None
     contexts: Optional[List[str]] = None
     ground_truth: Optional[str] = None
+    ground_truth_answers: Optional[List[str]] = None
     summary: Optional[str] = None
 
 class EvaluationParams(KeywordsAIBaseModel):
