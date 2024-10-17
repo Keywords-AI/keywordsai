@@ -261,8 +261,8 @@ class BasicLLMParams(KeywordsAIBaseModel):
     top_logprobs: Optional[int] = None
     top_p: Optional[float] = None
 
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
+    def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
 
     class Config:
@@ -483,15 +483,19 @@ class KeywordsAIParams(KeywordsAIBaseModel):
         data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
         data["latency"] = data.get("latency", data.get("generation_time"))
         super().__init__(**data)
-        if isinstance(self.timestamp, datetime):
-            self.timestamp = self.timestamp.isoformat()
+        if isinstance(self.timestamp, str):
+            self.timestamp = datetime.fromisoformat(self.timestamp)
+    
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
+    
+    def model_dump_json(self, exclude_none: bool = True, *args, **kwargs) -> str:
+        kwargs["exclude_none"] = exclude_none
+        return super().model_dump_json(*args, **kwargs)
 
     class Config:
         protected_namespaces = ()
-
 
 class BasicTextToSpeechParams(KeywordsAIBaseModel):
     model: str
