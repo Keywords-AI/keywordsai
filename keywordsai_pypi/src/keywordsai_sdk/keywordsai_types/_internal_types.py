@@ -5,7 +5,7 @@ from typing import Literal
 from .chat_completion_types import ProviderCredentialType
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
-
+from datetime import datetime
 class KeywordsAIBaseModel(BaseModel):
     def __contains__(self, key):
     # Define custom behavior for the 'in' operator
@@ -261,11 +261,6 @@ class BasicLLMParams(KeywordsAIBaseModel):
     top_logprobs: Optional[int] = None
     top_p: Optional[float] = None
 
-    @model_validator(mode="after")
-    def validate_messages(cls, values):
-        if not values.messages and not values.prompt:
-            raise ValueError("Either prompt or messages must be provided")
-
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
@@ -414,70 +409,82 @@ class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
 
+class Usage(KeywordsAIBaseModel):
+    prompt_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+
 class KeywordsAIParams(KeywordsAIBaseModel):
     api_key: Optional[str] = None
-    cache_hit: Optional[bool] = None
     cache_enabled: Optional[bool] = None
-    cache_ttl: Optional[int] = None
+    cache_hit: Optional[bool] = None
     cache_options: Optional[CacheOptions] = None
-    credential_override: Optional[Dict[str, dict]] = None
-    custom_identifier: Optional[str] = None
-    customer_params: Optional[Customer] = None
-    customer_email: Optional[str] = None
-    customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
-    customer_identifier: Optional[Union[str, int]] = None
-    delimiter: Optional[str] = "\n\n"
-    disable_fallback: Optional[bool] = False
-    disable_log: Optional[bool] = False
-    exclude_models: Optional[List[str]] = None
-    exclude_providers: Optional[List[str]] = None
-    evaluation_params: Optional[EvaluationParams] = None
-    evaluation_identifier: Optional[str] = None
-    error_message: Optional[str] = None
-    fallback_models: Optional[List[str]] = None
-    field_name: Optional[str] = "data: "
-    for_eval: Optional[bool] = None
-    full_request: Optional[dict] = None
-    load_balance_models: Optional[List[LoadBalanceModel]] = None
-    load_balance_group: Optional[LoadBalanceGroup] = None
-    metadata: Optional[dict] = None
-    mock_response: Optional[str] = None
-    models: Optional[List[str]] = None
-    model_name_map: Optional[Dict[str, str]] = None
-    organization_id: Optional[int] = None
-    organization_key_id: Optional[str] = None
-    posthog_integration: Optional[PostHogIntegration] = None
-    prompt: Optional[PromptParam] = None
-    request_breakdown: Optional[bool] = False
-    retry_params: Optional[RetryParams] = None
-    thread_identifier: Optional[Union[str, int]] = None
-    response_format: Optional[TextModelResponseFormat] = None
-    trace_params: Optional[Trace] = None
-    user_id: Optional[int] = None
-    warnings: Optional[str] = None
-    warnings_dict: Optional[Dict[str, str]] = None
-    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
-    # Fields from KeywordsAITextLogParams
+    cache_ttl: Optional[int] = None
     completion_message: Optional[Message] = None
-    model: str = ""
-    prompt_messages: Optional[List[Message]] = None
     completion_messages: Optional[List[Message]] = None
     completion_tokens: Optional[int] = None
     completion_unit_price: Optional[float] = None
     cost: Optional[float] = None
+    credential_override: Optional[Dict[str, dict]] = None
+    custom_identifier: Optional[str] = None
+    customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
+    customer_email: Optional[str] = None
+    customer_identifier: Optional[Union[str, int]] = None
+    customer_params: Optional[Customer] = None
+    delimiter: Optional[str] = "\n\n"
+    disable_fallback: Optional[bool] = False
+    disable_log: Optional[bool] = False
+    environment: Optional[str] = None
+    error_message: Optional[str] = None
+    evaluation_cost: Optional[float] = None
+    evaluation_identifier: Optional[str] = None
+    evaluation_params: Optional[EvaluationParams] = None
+    exclude_models: Optional[List[str]] = None
+    exclude_providers: Optional[List[str]] = None
+    fallback_models: Optional[List[str]] = None
+    field_name: Optional[str] = "data: "
+    for_eval: Optional[bool] = None
+    full_request: Optional[dict] = None
     generation_time: Optional[float] = None
+    ip_address: Optional[str] = None
+    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
     latency: Optional[float] = None
+    load_balance_group: Optional[LoadBalanceGroup] = None
+    load_balance_models: Optional[List[LoadBalanceModel]] = None
+    log_method: Optional[str] = None
+    log_type: Optional[str] = None
+    metadata: Optional[dict] = None
+    mock_response: Optional[str] = None
+    model_name_map: Optional[Dict[str, str]] = None
+    models: Optional[List[str]] = None
+    organization: Optional[int] = None  # Organization ID
+    organization_key: Optional[str] = None  # Organization key hashed ID
+    posthog_integration: Optional[PostHogIntegration] = None
+    prompt: Optional[PromptParam] = None
+    prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
     prompt_unit_price: Optional[float] = None
+    request_breakdown: Optional[bool] = False
+    response_format: Optional[TextModelResponseFormat] = None
+    retry_params: Optional[RetryParams] = None
     status_code: Optional[int] = None
+    thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
+    timestamp: Optional[str | datetime] = None
+    total_request_tokens: Optional[int] = None
+    trace_params: Optional[Trace] = None
     ttft: Optional[float] = None
+    usage: Optional[Usage] = None
+    user: Optional[int] = None
+    warnings: Optional[str] = None
+    warnings_dict: Optional[Dict[str, str]] = None
 
     def __init__(self, **data):
         data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
         data["latency"] = data.get("latency", data.get("generation_time"))
         super().__init__(**data)
-
+        if isinstance(self.timestamp, datetime):
+            self.timestamp = self.timestamp.isoformat()
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
