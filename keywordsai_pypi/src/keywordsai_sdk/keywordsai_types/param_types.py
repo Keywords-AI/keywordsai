@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 from typing_extensions import TypedDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from ._internal_types import KeywordsAIParams, BasicLLMParams
 """
 Conventions:
@@ -15,4 +15,5 @@ Logging params types:
 4. GENERAL_FUNCTION
 """
 class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
-    pass
+
+    model_config = ConfigDict(from_attributes=True)

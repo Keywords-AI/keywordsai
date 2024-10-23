@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import Any, Optional, List, Union, Dict
 from typing_extensions import Literal, TypedDict
 
@@ -9,7 +9,7 @@ class LBProviderCredentialType(BaseModel):
     weight: float
     credentials: dict
     
-    @validator("weight")
+    @field_validator("weight")
     def weight_validator(cls, v):
         if v <= 0:
             raise ValueError("Weight must be greater than 0")

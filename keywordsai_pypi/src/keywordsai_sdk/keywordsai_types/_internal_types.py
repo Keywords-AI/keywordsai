@@ -1,11 +1,12 @@
-from typing_extensions import Literal
-from pydantic import BaseModel, model_validator, field_validator
+from pydantic import BaseModel, model_validator, field_validator, ConfigDict
 from typing import Any, List, Union, Dict, Optional, Literal
 from typing import Literal
 from .chat_completion_types import ProviderCredentialType
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 from datetime import datetime
+from functools import wraps
+
 class KeywordsAIBaseModel(BaseModel):
     def __contains__(self, key):
     # Define custom behavior for the 'in' operator
@@ -78,8 +79,8 @@ class FilterObject(KeywordsAIBaseModel):
     value_field_type: Optional[str] = None
     from_url: Optional[str] = False
 
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
+    def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = exclude_none
         return super().model_dump(args, kwargs)
 
 
@@ -97,8 +98,7 @@ class ImageContent(KeywordsAIBaseModel):
     # text: Optional[str] = None
     image_url: Union[ImageURL, str]
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 
 class TextContent(KeywordsAIBaseModel):
@@ -175,29 +175,27 @@ class Properties(KeywordsAIBaseModel):
 
 
 class FunctionParameters(KeywordsAIBaseModel):
-    type: Literal["object"] = "object"
+    type: str = "object" # Any types
     properties: Dict[str, Properties]
     required: List[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 
 class Function(KeywordsAIBaseModel):
     name: str
     description: str = None  # Optional description
-    parameters: FunctionParameters
-    strict: Optional[bool] = None
+    parameters: Optional[FunctionParameters] = None # Optional parameters
+    strict: Optional[bool] = None # Optional strict mode
 
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
+    def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
 
 
 class FunctionTool(KeywordsAIBaseModel):
     type: Literal["function"] = "function"
     function: Function
-
 
 class CodeInterpreterTool(KeywordsAIBaseModel):
     type: Literal["code_interpreter"] = "code_interpreter"
@@ -215,16 +213,14 @@ class FileSearchTool(KeywordsAIBaseModel):
 class ToolChoiceFunction(KeywordsAIBaseModel):
     name: str
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 
 class ToolChoice(KeywordsAIBaseModel):
     type: str
     function: Optional[ToolChoiceFunction] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra='allow')
 
 
 class PromptParam(KeywordsAIBaseModel):
@@ -265,8 +261,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
         kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
 
-    class Config:
-        protected_namespaces = ()
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class StrictBasicLLMParams(BasicLLMParams):
@@ -298,17 +293,16 @@ class LoadBalanceModel(KeywordsAIBaseModel):
             raise ValueError("Weight has to be greater than 0")
         return v
 
-    class Config:
-        protected_namespaces = ()
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class Span(KeywordsAIBaseModel):
-    span_identifier: str
-    parent_identifier: Optional[str] = None
+    span_identifier: Union[str, int]
+    parent_identifier: Optional[Union[str, int]] = None
 
 
 class Trace(KeywordsAIBaseModel):
-    trace_identifier: str
+    trace_identifier: Union[str, int]
     span: Span
 
 
@@ -327,11 +321,11 @@ class PostHogIntegration(KeywordsAIBaseModel):
 
 
 class Customer(KeywordsAIBaseModel):
-    customer_identifier: str
+    customer_identifier: Union[str, int]
     name: Optional[str] = None
     email: Optional[str] = None
-    period_start: Optional[str] = None # ISO 8601 formatted date-string YYYY-MM-DD
-    period_end: Optional[str] = None # ISO 8601 formatted date-string YYYY-MM-DD
+    period_start: Optional[str | datetime] = None # ISO 8601 formatted date-string YYYY-MM-DD
+    period_end: Optional[str | datetime] = None # ISO 8601 formatted date-string YYYY-MM-DD
     budget_duration: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
     period_budget: Optional[float] = None
     markup_percentage: Optional[float] = None # 20 -> original price * 1.2
@@ -342,6 +336,23 @@ class Customer(KeywordsAIBaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+    
+    @staticmethod
+    def _validate_timestamp(v):
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v)
+            except ValueError:
+                raise ValueError("timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD")
+        return v
+    
+    @field_validator("period_start")
+    def validate_period_start(cls, v):
+        return cls._validate_timestamp(v)
+    
+    @field_validator("period_end")
+    def validate_period_end(cls, v):
+        return cls._validate_timestamp(v)
 
 
 class TextModelResponseFormat(KeywordsAIBaseModel):
@@ -382,8 +393,7 @@ class RetryParams(KeywordsAIBaseModel):
             raise ValueError("num_retries has to be greater than 0")
         return v
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra='forbid')
 
 class EvaluationExtraParams(TypedDict, total=False):
     retrieved_contexts: Optional[List[str]] = None
@@ -393,7 +403,7 @@ class EvaluationExtraParams(TypedDict, total=False):
     summary: Optional[str] = None
 
 class EvaluationParams(KeywordsAIBaseModel):
-    evaluation_identifier: str = ""
+    evaluation_identifier: Union[str, int] = ""
     last_n_messages: Optional[int] = 1 # last n messages to consider for evaluation, 0 -> all messages
     extra_params: Optional[EvaluationExtraParams] = {} # extra params that are needed for the evaluation
     sample_percentage: Optional[float] = None # percentage of messages that trigger the evaluation, default is defined in organization settings, 0 is disabled, 100 is always.
@@ -426,7 +436,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     completion_unit_price: Optional[float] = None
     cost: Optional[float] = None
     credential_override: Optional[Dict[str, dict]] = None
-    custom_identifier: Optional[str] = None
+    custom_identifier: Optional[Union[str, int]] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
     customer_email: Optional[str] = None
     customer_identifier: Optional[Union[str, int]] = None
@@ -437,7 +447,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     environment: Optional[str] = None
     error_message: Optional[str] = None
     evaluation_cost: Optional[float] = None
-    evaluation_identifier: Optional[str] = None
+    evaluation_identifier: Optional[Union[str, int]] = None
     evaluation_params: Optional[EvaluationParams] = None
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
@@ -445,9 +455,13 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     field_name: Optional[str] = "data: "
     for_eval: Optional[bool] = None
     full_request: Optional[dict] = None
+    full_response: Optional[dict] = None
     generation_time: Optional[float] = None
+    id: Optional[int] = None
     ip_address: Optional[str] = None
+    is_test: Optional[bool] = None
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
+    keywordsai_params: Optional[dict] = None
     latency: Optional[float] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
@@ -457,8 +471,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     mock_response: Optional[str] = None
     model_name_map: Optional[Dict[str, str]] = None
     models: Optional[List[str]] = None
-    organization: Optional[int] = None  # Organization ID
-    organization_key: Optional[str] = None  # Organization key hashed ID
+    organization_id: Optional[int] = None  # Organization ID
+    organization_key_id: Optional[str] = None  # Organization key ID
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
     prompt_messages: Optional[List[Message]] = None
@@ -467,35 +481,54 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     request_breakdown: Optional[bool] = False
     response_format: Optional[TextModelResponseFormat] = None
     retry_params: Optional[RetryParams] = None
+    status: Optional[str] = None
     status_code: Optional[int] = None
     thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
     timestamp: Optional[str | datetime] = None
+    tokens_per_second: Optional[float] = None
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
+    trace_id: Optional[int] = None
     ttft: Optional[float] = None
+    unique_id: Optional[str] = None
     usage: Optional[Usage] = None
-    user: Optional[int] = None
+    user_id: Optional[int] = None
     warnings: Optional[str] = None
     warnings_dict: Optional[Dict[str, str]] = None
+
+    def _assign_related_field(self, related_model_name: str, assign_to_name: str, data: dict):
+        related_model_value = data.get(related_model_name)
+        if not isinstance(related_model_value, (int, str)):
+            return
+        data[assign_to_name] = related_model_value
 
     def __init__(self, **data):
         data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
         data["latency"] = data.get("latency", data.get("generation_time"))
+        
+        for field_name in self.__annotations__:
+            if field_name.endswith('_id'):
+                related_model_name = field_name[:-3]  # Remove '_id' from the end
+                self._assign_related_field(related_model_name, field_name, data)
+        
         super().__init__(**data)
-        if isinstance(self.timestamp, str):
-            self.timestamp = datetime.fromisoformat(self.timestamp)
-    
-    def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = exclude_none
-        return super().model_dump(*args, **kwargs)
-    
-    def model_dump_json(self, exclude_none: bool = True, *args, **kwargs) -> str:
-        kwargs["exclude_none"] = exclude_none
-        return super().model_dump_json(*args, **kwargs)
 
-    class Config:
-        protected_namespaces = ()
+    def model_dump(self, *args, **kwargs):
+        # Set exclude_none to True if not explicitly provided
+        kwargs.setdefault('exclude_none', True)
+        return super().model_dump(**kwargs)
+    
+    @field_validator("timestamp")
+    def validate_timestamp(cls, v):
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v)
+            except ValueError:
+                raise ValueError("timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD")
+        return v
+
+    model_config = ConfigDict(protected_namespaces=())
 
 class BasicTextToSpeechParams(KeywordsAIBaseModel):
     model: str
@@ -504,8 +537,7 @@ class BasicTextToSpeechParams(KeywordsAIBaseModel):
     speed: Optional[float] = 1
     response_format: Optional[str] = "mp3"
 
-    class Config:
-        protected_namespaces = ()
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class BasicEmbeddingParams(KeywordsAIBaseModel):
