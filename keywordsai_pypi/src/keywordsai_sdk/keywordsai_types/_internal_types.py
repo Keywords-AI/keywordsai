@@ -24,6 +24,9 @@ class KeywordsAIBaseModel(BaseModel):
         # Allow dictionary-style assignment to attributes
         setattr(self, key, value)
 
+class CacheControl(KeywordsAIBaseModel):
+    type: str # ephemeral
+
 class OpenAIMessage(TypedDict):
     role: str
     content: str
@@ -104,6 +107,7 @@ class ImageContent(KeywordsAIBaseModel):
 class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
+    cache_control: Optional[CacheControl] = None
 
 
 class ToolCallFunction(KeywordsAIBaseModel):
@@ -222,19 +226,6 @@ class ToolChoice(KeywordsAIBaseModel):
 
     model_config = ConfigDict(extra='allow')
 
-
-class PromptParam(KeywordsAIBaseModel):
-    prompt_id: Optional[str] = None
-    version: Optional[int] = None
-    variables: Optional[dict] = None
-    echo: Optional[bool] = True
-    override: Optional[bool] = False
-
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
-        return super().model_dump(*args, **kwargs)
-
-
 class BasicLLMParams(KeywordsAIBaseModel):
     echo: Optional[bool] = None
     frequency_penalty: Optional[float] = None
@@ -262,7 +253,18 @@ class BasicLLMParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
     model_config = ConfigDict(protected_namespaces=())
+    
+class PromptParam(KeywordsAIBaseModel):
+    prompt_id: Optional[str] = None
+    version: Optional[int] = None
+    variables: Optional[dict] = None
+    echo: Optional[bool] = True
+    override: Optional[bool] = False
+    override_params: Optional[BasicLLMParams] = None
 
+    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
 
 class StrictBasicLLMParams(BasicLLMParams):
     messages: List[Message]
@@ -430,11 +432,13 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     cache_hit: Optional[bool] = None
     cache_options: Optional[CacheOptions] = None
     cache_ttl: Optional[int] = None
+    cache_bit: Optional[int] = None
     completion_message: Optional[Message] = None
     completion_messages: Optional[List[Message]] = None
     completion_tokens: Optional[int] = None
     completion_unit_price: Optional[float] = None
     cost: Optional[float] = None
+    covered_by: Optional[str] = None
     credential_override: Optional[Dict[str, dict]] = None
     custom_identifier: Optional[Union[str, int]] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
@@ -445,6 +449,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     disable_fallback: Optional[bool] = False
     disable_log: Optional[bool] = False
     environment: Optional[str] = None
+    error_bit: Optional[int] = None
     error_message: Optional[str] = None
     evaluation_cost: Optional[float] = None
     evaluation_identifier: Optional[Union[str, int]] = None
@@ -478,6 +483,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
     prompt_unit_price: Optional[float] = None
+    recommendations: Optional[str] = None
+    recommendations_dict: Optional[dict] = None
     request_breakdown: Optional[bool] = False
     response_format: Optional[TextModelResponseFormat] = None
     retry_params: Optional[RetryParams] = None
@@ -493,9 +500,10 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     ttft: Optional[float] = None
     unique_id: Optional[str] = None
     usage: Optional[Usage] = None
+    used_custom_credential: Optional[bool] = None
     user_id: Optional[int] = None
     warnings: Optional[str] = None
-    warnings_dict: Optional[Dict[str, str]] = None
+    warnings_dict: Optional[Dict[str, Union[str, int]]] = None
 
     def _assign_related_field(self, related_model_name: str, assign_to_name: str, data: dict):
         related_model_value = data.get(related_model_name)
@@ -728,10 +736,14 @@ class AnthropicToolChoice(KeywordsAIBaseModel):
 
 class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
     type: str
-    description: str
+    description: str = None
 
     class Config:
         extra = "allow"
+
+    def model_dump(self, exclude_none=True, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = exclude_none
+        return super().model_dump(*args, **kwargs)
 
 
 class AnthropicInputSchema(KeywordsAIBaseModel):
@@ -798,6 +810,11 @@ class AnthropicMessage(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
+class AnthropicSystemMessage(KeywordsAIBaseModel):
+    cache_control: Optional[CacheControl] = None
+    type: str # text
+    text: str
+
 class AnthropicParams(KeywordsAIBaseModel):
     model: str
     messages: List[AnthropicMessage]
@@ -805,7 +822,7 @@ class AnthropicParams(KeywordsAIBaseModel):
     metadata: Optional[Dict[str, Any]] = None
     stop_sequence: Optional[List[str]] = None
     stream: Optional[bool] = None
-    system: Optional[str] = None
+    system: Optional[Union[str, List[AnthropicSystemMessage]]] = None
     temperature: Optional[float] = None
     tool_choice: Optional[
         Union[AnthropicAutoToolChoice, AnthropicAnyToolChoice, AnthropicToolChoice]

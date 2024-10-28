@@ -120,6 +120,7 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
     AnthropicUsage,
     AnthropicStreamDelta,
     AnthropicStreamContentBlock,
+    CacheControl,
 )
 from openai.types.chat.chat_completion import ChatCompletion as ModelResponse
 
@@ -229,7 +230,17 @@ def anthropic_params_to_llm_params(params: AnthropicParams) -> LLMParams:
                 ),
             )
     if params.system:
-        messages.insert(0, Message(role="system", content=params.system))
+        if isinstance(params.system, list):
+            content_list = []
+            for system_message in params.system:
+                if system_message.cache_control:
+                    content = TextContent(**system_message.model_dump())
+                else:
+                    content = TextContent(text=system_message.text)
+                content_list.append(content)
+            messages.insert(0, Message(role="system", content=content_list))
+        else:
+            messages.insert(0, Message(role="system", content=params.system))
     if params.metadata:
         keywordsai_params: dict = params.metadata.pop("keywordsai_params", {})
         metadata_in_keywordsai_params = keywordsai_params.pop(
