@@ -191,18 +191,8 @@ def anthropic_messages_to_llm_messages(
 
 
 def anthropic_tool_to_llm_tool(tool: AnthropicTool) -> FunctionTool:
-    properties = {}
-    required = []
-    for key, value in tool.input_schema.properties.items():
-        properties[key] = Properties(**value.model_dump())
-        required_list = tool.input_schema.required or []
-        if key in required_list:
-            required.append(key)
-    function_parameters = FunctionParameters(
-        type="object", properties=properties, required=required
-    )
     function = Function(
-        name=tool.name, description=tool.description, parameters=function_parameters
+        name=tool.name, description=tool.description, parameters=tool.input_schema
     )
     return FunctionTool(type="function", function=function)
 

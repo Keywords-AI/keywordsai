@@ -24,6 +24,12 @@ class KeywordsAIBaseModel(BaseModel):
         # Allow dictionary-style assignment to attributes
         setattr(self, key, value)
 
+    def _assign_related_field(self, related_model_name: str, assign_to_name: str, data: dict):
+        related_model_value = data.get(related_model_name)
+        if not isinstance(related_model_value, (int, str)):
+            return
+        data[assign_to_name] = related_model_value
+
 class CacheControl(KeywordsAIBaseModel):
     type: str # ephemeral
 
@@ -166,7 +172,7 @@ class Messages(KeywordsAIBaseModel):
 
 
 class Properties(KeywordsAIBaseModel):
-    type: Literal["string", "number", "integer", "boolean", "array", "object"] = None
+    type: Union[str, list[str]] = None
     description: Optional[str] = None
     enum: Optional[List[str]] = None
 
@@ -179,8 +185,8 @@ class Properties(KeywordsAIBaseModel):
 
 
 class FunctionParameters(KeywordsAIBaseModel):
-    type: str = "object" # Any types
-    properties: Dict[str, Properties]
+    type: Union[str, list[str]] = "object"
+    properties: Dict[str, Properties] = None # Only need when you type is object
     required: List[str] = None
 
     model_config = ConfigDict(extra='allow')
@@ -189,7 +195,7 @@ class FunctionParameters(KeywordsAIBaseModel):
 class Function(KeywordsAIBaseModel):
     name: str
     description: str = None  # Optional description
-    parameters: Optional[FunctionParameters] = None # Optional parameters
+    parameters: Optional[dict] = None # Optional parameters
     strict: Optional[bool] = None # Optional strict mode
 
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
@@ -253,7 +259,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
     model_config = ConfigDict(protected_namespaces=())
-    
+
 class PromptParam(KeywordsAIBaseModel):
     prompt_id: Optional[str] = None
     version: Optional[int] = None
@@ -323,9 +329,9 @@ class PostHogIntegration(KeywordsAIBaseModel):
 
 
 class Customer(KeywordsAIBaseModel):
-    customer_identifier: Union[str, int]
-    name: Optional[str] = None
-    email: Optional[str] = None
+    customer_identifier: Union[str, int, None] = None
+    name: Optional[str | None] = None
+    email: Optional[str | None] = None
     period_start: Optional[str | datetime] = None # ISO 8601 formatted date-string YYYY-MM-DD
     period_end: Optional[str | datetime] = None # ISO 8601 formatted date-string YYYY-MM-DD
     budget_duration: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
@@ -343,8 +349,10 @@ class Customer(KeywordsAIBaseModel):
     def _validate_timestamp(v):
         if isinstance(v, str):
             try:
-                return datetime.fromisoformat(v)
-            except ValueError:
+                value = datetime.fromisoformat(v)
+                return value
+            except Exception as e:
+
                 raise ValueError("timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD")
         return v
     
@@ -503,13 +511,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     used_custom_credential: Optional[bool] = None
     user_id: Optional[int] = None
     warnings: Optional[str] = None
-    warnings_dict: Optional[Dict[str, Union[str, int]]] = None
-
-    def _assign_related_field(self, related_model_name: str, assign_to_name: str, data: dict):
-        related_model_value = data.get(related_model_name)
-        if not isinstance(related_model_value, (int, str)):
-            return
-        data[assign_to_name] = related_model_value
+    warnings_dict: Optional[dict] = None
 
     def __init__(self, **data):
         data["time_to_first_token"] = data.get("time_to_first_token", data.get("ttft"))
@@ -531,7 +533,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     def validate_timestamp(cls, v):
         if isinstance(v, str):
             try:
-                return datetime.fromisoformat(v)
+                value = datetime.fromisoformat(v)
+                return value
             except ValueError:
                 raise ValueError("timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD")
         return v
@@ -748,7 +751,7 @@ class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
 
 class AnthropicInputSchema(KeywordsAIBaseModel):
     type: Literal["object"] = "object"
-    properties: Dict[str, AnthropicInputSchemaProperty]
+    properties: Dict[str, AnthropicInputSchemaProperty] = None # Only need when you type is object
     required: List[str] = None
 
     class Config:
@@ -765,7 +768,7 @@ class AnthropicToolUse(KeywordsAIBaseModel):
 class AnthropicTool(KeywordsAIBaseModel):
     name: str
     description: str
-    input_schema: AnthropicInputSchema
+    input_schema: dict
 
 
 class AnthropicToolResult(KeywordsAIBaseModel):
