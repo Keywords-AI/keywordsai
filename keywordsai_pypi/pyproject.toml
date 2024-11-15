@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-sdk"
-version = "0.2.25"
+version = "0.2.48"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"
@@ -20,6 +20,7 @@ python-dotenv = "^1.0.1"
 traceloop-sdk = "^0.30.0"
 opentelemetry-instrumentation-redis = "^0.48b0"
 dateparse = "^1.4.0"
+dateparser = "^1.2.0"
 
 
 

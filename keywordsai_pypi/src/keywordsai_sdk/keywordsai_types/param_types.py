@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 from typing_extensions import TypedDict
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from ._internal_types import KeywordsAIParams, BasicLLMParams, KeywordsAIBaseModel, Customer
 """
 Conventions:
@@ -21,6 +21,39 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
         if v.customer_identifier is None:
             return None
         return v
+    
+    @model_validator(mode="before")
+    def _preprocess_data(cls, data):
+        data = KeywordsAIParams._preprocess_data(data)
+        return data
+
+    def serialize_for_logging(self) -> dict:
+        # Define fields to include based on Django model columns
+        # Using a set for O(1) lookup
+        FIELDS_TO_INCLUDE = {
+            'ip_address', 'custom_identifier', 'status', 'unique_id', 
+            'prompt_tokens', 'completion_tokens', 'total_request_tokens',
+            'cost', 'amount_to_pay', 'latency', 'user_id', 'organization_id',
+            'model', 'timestamp', 'error_bit', 'time_to_first_token',
+            'metadata', 'keywordsai_params', 'stream', 'stream_options', "thread_identifier",
+            'status_code', 'cached', 'cache_bit', 'full_request',
+            'full_response', 'tokens_per_second', 'warnings',
+            'recommendations', 'error_message', 'is_test', 'environment',
+            'temperature', 'max_tokens', 'logit_bias', 'logprobs',
+            'top_logprobs', 'frequency_penalty', 'presence_penalty',
+            'stop', 'n', 'evaluation_cost', 'evaluation_identifier',
+            'for_eval', 'customer_identifier', 'customer_email',
+            'used_custom_credential', 'covered_by', 'log_method',
+            'log_type', 'prompt_messages', 'completion_message',
+            'completion_messages', 'tools', 'tool_choice',
+            'response_format', 'parallel_tool_calls', 'organization_key_id'
+        }
+
+        # Get all non-None values using model_dump
+        data = self.model_dump(exclude_none=True)
+        
+        # Filter to only include fields that exist in Django model
+        return {k: v for k, v in data.items() if k in FIELDS_TO_INCLUDE}
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -147,33 +147,34 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
             mode="override",
         )
 
-    prompt_params = params.pop("prompt_params", {})
-    llm_params = {}
-    prompt_configs: dict | None = keywordsai_params.get("prompt", {})
-    override = prompt_configs and prompt_configs.get("override", False)
-    if override:
-        llm_params.update(params)
-        llm_params.update(prompt_params)
-    else:
-        llm_params.update(prompt_params)
-        llm_params.update(params)
+    # prompt_params = params.pop("prompt_params", {})
+    # llm_params = {}
+    # prompt_configs: dict | None = keywordsai_params.get("prompt", {})
+    # override = prompt_configs and prompt_configs.get("override", False)
+    # if override:
+    #     llm_params.update(params)
+    #     llm_params.update(prompt_params)
+    # else:
+    #     llm_params.update(prompt_params)
+    #     llm_params.update(params)
 
     if remove_none:
-        llm_params = {k: v for k, v in llm_params.items() if v is not None}
+        params = {k: v for k, v in params.items() if v is not None}
         keywordsai_params = {
             k: v for k, v in keywordsai_params.items() if v is not None
         }
 
-    return llm_params, keywordsai_params
+    return params, keywordsai_params
 
-def validate_and_separate_params(params: dict):
+def validate_and_separate_params(params: dict) -> tuple[BasicLLMParams, KeywordsAIParams]:
     """
     Validate and separate the params into llm_params and keywordsai_params using Pydantic models
     Returns:
     basic_llm: BasicLLMParams
     keywords_ai: KeywordsAIParams
     """
-    basic_llm = BasicLLMParams(**params)
-    keywords_ai = KeywordsAIParams(**params)
+
+    basic_llm = BasicLLMParams.model_validate(params)
+    keywords_ai = KeywordsAIParams.model_validate(params)
 
     return basic_llm, keywords_ai
