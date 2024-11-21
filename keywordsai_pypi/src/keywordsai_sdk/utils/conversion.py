@@ -161,7 +161,10 @@ def anthropic_messages_to_llm_messages(
                 elif item.type == "image":
                     content_list.append(
                         ImageContent(
-                            type="image_url", image_url=ImageURL(url=item.source.data)
+                            type="image_url",
+                            image_url=ImageURL(
+                                url=f"data:{item.source.media_type};{item.source.type},{item.source.data}"
+                            )
                         )
                     )
                 elif item.type == "tool_use":

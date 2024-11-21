@@ -465,11 +465,15 @@ class Usage(KeywordsAIBaseModel):
 
 class KeywordsAIParams(KeywordsAIBaseModel):
     api_key: Optional[str] = None
+    blurred: Optional[bool] = None
     cache_enabled: Optional[bool] = None
     cache_hit: Optional[bool] = None
     cache_options: Optional[CacheOptions] = None
     cache_ttl: Optional[int] = None
     cache_bit: Optional[int] = None
+    cache_key: Optional[str] = None
+    redis_cache_ttl: Optional[int] = None
+    cache_request_content: Optional[str] = None
     completion_message: Optional[Message] = None
     completion_messages: Optional[List[Message]] = None
     completion_tokens: Optional[int] = None
@@ -499,6 +503,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     full_request: Optional[dict] = None
     full_response: Optional[dict] = None
     generation_time: Optional[float] = None
+    has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
     ip_address: Optional[str] = None
     is_test: Optional[bool] = None
