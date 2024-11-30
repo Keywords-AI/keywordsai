@@ -9,6 +9,22 @@ from dateparser import parse
 from functools import wraps
 
 
+def parse_datetime(v: str | datetime) -> datetime:
+    if isinstance(v, str):
+        try:
+            value = datetime.fromisoformat(v)
+            return value
+        except Exception as e:
+            try:
+                value = parse(v)
+                return value
+            except Exception as e:
+                raise ValueError(
+                    "timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD"
+            )
+    return v
+
+
 class KeywordsAIBaseModel(BaseModel):
     def __contains__(self, key):
         # Define custom behavior for the 'in' operator
@@ -489,6 +505,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     delimiter: Optional[str] = "\n\n"
     disable_fallback: Optional[bool] = False
     disable_log: Optional[bool] = False
+    input_array: Optional[List[str]] = None
+    embedding: Optional[List[float]] = None
+    base64_embedding: Optional[str] = None
     environment: Optional[str] = None
     error_bit: Optional[int] = None
     error_message: Optional[str] = None
@@ -502,6 +521,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     for_eval: Optional[bool] = None
     full_request: Optional[dict] = None
     full_response: Optional[dict] = None
+    full_model_name: Optional[str] = None
     generation_time: Optional[float] = None
     has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
@@ -522,9 +542,11 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     organization_key_id: Optional[str] = None  # Organization key ID
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
+    prompt_id: Optional[str] = None
     prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
     prompt_unit_price: Optional[float] = None
+    provider_id: Optional[str] = None
     recommendations: Optional[str] = None
     recommendations_dict: Optional[dict] = None
     request_breakdown: Optional[bool] = False
@@ -535,6 +557,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
     timestamp: Optional[str | datetime] = None
+    hour_group: Optional[str | datetime] = None
+    minute_group: Optional[str | datetime] = None
     tokens_per_second: Optional[float] = None
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
@@ -546,6 +570,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     user_id: Optional[int] = None
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
+    has_warnings: Optional[bool] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -589,19 +614,15 @@ class KeywordsAIParams(KeywordsAIBaseModel):
 
     @field_validator("timestamp")
     def validate_timestamp(cls, v):
-        if isinstance(v, str):
-            try:
-                value = datetime.fromisoformat(v)
-                return value
-            except Exception as e:
-                try:
-                    value = parse(v)
-                    return value
-                except Exception as e:
-                    raise ValueError(
-                        "timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD"
-                )
-        return v
+        return parse_datetime(v)
+    
+    @field_validator("hour_group")
+    def validate_hour_group(cls, v):
+        return parse_datetime(v)
+    
+    @field_validator("minute_group")
+    def validate_minute_group(cls, v):
+        return parse_datetime(v)
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -617,11 +638,11 @@ class BasicTextToSpeechParams(KeywordsAIBaseModel):
 
 
 class BasicEmbeddingParams(KeywordsAIBaseModel):
-    input: str
-    model: str
-    encoding_format: Optional[Literal["float", "base64"]] = "float"
+    input: Optional[str | List[str]] = None
+    model: Optional[str] = None
+    encoding_format: Optional[str] = "float"
     dimensions: Optional[int] = None
-    user: Optional[str] = None
+    # user: Optional[str] = None # Comment out as it is conflicting with the user field in KeywordsAIParams
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True

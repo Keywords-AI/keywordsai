@@ -6,6 +6,7 @@ from ._internal_types import (
     BasicLLMParams,
     KeywordsAIBaseModel,
     Customer,
+    BasicEmbeddingParams,
 )
 
 """
@@ -22,7 +23,7 @@ Logging params types:
 """
 
 
-class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
+class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingParams):
 
     @field_validator("customer_params", mode="after")
     def validate_customer_params(cls, v: Customer):
@@ -40,10 +41,12 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
         # Using a set for O(1) lookup
         FIELDS_TO_INCLUDE = {
             "ip_address",
+            "blurred",
             "custom_identifier",
             "status",
             "unique_id",
             "prompt_tokens",
+            "prompt_id",
             "completion_tokens",
             "total_request_tokens",
             "cost",
@@ -52,7 +55,12 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
             "user_id",
             "organization_id",
             "model",
+            "provider_id",
+            "full_model_name",
             "timestamp",
+            "minute_group",
+            "hour_group",
+            "prompt_id",
             "error_bit",
             "time_to_first_token",
             "metadata",
@@ -83,15 +91,20 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
             "evaluation_cost",
             "evaluation_identifier",
             "for_eval",
+            "prompt_id",
             "customer_identifier",
             "customer_email",
             "used_custom_credential",
             "covered_by",
             "log_method",
             "log_type",
+            "input",
+            "input_array",
             "prompt_messages",
             "completion_message",
             "completion_messages",
+            "embedding",
+            "base64_embedding",
             "tools",
             "tool_choice",
             "tool_calls",
@@ -99,6 +112,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams):
             "response_format",
             "parallel_tool_calls",
             "organization_key_id",
+            "has_warnings",
         }
         if self.disable_log:
             FIELDS_TO_INCLUDE.discard("full_request")
