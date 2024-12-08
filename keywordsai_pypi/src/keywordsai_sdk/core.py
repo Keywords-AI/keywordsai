@@ -8,7 +8,6 @@ from keywordsai_sdk.integrations.openai import (
     sync_openai_wrapper,
     async_openai_wrapper,
 )
-from traceloop.sdk import Traceloop
 
 
 class KeywordsAI:
@@ -50,6 +49,7 @@ class KeywordsAI:
             return super(KeywordsAI, cls).__new__(cls)
 
     def __init__(self) -> None:
+        from traceloop.sdk import Traceloop
         Traceloop.init(
             app_name="keywordsai",
             api_endpoint=KEYWORDSAI_BASE_URL,
