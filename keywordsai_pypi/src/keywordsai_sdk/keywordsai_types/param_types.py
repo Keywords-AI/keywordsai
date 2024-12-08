@@ -113,6 +113,8 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "parallel_tool_calls",
             "organization_key_id",
             "has_warnings",
+            "prompt_version_number",
+            "deployment_name"
         }
         if self.disable_log:
             FIELDS_TO_INCLUDE.discard("full_request")

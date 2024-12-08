@@ -120,6 +120,7 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     )
     keywordsai_params["prompt"] = params.pop("prompt", None) or None
     keywordsai_params["prompt_group_id"] = params.pop("prompt_group_id", None) or None
+    keywordsai_params["prompt_version_number"] = params.pop("prompt_version_number", None) or None
     keywordsai_params["request_breakdown"] = params.pop("request_breakdown", None)
     if "retry_params" in params:
         assign_with_validation(

@@ -5,12 +5,12 @@ from .chat_completion_types import ProviderCredentialType
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 from datetime import datetime
-from dateparser import parse
-from functools import wraps
 
 
 def parse_datetime(v: str | datetime) -> datetime:
     if isinstance(v, str):
+        # Lazy import to improve import speed
+        from dateparser import parse
         try:
             value = datetime.fromisoformat(v)
             return value
@@ -377,6 +377,7 @@ class Customer(KeywordsAIBaseModel):
     @staticmethod
     def _validate_timestamp(v):
         if isinstance(v, str):
+            from dateparser import parse
             try:
                 value = datetime.fromisoformat(v)
                 return value
@@ -447,8 +448,12 @@ class EvaluationExtraParams(TypedDict, total=False):
     ground_truth_answers: Optional[List[str]] = None
     summary: Optional[str] = None
 
+class EvaluatorToRun(KeywordsAIBaseModel):
+    evaluator_slug: str
+    # TODO: other controlling parameters
 
 class EvaluationParams(KeywordsAIBaseModel):
+    evaluators: Optional[List[EvaluatorToRun]] = []
     evaluation_identifier: Union[str, int] = ""
     last_n_messages: Optional[int] = (
         1  # last n messages to consider for evaluation, 0 -> all messages
@@ -505,6 +510,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     delimiter: Optional[str] = "\n\n"
     disable_fallback: Optional[bool] = False
     disable_log: Optional[bool] = False
+    deployment_name: Optional[str] = None
     input_array: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
     base64_embedding: Optional[str] = None
@@ -543,6 +549,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
     prompt_id: Optional[str] = None
+    prompt_version_number: Optional[int] = None
     prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
     prompt_unit_price: Optional[float] = None
