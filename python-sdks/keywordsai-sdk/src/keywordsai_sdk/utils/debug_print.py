@@ -1,5 +1,4 @@
 from .bgcolors import BgColors
-from keywordsai_sdk.keywordsai_config import DEBUG
 
 def print_color(color: str, text: str, *args, **kwargs):
     print_function = kwargs.pop("print_func", print) or print
@@ -35,14 +34,11 @@ def print_underline(text, *args, **kwargs):
     print_color(color=BgColors.UNDERLINE, text=text, *args, **kwargs)
 
 def debug_print(*args, **kwargs):
-    if DEBUG:
-        print(*args, **kwargs)
+
+    print(*args, **kwargs)
 
 def debug(func):
     def wrapper(*args, **kwargs):
-        if DEBUG:
-            return func(*args, **kwargs)
-        else:
-            return lambda *args, **kwargs: None
+        return func(*args, **kwargs)
 
     return wrapper

@@ -1,32 +1,36 @@
 [tool.poetry]
 name = "keywordsai-sdk"
-version = "0.2.80"
+version = "0.2.82"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"
 readme = "README.md"
 packages = [
     { include = "keywordsai_sdk", from = "./src" },
-    { include = "./tests"}
 ]
 
 [tool.poetry.dependencies]
 python = ">3.10,<4.0"
 requests = "^2.31.0"
-pytest = "^8.3.2"
 typing-extensions = "^4.12.2"
-openai = "^1.43.1"
-python-dotenv = "^1.0.1"
-traceloop-sdk = "^0.30.0"
-opentelemetry-instrumentation-redis = "^0.48b0"
-dateparse = "^1.4.0"
 dateparser = "^1.2.0"
+pydantic = "^2.10.3"
+openai = "^1.57.4"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev]
+optional = true
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.extras]
+dev = ["pytest", "python-dotenv"]
 
 [project.urls]
 Homepage = "https://keywordsai.co"
