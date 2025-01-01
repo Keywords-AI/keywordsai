@@ -71,6 +71,7 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
         params.pop("customer_identifier", "") or None
     )
     keywordsai_params["customer_params"] = params.pop("customer_params", None) or None
+    keywordsai_params["custom_identifier"] = params.pop("custom_identifier", None) or None
     keywordsai_params["delimiter"] = params.pop("delimiter", "\n\n") or "---"
     keywordsai_params["disable_fallback"] = params.pop("disable_fallback", None)
     keywordsai_params["disable_log"] = params.pop("disable_log", None) or None

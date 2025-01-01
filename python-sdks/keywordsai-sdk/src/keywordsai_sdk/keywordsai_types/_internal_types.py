@@ -137,6 +137,12 @@ class TextContent(KeywordsAIBaseModel):
     text: str
     cache_control: Optional[CacheControl] = None
 
+class ToolUseContent(KeywordsAIBaseModel):
+    type: Literal["tool_use"] = "tool_use"
+    id: str = ""
+    name: str = ""
+    input: dict = {}
+
 
 class ToolCallFunction(KeywordsAIBaseModel):
     name: str
@@ -145,12 +151,13 @@ class ToolCallFunction(KeywordsAIBaseModel):
 
 class ToolCall(KeywordsAIBaseModel):
     id: str = None
-    type: Literal["function"] = "function"
+    type: str = "function"
     function: ToolCallFunction
 
 
+
 MessageContentType = Annotated[
-    Union[ImageContent, TextContent], Field(discriminator="type")
+    Union[ImageContent, TextContent, ToolUseContent], Field(discriminator="type")
 ]
 
 
@@ -226,7 +233,7 @@ class Function(KeywordsAIBaseModel):
 
 
 class FunctionTool(KeywordsAIBaseModel):
-    type: Literal["function"] = "function"
+    type: str = "function"
     function: Function
 
 
@@ -545,10 +552,13 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     model_name_map: Optional[Dict[str, str]] = None
     models: Optional[List[str]] = None
     organization_id: Optional[int] = None  # Organization ID
+    organization_name: Optional[str] = None  # Organization name
     organization_key_id: Optional[str] = None  # Organization key ID
+    organization_key_name: Optional[str] = None  # Organization key name
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam] = None
     prompt_id: Optional[str] = None
+    prompt_name: Optional[str] = None
     prompt_version_number: Optional[int] = None
     prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
@@ -561,6 +571,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     retry_params: Optional[RetryParams] = None
     status: Optional[str] = None
     status_code: Optional[int] = None
+    storage_object_key: Optional[str] = None
     thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
     timestamp: Optional[str | datetime] = None
@@ -575,6 +586,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     usage: Optional[Usage] = None
     used_custom_credential: Optional[bool] = None
     user_id: Optional[int] = None
+    user_email: Optional[str] = None # The use email of the keywordsai user
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
@@ -684,18 +696,12 @@ class TextFullResponse(KeywordsAIBaseModel):
         return values
 
 
-AssistantToolTypes = Annotated[
-    Union[CodeInterpreterTool, FunctionTool, FileSearchTool],
-    Field(discriminator="type"),
-]
-
-
 class BasicAssistantParams(KeywordsAIBaseModel):
     model: str
     name: Optional[str] = None
     description: Optional[str] = None
     instructions: Optional[str] = None
-    tools: Optional[List[AssistantToolTypes]] = None
+    tools: Optional[List[dict]] = None
     tool_resources: Optional[dict] = None  # To complete
     metadata: Optional[dict] = None
     temperature: Optional[float] = None
@@ -737,7 +743,7 @@ class BasicRunParams(KeywordsAIBaseModel):
     instructions: Optional[str] = None
     additional_instructions: Optional[str] = None
     additional_messages: Optional[List[ThreadMessage]] = None
-    tools: Optional[List[AssistantToolTypes]] = None
+    tools: Optional[List[dict]] = None
     metadata: Optional[dict] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
@@ -861,9 +867,14 @@ class AnthropicToolUse(KeywordsAIBaseModel):
 
 
 class AnthropicTool(KeywordsAIBaseModel):
+    type: str = "function"
     name: str
     description: Optional[str | None] = None
-    input_schema: dict
+    input_schema: dict = None
+    # We will make all these optional and let anthropic handle the rest of the type check. Default None.
+    display_height_px: Optional[int] = None
+    display_width_px: Optional[int] = None
+    display_number: Optional[int | None] = None
 
 
 class AnthropicToolResult(KeywordsAIBaseModel):

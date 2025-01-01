@@ -194,10 +194,16 @@ def anthropic_messages_to_llm_messages(
 
 
 def anthropic_tool_to_llm_tool(tool: AnthropicTool) -> FunctionTool:
+    if tool.input_schema:
+        input_schema = tool.input_schema.copy()
+    else:
+        input_schema = {}
+    extra_fields = tool.model_dump(exclude={"name", "description", "input_schema", "type"}, exclude_none=True)
+    input_schema.update(extra_fields)
     function = Function(
-        name=tool.name, description=tool.description, parameters=tool.input_schema
+        name=tool.name, description=tool.description, parameters=input_schema
     )
-    return FunctionTool(type="function", function=function)
+    return FunctionTool(type=tool.type, function=function)
 
 
 def anthropic_params_to_llm_params(params: AnthropicParams) -> LLMParams:
