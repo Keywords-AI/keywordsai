@@ -493,7 +493,9 @@ class Usage(KeywordsAIBaseModel):
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     cache_creation_input_tokens: Optional[int] = 0
-    cache_creation_output_tokens: Optional[int] = 0
+    cache_read_input_tokens: Optional[int] = 0
+    completion_tokens_details: Optional[dict] = None
+    prompt_tokens_details: Optional[dict] = None
 
 
 class KeywordsAIParams(KeywordsAIBaseModel):
@@ -963,7 +965,7 @@ class AnthropicUsage(KeywordsAIBaseModel):
     input_tokens: Optional[int] = 0
     output_tokens: Optional[int] = 1
     cache_creation_input_tokens: Optional[int] = 0
-    cache_creation_output_tokens: Optional[int] = 0
+    cache_read_input_tokens: Optional[int] = 0
 
 
 
