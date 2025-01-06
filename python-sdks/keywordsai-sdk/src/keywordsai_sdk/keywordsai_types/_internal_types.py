@@ -492,6 +492,8 @@ class Usage(KeywordsAIBaseModel):
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
+    cache_creation_input_tokens: Optional[int] = 0
+    cache_creation_output_tokens: Optional[int] = 0
 
 
 class KeywordsAIParams(KeywordsAIBaseModel):
@@ -900,7 +902,7 @@ class AnthropicImageContent(KeywordsAIBaseModel):
 class AnthropicTextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
-
+    cache_control: Optional[CacheControl] = None
 
 AnthropicContentTypes = Annotated[
     Union[
@@ -916,7 +918,7 @@ AnthropicContentTypes = Annotated[
 class AnthropicMessage(KeywordsAIBaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: Union[List[AnthropicContentTypes], str, None] = None
-
+    cache_control: Optional[CacheControl] = None
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
@@ -958,8 +960,11 @@ class AnthropicToolResponseContent(KeywordsAIBaseModel):
 
 
 class AnthropicUsage(KeywordsAIBaseModel):
-    input_tokens: int = 0
-    output_tokens: int = 1
+    input_tokens: Optional[int] = 0
+    output_tokens: Optional[int] = 1
+    cache_creation_input_tokens: Optional[int] = 0
+    cache_creation_output_tokens: Optional[int] = 0
+
 
 
 class AnthropicResponse(KeywordsAIBaseModel):
