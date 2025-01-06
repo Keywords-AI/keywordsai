@@ -36,7 +36,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
         data = KeywordsAIParams._preprocess_data(data)
         return data
 
-    def serialize_for_logging(self) -> dict:
+    def serialize_for_logging(self, exclude_fields: List[str] = []) -> dict:
         # Define fields to include based on Django model columns
         # Using a set for O(1) lookup
         FIELDS_TO_INCLUDE = {
@@ -72,20 +72,20 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "cached",
             "cache_bit",
             "cache_key",
-            # "prompt_messages",
-            # "completion_message",
-            # "keywordsai_params",
-            # "full_request",
-            # "full_response",
-            # "completion_messages",
-            # "system_text",
-            # "prompt_text",
-            # "completion_text",
-            # "prompt_text_vector",
-            # "completion_text_vector",
-            # "error_message",
-            # "warnings",
-            # "recommendations",
+            "prompt_messages",
+            "completion_message",
+            "keywordsai_params",
+            "full_request",
+            "full_response",
+            "completion_messages",
+            "system_text",
+            "prompt_text",
+            "completion_text",
+            "prompt_text_vector",
+            "completion_text_vector",
+            "error_message",
+            "warnings",
+            "recommendations",
             "storage_object_key",
             "system_text_vector",
             "tokens_per_second",
@@ -125,6 +125,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "prompt_version_number",
             "deployment_name"
         }
+        FIELDS_TO_INCLUDE = set(FIELDS_TO_INCLUDE) - set(exclude_fields)
         if self.disable_log:
             FIELDS_TO_INCLUDE.discard("full_request")
             FIELDS_TO_INCLUDE.discard("full_response")

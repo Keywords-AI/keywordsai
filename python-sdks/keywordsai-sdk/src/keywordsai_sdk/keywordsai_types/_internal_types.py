@@ -291,14 +291,17 @@ class BasicLLMParams(KeywordsAIBaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
-
+class MessageConfig(KeywordsAIBaseModel):
+    override_mode: Optional[Literal["override", "append"]] = "override"
+    
 class PromptParam(KeywordsAIBaseModel):
     prompt_id: Optional[str] = None
     version: Optional[int] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
-    override: Optional[bool] = False
+    override: Optional[bool] = False # Allow prompt to override other params in the request body. (e.g. model defined in the prompt will override the model defined in the request body)
     override_params: Optional[BasicLLMParams] = None
+    message_config: Optional[MessageConfig] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -556,7 +559,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     organization_key_id: Optional[str] = None  # Organization key ID
     organization_key_name: Optional[str] = None  # Organization key name
     posthog_integration: Optional[PostHogIntegration] = None
-    prompt: Optional[PromptParam] = None
+    prompt: Optional[PromptParam | str] = None # PromptParam when using prompt_id, str when used for logging transcription calls
     prompt_id: Optional[str] = None
     prompt_name: Optional[str] = None
     prompt_version_number: Optional[int] = None
