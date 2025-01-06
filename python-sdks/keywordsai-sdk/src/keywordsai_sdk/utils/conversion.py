@@ -305,7 +305,7 @@ def openai_response_to_anthropic_response(response: ModelResponse) -> AnthropicR
             input_tokens=usage_dict.get("prompt_tokens", 0),
             output_tokens=usage_dict.get("completion_tokens", 0),
             cache_creation_input_tokens=usage_dict.get("cache_creation_input_tokens", 0),
-            cache_creation_output_tokens=usage_dict.get("cache_read_input_tokens", 0),
+            cache_read_output_tokens=usage_dict.get("cache_read_input_tokens", 0),
         )
     else:
         anthropic_usage = AnthropicUsage(input_tokens=0, output_tokens=0, cache_creation_input_tokens=0, cache_creation_output_tokens=0)
