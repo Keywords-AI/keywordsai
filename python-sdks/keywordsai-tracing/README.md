@@ -171,21 +171,11 @@ def store_joke(joke: str):
     return embedding.data[0].embedding
 
 # Update create_joke to use store_joke
-@task(name="joke_creation")
-def create_joke():
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
-        temperature=0.5,
-        max_tokens=100,
-        frequency_penalty=0.5,
-        presence_penalty=0.5,
-        stop=["\n"],
-        logprobs=True,
-    )
-    joke = completion.choices[0].message.content
-    store_joke(joke)  # <--------- Add the task here
-    return joke
+@workflow(name="joke_and_audience_reaction")
+def joke_and_audience_reaction():
+    pirate_joke = joke_workflow()
+    audience_reaction(pirate_joke)
+    logging_joke(pirate_joke, audience_reaction(pirate_joke)) # <-------- Add this workflow here
 ```
 Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `store_joke` task.
 
