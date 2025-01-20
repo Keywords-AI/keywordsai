@@ -11,7 +11,7 @@ This tutorial demonstrates how to build and trace complex LLM workflows using Ke
 
 ## Installation
 ```bash
-pip install keywordsai-tracing openai anthropic python-dotenv
+pip install keywordsai-tracing openai anthropic
 ```
 
 
