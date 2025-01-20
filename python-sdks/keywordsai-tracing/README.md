@@ -143,7 +143,7 @@ def audience_reaction(joke: str):
     return laughter + applauds
 
 
-@workflow(name="joke_and_audience_reaction") <--------- Create the new workflow that combines both workflows together
+@workflow(name="joke_and_audience_reaction") #<--------- Create the new workflow that combines both workflows together
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
     reactions = audience_reaction(pirate_joke)
