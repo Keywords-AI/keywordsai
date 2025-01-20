@@ -148,7 +148,7 @@ def audience_reaction(joke: str):
 @workflow(name="joke_and_audience_reaction")
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
-    audience_reaction(pirate_joke)
+    reactions = audience_reaction(pirate_joke)
 
 if __name__ == "__main__":
     joke_and_audience_reaction() # <--------- Update the entrypoint here
