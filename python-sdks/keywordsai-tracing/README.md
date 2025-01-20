@@ -142,14 +142,15 @@ def audience_reaction(joke: str):
     applauds = audience_applaud(joke=joke)
     return laughter + applauds
 
-# ...Existing code...
 
-# Create a bigger main workflow that combines the joke workflow and the audience reaction workflow
-@workflow(name="joke_and_audience_reaction")
+@workflow(name="joke_and_audience_reaction") <--------- Create the new workflow that combines both workflows together
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
     reactions = audience_reaction(pirate_joke)
+```
 
+Don't forget to update the entrypoint!
+```python
 if __name__ == "__main__":
     joke_and_audience_reaction() # <--------- Update the entrypoint here
 ```
@@ -169,13 +170,25 @@ def store_joke(joke: str):
         input=joke,
     )
     return embedding.data[0].embedding
+```
 
-# Update create_joke to use store_joke
-@workflow(name="joke_and_audience_reaction")
-def joke_and_audience_reaction():
-    pirate_joke = joke_workflow()
-    reactions = audience_reaction(pirate_joke)
-    logging_joke(pirate_joke, reactions) # <-------- Add this workflow here
+Update create_joke to use store_joke
+```python
+@task(name="joke_creation")
+def create_joke():
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
+        temperature=0.5,
+        max_tokens=100,
+        frequency_penalty=0.5,
+        presence_penalty=0.5,
+        stop=["\n"],
+        logprobs=True,
+    )
+    joke = completion.choices[0].message.content
+    store_joke(joke)  # <--------- Add the task here
+    return joke
 ```
 Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `store_joke` task.
 
@@ -190,17 +203,15 @@ def logging_joke(joke: str, reactions: str):
     """Simulates logging the process into a database."""
     print(joke + "\n\n" + reactions)
     time.sleep(1)
+```
 
-# ...Existing code...
-#Insert the workflow into the main workflow
-@workflow(name="pirate_joke_generator")
-def joke_workflow():
-    eng_joke = create_joke()
-    pirate_joke = translate_joke_to_pirate(eng_joke)
-    signature = generate_signature(pirate_joke)
-    audience_reaction(pirate_joke)
-    logging_joke(pirate_joke, audience_reaction(pirate_joke)) # <-------- Add this workflow here
-    return pirate_joke + signature
+Update `joke_and_audience_reaction`
+```python
+@workflow(name="joke_and_audience_reaction")
+def joke_and_audience_reaction():
+    pirate_joke = joke_workflow()
+    reactions = audience_reaction(pirate_joke)
+    logging_joke(pirate_joke, reactions) # <-------- Add this workflow here
 ```
 
 Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `logging_joke` task.
@@ -232,9 +243,10 @@ def read_joke_comments(comments: str):
 def audience_interaction(joke: str):
     comments = ask_for_comments(joke=joke)
     read_joke_comments(comments=comments)
+```
 
-# ...Existing code...
-
+Update `joke_and_audience_reaction`
+```python
 @workflow(name="joke_and_audience_reaction")
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
