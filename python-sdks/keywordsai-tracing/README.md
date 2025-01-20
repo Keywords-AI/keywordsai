@@ -174,8 +174,8 @@ def store_joke(joke: str):
 @workflow(name="joke_and_audience_reaction")
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
-    audience_reaction(pirate_joke)
-    logging_joke(pirate_joke, audience_reaction(pirate_joke)) # <-------- Add this workflow here
+    reactions = audience_reaction(pirate_joke)
+    logging_joke(pirate_joke, reactions) # <-------- Add this workflow here
 ```
 Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `store_joke` task.
 
