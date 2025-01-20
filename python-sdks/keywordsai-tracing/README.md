@@ -238,8 +238,9 @@ def audience_interaction(joke: str):
 @workflow(name="joke_and_audience_reaction")
 def joke_and_audience_reaction():
     pirate_joke = joke_workflow()
-    audience_reaction(pirate_joke)
-    audience_interaction(pirate_joke)
+    reactions = audience_reaction(pirate_joke)
+    audience_interaction(pirate_joke) # <-------- Add this workflow here
+    logging_joke(pirate_joke, reactions)
 ```
 
 Running the workflow for one last time, you can see that the new `audience_interaction` can recognize the `anthropic.completion` calls.
