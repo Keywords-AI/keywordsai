@@ -26,7 +26,9 @@ Logging params types:
 class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingParams):
 
     @field_validator("customer_params", mode="after")
-    def validate_customer_params(cls, v: Customer):
+    def validate_customer_params(cls, v: Customer | None):
+        if v is None:
+            return None
         if v.customer_identifier is None:
             return None
         return v
@@ -45,7 +47,15 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "custom_identifier",
             "status",
             "unique_id",
+            "trace_unique_id",
+            "span_unique_id",
+            "span_name",
+            "span_parent_id",
+            "span_path",
+            "span_workflow_name",
             "prompt_tokens",
+            "prompt_cache_hit_tokens",
+            "prompt_cache_creation_tokens",
             "prompt_id",
             "completion_tokens",
             "total_request_tokens",
@@ -57,6 +67,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "model",
             "provider_id",
             "full_model_name",
+            "start_time",
             "timestamp",
             "minute_group",
             "hour_group",
@@ -71,6 +82,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "status_code",
             "cached",
             "cache_bit",
+            "cache_miss_bit",
             "cache_key",
             "prompt_messages",
             "completion_message",
@@ -112,6 +124,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "log_type",
             "input",
             "input_array",
+            "output",
             "embedding",
             "base64_embedding",
             "tools",

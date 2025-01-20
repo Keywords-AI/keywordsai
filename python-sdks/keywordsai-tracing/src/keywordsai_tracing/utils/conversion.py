@@ -124,6 +124,26 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
 )
 from openai.types.chat.chat_completion import ChatCompletion as ModelResponse
 
+
+def anthropic_message_to_llm_message(message: AnthropicMessage) -> Message:
+    content = message.content
+    if isinstance(content, str):
+        return Message(role=message.role, content=content)
+    elif isinstance(content, list):
+        content_list = []
+        for item in content:
+            if item.type == "text":
+                content_list.append(TextContent(type="text", text=item.text))
+            elif item.type == "image":
+                content_list.append(
+                    ImageContent(
+                        type="image_url", image_url=ImageURL(url=item.source.data)
+                    )
+                )
+        return Message(role=message.role, content=content_list)
+    return Message(role=message.role)
+
+
 def anthropic_messages_to_llm_messages(
     messages: List[AnthropicMessage],
 ) -> List[Message]:
@@ -137,14 +157,14 @@ def anthropic_messages_to_llm_messages(
             tool_calls = []
             for item in content:
                 if item.type == "text":
-                    content_list.append(TextContent(**item.model_dump()))
+                    content_list.append(TextContent(type="text", text=item.text))
                 elif item.type == "image":
                     content_list.append(
                         ImageContent(
                             type="image_url",
                             image_url=ImageURL(
                                 url=f"data:{item.source.media_type};{item.source.type},{item.source.data}"
-                            ),
+                            )
                         )
                     )
                 elif item.type == "tool_use":
@@ -174,18 +194,10 @@ def anthropic_messages_to_llm_messages(
 
 
 def anthropic_tool_to_llm_tool(tool: AnthropicTool) -> FunctionTool:
-    if tool.input_schema:
-        input_schema = tool.input_schema.copy()
-    else:
-        input_schema = {}
-    extra_fields = tool.model_dump(
-        exclude={"name", "description", "input_schema", "type"}, exclude_none=True
-    )
-    input_schema.update(extra_fields)
     function = Function(
-        name=tool.name, description=tool.description, parameters=input_schema
+        name=tool.name, description=tool.description, parameters=tool.input_schema
     )
-    return FunctionTool(type=tool.type, function=function)
+    return FunctionTool(type="function", function=function)
 
 
 def anthropic_params_to_llm_params(params: AnthropicParams) -> LLMParams:
@@ -297,18 +309,14 @@ def openai_response_to_anthropic_response(response: ModelResponse) -> AnthropicR
                     )
                 )
 
-    anthropic_usage = None
     usage = response.usage
-    usage_dict = usage.model_dump()
+    anthropic_usage = None
     if usage:
         anthropic_usage = AnthropicUsage(
-            input_tokens=usage_dict.get("prompt_tokens", 0),
-            output_tokens=usage_dict.get("completion_tokens", 0),
-            cache_creation_input_tokens=usage_dict.get("cache_creation_input_tokens", 0),
-            cache_read_input_tokens=usage_dict.get("prompt_tokens_details", {}).get("cached_tokens", 0),
+            input_tokens=usage.prompt_tokens, output_tokens=usage.completion_tokens
         )
     else:
-        anthropic_usage = AnthropicUsage(input_tokens=0, output_tokens=0, cache_creation_input_tokens=0, cache_creation_output_tokens=0)
+        anthropic_usage = AnthropicUsage(input_tokens=0, output_tokens=0)
 
     finish_reason_dict = {
         "stop": "stop_sequence",

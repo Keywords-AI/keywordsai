@@ -1,0 +1,79 @@
+# Poetry Dependencies & Extras Guide
+
+# Add dependencies to a group
+poetry add pytest --group test
+poetry add black flake8 --group dev
+poetry add traceloop-sdk --group trace
+
+# Make a group optional
+poetry group add dev --optional
+
+# Install dependencies from a group
+poetry install --group dev
+
+# Install dependencies from multiple groups
+poetry install --group test --group dev
+
+# Install dependencies from all groups
+poetry install --all-groups
+
+# Make a group optional
+In the `pyproject.toml` file, add the following:
+```
+[tool.poetry.group.<group_name>]
+optional = true
+```
+
+
+## Managing Extras
+
+### Step 1: Set Up Groups First
+- Create groups for features that have dependencies
+- Make the groups optional if they're for end-user features
+
+### Step 2: Manual Extra Configuration
+Add to `pyproject.toml`:
+
+```toml
+[tool.poetry.extras]
+# For features without dependencies
+auth = []  
+
+# For features with dependencies (must match group dependencies)
+trace = ["traceloop-sdk", "opentelemetry-instrumentation-redis"]
+```
+
+## Installation Commands
+
+### Development Installation
+```bash
+# Install all dependencies (including dev)
+poetry install
+
+# Install without dev dependencies
+poetry install --without dev
+
+# Install with specific groups
+poetry install --with test,trace
+
+# Install with extras
+poetry install --extras "auth trace"
+```
+
+### End User Installation
+```bash
+# Core package only
+pip install package-name
+
+# With extras
+pip install "package-name[auth]"
+pip install "package-name[trace]"
+pip install "package-name[auth,trace]"
+```
+
+## Important Notes
+1. Groups are for development organization
+2. Extras are for end-user feature selection
+3. No direct command to create extras (manual `pyproject.toml` edit required)
+4. Extras dependencies must match group dependencies when they exist
+5. Core dependencies are always installed

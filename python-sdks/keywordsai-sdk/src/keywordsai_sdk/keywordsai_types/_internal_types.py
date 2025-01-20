@@ -234,7 +234,9 @@ class Function(KeywordsAIBaseModel):
 
 class FunctionTool(KeywordsAIBaseModel):
     type: str = "function"
-    function: Function
+    function: Function = None
+
+    model_config = ConfigDict(extra="allow")
 
 
 class CodeInterpreterTool(KeywordsAIBaseModel):
@@ -492,10 +494,23 @@ class Usage(KeywordsAIBaseModel):
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
-    cache_creation_input_tokens: Optional[int] = 0
+    cache_creation_input_tokens: Optional[int] = 0 # Internal field, name directly from Anthropic. Will be populated from cache_creation_prompt_tokens
+    cache_creation_prompt_tokens: Optional[int] = 0 # User facing, renamed for naming consistency, equivalent to cache_creation_input_tokens
     cache_read_input_tokens: Optional[int] = 0
     completion_tokens_details: Optional[dict] = None
     prompt_tokens_details: Optional[dict] = None
+
+    @model_validator(mode="before")
+    def _preprocess_data(data):
+        if isinstance(data, dict):
+            pass
+        elif hasattr(data, "__dict__"):
+            data = data.__dict__
+        else:
+            raise ValueError("KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute")
+        if data.get("cache_creation_prompt_tokens"):
+            data["cache_creation_input_tokens"] = data["cache_creation_prompt_tokens"]
+        return data
 
 
 class KeywordsAIParams(KeywordsAIBaseModel):
@@ -506,6 +521,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     cache_options: Optional[CacheOptions] = None
     cache_ttl: Optional[int] = None
     cache_bit: Optional[int] = None
+    cache_miss_bit: Optional[int] = None
     cache_key: Optional[str] = None
     redis_cache_ttl: Optional[int] = None
     cache_request_content: Optional[str] = None
@@ -562,6 +578,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     organization_name: Optional[str] = None  # Organization name
     organization_key_id: Optional[str] = None  # Organization key ID
     organization_key_name: Optional[str] = None  # Organization key name
+    output: Optional[str] = None
     posthog_integration: Optional[PostHogIntegration] = None
     prompt: Optional[PromptParam | str] = None # PromptParam when using prompt_id, str when used for logging transcription calls
     prompt_id: Optional[str] = None
@@ -569,6 +586,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     prompt_version_number: Optional[int] = None
     prompt_messages: Optional[List[Message]] = None
     prompt_tokens: Optional[int] = None
+    prompt_cache_hit_tokens: Optional[int] = None
+    prompt_cache_creation_tokens: Optional[int] = None
     prompt_unit_price: Optional[float] = None
     provider_id: Optional[str] = None
     recommendations: Optional[str] = None
@@ -581,13 +600,19 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     storage_object_key: Optional[str] = None
     thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
-    timestamp: Optional[str | datetime] = None
+    start_time: Optional[str | datetime] = None
+    timestamp: Optional[str | datetime] = None # This is the end_time in the context of being a span
     hour_group: Optional[str | datetime] = None
     minute_group: Optional[str | datetime] = None
     tokens_per_second: Optional[float] = None
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
-    trace_id: Optional[int] = None
+    trace_unique_id: Optional[str] = None
+    span_unique_id: Optional[str] = None
+    span_name: Optional[str] = None
+    span_parent_id: Optional[str] = None
+    span_path: Optional[str] = None
+    span_workflow_name: Optional[str] = None
     ttft: Optional[float] = None
     unique_id: Optional[str] = None
     usage: Optional[Usage] = None
@@ -642,6 +667,10 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     def validate_timestamp(cls, v):
         return parse_datetime(v)
     
+    @field_validator("start_time")
+    def validate_start_time(cls, v):
+        return parse_datetime(v)
+    
     @field_validator("hour_group")
     def validate_hour_group(cls, v):
         return parse_datetime(v)
@@ -671,7 +700,7 @@ class BasicEmbeddingParams(KeywordsAIBaseModel):
     # user: Optional[str] = None # Comment out as it is conflicting with the user field in KeywordsAIParams
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
+        kwargs.setdefault("exclude_none", True)
         return super().model_dump(*args, **kwargs)
 
 
@@ -874,7 +903,7 @@ class AnthropicToolUse(KeywordsAIBaseModel):
 
 
 class AnthropicTool(KeywordsAIBaseModel):
-    type: str = "function"
+    type: str = "computer_20241022"
     name: str
     description: Optional[str | None] = None
     input_schema: dict = None
