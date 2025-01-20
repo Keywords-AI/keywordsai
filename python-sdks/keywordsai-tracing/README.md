@@ -25,7 +25,6 @@ from keywordsai_tracing.decorators import workflow, task
 import time
 
 # Initialize KeywordsAI Telemetry
-os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api"
 os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
 k_tl = KeywordsAITelemetry()
 
