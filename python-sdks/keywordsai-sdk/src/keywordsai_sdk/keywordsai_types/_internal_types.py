@@ -162,7 +162,7 @@ MessageContentType = Annotated[
 
 
 class Message(KeywordsAIBaseModel):
-    role: Literal["user", "assistant", "system", "tool", "none"]
+    role: Literal["user", "assistant", "system", "tool", "none", "developer"]
     content: Union[str, List[Union[MessageContentType, str]], None] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
@@ -580,6 +580,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     organization_key_name: Optional[str] = None  # Organization key name
     output: Optional[str] = None
     posthog_integration: Optional[PostHogIntegration] = None
+    positive_feedback: Optional[bool] = None
     prompt: Optional[PromptParam | str] = None # PromptParam when using prompt_id, str when used for logging transcription calls
     prompt_id: Optional[str] = None
     prompt_name: Optional[str] = None

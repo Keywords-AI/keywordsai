@@ -1,8 +1,4 @@
-from .constants.keywordsai_config import (
-    KEYWORDSAI_API_KEY,
-    KEYWORDSAI_BASE_URL,
-    KEYWORDSAI_DISABLE_BATCH,
-)
+import os
 from .decorators import workflow, task
 from traceloop.sdk import Traceloop
 
@@ -16,6 +12,9 @@ class KeywordsAITelemetry:
         self, api_key: str = None, base_url: str = None, disable_batch: bool = None
     ):
         self.tracer = Traceloop()
+        KEYWORDSAI_API_KEY = os.getenv("KEYWORDSAI_API_KEY")
+        KEYWORDSAI_BASE_URL = os.getenv("KEYWORDSAI_BASE_URL")
+        KEYWORDSAI_DISABLE_BATCH = os.getenv("KEYWORDSAI_DISABLE_BATCH")
         api_key = api_key or KEYWORDSAI_API_KEY
         base_url = base_url or KEYWORDSAI_BASE_URL
         disable_batch = disable_batch or KEYWORDSAI_DISABLE_BATCH

@@ -73,6 +73,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "hour_group",
             "prompt_id",
             "prompt_name",
+            "positive_feedback", # This is a boolean, bad naming
             "error_bit",
             "time_to_first_token",
             "metadata",
