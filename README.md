@@ -1,6 +1,9 @@
 <p align="center">
-<a href="https://www.keywordsai.co">
+<a href="https://www.keywordsai.co#gh-light-mode-only">
 <img width="800" src="https://keywordsai-static.s3.us-east-1.amazonaws.com/social_media_images/logo-header.jpg">
+</a>
+<a href="https://www.keywordsai.co#gh-dark-mode-only">
+<img width="800" src="https://keywordsai-static.s3.us-east-1.amazonaws.com/social_media_images/logo-header-dark.jpg">
 </a>
 </p>
 <p align="center">
