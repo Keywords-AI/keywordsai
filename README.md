@@ -7,7 +7,7 @@
   <p align="center">Observability, prompt management, and evals for LLM engineering teams.</p>
 </p>
 
-# Keywords AI SDKs
+# Keywords AI
 
 Observability, prompt management, and evals for LLM engineering teams.
 
