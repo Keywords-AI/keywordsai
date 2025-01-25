@@ -50,7 +50,7 @@ For a comprehensive example, see the [trace example run](https://github.com/Keyw
 
 Guide for recreating the example step by step can be found [here](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/README.md).
 
-## Keywords AI Types
+## Keywords AI SDK
 ### What for?
 This is a lightweight package used for defining the types used in Keywords AI and conversions between them.
 
