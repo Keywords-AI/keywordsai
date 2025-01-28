@@ -2,3 +2,5 @@
 boilerplates/
 **/*/.env
 **/*/dist/
+**/*/test-dist/
+**/*/node_modules/

@@ -174,13 +174,6 @@ class Message(KeywordsAIBaseModel):
             raise ValueError("Empty list not allowed for content")
         return v
 
-    @field_validator("role")
-    def validate_role(cls, v):
-        valid_values = ["user", "assistant", "system", "tool", "none"]
-        if v not in valid_values:
-            raise ValueError(f"Invalid role value, must be one of {valid_values}")
-        return v
-
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
