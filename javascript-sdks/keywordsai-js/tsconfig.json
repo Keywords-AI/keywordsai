@@ -23,6 +23,6 @@
     "skipDefaultLibCheck": true,
     "experimentalDecorators": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "test", "test-dist"]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "test-dist"]
 }

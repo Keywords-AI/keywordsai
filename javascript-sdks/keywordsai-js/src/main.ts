@@ -1,21 +1,8 @@
 import * as traceloop from "@traceloop/node-server-sdk";
-import { DecoratorConfig } from "@traceloop/node-server-sdk";
-import { OpenAI } from "openai";
-import { withAgent, withTask, withWorkflow } from "src/decorators";
-import { WithFunctionType } from "./types/decorator_types";
-
-interface KeywordsAIOptions {
-    appName: string;
-    disableBatch?: boolean;
-    baseUrl?: string;
-    apiKey: string;
-    // Add any other options you want to expose
-    instrumentModules?: {
-        openAI?: typeof OpenAI;
-        // Add other modules as needed
-    };
-}
-
+import { withTask, withWorkflow } from "./decorators";
+import { WithFunctionType } from "./types/decoratorTypes";
+import { KeywordsAIOptions } from "./types/clientTypes";
+import { withKeywordsAISpanAttributes } from "./contexts/span";
 export class KeywordsAITelemetry {
     private options: KeywordsAIOptions;
 
@@ -50,17 +37,12 @@ export class KeywordsAITelemetry {
         }) as traceloop.TraceloopClient;
     }
 
-    public withAgent: WithFunctionType = (options, callback, ...args) => {
-        return withAgent(options, callback, ...args);
-    }
+    public withTask: WithFunctionType = withTask;
 
-    public withTask: WithFunctionType = (options, callback, ...args) => {
-        return withTask(options, callback, ...args);
-    }
+    public withWorkflow: WithFunctionType = withWorkflow;
 
-    public withWorkflow: WithFunctionType = (options, callback, ...args) => {
-        return withWorkflow(options, callback, ...args);
-    }
+    public withKeywordsAISpanAttributes = withKeywordsAISpanAttributes;
+
 
     // Add your methods here
 }

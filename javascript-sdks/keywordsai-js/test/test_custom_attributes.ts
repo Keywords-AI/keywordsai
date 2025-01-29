@@ -23,7 +23,22 @@ async function testTask() {
 
 async function testWorkflow() {
   return await keywordsAi.withWorkflow({ name: "test" }, async (workflow) => {
-    await testTask();
+    keywordsAi.withKeywordsAISpanAttributes(
+      async () => {
+        testTask();
+      },
+      {
+        customer_identifier: "123",
+        customer_email: "test@test.com",
+        customer_name: "Test User",
+        custom_identifier: "some_identifier",
+        evaluation_identifier: "some_evaluation_identifier",
+        thread_identifier: "some_thread_identifier",
+        metadata: {
+          key: "value",
+        },
+      }
+    );
     return "test workflow";
   });
 }
