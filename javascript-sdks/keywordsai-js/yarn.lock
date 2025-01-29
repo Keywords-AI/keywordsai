@@ -170,6 +170,14 @@
   resolved "https://registry.yarnpkg.com/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz#9299f82874bab9e4c7f9c48d865becbfe8d6907c"
   integrity sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==
 
+"@keywordsai/tracing@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@keywordsai/tracing/-/tracing-1.0.2.tgz#b5f9a4e945ef475b75a71895f024ae02062a3154"
+  integrity sha512-yJiDOQ6daLYYhYhQaFGZogprYdy6FoiP2GNBrn8fu6/5KD0bIbnplEn9Ah0SAvIsBneXAlECtGX49sdWL+uTlg==
+  dependencies:
+    "@traceloop/node-server-sdk" "^0.12.0"
+    openai "^4.80.1"
+
 "@opentelemetry/api-logs@0.56.0":
   version "0.56.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/api-logs/-/api-logs-0.56.0.tgz#68f8c51ca905c260b610c8a3c67d3f9fa3d59a45"

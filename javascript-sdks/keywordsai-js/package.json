@@ -25,6 +25,7 @@
     "openai": "^4.80.1"
   },
   "devDependencies": {
+    "@keywordsai/tracing": "^1.0.2",
     "dotenv": "^16.4.7",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
