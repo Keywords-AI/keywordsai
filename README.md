@@ -55,7 +55,7 @@ yarn add @keywordsai/tracing
 
 ### Getting started
 
-
+#### Python
 ```python
 import os
 from keywordsai_tracing.main import KeywordsAITelemetry
@@ -77,6 +77,35 @@ def my_workflow():
 ```
 For a **comprehensive example**, see the [trace example run](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/tests/tracing_tests/basic_workflow_test.py).
 
+#### TypeScript
+```TypeScript
+import { KeywordsAITelemetry } from '@keywordsai/tracing';
+
+// Initialize clients
+// Make sure to set these environment variables or pass them directly
+const keywordsAI = new KeywordsAITelemetry({
+    apiKey: process.env.KEYWORDSAI_API_KEY || "",
+    baseUrl: process.env.KEYWORDSAI_BASE_URL || "",
+    appName: 'test-app',
+    disableBatch: true  // For testing, disable batching
+});
+```
+That's it! You can now trace your LLM applications by wrapping the wrappers around your functions (`keywordsAI.withTask` in the below example)
+```TypeScript
+async function createJoke() {
+    return await keywordsAI.withTask(
+        { name: 'joke_creation' },
+        async () => {
+            const completion = await openai.chat.completions.create({
+                messages: [{ role: 'user', content: 'Tell me a joke about TypeScript' }],
+                model: 'gpt-3.5-turbo',
+                temperature: 0.7
+            });
+            return completion.choices[0].message.content;
+        }
+    );
+}
+```
 **Step by step guide** can be below:  
 - [Python](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/README.md).
 - [TypeScript](https://github.com/Keywords-AI/keywordsai/blob/main/javascript-sdks/keywordsai-js/README.md).
