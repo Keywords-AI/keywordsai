@@ -37,7 +37,21 @@ poetry add keywordsai-tracing
 </details>
 
 #### TypeScript/JavaScript
-Coming soon!
+<details>
+<summary>npm</summary>
+
+```bash
+npm install @keywordsai/tracing
+```
+</details>
+
+<details>
+<summary>yarn</summary>
+
+```bash
+yarn add @keywordsai/tracing
+```
+</details>
 
 ### Getting started
 
@@ -63,4 +77,6 @@ def my_workflow():
 ```
 For a **comprehensive example**, see the [trace example run](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/tests/tracing_tests/basic_workflow_test.py).
 
-**Step by step guide** can be found [here](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/README.md).
+**Step by step guide** can be below:  
+- [Python](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/README.md).
+- [TypeScript](https://github.com/Keywords-AI/keywordsai/blob/main/javascript-sdks/keywordsai-js/README.md).
