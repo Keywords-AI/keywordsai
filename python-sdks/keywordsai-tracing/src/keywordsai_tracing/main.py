@@ -13,8 +13,8 @@ class KeywordsAITelemetry:
     ):
         self.tracer = Traceloop()
         KEYWORDSAI_API_KEY = os.getenv("KEYWORDSAI_API_KEY")
-        KEYWORDSAI_BASE_URL = os.getenv("KEYWORDSAI_BASE_URL")
-        KEYWORDSAI_DISABLE_BATCH = os.getenv("KEYWORDSAI_DISABLE_BATCH")
+        KEYWORDSAI_BASE_URL = os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api")
+        KEYWORDSAI_DISABLE_BATCH = (os.getenv("KEYWORDSAI_DISABLE_BATCH", "False")).lower() == "true"
         api_key = api_key or KEYWORDSAI_API_KEY
         base_url = base_url or KEYWORDSAI_BASE_URL
         disable_batch = disable_batch or KEYWORDSAI_DISABLE_BATCH

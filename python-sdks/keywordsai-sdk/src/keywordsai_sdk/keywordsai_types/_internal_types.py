@@ -587,7 +587,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     recommendations: Optional[str] = None
     recommendations_dict: Optional[dict] = None
     request_breakdown: Optional[bool] = False
-    response_format: Optional[TextModelResponseFormat] = None
+    response_format: Optional[Union[TextModelResponseFormat, str]] = None
     retry_params: Optional[RetryParams] = None
     status: Optional[str] = None
     status_code: Optional[int] = None
