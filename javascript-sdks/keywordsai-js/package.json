@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,7 +25,7 @@
     "openai": "^4.80.1"
   },
   "devDependencies": {
-    "@keywordsai/tracing": "^1.0.2",
+    "@keywordsai/tracing": "^1.0.9",
     "dotenv": "^16.4.7",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
