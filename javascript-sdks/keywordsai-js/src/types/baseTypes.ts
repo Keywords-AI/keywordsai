@@ -5,6 +5,7 @@ export type KeywordsAIParams = {
     customer_name?: string;
     evaluation_identifier?: string | number;
     thread_identifier?: string | number;
+    trace_group_identifier?: string | number;
     metadata?: Record<string, any>;
 }
 

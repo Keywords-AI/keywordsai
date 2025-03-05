@@ -1,7 +1,9 @@
 from pydantic import BaseModel, field_validator
 from typing import Any, Optional, List, Union, Dict
 from typing_extensions import Literal, TypedDict
-
+"""
+The types that are used only during Keywords AI's chat/completions endpoint invocation
+"""
 class LBProviderCredentialDictType(TypedDict):
     weight: float
     credentials: dict

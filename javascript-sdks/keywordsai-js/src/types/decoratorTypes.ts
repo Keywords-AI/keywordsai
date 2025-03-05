@@ -5,10 +5,11 @@ export type WithFunctionType = <
     // 'A' represents an array of argument types
     A extends unknown[],
     // 'F' represents a function type that takes those arguments and returns something
-    F extends (...args: A) => ReturnType<F>
+    F extends (...args: A) => ReturnType<F>,
 >(
     config: DecoratorConfig,
     fn: F,
+    ...args: A
 ) => Promise<any>;
 
 // Now we can define our specific function types

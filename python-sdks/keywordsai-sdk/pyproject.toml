@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-sdk"
-version = "0.3.40"
+version = "0.3.69"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"

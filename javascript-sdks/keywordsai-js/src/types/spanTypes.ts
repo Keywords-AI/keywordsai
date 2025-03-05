@@ -13,6 +13,9 @@ export enum KeywordsAISpanAttributes {
     // Threads
     KEYWORDSAI_THREADS_ID = "keywordsai.threads.thread_identifier",
 
+    // Trace
+    KEYWORDSAI_TRACE_GROUP_ID = "keywordsai.trace.trace_group_identifier",
+
     // Metadata
     KEYWORDSAI_METADATA = "keywordsai.metadata"
 }
@@ -24,6 +27,7 @@ export const KEYWORDSAI_SPAN_ATTRIBUTES_MAP: { [key: string]: string } = {
     evaluation_identifier: KeywordsAISpanAttributes.KEYWORDSAI_EVALUATION_PARAMS_ID,
     thread_identifier: KeywordsAISpanAttributes.KEYWORDSAI_THREADS_ID,
     custom_identifier: KeywordsAISpanAttributes.KEYWORDSAI_SPAN_CUSTOM_ID,
+    trace_group_identifier: KeywordsAISpanAttributes.KEYWORDSAI_TRACE_GROUP_ID,
     metadata: KeywordsAISpanAttributes.KEYWORDSAI_METADATA
 };
 

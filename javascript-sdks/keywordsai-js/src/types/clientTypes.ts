@@ -8,7 +8,7 @@ export interface KeywordsAIOptions {
     /**
      * The app name to be used when reporting traces.
      */
-    appName: string;
+    appName?: string;
 
     /**
      * Sends traces and spans without batching, for local development.

@@ -84,6 +84,15 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
             raise_exception=raise_exception,
             mode="assign",
         )
+    if "eval_params" in params:
+        assign_with_validation(
+            retrieve_from=params,
+            assign_to=keywordsai_params,
+            key="eval_params",
+            type=EvaluationParams,
+            raise_exception=raise_exception,
+            mode="assign",
+        )
     keywordsai_params["evaluation_identifier"] = (
         params.pop("evaluation_identifier", "") or None
     )

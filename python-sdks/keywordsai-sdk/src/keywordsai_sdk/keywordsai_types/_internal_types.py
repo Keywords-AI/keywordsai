@@ -157,9 +157,20 @@ class ToolCall(KeywordsAIBaseModel):
 
 
 MessageContentType = Annotated[
-    Union[ImageContent, TextContent, ToolUseContent], Field(discriminator="type")
+    Union[ImageContent, TextContent, ToolUseContent, "AnthropicImageContent", "AnthropicToolResultContent"], Field(discriminator="type")
 ]
 
+class TextModelResponseFormat(KeywordsAIBaseModel):
+    type: str
+    response_schema: Optional[dict] = None
+    json_schema: Optional[dict] = None
+
+    class Config:
+        extra = "allow"
+
+    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
+        kwargs["exclude_none"] = True
+        return super().model_dump(*args, **kwargs)
 
 class Message(KeywordsAIBaseModel):
     role: Literal["user", "assistant", "system", "tool", "none", "developer"]
@@ -215,8 +226,8 @@ class FunctionParameters(KeywordsAIBaseModel):
 
 
 class Function(KeywordsAIBaseModel):
-    name: str
-    description: Optional[str | None] = None  # Optional description
+    name: Optional[str] = None
+    description: Optional[str] = None  # Optional description
     parameters: Optional[dict] = {}  # Optional parameters
     strict: Optional[bool] = None  # Optional strict mode
 
@@ -276,6 +287,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
     temperature: Optional[float] = None
     timeout: Optional[float] = None
     tools: Optional[List[FunctionTool]] = None
+    response_format: Optional[Union[TextModelResponseFormat, str]] = None
     tool_choice: Optional[Union[Literal["auto", "none", "required"], ToolChoice]] = None
     top_logprobs: Optional[int] = None
     top_p: Optional[float] = None
@@ -291,6 +303,7 @@ class OverrideConfig(KeywordsAIBaseModel):
 
 class PromptParam(KeywordsAIBaseModel):
     prompt_id: Optional[str] = None
+    is_custom_prompt: Optional[bool] = False
     version: Optional[int] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
@@ -405,21 +418,12 @@ class Customer(KeywordsAIBaseModel):
         return cls._validate_timestamp(v)
 
 
-class TextModelResponseFormat(KeywordsAIBaseModel):
-    type: str
-    response_schema: Optional[dict] = None
-    json_schema: Optional[dict] = None
 
-    class Config:
-        extra = "allow"
-
-    def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
-        kwargs["exclude_none"] = True
-        return super().model_dump(*args, **kwargs)
 
 
 class CacheOptions(KeywordsAIBaseModel):
     cache_by_customer: Optional[bool] = None  # Create cache for each customer_user
+    omit_log: Optional[bool] = None  # When cache is hit, don't log the request
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -446,12 +450,20 @@ class RetryParams(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class EvaluationExtraParams(TypedDict, total=False):
-    retrieved_contexts: Optional[List[str]] = None
-    contexts: Optional[List[str]] = None
-    ground_truth: Optional[str] = None
-    ground_truth_answers: Optional[List[str]] = None
-    summary: Optional[str] = None
+class EvalInputs(TypedDict, total=False):
+    # Default inputs, automatically populated by Keywords AI
+    llm_input: str = "" # Reserved key, automatically populated by the `messages` parameter
+    llm_output: str = "" # Reserved key, automatically populated by the LLM's response.message
+
+    # LLM output related inputs
+    ideal_output: Optional[str] = None # Reserved, but need to be provided, default null and ignored
+
+    # RAG related inputs
+    ground_truth: Optional[str] = None # Reserved, but need to be provided, default null and ignored
+    retrieved_contexts: Optional[List[str]] = None # Reserved, but need to be provided, default null and ignored
+    ideal_contexts: Optional[List[str]] = None # Reserved, but need to be provided, default null and ignored
+
+    model_config = ConfigDict(extra="allow")
 
 class EvaluatorToRun(KeywordsAIBaseModel):
     evaluator_slug: str
@@ -463,7 +475,7 @@ class EvaluationParams(KeywordsAIBaseModel):
     last_n_messages: Optional[int] = (
         1  # last n messages to consider for evaluation, 0 -> all messages
     )
-    extra_params: Optional[EvaluationExtraParams] = (
+    eval_inputs: Optional[EvalInputs] = (
         {}
     )  # extra params that are needed for the evaluation
     sample_percentage: Optional[float] = (
@@ -528,6 +540,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     custom_identifier: Optional[Union[str, int]] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
     customer_email: Optional[str] = None
+    customer_name: Optional[str] = None
     customer_identifier: Optional[Union[str, int]] = None
     customer_params: Optional[Customer] = None
     delimiter: Optional[str] = "\n\n"
@@ -542,19 +555,21 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     error_message: Optional[str] = None
     evaluation_cost: Optional[float] = None
     evaluation_identifier: Optional[Union[str, int]] = None
-    evaluation_params: Optional[EvaluationParams] = None
+    eval_params: Optional[EvaluationParams] = None
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
     fallback_models: Optional[List[str]] = None
     field_name: Optional[str] = "data: "
     for_eval: Optional[bool] = None
-    full_request: Optional[dict] = None
-    full_response: Optional[dict] = None
+    full_request: Optional[dict | list] = None
+    full_response: Optional[dict | list] = None
     full_model_name: Optional[str] = None
     generation_time: Optional[float] = None
     has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
+    input: Optional[str] = None
     ip_address: Optional[str] = None
+    request_url_path: Optional[str] = None
     is_test: Optional[bool] = None
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
     keywordsai_params: Optional[dict] = None
@@ -579,6 +594,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     prompt_name: Optional[str] = None
     prompt_version_number: Optional[int] = None
     prompt_messages: Optional[List[Message]] = None
+    prompt_messages_template: Optional[List[Message]] = None # This is for logging the raw messages from Prompt users
+    variables: Optional[dict] = None # This is for logging the variables from Prompt users
     prompt_tokens: Optional[int] = None
     prompt_cache_hit_tokens: Optional[int] = None
     prompt_cache_creation_tokens: Optional[int] = None
@@ -587,7 +604,6 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     recommendations: Optional[str] = None
     recommendations_dict: Optional[dict] = None
     request_breakdown: Optional[bool] = False
-    response_format: Optional[Union[TextModelResponseFormat, str]] = None
     retry_params: Optional[RetryParams] = None
     status: Optional[str] = None
     status_code: Optional[int] = None
@@ -602,6 +618,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
     trace_unique_id: Optional[str] = None
+    trace_group_identifier: Optional[str] = None # The customizable id for grouping traces together
     span_unique_id: Optional[str] = None
     span_name: Optional[str] = None
     span_parent_id: Optional[str] = None
@@ -611,7 +628,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     unique_id: Optional[str] = None
     usage: Optional[Usage] = None
     used_custom_credential: Optional[bool] = None
-    user_id: Optional[int] = None
+    user_id: Optional[int | str] = None
     user_email: Optional[str] = None # The use email of the keywordsai user
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
@@ -907,7 +924,7 @@ class AnthropicTool(KeywordsAIBaseModel):
     display_number: Optional[int | None] = None
 
 
-class AnthropicToolResult(KeywordsAIBaseModel):
+class AnthropicToolResultContent(KeywordsAIBaseModel):
     type: Literal["tool_result"] = "tool_result"
     tool_use_id: str
     content: str
@@ -934,7 +951,7 @@ AnthropicContentTypes = Annotated[
         AnthropicImageContent,
         AnthropicTextContent,
         AnthropicToolUse,
-        AnthropicToolResult,
+        AnthropicToolResultContent,
     ],
     Field(discriminator="type"),
 ]

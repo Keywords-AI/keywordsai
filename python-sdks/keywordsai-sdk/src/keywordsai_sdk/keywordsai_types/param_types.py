@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 from typing_extensions import TypedDict
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from ._internal_types import (
@@ -8,7 +8,6 @@ from ._internal_types import (
     Customer,
     BasicEmbeddingParams,
 )
-
 """
 Conventions:
 
@@ -24,6 +23,9 @@ Logging params types:
 
 
 class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingParams):
+    """
+    A type definition of the input parameters for creating a Keywords AI RequestLog object.
+    """
 
     @field_validator("customer_params", mode="after")
     def validate_customer_params(cls, v: Customer | None):
@@ -49,6 +51,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "unique_id",
             "trace_unique_id",
             "span_unique_id",
+            "trace_group_identifier",
             "span_name",
             "span_parent_id",
             "span_path",

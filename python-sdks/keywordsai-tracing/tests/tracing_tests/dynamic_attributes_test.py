@@ -1,26 +1,24 @@
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 from keywordsai_tracing.contexts.span import keywordsai_span_attributes
 from openai import OpenAI
 from keywordsai_tracing import KeywordsAITelemetry
 from keywordsai_tracing.decorators import workflow, task
-from dotenv import load_dotenv
-
-load_dotenv(override=True)
+import os
 
 k_tl = KeywordsAITelemetry()
 client = OpenAI()
 
+os.environ["KEYWORDSAI_API_KEY"] = "test"
+os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api"
+os.environ["KEYWORDSAI_API_KEY"] = os.getenv("KEYWORDSAI_API_KEY")
 
 @workflow(name="test_dynamic_attributes")
 def test_dynamic_attributes():
     with keywordsai_span_attributes(
         keywordsai_params={
-            "customer_identifier": "123",
-            "customer_email": "test@test.com",
-            "customer_name": "John Doe",
-            "evaluation_identifier": "456",
-            "thread_identifier": "789",
-            "custom_identifier": "101",
-            "metadata": {"some_key": "some_value"},
+            "trace_group_identifier": "test_dynamic_attributes",
         }
     ):
         response = client.chat.completions.create(

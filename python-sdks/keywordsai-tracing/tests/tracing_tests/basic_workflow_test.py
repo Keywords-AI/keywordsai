@@ -5,8 +5,8 @@ loaded = load_dotenv("./tests/.env", override=True)
 import os
 from keywordsai_tracing.main import KeywordsAITelemetry
 
-os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api" # This is also the default value if not explicitly set
-os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
+# os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api" # This is also the default value if not explicitly set
+# os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
 k_tl = KeywordsAITelemetry()
 # endregion: setup
 import time
@@ -160,14 +160,15 @@ def audience_interaction(joke: str):
     comments = ask_for_comments(joke=joke)
     read_joke_comments(comments=comments)
 
-
+from keywordsai_tracing.contexts.span import keywordsai_span_attributes
 
 @workflow(name="pirate_joke_plus_audience_reactions")
 def pirate_joke_plus_audience():
-    joke = joke_workflow() # This show case the basic workflow usage and compatibility with the OpenAI SDK
-    reactions = audience_reaction(joke=joke) # This show case the the display of multi-workflow under the same trace
-    audience_interaction(joke=joke) # This show case the compatibility with the anthropic SDK
-    logging_joke(joke=joke, reactions=reactions) # THis show case the tracing of a function with arbitrary inputs/outputs
+    with keywordsai_span_attributes(keywordsai_params={"trace_group_identifier": "1234567890"}):
+        joke = joke_workflow() # This show case the basic workflow usage and compatibility with the OpenAI SDK
+        reactions = audience_reaction(joke=joke) # This show case the the display of multi-workflow under the same trace
+        audience_interaction(joke=joke) # This show case the compatibility with the anthropic SDK
+        logging_joke(joke=joke, reactions=reactions) # THis show case the tracing of a function with arbitrary inputs/outputs
 
 pirate_joke_plus_audience()
 
