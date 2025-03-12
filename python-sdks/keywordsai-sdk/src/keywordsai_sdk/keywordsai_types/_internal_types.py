@@ -1,11 +1,12 @@
-from pydantic import BaseModel, model_validator, field_validator, ConfigDict
+from pydantic import model_validator, field_validator, ConfigDict
 from typing import Any, List, Union, Dict, Optional, Literal
 from typing import Literal
 from .chat_completion_types import ProviderCredentialType
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 from datetime import datetime
-
+from .services_types.linkup_types import LinkupParams
+from .base_types import KeywordsAIBaseModel
 
 def parse_datetime(v: str | datetime) -> datetime:
     if isinstance(v, str):
@@ -25,30 +26,6 @@ def parse_datetime(v: str | datetime) -> datetime:
     return v
 
 
-class KeywordsAIBaseModel(BaseModel):
-    def __contains__(self, key):
-        # Define custom behavior for the 'in' operator
-        return hasattr(self, key)
-
-    def get(self, key, default=None):
-        # Custom .get() method to access attributes with a default value if the attribute doesn't exist
-        return getattr(self, key, default)
-
-    def __getitem__(self, key):
-        # Allow dictionary-style access to attributes
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        # Allow dictionary-style assignment to attributes
-        setattr(self, key, value)
-
-    def _assign_related_field(
-        self, related_model_name: str, assign_to_name: str, data: dict
-    ):
-        related_model_value = data.get(related_model_name)
-        if not isinstance(related_model_value, (int, str)):
-            return
-        data[assign_to_name] = related_model_value
 
 
 class CacheControl(KeywordsAIBaseModel):
@@ -136,6 +113,11 @@ class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
+class OutputTextContent(KeywordsAIBaseModel):
+    type: Literal["output_text"] = "output_text"
+    text: str
+    annotations: Optional[List[Dict | str]] = None
+    cache_control: Optional[CacheControl] = None
 
 class ToolUseContent(KeywordsAIBaseModel):
     type: Literal["tool_use"] = "tool_use"
@@ -157,7 +139,7 @@ class ToolCall(KeywordsAIBaseModel):
 
 
 MessageContentType = Annotated[
-    Union[ImageContent, TextContent, ToolUseContent, "AnthropicImageContent", "AnthropicToolResultContent"], Field(discriminator="type")
+    Union[ImageContent, TextContent, ToolUseContent, OutputTextContent, "AnthropicImageContent", "AnthropicToolResultContent"], Field(discriminator="type")
 ]
 
 class TextModelResponseFormat(KeywordsAIBaseModel):
@@ -181,13 +163,15 @@ class Message(KeywordsAIBaseModel):
 
     @field_validator("content")
     def validate_content(cls, v):
-        if isinstance(v, list) and not v:
-            raise ValueError("Empty list not allowed for content")
+        # if isinstance(v, list) and not v:
+        #     raise ValueError("Empty list not allowed for content")
         return v
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Messages(KeywordsAIBaseModel):
@@ -387,6 +371,7 @@ class Customer(KeywordsAIBaseModel):
     markup_percentage: Optional[float] = None  # 20 -> original price * 1.2
     total_budget: Optional[float] = None
     metadata: Optional[dict] = None
+    rate_limit: Optional[int] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -564,6 +549,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     full_request: Optional[dict | list] = None
     full_response: Optional[dict | list] = None
     full_model_name: Optional[str] = None
+    tool_calls: Optional[List[dict]] = None
     generation_time: Optional[float] = None
     has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
@@ -574,11 +560,15 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
     keywordsai_params: Optional[dict] = None
     latency: Optional[float] = None
+    linkup_params: Optional[LinkupParams] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     log_method: Optional[str] = None
     log_type: Optional[str] = None
     metadata: Optional[dict] = None
+    metadata_indexed_string_1: Optional[str] = None
+    metadata_indexed_string_2: Optional[str] = None
+    metadata_indexed_numerical_1: Optional[float] = None
     mock_response: Optional[str] = None
     model_name_map: Optional[Dict[str, str]] = None
     models: Optional[List[str]] = None
@@ -623,6 +613,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     span_name: Optional[str] = None
     span_parent_id: Optional[str] = None
     span_path: Optional[str] = None
+    span_handoffs: Optional[List[str]] = None
+    span_tools: Optional[List[str]] = None
     span_workflow_name: Optional[str] = None
     ttft: Optional[float] = None
     unique_id: Optional[str] = None

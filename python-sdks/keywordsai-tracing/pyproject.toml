@@ -21,7 +21,7 @@ opentelemetry-sdk = "^1.29.0"
 opentelemetry-instrumentation-redis = "^0.50b0"
 langchain-community = "^0.3.14"
 langchain-openai = "^0.3.0"
-keywordsai-sdk = "^0.3.39"
+keywordsai-sdk = "^0.3.82"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -31,12 +31,20 @@ python-dotenv = "^1.0.1"
 [tool.poetry.group.dev]
 optional = true
 
+[tool.poetry.group.openai-agents]
+optional = true
+
+[tool.poetry.group.openai-agents.dependencies]
+httpx = "^0.28.1"
+openai-agents = "^0.0.3"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.extras]
 dev = ["pytest", "python-dotenv"]
+openai-agents = ["openai-agents", "httpx"]
 
 [project.urls]
 Homepage = "https://keywordsai.co"
