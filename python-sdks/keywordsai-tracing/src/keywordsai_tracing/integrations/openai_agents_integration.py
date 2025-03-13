@@ -378,19 +378,15 @@ class KeywordsAISpanExporter(BackendSpanExporter):
         """
         # First try the native export method
         if isinstance(item, Trace):
+            # This one is going to be the root trace. The span id will be the trace id
             return None  # We don't need the trace. Keywords AI will construct the trace from the spans
         elif isinstance(item, SpanImpl):
             # Get the span ID - it could be named span_id or id depending on the implementation
-            span_id = None
-            if hasattr(item, "span_id"):
-                span_id = item.span_id
-            elif hasattr(item, "id"):
-                span_id = item.id
 
             # Create the base data dictionary with common fields
             data = KeywordsAITextLogParams(
                 trace_unique_id=item.trace_id,
-                span_unique_id=span_id,
+                span_unique_id=item.span_id,
                 span_parent_id=item.parent_id,
                 start_time=item.started_at,
                 timestamp=item.ended_at,

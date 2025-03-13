@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
+
 import asyncio
 import random
 from typing import Any
@@ -5,6 +9,20 @@ from typing import Any
 from pydantic import BaseModel
 
 from agents import Agent, AgentHooks, RunContextWrapper, Runner, Tool, function_tool
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+import os
+
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 
 
 class CustomAgentHooks(AgentHooks):
@@ -14,21 +32,29 @@ class CustomAgentHooks(AgentHooks):
 
     async def on_start(self, context: RunContextWrapper, agent: Agent) -> None:
         self.event_counter += 1
-        print(f"### ({self.display_name}) {self.event_counter}: Agent {agent.name} started")
+        print(
+            f"### ({self.display_name}) {self.event_counter}: Agent {agent.name} started"
+        )
 
-    async def on_end(self, context: RunContextWrapper, agent: Agent, output: Any) -> None:
+    async def on_end(
+        self, context: RunContextWrapper, agent: Agent, output: Any
+    ) -> None:
         self.event_counter += 1
         print(
             f"### ({self.display_name}) {self.event_counter}: Agent {agent.name} ended with output {output}"
         )
 
-    async def on_handoff(self, context: RunContextWrapper, agent: Agent, source: Agent) -> None:
+    async def on_handoff(
+        self, context: RunContextWrapper, agent: Agent, source: Agent
+    ) -> None:
         self.event_counter += 1
         print(
             f"### ({self.display_name}) {self.event_counter}: Agent {source.name} handed off to {agent.name}"
         )
 
-    async def on_tool_start(self, context: RunContextWrapper, agent: Agent, tool: Tool) -> None:
+    async def on_tool_start(
+        self, context: RunContextWrapper, agent: Agent, tool: Tool
+    ) -> None:
         self.event_counter += 1
         print(
             f"### ({self.display_name}) {self.event_counter}: Agent {agent.name} started tool {tool.name}"

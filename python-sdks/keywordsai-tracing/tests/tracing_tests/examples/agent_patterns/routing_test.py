@@ -1,16 +1,32 @@
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
+
 import asyncio
 import uuid
 
 from openai.types.responses import ResponseContentPartDoneEvent, ResponseTextDeltaEvent
 
 from agents import Agent, RawResponsesStreamEvent, Runner, TResponseInputItem, trace
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+import os
 
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 """
 This example shows the handoffs/routing pattern. The triage agent receives the first message, and
 then hands off to the appropriate agent based on the language of the request. Responses are
 streamed to the user.
 """
-
 french_agent = Agent(
     name="french_agent",
     instructions="You only speak French",

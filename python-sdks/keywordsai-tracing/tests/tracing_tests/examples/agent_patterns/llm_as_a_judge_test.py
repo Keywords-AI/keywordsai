@@ -55,7 +55,7 @@ async def main() -> None:
     input_items: list[TResponseInputItem] = [{"content": msg, "role": "user"}]
 
     latest_outline: str | None = None
-    max_iterations = 5
+    max_iterations = 3
     # We'll run the entire workflow in a single trace
     with trace("LLM as a judge"):
         while True:

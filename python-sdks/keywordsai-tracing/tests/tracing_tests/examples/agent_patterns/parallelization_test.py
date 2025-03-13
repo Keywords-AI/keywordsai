@@ -1,12 +1,27 @@
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
 
 from agents import Agent, ItemHelpers, Runner, trace
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+import os
 
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 """
 This example shows the parallelization pattern. We run the agent three times in parallel, and pick
 the best result.
 """
-
 spanish_agent = Agent(
     name="spanish_agent",
     instructions="You translate the user's message to Spanish",
