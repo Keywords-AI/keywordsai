@@ -1,6 +1,22 @@
-import asyncio
+from dotenv import load_dotenv
 
+load_dotenv("./tests/.env", override=True)
+
+# ==========copy paste below==========
+import asyncio
+import os
 from agents import Agent, Runner
+from agents.tracing import set_trace_processors
+from keywordsai_tracing.integrations.openai_agents_integration import KeywordsAITraceProcessor
+
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            api_key=os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 
 
 async def main():

@@ -15,11 +15,11 @@ from agents import (
     TResponseInputItem,
     input_guardrail,
 )
-from keywordsai_tracing.integrations.openai_agents_integration import KeywordsProcessor
+from keywordsai_tracing.integrations.openai_agents_integration import KeywordsAITraceProcessor
 from agents.tracing import set_trace_processors
 set_trace_processors(
     [
-        KeywordsProcessor(os.getenv("KEYWORDSAI_API_KEY"),
+        KeywordsAITraceProcessor(os.getenv("KEYWORDSAI_API_KEY"),
             endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
         ),
     ]

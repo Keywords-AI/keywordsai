@@ -9,19 +9,15 @@ import os
 import random
 from agents import Agent, HandoffInputData, Runner, function_tool, handoff, trace
 from agents.extensions import handoff_filters
-from keywordsai_tracing.integrations.openai_agents_integration import KeywordsProcessor
+from keywordsai_tracing.integrations.openai_agents_integration import KeywordsAITraceProcessor
 from agents.tracing import set_trace_processors
 
 
 set_trace_processors(
     [
-        KeywordsProcessor(
+        KeywordsAITraceProcessor(
             os.getenv("KEYWORDSAI_API_KEY"),
             endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
-        ),
-        KeywordsProcessor(
-            os.getenv("KEYWORDSAI_API_KEY"),
-            endpoint="https://webhook.site/7bf71ea4-1078-4cf3-9c9b-dd013b0e224c",
         ),
     ]
 )

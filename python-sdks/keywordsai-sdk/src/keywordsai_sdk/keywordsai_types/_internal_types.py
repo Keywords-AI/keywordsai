@@ -564,7 +564,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     log_method: Optional[str] = None
-    log_type: Optional[str] = None
+    log_type: Optional[Literal["text", "embedding", "transcription", "speech", "workflow", "task", "tool", "agent", "unknown"]] = None
     metadata: Optional[dict] = None
     metadata_indexed_string_1: Optional[str] = None
     metadata_indexed_string_2: Optional[str] = None
@@ -682,7 +682,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     def validate_minute_group(cls, v):
         return parse_datetime(v)
 
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
 class BasicTextToSpeechParams(KeywordsAIBaseModel):

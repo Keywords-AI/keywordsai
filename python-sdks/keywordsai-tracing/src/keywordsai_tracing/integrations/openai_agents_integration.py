@@ -64,14 +64,21 @@ def _response_data_to_keywordsai_log(
                         data.prompt_messages = data.prompt_messages or []
                         data.prompt_messages.append(Message.model_validate(dict(item)))
                     except Exception as e:
-                        if isinstance(item, ResponseFunctionToolCallParam):
+                        if isinstance(item, dict):
+                            item_type = item.get("type")
+                            if item_type == "function_call" or item_type == "function_call_output":
+                                data.tool_calls = data.tool_calls or []
+                                data.tool_calls.append(item)
+                            elif item_type == "user":
+                                data.output = "" + str(item)
+                        elif isinstance(item, ResponseFunctionToolCallParam):
                             data.tools = data.tools or []
                             data.tools.append(item.model_dump())
                         elif isinstance(item, FunctionCallOutput):
                             data.tool_calls = data.tool_calls or []
                             data.tool_calls.append(item.model_dump())
                         else:
-                            logger.warning(f"Failed to convert item to Message: {e}, type: {type(item)}")
+                            logger.warning(f"Failed to convert item to Message: {e}, type: {item}")
                             data.output = "" + str(item)
             elif isinstance(span_data.input, str):
                 # Handle string input (convert to a single user message)
@@ -95,7 +102,10 @@ def _response_data_to_keywordsai_log(
             if hasattr(response, "output") and response.output:
                 response_items = response.output
                 for item in response_items:
-                    if isinstance(item, ResponseOutputMessage):
+                    if isinstance(item, dict):
+                        item_type = item.get("type")
+                        data.output = "" + str(item)
+                    elif isinstance(item, ResponseOutputMessage):
                         data.completion_messages = data.completion_messages or []
                         data.completion_messages.append(
                             Message.model_validate(item.model_dump())
@@ -135,7 +145,8 @@ def _function_data_to_keywordsai_log(
 
         # Try to extract tool calls if the input is in a format that might contain them
         if span_data.input:
-            data.tools = span_data.input
+            data.log_type = "tool"
+            data.input = span_data.input
     except Exception as e:
         logger.error(f"Error converting function data to KeywordsAI log: {e}")
 
@@ -405,12 +416,12 @@ class KeywordsAISpanExporter(BackendSpanExporter):
                 elif isinstance(item.span_data, GuardrailSpanData):
                     _guardrail_data_to_keywordsai_log(data, item.span_data)
                 else:
-                    logger.warning(f"Unknown span data type: {type(item.span_data)}")
+                    logger.warning(f"Unknown span data type: {item.span_data}")
                     return None
                 return data.model_dump(mode="json")
             except Exception as e:
                 logger.error(
-                    f"Error converting span data of {type(item.span_data)} to KeywordsAI log: {e}"
+                    f"Error converting span data of {item.span_data} to KeywordsAI log: {e}"
                 )
                 return None
         else:
@@ -485,7 +496,7 @@ class KeywordsAISpanExporter(BackendSpanExporter):
             delay = min(delay * 2, self.max_delay)
 
 
-class KeywordsProcessor(BatchTraceProcessor):
+class KeywordsAITraceProcessor(BatchTraceProcessor):
     """
     A processor that uses KeywordsAISpanExporter to send traces and spans to Keywords AI.
     """
@@ -495,7 +506,7 @@ class KeywordsProcessor(BatchTraceProcessor):
         api_key: str | None = None,
         organization: str | None = None,
         project: str | None = None,
-        endpoint: str = "https://api.keywordsai.co/api/",
+        endpoint: str = "https://api.keywordsai.co/api/openai/v1/traces/ingest",
         max_retries: int = 3,
         base_delay: float = 1.0,
         max_delay: float = 30.0,
