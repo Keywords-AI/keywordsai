@@ -1,4 +1,7 @@
 from __future__ import annotations
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
 
 import asyncio
 import json
@@ -13,7 +16,20 @@ from agents import (
     Runner,
     output_guardrail,
 )
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+import os
 
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 """
 This example shows how to use output guardrails.
 
@@ -29,9 +45,13 @@ a phone number.
 
 # The agent's output type
 class MessageOutput(BaseModel):
-    reasoning: str = Field(description="Thoughts on how to respond to the user's message")
+    reasoning: str = Field(
+        description="Thoughts on how to respond to the user's message"
+    )
     response: str = Field(description="The response to the user's message")
-    user_name: str | None = Field(description="The name of the user who sent the message, if known")
+    user_name: str | None = Field(
+        description="The name of the user who sent the message, if known"
+    )
 
 
 @output_guardrail

@@ -1,11 +1,23 @@
 from __future__ import annotations
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
 
 import asyncio
 from dataclasses import dataclass
 from typing import Literal
 
 from agents import Agent, ItemHelpers, Runner, TResponseInputItem, trace
-
+from keywordsai_tracing.integrations.openai_agents_integration import KeywordsAITraceProcessor
+from agents.tracing import set_trace_processors
+import os
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 """
 This example shows the LLM as a judge pattern. The first agent generates an outline for a story.
 The second agent judges the outline and provides feedback. We loop until the judge is satisfied
@@ -43,10 +55,15 @@ async def main() -> None:
     input_items: list[TResponseInputItem] = [{"content": msg, "role": "user"}]
 
     latest_outline: str | None = None
-
+    max_iterations = 5
     # We'll run the entire workflow in a single trace
     with trace("LLM as a judge"):
         while True:
+            max_iterations -= 1
+            if max_iterations <= 0:
+                print("Max iterations reached, exiting.")
+                break
+
             story_outline_result = await Runner.run(
                 story_outline_generator,
                 input_items,
