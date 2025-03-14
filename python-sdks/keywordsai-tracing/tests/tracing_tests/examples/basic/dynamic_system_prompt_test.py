@@ -1,8 +1,22 @@
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
+endpoint = "http://localhost:8000/api/openai/v1/traces/ingest"
+
+import os
 import asyncio
 import random
 from typing import Literal
 
 from agents import Agent, RunContextWrapper, Runner
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+
+set_trace_processors(
+    [KeywordsAITraceProcessor(os.getenv("KEYWORDSAI_API_KEY"), endpoint=endpoint)]
+)
 
 
 class CustomContext:
@@ -29,7 +43,9 @@ agent = Agent(
 
 
 async def main():
-    choice: Literal["haiku", "pirate", "robot"] = random.choice(["haiku", "pirate", "robot"])
+    choice: Literal["haiku", "pirate", "robot"] = random.choice(
+        ["haiku", "pirate", "robot"]
+    )
     context = CustomContext(style=choice)
     print(f"Using style: {choice}\n")
 

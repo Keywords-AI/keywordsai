@@ -1,10 +1,24 @@
 from __future__ import annotations
+from dotenv import load_dotenv
 
+load_dotenv("./tests/.env", override=True)
+
+endpoint = "http://localhost:8000/api/openai/v1/traces/ingest"
+
+import os
 import json
 import random
 
 from agents import Agent, HandoffInputData, Runner, function_tool, handoff, trace
 from agents.extensions import handoff_filters
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+
+set_trace_processors(
+    [KeywordsAITraceProcessor(os.getenv("KEYWORDSAI_API_KEY"), endpoint=endpoint)]
+)
 
 
 @function_tool
@@ -13,7 +27,9 @@ def random_number_tool(max: int) -> int:
     return random.randint(0, max)
 
 
-def spanish_handoff_message_filter(handoff_message_data: HandoffInputData) -> HandoffInputData:
+def spanish_handoff_message_filter(
+    handoff_message_data: HandoffInputData,
+) -> HandoffInputData:
     # First, we'll remove any tool-related messages from the message history
     handoff_message_data = handoff_filters.remove_all_tools(handoff_message_data)
 
@@ -64,7 +80,12 @@ async def main():
         result = await Runner.run(
             second_agent,
             input=result.to_input_list()
-            + [{"content": "Can you generate a random number between 0 and 100?", "role": "user"}],
+            + [
+                {
+                    "content": "Can you generate a random number between 0 and 100?",
+                    "role": "user",
+                }
+            ],
         )
 
         print("Step 2 done")

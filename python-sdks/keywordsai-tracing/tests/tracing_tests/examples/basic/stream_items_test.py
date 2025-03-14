@@ -1,7 +1,27 @@
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
+endpoint = "http://localhost:8000/api/openai/v1/traces/ingest"
+
+import os
+
 import asyncio
 import random
 
 from agents import Agent, ItemHelpers, Runner, function_tool
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint=endpoint,
+        ),
+    ]
+)
 
 
 @function_tool
@@ -34,7 +54,9 @@ async def main():
             elif event.item.type == "tool_call_output_item":
                 print(f"-- Tool output: {event.item.output}")
             elif event.item.type == "message_output_item":
-                print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
+                print(
+                    f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}"
+                )
             else:
                 pass  # Ignore other event types
 

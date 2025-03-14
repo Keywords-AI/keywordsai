@@ -51,7 +51,7 @@ evaluator = Agent[None](
 
 
 async def main() -> None:
-    msg = input("What kind of story would you like to hear? ")
+    msg = "Love"
     input_items: list[TResponseInputItem] = [{"content": msg, "role": "user"}]
 
     latest_outline: str | None = None

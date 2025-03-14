@@ -1,5 +1,10 @@
 from __future__ import annotations as _annotations
+from dotenv import load_dotenv
 
+load_dotenv("./tests/.env", override=True)
+endpoint = "http://localhost:8000/api/openai/v1/traces/ingest"
+
+import os
 import asyncio
 import random
 import uuid
@@ -21,6 +26,16 @@ from agents import (
     trace,
 )
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
+
+load_dotenv("./tests/.env", override=True)
+
+set_trace_processors(
+    [KeywordsAITraceProcessor(os.getenv("KEYWORDSAI_API_KEY"), endpoint=endpoint)]
+)
 
 ### CONTEXT
 

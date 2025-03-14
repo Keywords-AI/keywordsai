@@ -1,3 +1,8 @@
+from dotenv import load_dotenv
+
+load_dotenv("./tests/.env", override=True)
+
+import os
 import asyncio
 import random
 from typing import Any
@@ -5,7 +10,19 @@ from typing import Any
 from pydantic import BaseModel
 
 from agents import Agent, RunContextWrapper, RunHooks, Runner, Tool, Usage, function_tool
+from keywordsai_tracing.integrations.openai_agents_integration import (
+    KeywordsAITraceProcessor,
+)
+from agents.tracing import set_trace_processors
 
+set_trace_processors(
+    [
+        KeywordsAITraceProcessor(
+            os.getenv("KEYWORDSAI_API_KEY"),
+            endpoint="http://localhost:8000/api/openai/v1/traces/ingest",
+        ),
+    ]
+)
 
 class ExampleHooks(RunHooks):
     def __init__(self):

@@ -27,6 +27,8 @@ keywordsai-sdk = "^0.3.83"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 python-dotenv = "^1.0.1"
+rich = "^13.9.4"
+playwright = "^1.50.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -43,7 +45,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.extras]
-dev = ["pytest", "python-dotenv"]
+dev = ["pytest", "python-dotenv", "rich", "playwright"]
 openai-agents = ["openai-agents", "httpx"]
 
 [project.urls]
