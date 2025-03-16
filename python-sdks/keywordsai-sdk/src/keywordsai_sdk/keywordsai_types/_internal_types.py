@@ -8,10 +8,12 @@ from datetime import datetime
 from .services_types.linkup_types import LinkupParams
 from .base_types import KeywordsAIBaseModel
 
+
 def parse_datetime(v: str | datetime) -> datetime:
     if isinstance(v, str):
         # Lazy import to improve import speed
         from dateparser import parse
+
         try:
             value = datetime.fromisoformat(v)
             return value
@@ -22,10 +24,8 @@ def parse_datetime(v: str | datetime) -> datetime:
             except Exception as e:
                 raise ValueError(
                     "timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD"
-            )
+                )
     return v
-
-
 
 
 class CacheControl(KeywordsAIBaseModel):
@@ -113,11 +113,14 @@ class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
+
+
 class OutputTextContent(KeywordsAIBaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
     annotations: Optional[List[Dict | str]] = None
     cache_control: Optional[CacheControl] = None
+
 
 class ToolUseContent(KeywordsAIBaseModel):
     type: Literal["tool_use"] = "tool_use"
@@ -137,10 +140,18 @@ class ToolCall(KeywordsAIBaseModel):
     function: ToolCallFunction
 
 
-
 MessageContentType = Annotated[
-    Union[ImageContent, TextContent, ToolUseContent, OutputTextContent, "AnthropicImageContent", "AnthropicToolResultContent"], Field(discriminator="type")
+    Union[
+        ImageContent,
+        TextContent,
+        ToolUseContent,
+        OutputTextContent,
+        "AnthropicImageContent",
+        "AnthropicToolResultContent",
+    ],
+    Field(discriminator="type"),
 ]
+
 
 class TextModelResponseFormat(KeywordsAIBaseModel):
     type: str
@@ -153,6 +164,7 @@ class TextModelResponseFormat(KeywordsAIBaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
 
 class Message(KeywordsAIBaseModel):
     role: Literal["user", "assistant", "system", "tool", "none", "developer"]
@@ -282,8 +294,10 @@ class BasicLLMParams(KeywordsAIBaseModel):
 
     model_config = ConfigDict(protected_namespaces=())
 
+
 class OverrideConfig(KeywordsAIBaseModel):
     messages_override_mode: Optional[Literal["override", "append"]] = "override"
+
 
 class PromptParam(KeywordsAIBaseModel):
     prompt_id: Optional[str] = None
@@ -291,7 +305,9 @@ class PromptParam(KeywordsAIBaseModel):
     version: Optional[int] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
-    override: Optional[bool] = False # Allow prompt to override other params in the request body. (e.g. model defined in the prompt will override the model defined in the request body)
+    override: Optional[bool] = (
+        False  # Allow prompt to override other params in the request body. (e.g. model defined in the prompt will override the model defined in the request body)
+    )
     override_params: Optional[BasicLLMParams] = None
     override_config: Optional[OverrideConfig] = None
 
@@ -381,6 +397,7 @@ class Customer(KeywordsAIBaseModel):
     def _validate_timestamp(v):
         if isinstance(v, str):
             from dateparser import parse
+
             try:
                 value = datetime.fromisoformat(v)
                 return value
@@ -390,8 +407,8 @@ class Customer(KeywordsAIBaseModel):
                     return value
                 except Exception as e:
                     raise ValueError(
-                    "timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD"
-                )
+                        "timestamp has to be a valid ISO 8601 formatted date-string YYYY-MM-DD"
+                    )
         return v
 
     @field_validator("period_start")
@@ -401,9 +418,6 @@ class Customer(KeywordsAIBaseModel):
     @field_validator("period_end")
     def validate_period_end(cls, v):
         return cls._validate_timestamp(v)
-
-
-
 
 
 class CacheOptions(KeywordsAIBaseModel):
@@ -437,22 +451,36 @@ class RetryParams(KeywordsAIBaseModel):
 
 class EvalInputs(TypedDict, total=False):
     # Default inputs, automatically populated by Keywords AI
-    llm_input: str = "" # Reserved key, automatically populated by the `messages` parameter
-    llm_output: str = "" # Reserved key, automatically populated by the LLM's response.message
+    llm_input: str = (
+        ""  # Reserved key, automatically populated by the `messages` parameter
+    )
+    llm_output: str = (
+        ""  # Reserved key, automatically populated by the LLM's response.message
+    )
 
     # LLM output related inputs
-    ideal_output: Optional[str] = None # Reserved, but need to be provided, default null and ignored
+    ideal_output: Optional[str] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
 
     # RAG related inputs
-    ground_truth: Optional[str] = None # Reserved, but need to be provided, default null and ignored
-    retrieved_contexts: Optional[List[str]] = None # Reserved, but need to be provided, default null and ignored
-    ideal_contexts: Optional[List[str]] = None # Reserved, but need to be provided, default null and ignored
+    ground_truth: Optional[str] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+    retrieved_contexts: Optional[List[str]] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+    ideal_contexts: Optional[List[str]] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
 
     model_config = ConfigDict(extra="allow")
+
 
 class EvaluatorToRun(KeywordsAIBaseModel):
     evaluator_slug: str
     # TODO: other controlling parameters
+
 
 class EvaluationParams(KeywordsAIBaseModel):
     evaluators: Optional[List[EvaluatorToRun]] = []
@@ -484,8 +512,12 @@ class Usage(KeywordsAIBaseModel):
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
-    cache_creation_input_tokens: Optional[int] = 0 # Internal field, name directly from Anthropic. Will be populated from cache_creation_prompt_tokens
-    cache_creation_prompt_tokens: Optional[int] = 0 # User facing, renamed for naming consistency, equivalent to cache_creation_input_tokens
+    cache_creation_input_tokens: Optional[int] = (
+        0  # Internal field, name directly from Anthropic. Will be populated from cache_creation_prompt_tokens
+    )
+    cache_creation_prompt_tokens: Optional[int] = (
+        0  # User facing, renamed for naming consistency, equivalent to cache_creation_input_tokens
+    )
     cache_read_input_tokens: Optional[int] = 0
     completion_tokens_details: Optional[dict] = None
     prompt_tokens_details: Optional[dict] = None
@@ -497,7 +529,9 @@ class Usage(KeywordsAIBaseModel):
         elif hasattr(data, "__dict__"):
             data = data.__dict__
         else:
-            raise ValueError("KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute")
+            raise ValueError(
+                "KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute"
+            )
         if data.get("cache_creation_prompt_tokens"):
             data["cache_creation_input_tokens"] = data["cache_creation_prompt_tokens"]
         return data
@@ -564,7 +598,24 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     log_method: Optional[str] = None
-    log_type: Optional[Literal["text", "embedding", "transcription", "speech", "workflow", "task", "tool", "agent", "unknown"]] = None
+    log_type: Optional[
+        Literal[
+            "text",
+            "embedding",
+            "transcription",
+            "speech",
+            "workflow",
+            "task",
+            "tool",
+            "agent",
+            "unknown",
+            "handoff",
+            "function",
+            "guardrail",
+            "custom",
+            "generation",
+        ]
+    ] = None
     metadata: Optional[dict] = None
     metadata_indexed_string_1: Optional[str] = None
     metadata_indexed_string_2: Optional[str] = None
@@ -579,13 +630,19 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     output: Optional[str] = None
     posthog_integration: Optional[PostHogIntegration] = None
     positive_feedback: Optional[bool] = None
-    prompt: Optional[PromptParam | str] = None # PromptParam when using prompt_id, str when used for logging transcription calls
+    prompt: Optional[PromptParam | str] = (
+        None  # PromptParam when using prompt_id, str when used for logging transcription calls
+    )
     prompt_id: Optional[str] = None
     prompt_name: Optional[str] = None
     prompt_version_number: Optional[int] = None
     prompt_messages: Optional[List[Message]] = None
-    prompt_messages_template: Optional[List[Message]] = None # This is for logging the raw messages from Prompt users
-    variables: Optional[dict] = None # This is for logging the variables from Prompt users
+    prompt_messages_template: Optional[List[Message]] = (
+        None  # This is for logging the raw messages from Prompt users
+    )
+    variables: Optional[dict] = (
+        None  # This is for logging the variables from Prompt users
+    )
     prompt_tokens: Optional[int] = None
     prompt_cache_hit_tokens: Optional[int] = None
     prompt_cache_creation_tokens: Optional[int] = None
@@ -601,14 +658,19 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_identifier: Optional[Union[str, int]] = None
     time_to_first_token: Optional[float] = None
     start_time: Optional[str | datetime] = None
-    timestamp: Optional[str | datetime] = None # This is the end_time in the context of being a span
+    timestamp: Optional[str | datetime] = (
+        None  # This is the end_time in the context of being a span
+    )
     hour_group: Optional[str | datetime] = None
     minute_group: Optional[str | datetime] = None
     tokens_per_second: Optional[float] = None
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
     trace_unique_id: Optional[str] = None
-    trace_group_identifier: Optional[str] = None # The customizable id for grouping traces together
+    trace_name: Optional[str] = None
+    trace_group_identifier: Optional[str] = (
+        None  # The customizable id for grouping traces together
+    )
     span_unique_id: Optional[str] = None
     span_name: Optional[str] = None
     span_parent_id: Optional[str] = None
@@ -621,7 +683,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     usage: Optional[Usage] = None
     used_custom_credential: Optional[bool] = None
     user_id: Optional[int | str] = None
-    user_email: Optional[str] = None # The use email of the keywordsai user
+    user_email: Optional[str] = None  # The use email of the keywordsai user
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
@@ -634,7 +696,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
         elif hasattr(data, "__dict__"):
             data = data.__dict__
         else:
-            raise ValueError("KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute")
+            raise ValueError(
+                "KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute"
+            )
 
         _name_mapping = {"time_to_first_token": "ttft", "latency": "generation_time"}
         # Map field names
@@ -669,15 +733,15 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     @field_validator("timestamp")
     def validate_timestamp(cls, v):
         return parse_datetime(v)
-    
+
     @field_validator("start_time")
     def validate_start_time(cls, v):
         return parse_datetime(v)
-    
+
     @field_validator("hour_group")
     def validate_hour_group(cls, v):
         return parse_datetime(v)
-    
+
     @field_validator("minute_group")
     def validate_minute_group(cls, v):
         return parse_datetime(v)
@@ -938,6 +1002,7 @@ class AnthropicTextContent(KeywordsAIBaseModel):
     text: str
     cache_control: Optional[CacheControl] = None
 
+
 AnthropicContentTypes = Annotated[
     Union[
         AnthropicImageContent,
@@ -953,6 +1018,7 @@ class AnthropicMessage(KeywordsAIBaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: Union[List[AnthropicContentTypes], str, None] = None
     cache_control: Optional[CacheControl] = None
+
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
@@ -998,7 +1064,6 @@ class AnthropicUsage(KeywordsAIBaseModel):
     output_tokens: Optional[int] = 1
     cache_creation_input_tokens: Optional[int] = 0
     cache_read_input_tokens: Optional[int] = 0
-
 
 
 class AnthropicResponse(KeywordsAIBaseModel):

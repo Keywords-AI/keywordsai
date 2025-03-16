@@ -1043,13 +1043,13 @@ files = [
 
 [[package]]
 name = "keywordsai-sdk"
-version = "0.3.83"
+version = "0.3.86"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 optional = false
 python-versions = "<4.0,>3.10"
 files = [
-    {file = "keywordsai_sdk-0.3.83-py3-none-any.whl", hash = "sha256:a82b2ce9f007a93247af2458369c63412c3265ff578743546ef8a8a7beb8b0cc"},
-    {file = "keywordsai_sdk-0.3.83.tar.gz", hash = "sha256:610cb89ab491a69ae123ebb328a5187a13d5c4b10479160b14e2fb94dfb93698"},
+    {file = "keywordsai_sdk-0.3.86-py3-none-any.whl", hash = "sha256:fe5ea8cfe226234a987248370b57d70868e787c7ddf9c8e64da78223e63df626"},
+    {file = "keywordsai_sdk-0.3.86.tar.gz", hash = "sha256:b774a7bda2af4b9547bdff82df75a13e3a49dba181586d1396792c8cd3e56f6f"},
 ]
 
 [package.dependencies]
@@ -2760,6 +2760,24 @@ tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "pytest-asyncio"
+version = "0.25.3"
+description = "Pytest support for asyncio"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pytest_asyncio-0.25.3-py3-none-any.whl", hash = "sha256:9e89518e0f9bd08928f97a3482fdc4e244df17529460bc038291ccaf8f85c7c3"},
+    {file = "pytest_asyncio-0.25.3.tar.gz", hash = "sha256:fc1da2cf9f125ada7e710b4ddad05518d4cee187ae9412e9ac9271003497f07a"},
+]
+
+[package.dependencies]
+pytest = ">=8.2,<9"
+
+[package.extras]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -3715,9 +3733,9 @@ cffi = ["cffi (>=1.11)"]
 
 [extras]
 dev = []
-openai-agents = []
+openai-agents = ["openai-agents"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.10,<4.0"
-content-hash = "457e07cd9a79598dff0200e8af11d969b3fa09a4be8acaf8cab19ef2f6836800"
+content-hash = "7eff4381ab4dbfa8e98e3e787dffe1e3f966840c296a9ec40a8f73d8b916ca7d"

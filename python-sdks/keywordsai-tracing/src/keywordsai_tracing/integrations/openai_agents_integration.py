@@ -27,10 +27,12 @@ from keywordsai_sdk.keywordsai_types._internal_types import Message
 from openai.types.responses.response_output_item import (
     ResponseOutputMessage,
     ResponseFunctionToolCall,
+    ResponseFunctionWebSearch,
+    ResponseFileSearchToolCall,
 )
 from openai.types.responses.response_input_item_param import (
     ResponseFunctionToolCallParam,
-    FunctionCallOutput
+    FunctionCallOutput,
 )
 import random
 import time
@@ -53,7 +55,8 @@ def _response_data_to_keywordsai_log(
     Returns:
         Dictionary with ResponseSpanData fields mapped to KeywordsAI log format
     """
-    data.span_name = "response"
+    data.span_name = span_data.type # response
+    data.log_type = "text" # The corresponding keywordsai log type
     try:
         # Extract prompt messages from input if available
         if span_data.input:
@@ -74,7 +77,7 @@ def _response_data_to_keywordsai_log(
                         elif isinstance(item, ResponseFunctionToolCallParam):
                             data.tools = data.tools or []
                             data.tools.append(item.model_dump())
-                        elif isinstance(item, FunctionCallOutput):
+                        elif isinstance(item, ResponseFileSearchToolCall):
                             data.tool_calls = data.tool_calls or []
                             data.tool_calls.append(item.model_dump())
                         else:
@@ -94,6 +97,7 @@ def _response_data_to_keywordsai_log(
                 data.completion_tokens = usage.output_tokens
                 data.total_request_tokens = usage.total_tokens
 
+
             # Extract model information if available
             if hasattr(response, "model"):
                 data.model = response.model
@@ -104,7 +108,14 @@ def _response_data_to_keywordsai_log(
                 for item in response_items:
                     if isinstance(item, dict):
                         item_type = item.get("type")
-                        data.output = "" + str(item)
+                        if item_type == "file_search_call":
+                            data.tool_calls = data.tool_calls or []
+                            data.tool_calls.append(item)
+                        elif item_type == "web_search_call":
+                            data.tool_calls = data.tool_calls or []
+                            data.tool_calls.append(item)
+                        else:
+                            data.output = "" + str(item)
                     elif isinstance(item, ResponseOutputMessage):
                         data.completion_messages = data.completion_messages or []
                         data.completion_messages.append(
@@ -113,6 +124,12 @@ def _response_data_to_keywordsai_log(
                         if data.completion_messages and not data.completion_message:
                             data.completion_message = data.completion_messages[0]
                     elif isinstance(item, ResponseFunctionToolCall):
+                        data.tool_calls = data.tool_calls or []
+                        data.tool_calls.append(item.model_dump())
+                    elif isinstance(item, ResponseFunctionWebSearch):
+                        data.tool_calls = data.tool_calls or []
+                        data.tool_calls.append(item.model_dump())
+                    elif isinstance(item, ResponseFileSearchToolCall):
                         data.tool_calls = data.tool_calls or []
                         data.tool_calls.append(item.model_dump())
                     else:
@@ -139,6 +156,7 @@ def _function_data_to_keywordsai_log(
     """
     try:
         data.span_name = span_data.name
+        data.log_type = "function" # The corresponding keywordsai log type
         data.input = span_data.input
         data.output = span_data.output
         data.span_tools = [span_data.name]
@@ -164,7 +182,8 @@ def _generation_data_to_keywordsai_log(
     Returns:
         Dictionary with GenerationSpanData fields mapped to KeywordsAI log format
     """
-    data.span_name = "generation"
+    data.span_name = span_data.type # generation
+    data.log_type = "generation"
     data.model = span_data.model
 
     try:
@@ -213,7 +232,8 @@ def _handoff_data_to_keywordsai_log(
     Returns:
         Dictionary with HandoffSpanData fields mapped to KeywordsAI log format
     """
-    data.span_name = "handoff"
+    data.span_name = span_data.type # handoff
+    data.log_type = "handoff" # The corresponding keywordsai log type
     data.span_handoffs = [f"{span_data.from_agent} -> {span_data.to_agent}"]
     data.metadata = {
         "from_agent": span_data.from_agent,
@@ -235,6 +255,7 @@ def _custom_data_to_keywordsai_log(
         Dictionary with CustomSpanData fields mapped to KeywordsAI log format
     """
     data.span_name = span_data.name
+    data.log_type = "custom" # The corresponding keywordsai log type
     data.metadata = span_data.data
 
     # If the custom data contains specific fields that map to KeywordsAI fields, extract them
@@ -259,6 +280,7 @@ def _agent_data_to_keywordsai_log(
         Dictionary with AgentSpanData fields mapped to KeywordsAI log format
     """
     data.span_name = span_data.name
+    data.log_type = "agent" # The corresponding keywordsai log type
     data.span_workflow_name = span_data.name
 
     # Add tools if available
@@ -306,6 +328,7 @@ def _guardrail_data_to_keywordsai_log(
         Dictionary with GuardrailSpanData fields mapped to KeywordsAI log format
     """
     data.span_name = f"guardrail:{span_data.name}"
+    data.log_type = "guardrail" # The corresponding keywordsai log type
     data.has_warnings = span_data.triggered
     if span_data.triggered:
         data.warnings_dict = data.warnings_dict or {}
@@ -379,15 +402,23 @@ class KeywordsAISpanExporter(BackendSpanExporter):
         # First try the native export method
         if isinstance(item, Trace):
             # This one is going to be the root trace. The span id will be the trace id
-            return None  # We don't need the trace. Keywords AI will construct the trace from the spans
+            return KeywordsAITextLogParams(
+                trace_unique_id=item.trace_id,
+                span_unique_id=item.trace_id,
+                span_name=item.name,
+                log_type="agent"
+            ).model_dump(mode="json")
         elif isinstance(item, SpanImpl):
             # Get the span ID - it could be named span_id or id depending on the implementation
+            parent_id = item.parent_id
+            if not parent_id:
+                parent_id = item.trace_id
 
             # Create the base data dictionary with common fields
             data = KeywordsAITextLogParams(
                 trace_unique_id=item.trace_id,
                 span_unique_id=item.span_id,
-                span_parent_id=item.parent_id,
+                span_parent_id=parent_id,
                 start_time=item.started_at,
                 timestamp=item.ended_at,
                 error_bit=1 if item.error else 0,
