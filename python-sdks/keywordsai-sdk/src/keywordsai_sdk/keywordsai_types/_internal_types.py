@@ -561,6 +561,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     customer_email: Optional[str] = None
     customer_name: Optional[str] = None
     customer_identifier: Optional[Union[str, int]] = None
+    customer_user_unique_id: Optional[str] = None
     customer_params: Optional[Customer] = None
     delimiter: Optional[str] = "\n\n"
     disable_fallback: Optional[bool] = False
@@ -569,11 +570,15 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     input_array: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
     base64_embedding: Optional[str] = None
+    audio_input_file: Optional[str] = None
+    audio_output_file: Optional[str] = None
+    category: Optional[str] = None
     environment: Optional[str] = None
     error_bit: Optional[int] = None
     error_message: Optional[str] = None
     evaluation_cost: Optional[float] = None
     evaluation_identifier: Optional[Union[str, int]] = None
+    note: Optional[str] = None
     eval_params: Optional[EvaluationParams] = None
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
@@ -588,6 +593,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
     input: Optional[str] = None
+    system_text: Optional[str] = None
+    prompt_text: Optional[str] = None
+    completion_text: Optional[str] = None
     ip_address: Optional[str] = None
     request_url_path: Optional[str] = None
     is_test: Optional[bool] = None
@@ -625,6 +633,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     models: Optional[List[str]] = None
     organization_id: Optional[int] = None  # Organization ID
     organization_name: Optional[str] = None  # Organization name
+    unique_organization_id: Optional[str] = None  # Organization ID - the future replacement for organization_id
     organization_key_id: Optional[str] = None  # Organization key ID
     organization_key_name: Optional[str] = None  # Organization key name
     output: Optional[str] = None
@@ -656,7 +665,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     status_code: Optional[int] = None
     storage_object_key: Optional[str] = None
     thread_identifier: Optional[Union[str, int]] = None
+    thread_unique_id: Optional[str] = None
     time_to_first_token: Optional[float] = None
+    routing_time: Optional[float] = None
     start_time: Optional[str | datetime] = None
     timestamp: Optional[str | datetime] = (
         None  # This is the end_time in the context of being a span
@@ -687,6 +698,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
+    load_balance_group_id: Optional[int] = None
 
     @model_validator(mode="before")
     @classmethod
