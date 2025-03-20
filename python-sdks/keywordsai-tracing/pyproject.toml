@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-tracing"
-version = "0.0.21"
+version = "0.0.23"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"
@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">3.10,<4.0"
+python = ">3.9,<4.0"
 requests = "^2.31.0"
 typing-extensions = "^4.12.2"
 openai = "^1.43.1"
@@ -21,7 +21,7 @@ opentelemetry-sdk = "^1.29.0"
 opentelemetry-instrumentation-redis = "^0.50b0"
 langchain-community = "^0.3.14"
 langchain-openai = "^0.3.0"
-keywordsai-sdk = "^0.3.90"
+keywordsai-sdk = "^0.3.92"
 openai-agents = "^0.0.4"
 
 

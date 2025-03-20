@@ -19,6 +19,7 @@ from agents import (
 from keywordsai_tracing.integrations.openai_agents_integration import (
     KeywordsAITraceProcessor,
 )
+from typing import Union
 from agents.tracing import set_trace_processors, trace
 import os
 
@@ -49,7 +50,7 @@ class MessageOutput(BaseModel):
         description="Thoughts on how to respond to the user's message"
     )
     response: str = Field(description="The response to the user's message")
-    user_name: str | None = Field(
+    user_name: Union[str, None] = Field(
         description="The name of the user who sent the message, if known"
     )
 

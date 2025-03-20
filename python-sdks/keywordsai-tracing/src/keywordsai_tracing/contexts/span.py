@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from opentelemetry import trace
 from opentelemetry.trace.span import Span
 from keywordsai_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
@@ -12,7 +12,7 @@ from traceloop.sdk import TracerWrapper
 logger = logging.getLogger(__name__)
 
 @contextmanager
-def keywordsai_span_attributes(keywordsai_params: Dict[str, Any] | KeywordsAIParams):
+def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], KeywordsAIParams]):
     """Adds KeywordsAI-specific attributes to the current active span.
     
     Args:

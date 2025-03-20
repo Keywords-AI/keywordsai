@@ -71,7 +71,7 @@ class FilterAction(BaseActionType):
     field: FilterType
     pass
 class ConditionAction(BaseActionType):
-    param_info: ParamType | None = None
+    param_info: Union[ParamType, None] = None
     pass
 
 
@@ -114,20 +114,20 @@ class FieldType(KeywordsAIBaseModel):
 
 
 class ScoreMapping(KeywordsAIBaseModel):
-    primary_score: str | None = None
-    secondary_score: str | None = None
-    tertiary_score: str | None = None
-    quaternary_score: str | None = None
+    primary_score: Union[str, None] = None
+    secondary_score: Union[str, None] = None
+    tertiary_score: Union[str, None] = None
+    quaternary_score: Union[str, None] = None
 
     @property
     def reverse_mapping(self):
         return {v: k for k, v in self.model_dump().items() if v is not None}
 
 class ScoreMappingDict(TypedDict):
-    primary_score: str | None = None
-    secondary_score: str | None = None
-    tertiary_score: str | None = None
-    quaternary_score: str | None = None
+    primary_score: Union[str, None] = None
+    secondary_score: Union[str, None] = None
+    tertiary_score: Union[str, None] = None
+    quaternary_score: Union[str, None] = None
 
 
 class BaseEvalFormType(KeywordsAIBaseModel):
@@ -191,9 +191,9 @@ class EvalParams(KeywordsAIBaseModel):
 # EvalInputsDict = TypedDict('EvalInputsDict', **{k: v.outer_type_ for k, v in EvalInputs.model_fields.items()})
 class EvalCost(KeywordsAIBaseModel):
     cost: float
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    model: str | None = None
+    input_tokens: Union[int, None] = None
+    output_tokens: Union[int, None] = None
+    model: Union[str, None] = None
 
 class EvalResultType(KeywordsAIBaseModel):
     scores: Dict[str, Any]
@@ -208,9 +208,9 @@ class EvalErrorType(KeywordsAIBaseModel):
 class EvalConfigurations(KeywordsAIBaseModel):
     id: str
     organization_id: int
-    model: str | None = None
+    model: Union[str, None] = None
     enabled: bool = False
-    sample_percentage: float | None = None
+    sample_percentage: Union[float, None] = None
     eval_class: str
     configurations: BaseEvalFormType
     name: str = ""
@@ -279,7 +279,7 @@ class EvalConfigurations(KeywordsAIBaseModel):
 
         return True
 
-    def running_conditions_met(self, inputs: EvalParams, hard_override: bool | None = None):
+    def running_conditions_met(self, inputs: EvalParams, hard_override: Union[bool, None] = None):
         if hard_override is not None:
             return hard_override
         filter_values = {
@@ -294,7 +294,7 @@ class EvalConfigurations(KeywordsAIBaseModel):
         
         return self.enabled
 
-    def passing_conditions_met(self, results: Dict[str, Any], hard_override: bool | None = None):
+    def passing_conditions_met(self, results: Dict[str, Any], hard_override: Union[bool, None] = None):
         if hard_override is not None:
             return hard_override
         

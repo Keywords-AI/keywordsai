@@ -346,9 +346,9 @@ class KeywordsAISpanExporter(BackendSpanExporter):
 
     def __init__(
         self,
-        api_key: str | None = None,
-        organization: str | None = None,
-        project: str | None = None,
+        api_key: Union[str, None] = None,
+        organization: Union[str, None] = None,
+        project: Union[str, None] = None,
         endpoint: str = "https://api.keywordsai.co/api/",
         max_retries: int = 3,
         base_delay: float = 1.0,
@@ -454,7 +454,7 @@ class KeywordsAISpanExporter(BackendSpanExporter):
         else:
             return None
 
-    def export(self, items: list[Trace | Span[Any]]) -> None:
+    def export(self, items: list[Union[Trace, Span[Any]]]) -> None:
         """
         Export traces and spans to the Keywords AI backend.
 
@@ -530,9 +530,9 @@ class KeywordsAITraceProcessor(BatchTraceProcessor):
 
     def __init__(
         self,
-        api_key: str | None = None,
-        organization: str | None = None,
-        project: str | None = None,
+        api_key: Union[str, None] = None,
+        organization: Union[str, None] = None,
+        project: Union[str, None] = None,
         endpoint: str = "https://api.keywordsai.co/api/openai/v1/traces/ingest",
         max_retries: int = 3,
         base_delay: float = 1.0,

@@ -28,7 +28,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
     """
 
     @field_validator("customer_params", mode="after")
-    def validate_customer_params(cls, v: Customer | None):
+    def validate_customer_params(cls, v: Union[Customer, None]):
         if v is None:
             return None
         if v.customer_identifier is None:
@@ -177,8 +177,8 @@ class SimpleLogStats(KeywordsAIBaseModel):
     organization_id: int
     user_id: int
     organization_key_id: str
-    model: str | None = None
-    metadata: dict | None = None
+    model: Union[str, None] = None
+    metadata: Union[dict, None] = None
     used_custom_credential: bool = False
 
     def __init__(self, **data):

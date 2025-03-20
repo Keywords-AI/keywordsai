@@ -11,7 +11,7 @@ from .agents.planner_agent import WebSearchItem, WebSearchPlan, planner_agent
 from .agents.search_agent import search_agent
 from .agents.writer_agent import ReportData, writer_agent
 from .printer import Printer
-
+from typing import Union
 
 class ResearchManager:
     def __init__(self):
@@ -79,7 +79,7 @@ class ResearchManager:
             self.printer.mark_item_done("searching")
             return results
 
-    async def _search(self, item: WebSearchItem) -> str | None:
+    async def _search(self, item: WebSearchItem) -> Union[str, None]:
         input = f"Search term: {item.query}\nReason for searching: {item.reason}"
         try:
             result = await Runner.run(

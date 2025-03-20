@@ -5,7 +5,7 @@ load_dotenv("./tests/.env", override=True)
 
 import asyncio
 import os
-from typing import Literal
+from typing import Literal, Union
 import pytest
 from pydantic import BaseModel
 
@@ -64,7 +64,7 @@ async def test_main() -> StoryEvaluationResult:
     msg = "Sci fi"
     input_items: list[TResponseInputItem] = [{"content": msg, "role": "user"}]
 
-    latest_outline: str | None = None
+    latest_outline: Union[str, None] = None
     iterations = 0
     max_iterations = 2
     final_score = ""

@@ -158,17 +158,6 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
             mode="override",
         )
 
-    # prompt_params = params.pop("prompt_params", {})
-    # llm_params = {}
-    # prompt_configs: dict | None = keywordsai_params.get("prompt", {})
-    # override = prompt_configs and prompt_configs.get("override", False)
-    # if override:
-    #     llm_params.update(params)
-    #     llm_params.update(prompt_params)
-    # else:
-    #     llm_params.update(prompt_params)
-    #     llm_params.update(params)
-
     if remove_none:
         params = {k: v for k, v in params.items() if v is not None}
         keywordsai_params = {

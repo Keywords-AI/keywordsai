@@ -30,7 +30,7 @@ from keywordsai_tracing.integrations.openai_agents_integration import (
     KeywordsAITraceProcessor,
 )
 from agents.tracing import set_trace_processors
-
+from typing import Union
 load_dotenv("./tests/.env", override=True)
 
 set_trace_processors(
@@ -41,10 +41,10 @@ set_trace_processors(
 
 
 class AirlineAgentContext(BaseModel):
-    passenger_name: str | None = None
-    confirmation_number: str | None = None
-    seat_number: str | None = None
-    flight_number: str | None = None
+    passenger_name: Union[str, None] = None
+    confirmation_number: Union[str, None] = None
+    seat_number: Union[str, None] = None
+    flight_number: Union[str, None] = None
 
 
 ### TOOLS

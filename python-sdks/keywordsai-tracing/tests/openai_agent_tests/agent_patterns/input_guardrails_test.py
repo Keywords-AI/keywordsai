@@ -5,6 +5,7 @@ load_dotenv("./tests/.env", override=True)
 import asyncio
 import os
 import pytest
+from typing import Union
 from pydantic import BaseModel
 
 from agents import (
@@ -56,7 +57,7 @@ guardrail_agent = Agent(
 
 @input_guardrail
 async def math_guardrail(
-    context: RunContextWrapper[None], agent: Agent, input: str | list[TResponseInputItem]
+    context: RunContextWrapper[None], agent: Agent, input: Union[str, list[TResponseInputItem]]
 ) -> GuardrailFunctionOutput:
     """This is an input guardrail function, which happens to call an agent to check if the input
     is a math homework question.
