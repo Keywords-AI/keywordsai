@@ -9,7 +9,7 @@ from .services_types.linkup_types import LinkupParams
 from .base_types import KeywordsAIBaseModel
 
 
-def parse_datetime(v: str | datetime) -> datetime:
+def parse_datetime(v: Union[str, datetime]) -> datetime:
     if isinstance(v, str):
         # Lazy import to improve import speed
         from dateparser import parse
@@ -118,7 +118,7 @@ class TextContent(KeywordsAIBaseModel):
 class OutputTextContent(KeywordsAIBaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
-    annotations: Optional[List[Dict | str]] = None
+    annotations: Optional[List [Union[Dict, str]]] = None
     cache_control: Optional[CacheControl] = None
 
 
@@ -373,15 +373,11 @@ class PostHogIntegration(KeywordsAIBaseModel):
 
 
 class Customer(KeywordsAIBaseModel):
-    customer_identifier: Union[str, int, None] = None
-    name: Optional[str | None] = None
-    email: Optional[str | None] = None
-    period_start: Optional[str | datetime] = (
-        None  # ISO 8601 formatted date-string YYYY-MM-DD
-    )
-    period_end: Optional[str | datetime] = (
-        None  # ISO 8601 formatted date-string YYYY-MM-DD
-    )
+    customer_identifier: Optional[Union[str, int]] = None  # Supports str or int
+    name: Optional[str] = None
+    email: Optional[str] = None
+    period_start: Optional[Union[str, datetime]] = None  # ISO 8601 formatted date-string YYYY-MM-DD
+    period_end: Optional[Union[str, datetime]] = None  # ISO 8601 formatted date-string YYYY-MM-DD
     budget_duration: Optional[Literal["daily", "weekly", "monthly", "yearly"]] = None
     period_budget: Optional[float] = None
     markup_percentage: Optional[float] = None  # 20 -> original price * 1.2
@@ -585,8 +581,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     fallback_models: Optional[List[str]] = None
     field_name: Optional[str] = "data: "
     for_eval: Optional[bool] = None
-    full_request: Optional[dict | list] = None
-    full_response: Optional[dict | list] = None
+    full_request: Union[dict, list] = None
+    full_response: Union[dict, list] = None
     full_model_name: Optional[str] = None
     tool_calls: Optional[List[dict]] = None
     generation_time: Optional[float] = None
@@ -639,7 +635,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     output: Optional[str] = None
     posthog_integration: Optional[PostHogIntegration] = None
     positive_feedback: Optional[bool] = None
-    prompt: Optional[PromptParam | str] = (
+    prompt: Union[PromptParam, str] = (
         None  # PromptParam when using prompt_id, str when used for logging transcription calls
     )
     prompt_id: Optional[str] = None
@@ -668,12 +664,12 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_unique_id: Optional[str] = None
     time_to_first_token: Optional[float] = None
     routing_time: Optional[float] = None
-    start_time: Optional[str | datetime] = None
-    timestamp: Optional[str | datetime] = (
+    start_time: Union[str , datetime] = None
+    timestamp: Union[str , datetime] = (
         None  # This is the end_time in the context of being a span
     )
-    hour_group: Optional[str | datetime] = None
-    minute_group: Optional[str | datetime] = None
+    hour_group: Union[str , datetime] = None
+    minute_group: Union[str , datetime] = None
     tokens_per_second: Optional[float] = None
     total_request_tokens: Optional[int] = None
     trace_params: Optional[Trace] = None
@@ -693,7 +689,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     unique_id: Optional[str] = None
     usage: Optional[Usage] = None
     used_custom_credential: Optional[bool] = None
-    user_id: Optional[int | str] = None
+    user_id: Union[int, str] = None
     user_email: Optional[str] = None  # The use email of the keywordsai user
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
@@ -772,7 +768,7 @@ class BasicTextToSpeechParams(KeywordsAIBaseModel):
 
 
 class BasicEmbeddingParams(KeywordsAIBaseModel):
-    input: Optional[str | List[str]] = None
+    input: Union[str, List[str]] = None
     model: Optional[str] = None
     encoding_format: Optional[str] = "float"
     dimensions: Optional[int] = None
@@ -984,12 +980,12 @@ class AnthropicToolUse(KeywordsAIBaseModel):
 class AnthropicTool(KeywordsAIBaseModel):
     type: str = "computer_20241022"
     name: str
-    description: Optional[str | None] = None
+    description: Optional[str] = None
     input_schema: dict = None
     # We will make all these optional and let anthropic handle the rest of the type check. Default None.
     display_height_px: Optional[int] = None
     display_width_px: Optional[int] = None
-    display_number: Optional[int | None] = None
+    display_number: Union[int, None] = None
 
 
 class AnthropicToolResultContent(KeywordsAIBaseModel):
@@ -1081,12 +1077,12 @@ class AnthropicUsage(KeywordsAIBaseModel):
 class AnthropicResponse(KeywordsAIBaseModel):
     id: str
     type: Literal["message", "tool_use", "tool_result"]
-    content: List[AnthropicTextResponseContent | AnthropicToolResponseContent] = []
+    content: List[Union[AnthropicTextResponseContent, AnthropicToolResponseContent]] = []
     model: str
     stop_reason: Literal["end_turn ", "max_tokens", "stop_sequence", "tool_use"] = (
         "end_turn"
     )
-    stop_sequence: Union[str, None] = None
+    stop_sequence: Optional[str] = None
     usage: AnthropicUsage
 
 
@@ -1119,8 +1115,8 @@ data: {"type": "message_stop"}
 
 class AnthropicStreamDelta(KeywordsAIBaseModel):
     type: Literal["text_delta", "input_json_delta"] = "text_delta"
-    text: str | None = None
-    partial_json: str | None = None
+    text: Optional[str] = None
+    partial_json: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1171,3 +1167,4 @@ class AnthropicStreamChunk(KeywordsAIBaseModel):
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
