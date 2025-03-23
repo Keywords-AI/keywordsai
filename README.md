@@ -10,10 +10,6 @@
   <p align="center">Observability, prompt management, and evals for LLM engineering teams.</p>
 </p>
 
-# Keywords AI
-
-Observability, prompt management, and evals for LLM engineering teams.
-
 <div align="center">
   <a href="https://www.ycombinator.com/companies/keywords-ai"><img src="https://img.shields.io/badge/Y%20Combinator-W24-orange" alt="Y Combinator W24"></a>
   <a href="https://www.keywordsai.co"><img src="https://img.shields.io/badge/Platform-green.svg?style=flat-square" alt="Platform" style="height: 20px;"></a>
@@ -23,47 +19,45 @@ Observability, prompt management, and evals for LLM engineering teams.
 
 </div>
 
-## Keywords AI Tracing
+# Keywords AI Tracing
+<div align="center">
+<img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/social_media_images/github-cover.jpg" width="800"></img>
+</div>
 Keywords AI's library for sending telemetries of LLM applications in [OpenLLMetry](https://github.com/traceloop/openllmetry) format.
 
-### Installation
+
+## Integrations
+<div align="center" style="background-color: white; padding: 20px; border-radius: 10px; margin: 0 auto; max-width: 800px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 120px; margin-bottom: 20px;">
+    <a href="https://docs.keywordsai.co/features/monitoring/traces/integrations/openai-agents-sdk"><img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/github/openai-agents-sdk.jpg" height="45" alt="OpenAI Agents SDK"></a>
+        <a href="https://docs.keywordsai.co/features/monitoring/traces/integrations/langgraph"><img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/github/langgraph.jpg" height="45" alt="LangGraph"></a>
+    <a href="https://docs.keywordsai.co/features/monitoring/traces/integrations/vercel-ai-sdk"><img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/github/vercel.jpg" height="45" alt="Vercel AI SDK"></a>
+  </div>
+
+</div>
+
+
+## Quickstart
+
+### 1️⃣ Get an API key
+Go to Keywords AI platform and [get your API key](https://platform.keywordsai.co/platform/api/api-keys).
+
+### 2️⃣ Download package
 
 #### Python
-<details>
-<summary>pip</summary>
 
 ```bash
 pip install keywordsai-tracing
 ```
-</details>
-
-<details>
-<summary>poetry</summary>
-
-```bash
-poetry add keywordsai-tracing
-```
-</details>
 
 #### TypeScript/JavaScript
-<details>
-<summary>npm</summary>
 
 ```bash
 npm install @keywordsai/tracing
 ```
-</details>
 
-<details>
-<summary>yarn</summary>
 
-```bash
-yarn add @keywordsai/tracing
-```
-</details>
-
-### Getting started
-
+### 3️⃣ Initialize Keywords AI tracing processor
 #### Python
 ```python
 import os
@@ -73,20 +67,8 @@ os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api" # This is al
 os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
 k_tl = KeywordsAITelemetry()
 ```
-That's it! You can now trace your LLM applications using the decorators.
-```python
-from keywordsai_tracing.decorators import workflow, task
 
-@workflow(name="my_workflow")
-def my_workflow():
-    @task(name="my_task")
-    def my_task():
-        pass
-    my_task()
-```
-For a **comprehensive example**, see the [trace example run](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/tests/tracing_tests/basic_workflow_test.py).
-
-#### TypeScript
+#### Typescript/JavaScript
 ```TypeScript
 import { KeywordsAITelemetry } from '@keywordsai/tracing';
 
@@ -99,7 +81,32 @@ const keywordsAI = new KeywordsAITelemetry({
     disableBatch: true  // For testing, disable batching
 });
 ```
-That's it! You can now trace your LLM applications by wrapping the wrappers around your functions (`keywordsAI.withTask` in the below example)
+
+### 4️⃣ Trace agent workflows and tasks
+
+#### Python
+You can now trace your LLM applications using the decorators.
+> A workflow is the whole process of an AI agent run, and a workflow may contains several tasks also could say tools/LLM calls.
+>
+> In the example, below, this means there's an Agent run named `my_workflow` and it contains 1 task `my_task` in this agent.
+```python
+from keywordsai_tracing.decorators import workflow, task
+
+@workflow(name="my_workflow")
+def my_workflow():
+    @task(name="my_task")
+    def my_task():
+        pass
+    my_task()
+```
+
+
+#### Typescript/JavaScript
+You can now trace your LLM applications by wrapping the wrappers around your functions (`keywordsAI.withTask` in the below example)
+
+> A workflow is the whole process of an AI agent run, and a workflow may contains several tasks also could say tools/LLM calls.
+>
+> In the example, below, this means there's an Agent run named `pirate_joke_workflow` and it contains 1 task `joke_creation` in this agent.
 ```TypeScript
 async function createJoke() {
     return await keywordsAI.withTask(
@@ -114,7 +121,29 @@ async function createJoke() {
         }
     );
 }
+
+async function jokeWorkflow() {
+    return await keywordsAi.withWorkflow(
+        { name: 'pirate_joke_workflow' },
+        async () => {
+            const joke = await createJoke();
+            return joke;
+        }
+    );
+}
 ```
+
+### 5️⃣ See traces in [Keywords AI](https://www.keywordsai.co)
+<div align="center">
+<img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/github/traces-output.png" width="800"> </img>
+</div>
+
+## ⭐️ Star us 🙏
+Please star us if you found this is helpful!
+
+
+------------------
+For a **comprehensive example**, see the [trace example run](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/tests/tracing_tests/basic_workflow_test.py).
 **Step by step guide** can be below:  
 - [Python](https://github.com/Keywords-AI/keywordsai_sdks/blob/main/python-sdks/keywordsai-tracing/README.md).
 - [TypeScript](https://github.com/Keywords-AI/keywordsai/blob/main/javascript-sdks/keywordsai-js/README.md).
