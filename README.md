@@ -14,6 +14,15 @@
 
 Observability, prompt management, and evals for LLM engineering teams.
 
+<div align="center">
+  <a href="https://www.ycombinator.com/companies/keywords-ai"><img src="https://img.shields.io/badge/Y%20Combinator-W24-orange" alt="Y Combinator W24"></a>
+  <a href="https://www.keywordsai.co"><img src="https://img.shields.io/badge/Platform-green.svg?style=flat-square" alt="Platform" style="height: 20px;"></a>
+  <a href="https://docs.keywordsai.co/get-started/overview"><img src="https://img.shields.io/badge/Documentation-blue.svg?style=flat-square" alt="Documentation" style="height: 20px;"></a>
+  <a href="https://x.com/keywordsai/"><img src="https://img.shields.io/twitter/follow/keywordsai?style=social" alt="Twitter" style="height: 20px;"></a>
+  <a href="https://discord.com/invite/KEanfAafQQ"><img src="https://img.shields.io/badge/discord-7289da.svg?style=flat-square&logo=discord" alt="Discord" style="height: 20px;"></a>
+
+</div>
+
 ## Keywords AI Tracing
 Keywords AI's library for sending telemetries of LLM applications in [OpenLLMetry](https://github.com/traceloop/openllmetry) format.
 
