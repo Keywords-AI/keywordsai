@@ -23,6 +23,7 @@
 <div align="center">
 <img src="https://keywordsai-static.s3.us-east-1.amazonaws.com/social_media_images/github-cover.jpg" width="800"></img>
 </div>
+
 Keywords AI's library for sending telemetries of LLM applications in [OpenLLMetry](https://github.com/traceloop/openllmetry) format.
 
 
