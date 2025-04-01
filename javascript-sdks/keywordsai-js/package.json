@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,19 +12,6 @@
   ],
   "publishConfig": {
     "access": "public"
-  },
-  "browser": {
-    "stream": "stream-browserify",
-    "http": "stream-http",
-    "https": "https-browserify",
-    "zlib": "browserify-zlib",
-    "path": "path-browserify",
-    "crypto": "crypto-browserify",
-    "fs": false,
-    "net": false,
-    "tls": false,
-    "child_process": false,
-    "os": false
   },
   "scripts": {
     "build": "tsc",
@@ -43,13 +30,7 @@
     "@keywordsai/tracing": "^1.0.18",
     "@vercel/otel": "^1.10.4",
     "ai": "^4.2.10",
-    "browserify-zlib": "^0.2.0",
-    "crypto-browserify": "^3.12.0",
     "dotenv": "^16.4.7",
-    "https-browserify": "^1.0.0",
-    "path-browserify": "^1.0.1",
-    "stream-browserify": "^3.0.0",
-    "stream-http": "^3.2.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
