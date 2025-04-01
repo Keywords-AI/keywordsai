@@ -5,6 +5,8 @@ loaded = load_dotenv("./tests/.env", override=True)
 import os
 from keywordsai_tracing.main import KeywordsAITelemetry
 
+print(os.environ["KEYWORDSAI_BASE_URL"])
+print(os.environ["KEYWORDSAI_API_KEY"])
 # os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api" # This is also the default value if not explicitly set
 # os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
 k_tl = KeywordsAITelemetry()

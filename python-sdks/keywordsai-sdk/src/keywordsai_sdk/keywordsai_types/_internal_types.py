@@ -539,6 +539,7 @@ class Usage(KeywordsAIBaseModel):
 
 class KeywordsAIParams(KeywordsAIBaseModel):
     api_key: Optional[str] = None
+    response_id: Optional[str] = None
     blurred: Optional[bool] = None
     cache_enabled: Optional[bool] = None
     cache_hit: Optional[bool] = None
@@ -589,6 +590,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     full_response: Optional[Union[dict, list]] = None
     full_model_name: Optional[str] = None
     tool_calls: Optional[List[dict]] = None
+    reasoning: Optional[List[dict]] = None
     generation_time: Optional[float] = None
     has_tool_calls: Optional[bool] = None
     id: Optional[int] = None
@@ -698,7 +700,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
-    load_balance_group_id: Optional[int] = None
+    load_balance_group_id: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod
