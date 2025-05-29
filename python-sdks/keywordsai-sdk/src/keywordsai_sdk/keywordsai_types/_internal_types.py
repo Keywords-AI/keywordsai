@@ -6,6 +6,7 @@ from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 from datetime import datetime
 from .services_types.linkup_types import LinkupParams
+from .services_types.mem0_types import Mem0Params
 from .base_types import KeywordsAIBaseModel
 
 
@@ -108,11 +109,23 @@ class ImageContent(KeywordsAIBaseModel):
 
     model_config = ConfigDict(extra="allow")
 
+class FileContent(KeywordsAIBaseModel):
+    type: Literal["file"] = "file"
+    file_id: str
+    file_name: str
+    file_type: str
+    file_size: int
+    
+
 
 class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
+
+class FileContent(KeywordsAIBaseModel):
+    type: Literal["file"] = "file"
+    file: Dict[str, Any] = {}
 
 
 class OutputTextContent(KeywordsAIBaseModel):
@@ -144,6 +157,7 @@ MessageContentType = Annotated[
     Union[
         ImageContent,
         TextContent,
+        FileContent,
         ToolUseContent,
         OutputTextContent,
         "AnthropicImageContent",
@@ -171,7 +185,7 @@ class Message(KeywordsAIBaseModel):
     content: Union[str, List[Union[MessageContentType, str]], None] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
-    tool_calls: Optional[List[ToolCall]] = None
+    tool_calls: Optional[List[Union[ToolCall, dict]]] = None
 
     @field_validator("content")
     def validate_content(cls, v):
@@ -283,7 +297,8 @@ class BasicLLMParams(KeywordsAIBaseModel):
     temperature: Optional[float] = None
     timeout: Optional[float] = None
     tools: Optional[List[FunctionTool]] = None
-    response_format: Optional[Union[TextModelResponseFormat, str]] = None
+    response_format: Optional[Dict] = None
+    reasoning_effort: Optional[Union[str, None]] = None
     tool_choice: Optional[Union[Literal["auto", "none", "required"], ToolChoice]] = None
     top_logprobs: Optional[int] = None
     top_p: Optional[float] = None
@@ -538,6 +553,8 @@ class Usage(KeywordsAIBaseModel):
 
 
 class KeywordsAIParams(KeywordsAIBaseModel):
+    is_fts_enabled: Optional[bool] = None
+    full_text: Optional[str] = None # The field that contains the full the full text representation of the request
     api_key: Optional[str] = None
     response_id: Optional[str] = None
     blurred: Optional[bool] = None
@@ -558,6 +575,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     covered_by: Optional[str] = None
     credential_override: Optional[Dict[str, dict]] = None
     custom_identifier: Optional[Union[str, int]] = None
+    group_identifier: Optional[Union[str, int]] = None
     customer_credentials: Optional[Dict[str, ProviderCredentialType]] = None
     customer_email: Optional[str] = None
     customer_name: Optional[str] = None
@@ -593,7 +611,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     reasoning: Optional[List[dict]] = None
     generation_time: Optional[float] = None
     has_tool_calls: Optional[bool] = None
-    id: Optional[int] = None
+    id: Optional[Union[int, str]] = None
     input: Optional[str] = None
     system_text: Optional[str] = None
     prompt_text: Optional[str] = None
@@ -605,6 +623,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     keywordsai_params: Optional[dict] = None
     latency: Optional[float] = None
     linkup_params: Optional[LinkupParams] = None
+    mem0_params: Optional[Mem0Params] = None
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     log_method: Optional[str] = None
@@ -633,7 +652,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     mock_response: Optional[str] = None
     model_name_map: Optional[Dict[str, str]] = None
     models: Optional[List[str]] = None
-    organization_id: Optional[int] = None  # Organization ID
+    organization_id: Optional[Union[int, str]] = None  # Organization ID
     organization_name: Optional[str] = None  # Organization name
     unique_organization_id: Optional[str] = None  # Organization ID - the future replacement for organization_id
     organization_key_id: Optional[str] = None  # Organization key ID
@@ -651,6 +670,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     prompt_messages_template: Optional[List[Message]] = (
         None  # This is for logging the raw messages from Prompt users
     )
+    period_start: Optional[Union[str, datetime]] = None
+    period_end: Optional[Union[str, datetime]] = None
     variables: Optional[dict] = (
         None  # This is for logging the variables from Prompt users
     )
@@ -701,6 +722,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
     load_balance_group_id: Optional[str] = None
+    is_log_omitted: Optional[bool] = None # If true, logging will be omitted for this request
 
     @model_validator(mode="before")
     @classmethod
@@ -759,6 +781,12 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     @field_validator("minute_group")
     def validate_minute_group(cls, v):
         return parse_datetime(v)
+    
+    @field_validator("customer_identifier")
+    def validate_customer_identifier(cls, v):
+        if v and isinstance(v, str) and len(v) > 120:
+            raise ValueError("Customer identifier must be less than 120 characters")
+        return v
 
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 

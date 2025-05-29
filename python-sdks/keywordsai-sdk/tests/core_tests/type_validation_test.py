@@ -15,7 +15,8 @@ class TestTypeValidation:
         self.hour_group = "2024-01-01T00:00:00"
         self.minute_group = "2024-01-01T00:00:00"
         self.timestamp = "2024-01-01T00:00:00"
-        # self.log_type= "some_random_shit"
+        self.customer_identifier = "1234567890123456789123456789012345678901234567890123456789123456789012"
+        self.reasoning = {"reason": "This is a test"}
 
 
 # Method 1: Convert to dict first

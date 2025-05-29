@@ -7,7 +7,7 @@ import asyncio
 
 
 from .manager import ResearchManager
-from agents import set_trace_processors, trace
+from agents import set_trace_processors
 from keywordsai_tracing.integrations.openai_agents_integration import (
     KeywordsAITraceProcessor,
 )

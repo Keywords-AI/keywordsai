@@ -1,37 +1,40 @@
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 import { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { KeywordsPayload, KeywordsPayloadSchema } from "../types/logTypes";
-import { KeywordsLogType, VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE } from "../constants";
+import {
+  KeywordsLogType,
+  VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE,
+} from "../constants";
 
 export class KeywordsAIExporter implements SpanExporter {
   private readonly debug: boolean;
   private readonly apiKey: string;
+  private readonly baseUrl: string;
   private readonly url: string;
-
-
-  constructor(params: { debug?: boolean; apiKey?: string; url?: string } = {}) {
+  constructor(
+    params: { debug?: boolean; apiKey?: string; baseUrl?: string } = {}
+  ) {
     this.debug = params.debug ?? false;
     this.apiKey = params.apiKey ?? (process.env.KEYWORDSAI_API_KEY || "");
     if (!this.apiKey) {
       throw new Error("KEYWORDSAI_API_KEY is required");
     }
-    this.url =
-      params.url ?? "https://api.keywordsai.co/api/request-logs/create/";
+    this.baseUrl = params.baseUrl ?? "https://api.keywordsai.co/api";
+    this.url = `${this.baseUrl}/api/integrations/v1/traces/ingest`;
   }
 
   async export(
     spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void
   ): Promise<void> {
-
     try {
       const sortedSpans = spans
         .slice()
         .sort((a, b) => this.compareHrTime(a.startTime, b.startTime));
 
       // Filter for AI SDK spans instead of just generation spans
-      const aiSdkSpans = sortedSpans.filter(span => this.isAiSdkSpan(span));
-      
+      const aiSdkSpans = sortedSpans.filter((span) => this.isAiSdkSpan(span));
+
       if (aiSdkSpans.length === 0) {
         this.logDebug("No AI SDK spans found");
         resultCallback({ code: ExportResultCode.SUCCESS });
@@ -40,7 +43,9 @@ export class KeywordsAIExporter implements SpanExporter {
 
       // Deduplicate spans - prefer doStream/doGenerate over their parent spans
       const deduplicatedSpans = this.deduplicateSpans(aiSdkSpans);
-      this.logDebug(`Filtered ${aiSdkSpans.length} spans to ${deduplicatedSpans.length} after deduplication`);
+      this.logDebug(
+        `Filtered ${aiSdkSpans.length} spans to ${deduplicatedSpans.length} after deduplication`
+      );
 
       // Prepare all payloads
       const allPayloads: KeywordsPayload[] = [];
@@ -65,7 +70,9 @@ export class KeywordsAIExporter implements SpanExporter {
               // Last resort - create minimal valid payload with error info
               const minimalPayload: KeywordsPayload = {
                 model: "unknown",
-                prompt_messages: [{ role: "system", content: "Error processing span" }],
+                prompt_messages: [
+                  { role: "system", content: "Error processing span" },
+                ],
                 prompt_tokens: 0,
                 timestamp: this.formatTimestamp(span.endTime),
                 customer_identifier: "default_user",
@@ -74,8 +81,8 @@ export class KeywordsAIExporter implements SpanExporter {
                   error: String(error),
                   span_id: span.spanContext().spanId,
                   trace_id: span.spanContext().traceId,
-                  span_name: span.name
-                }
+                  span_name: span.name,
+                },
               };
               allPayloads.push(minimalPayload);
             }
@@ -168,58 +175,60 @@ export class KeywordsAIExporter implements SpanExporter {
         "ai.toolCall",
         "ai.toolCalls",
       ];
-      
+
       // Try to find tool calls in any of the standard attribute locations
       for (const attr of toolCallAttributes) {
         if (span.attributes[attr]) {
           const rawData = span.attributes[attr];
           if (!rawData) continue;
-          
+
           // Handle both string and object formats
           let parsed;
           try {
-            parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+            parsed =
+              typeof rawData === "string" ? JSON.parse(rawData) : rawData;
           } catch (e) {
             this.logDebug(`Failed to parse ${attr}:`, e);
             continue;
           }
-          
+
           // Standardize to array
           const toolCalls = Array.isArray(parsed) ? parsed : [parsed];
-          
+
           // Process each tool call with minimal transformation
-          return toolCalls.map(call => {
+          return toolCalls.map((call) => {
             // Ensure we have a valid object
-            if (!call || typeof call !== 'object') {
-              return { type: 'function' };
+            if (!call || typeof call !== "object") {
+              return { type: "function" };
             }
-            
+
             // Make a copy to avoid mutating the original
             const result = { ...call };
-            
+
             // Ensure the object has a type
             if (!result.type) {
               result.type = "function";
             }
-            
+
             // Handle ID normalization (only if needed)
             if (!result.id && (result.toolCallId || result.tool_call_id)) {
               result.id = result.toolCallId || result.tool_call_id;
             }
-            
+
             return result;
           });
         }
       }
-      
+
       // If we didn't find tool calls in the standard places, check for individual attributes
-      if (span.attributes["ai.toolCall.id"] || 
-          span.attributes["ai.toolCall.name"] || 
-          span.attributes["ai.toolCall.args"]) {
-        
+      if (
+        span.attributes["ai.toolCall.id"] ||
+        span.attributes["ai.toolCall.name"] ||
+        span.attributes["ai.toolCall.args"]
+      ) {
         // Build a tool call object from individual attributes
         const toolCall: Record<string, any> = { type: "function" };
-        
+
         // Copy all tool call attributes
         for (const [key, value] of Object.entries(span.attributes)) {
           if (key.startsWith("ai.toolCall.")) {
@@ -227,10 +236,10 @@ export class KeywordsAIExporter implements SpanExporter {
             toolCall[propName] = value;
           }
         }
-        
+
         return [toolCall];
       }
-      
+
       return undefined;
     } catch (error) {
       this.logDebug("Error parsing tool calls:", error);
@@ -247,10 +256,10 @@ export class KeywordsAIExporter implements SpanExporter {
       content: String(span.attributes["ai.response.text"] || ""),
       ...(toolCalls && toolCalls.length > 0 && { tool_calls: toolCalls }),
     };
-    
+
     // Check if there's a tool result to add as a separate message
     const toolResults: any[] = [];
-    
+
     if (span.attributes["ai.toolCall.result"]) {
       toolResults.push({
         role: "tool",
@@ -258,26 +267,23 @@ export class KeywordsAIExporter implements SpanExporter {
         content: String(span.attributes["ai.toolCall.result"] || ""),
       });
     }
-    
+
     return toolResults.length > 0 ? [message, ...toolResults] : [message];
   }
-
 
   private calculateLatency(span: ReadableSpan): number {
     return span.duration[0] / 1e9 + span.duration[1] / 1e9;
   }
 
-  private async sendToKeywords(
-    payloads: KeywordsPayload[]
-  ): Promise<void> {
+  private async sendToKeywords(payloads: KeywordsPayload[]): Promise<void> {
     if (payloads.length === 0) {
       this.logDebug("No payloads to send");
       return;
     }
-    
+
     try {
       this.logDebug(`Sending ${payloads.length} payloads to Keywords`);
-      
+
       const response = await fetch(this.url, {
         method: "POST",
         headers: {
@@ -415,9 +421,8 @@ export class KeywordsAIExporter implements SpanExporter {
       span.attributes["ai.sdk"] === true ||
       span.name.includes("ai.") ||
       // Check for other AI SDK related attributes
-      Object.keys(span.attributes).some(key => 
-        key.startsWith("ai.") || 
-        key.startsWith("gen_ai.")
+      Object.keys(span.attributes).some(
+        (key) => key.startsWith("ai.") || key.startsWith("gen_ai.")
       )
     );
   }
@@ -519,30 +524,30 @@ export class KeywordsAIExporter implements SpanExporter {
   private parseLogType(span: ReadableSpan): string {
     // Try to match span name directly to a known type
     const spanName = span.name;
-    
+
     // Check if span name is in our mapping
     if (spanName in VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE) {
       return VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE[spanName];
     }
-    
+
     // For spans with operationId attribute, check for more specific mapping
     const operationId = span.attributes["ai.operationId"]?.toString();
     if (operationId && operationId in VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE) {
       return VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE[operationId];
     }
-    
+
     // Check for specific attributes that indicate the span type
-    
+
     // Check for embedding-related attributes
     if (
       span.attributes["ai.embedding"] ||
       span.attributes["ai.embeddings"] ||
-      spanName.includes("embed") || 
+      spanName.includes("embed") ||
       operationId?.includes("embed")
     ) {
       return KeywordsLogType.EMBEDDING;
     }
-    
+
     // Check for tool-related attributes
     if (
       span.attributes["ai.toolCall.id"] ||
@@ -550,53 +555,53 @@ export class KeywordsAIExporter implements SpanExporter {
       span.attributes["ai.toolCall.args"] ||
       span.attributes["ai.toolCall.result"] ||
       span.attributes["ai.response.toolCalls"] ||
-      spanName.includes("tool") || 
+      spanName.includes("tool") ||
       operationId?.includes("tool")
     ) {
       return KeywordsLogType.TOOL;
     }
-    
+
     // Check for agent-related attributes
     if (
       span.attributes["ai.agent.id"] ||
-      spanName.includes("agent") || 
+      spanName.includes("agent") ||
       operationId?.includes("agent")
     ) {
       return KeywordsLogType.AGENT;
     }
-    
+
     // Check for workflow-related attributes
     if (
       span.attributes["ai.workflow.id"] ||
-      spanName.includes("workflow") || 
+      spanName.includes("workflow") ||
       operationId?.includes("workflow")
     ) {
       return KeywordsLogType.WORKFLOW;
     }
-    
+
     // Check for transcription-related attributes
     if (
       span.attributes["ai.transcript"] ||
-      spanName.includes("transcript") || 
+      spanName.includes("transcript") ||
       operationId?.includes("transcript")
     ) {
       return KeywordsLogType.TRANSCRIPTION;
     }
-    
+
     // Check for speech-related attributes
     if (
       span.attributes["ai.speech"] ||
-      spanName.includes("speech") || 
+      spanName.includes("speech") ||
       operationId?.includes("speech")
     ) {
       return KeywordsLogType.SPEECH;
     }
-    
+
     // Default to TEXT for any generation-related spans
     if (this.isGenerationSpan(span)) {
       return KeywordsLogType.TEXT;
     }
-    
+
     // Fall back to unknown for anything else
     return VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE["default"];
   }
@@ -605,7 +610,7 @@ export class KeywordsAIExporter implements SpanExporter {
   private deduplicateSpans(spans: ReadableSpan[]): ReadableSpan[] {
     // First, group spans by their trace ID
     const traceGroups: Record<string, ReadableSpan[]> = {};
-    
+
     // Group spans by trace ID
     for (const span of spans) {
       const traceId = span.spanContext().traceId;
@@ -614,38 +619,39 @@ export class KeywordsAIExporter implements SpanExporter {
       }
       traceGroups[traceId].push(span);
     }
-    
+
     const deduplicatedSpans: ReadableSpan[] = [];
-    
+
     // Process each trace group
     Object.values(traceGroups).forEach((traceSpans: ReadableSpan[]) => {
       // Group by base operation name
       const operationGroups: Record<string, ReadableSpan[]> = {};
-      
+
       // Group spans by operation name (without .doStream or .doGenerate suffix)
       for (const span of traceSpans) {
         let opKey = span.name;
-        if (opKey.endsWith('.doStream')) {
-          opKey = opKey.replace('.doStream', '');
-        } else if (opKey.endsWith('.doGenerate')) {
-          opKey = opKey.replace('.doGenerate', '');
+        if (opKey.endsWith(".doStream")) {
+          opKey = opKey.replace(".doStream", "");
+        } else if (opKey.endsWith(".doGenerate")) {
+          opKey = opKey.replace(".doGenerate", "");
         }
-        
+
         if (!operationGroups[opKey]) {
           operationGroups[opKey] = [];
         }
         operationGroups[opKey].push(span);
       }
-      
+
       // Process each operation group
       Object.values(operationGroups).forEach((opSpans: ReadableSpan[]) => {
         // If we have multiple spans for the same operation, prefer the more detailed one
         if (opSpans.length > 1) {
           // Find doStream or doGenerate span
-          const detailedSpan = opSpans.find((s: ReadableSpan) => 
-            s.name.endsWith('.doStream') || s.name.endsWith('.doGenerate')
+          const detailedSpan = opSpans.find(
+            (s: ReadableSpan) =>
+              s.name.endsWith(".doStream") || s.name.endsWith(".doGenerate")
           );
-          
+
           if (detailedSpan) {
             // Only use the detailed span
             deduplicatedSpans.push(detailedSpan);
@@ -659,7 +665,7 @@ export class KeywordsAIExporter implements SpanExporter {
         }
       });
     });
-    
+
     return deduplicatedSpans;
   }
 }

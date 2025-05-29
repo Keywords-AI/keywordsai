@@ -27,6 +27,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
     A type definition of the input parameters for creating a Keywords AI RequestLog object.
     """
 
+
     @field_validator("customer_params", mode="after")
     def validate_customer_params(cls, v: Union[Customer, None]):
         if v is None:
@@ -160,7 +161,14 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
         data = self.model_dump(exclude_none=True)
 
         # Filter to only include fields that exist in Django model
-        return {k: v for k, v in data.items() if k in FIELDS_TO_INCLUDE}
+        to_return = {}
+        for key, value in data.items():
+            if key in FIELDS_TO_INCLUDE:
+                if key.endswith("_identifier"):
+                    to_return[key] = str(value)[:120]
+                else:
+                    to_return[key] = value
+        return to_return
 
     model_config = ConfigDict(from_attributes=True)
 

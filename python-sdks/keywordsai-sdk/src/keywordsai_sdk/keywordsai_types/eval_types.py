@@ -219,6 +219,12 @@ class EvalConfigurations(KeywordsAIBaseModel):
         super().__init__(**kwargs)
         self.load_configs()
 
+    @classmethod
+    def model_validate(cls, *args, **kwargs):
+        to_return = super().model_validate(*args, **kwargs)
+        to_return.load_configs()
+        return to_return
+
     @field_validator("model")
     def validate_model(cls,value):
         if not value:
