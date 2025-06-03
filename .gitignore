@@ -4,3 +4,4 @@ boilerplates/
 **/*/dist/
 **/*/test-dist/
 **/*/node_modules/
+**/*/traceloop-sdk
