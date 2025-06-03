@@ -1,12 +1,12 @@
 from contextlib import contextmanager
 import logging
-from typing import Any, Dict, Union
-from opentelemetry import trace
+from typing import Any, Dict, Union, Optional
+from opentelemetry import trace, context as context_api
 from opentelemetry.trace.span import Span
 from keywordsai_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
 from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams
 from pydantic import ValidationError
-from traceloop.sdk import TracerWrapper
+from keywordsai_tracing.core.tracer import KeywordsAITracer
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], Keywords
         - If params validation fails, a warning will be logged and the context will continue
         - If an attribute cannot be set, a warning will be logged and the context will continue
     """
-    if not TracerWrapper.verify_initialized():
+    if not KeywordsAITracer.is_initialized():
         logger.warning("KeywordsAI Telemetry not initialized. Attributes will not be set.")
         yield
         return

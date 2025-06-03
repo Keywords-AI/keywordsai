@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 loaded = load_dotenv("./tests/.env", override=True)
 
 # region: setup
@@ -7,16 +8,16 @@ from keywordsai_tracing.main import KeywordsAITelemetry
 
 print(os.environ["KEYWORDSAI_BASE_URL"])
 print(os.environ["KEYWORDSAI_API_KEY"])
-# os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api" # This is also the default value if not explicitly set
-# os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
 k_tl = KeywordsAITelemetry()
 # endregion: setup
 import time
 from openai import OpenAI
 from anthropic import Anthropic
 from keywordsai_tracing.decorators import workflow, task
+
 client = OpenAI()
 anthropic = Anthropic()
+
 
 @task(name="store_joke")
 def store_joke(joke: str):
@@ -29,6 +30,7 @@ def store_joke(joke: str):
     )
 
     return embedding.data[0].embedding
+
 
 @task(name="joke_creation")
 def create_joke():
@@ -82,6 +84,7 @@ def joke_workflow():
     signature = generate_signature(pirate_joke)
     return pirate_joke + signature
 
+
 @task(name="audience_laughs")
 def audience_laughs(joke: str):
     completion = client.chat.completions.create(
@@ -96,6 +99,7 @@ def audience_laughs(joke: str):
     )
 
     return completion.choices[0].message.content
+
 
 @task(name="audience_claps")
 def audience_claps():
@@ -112,8 +116,9 @@ def audience_claps():
 
     return completion.choices[0].message.content
 
+
 @task(name="audience_applaud")
-def audience_applaud(joke:str):
+def audience_applaud(joke: str):
     clap = audience_claps()
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -128,12 +133,14 @@ def audience_applaud(joke:str):
 
     return completion.choices[0].message.content
 
+
 @workflow(name="audience_reaction")
 def audience_reaction(joke: StopIteration):
     laughter = audience_laughs(joke=joke)
     applauds = audience_applaud(joke=joke)
 
     return laughter + applauds
+
 
 @task(name="logging_joke")
 def logging_joke(joke: str, reactions: str):
@@ -143,34 +150,51 @@ def logging_joke(joke: str, reactions: str):
     print(joke + "\n\n" + reactions)
     time.sleep(1)
 
+
 @task(name="ask_for_comments")
 def ask_for_comments(joke: str):
     completion = anthropic.messages.create(
         model="claude-3-5-sonnet-20240620",
-        messages=[{"role": "user", "content": f"What do you think about this joke: {joke}"}],
+        messages=[
+            {"role": "user", "content": f"What do you think about this joke: {joke}"}
+        ],
         max_tokens=100,
     )
 
     return completion.content[0].text
 
+
 @task(name="read_joke_comments")
 def read_joke_comments(comments: str):
     return f"Here is the comment from the audience: {comments}"
+
 
 @workflow(name="audience_interaction")
 def audience_interaction(joke: str):
     comments = ask_for_comments(joke=joke)
     read_joke_comments(comments=comments)
 
+
 from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+
 
 @workflow(name="pirate_joke_plus_audience_reactions")
 def pirate_joke_plus_audience():
-    with keywordsai_span_attributes(keywordsai_params={"trace_group_identifier": "1234567890"}):
-        joke = joke_workflow() # This show case the basic workflow usage and compatibility with the OpenAI SDK
-        reactions = audience_reaction(joke=joke) # This show case the the display of multi-workflow under the same trace
-        audience_interaction(joke=joke) # This show case the compatibility with the anthropic SDK
-        logging_joke(joke=joke, reactions=reactions) # THis show case the tracing of a function with arbitrary inputs/outputs
+    with keywordsai_span_attributes(
+        keywordsai_params={"trace_group_identifier": "1234567890"}
+    ):
+        joke = (
+            joke_workflow()
+        )  # This show case the basic workflow usage and compatibility with the OpenAI SDK
+        reactions = audience_reaction(
+            joke=joke
+        )  # This show case the the display of multi-workflow under the same trace
+        audience_interaction(
+            joke=joke
+        )  # This show case the compatibility with the anthropic SDK
+        logging_joke(
+            joke=joke, reactions=reactions
+        )  # THis show case the tracing of a function with arbitrary inputs/outputs
+
 
 pirate_joke_plus_audience()
-

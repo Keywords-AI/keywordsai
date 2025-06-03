@@ -19,8 +19,6 @@ except ImportError:
         "OpenAI agents integration requires additional dependencies. "
         "Please install them with: pip install 'keywordsai-tracing[openai-agents]'"
     )
-
-
 from typing import Any, Dict, Optional, Union
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
 from keywordsai_sdk.keywordsai_types._internal_types import Message
@@ -32,7 +30,6 @@ from openai.types.responses.response_output_item import (
 )
 from openai.types.responses.response_input_item_param import (
     ResponseFunctionToolCallParam,
-    FunctionCallOutput,
 )
 import random
 import time
