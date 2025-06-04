@@ -1,11 +1,11 @@
 from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIBaseModel
-from pydantic import field_validator, model_validator
-from typing import List, Union, Dict, Any, Literal, Callable, TypedDict
+from pydantic import field_validator, model_validator, ConfigDict
+from typing import List, Union, Dict, Any, Literal, Callable, Optional
+from typing_extensions import TypedDict
 from keywordsai_sdk.keywordsai_types._internal_types import (
-    EvalInputs,
     Message,
-    EvaluatorToRun
 )
+
 from keywordsai_sdk.keywordsai_types.generic_types import ParamType
 from keywordsai_sdk.constants import DEFAULT_EVAL_LLM_ENGINE, LLM_ENGINE_FIELD_NAME
 import random
@@ -41,6 +41,35 @@ FieldInputType = Literal[
     "textarea_arrays",  # This is for array of arrays of strings
     "json"
 ]
+
+class EvalInputs(TypedDict, total=False):
+    # Default inputs, automatically populated by Keywords AI
+    llm_input: str = (
+        ""  # Reserved key, automatically populated by the `messages` parameter
+    )
+    llm_output: str = (
+        ""  # Reserved key, automatically populated by the LLM's response.message
+    )
+
+    # LLM output related inputs
+    ideal_output: Optional[str] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+
+    # RAG related inputs
+    ground_truth: Optional[str] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+    retrieved_contexts: Optional[List[str]] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+    ideal_contexts: Optional[List[str]] = (
+        None  # Reserved, but need to be provided, default null and ignored
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
 
 
 class ChoiceType(KeywordsAIBaseModel):
@@ -170,6 +199,9 @@ class EvalParamsDict(TypedDict):
     last_n_messages: int = 1
     filter_values: List[FilterValue]
 
+class EvaluatorToRun(KeywordsAIBaseModel):
+    evaluator_slug: str
+    # TODO: other controlling parameters
 
 class EvalParams(KeywordsAIBaseModel):
     evaluation_identifier: str = ""
@@ -306,5 +338,4 @@ class EvalConfigurations(KeywordsAIBaseModel):
         
         return self._check_conditions(self.configurations.conditions, results)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

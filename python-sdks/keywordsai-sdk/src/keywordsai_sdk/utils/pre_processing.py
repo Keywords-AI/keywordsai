@@ -1,8 +1,12 @@
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams, RetryParams, EvaluationParams, BasicLLMParams, KeywordsAIAPIControlParams
+from keywordsai_sdk.keywordsai_types.param_types import (
+    KeywordsAIParams,
+    RetryParams,
+    EvaluationParams,
+    BasicLLMParams,
+    KeywordsAIAPIControlParams,
+)
 from pydantic import BaseModel, ValidationError
 from typing import Literal
-
-
 
 
 def assign_with_validation(
@@ -71,7 +75,9 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
         params.pop("customer_identifier", "") or None
     )
     keywordsai_params["customer_params"] = params.pop("customer_params", None) or None
-    keywordsai_params["custom_identifier"] = params.pop("custom_identifier", None) or None
+    keywordsai_params["custom_identifier"] = (
+        params.pop("custom_identifier", None) or None
+    )
     keywordsai_params["delimiter"] = params.pop("delimiter", "\n\n") or "---"
     keywordsai_params["disable_fallback"] = params.pop("disable_fallback", None)
     keywordsai_params["disable_log"] = params.pop("disable_log", None) or None
@@ -130,7 +136,9 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
     )
     keywordsai_params["prompt"] = params.pop("prompt", None) or None
     keywordsai_params["prompt_group_id"] = params.pop("prompt_group_id", None) or None
-    keywordsai_params["prompt_version_number"] = params.pop("prompt_version_number", None) or None
+    keywordsai_params["prompt_version_number"] = (
+        params.pop("prompt_version_number", None) or None
+    )
     keywordsai_params["request_breakdown"] = params.pop("request_breakdown", None)
     if "retry_params" in params:
         assign_with_validation(
@@ -166,7 +174,10 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
 
     return params, keywordsai_params
 
-def validate_and_separate_params(params: dict) -> tuple[BasicLLMParams, KeywordsAIParams]:
+
+def validate_and_separate_params(
+    params: dict,
+) -> tuple[BasicLLMParams, KeywordsAIParams]:
     """
     Validate and separate the params into llm_params and keywordsai_params using Pydantic models
     Returns:

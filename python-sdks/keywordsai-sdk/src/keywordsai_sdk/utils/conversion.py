@@ -110,10 +110,9 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
     ToolChoice,
     ToolChoiceFunction,
     FunctionTool,
-    FunctionParameters,
+
     Function,
     LLMParams,
-    Properties,
     AnthropicResponse,
     AnthropicTextResponseContent,
     AnthropicToolResponseContent,

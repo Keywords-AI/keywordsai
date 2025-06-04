@@ -1,10 +1,8 @@
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
 from keywordsai_sdk.keywordsai_types._internal_types import (
     OpenAIStyledInput,
-    OpenAIStyledResponse,
 )
-from openai.types.chat.chat_completion import ChatCompletion, Choice, ChatCompletionMessage
-from openai.types.chat.chat_completion_message import FunctionCall
+from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from typing import List
 
