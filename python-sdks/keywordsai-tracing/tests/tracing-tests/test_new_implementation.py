@@ -30,8 +30,8 @@ class MockOpenAI:
         self.chat = type('Chat', (), {'completions': self.ChatCompletions()})()
 
 # Set up environment
-os.environ["KEYWORDSAI_API_KEY"] = "test-key"
-os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api"
+os.environ["KEYWORDSAI_API_KEY"] = os.getenv("KEYWORDSAI_API_KEY")
+os.environ["KEYWORDSAI_BASE_URL"] = os.getenv("KEYWORDSAI_BASE_URL")
 
 def test_basic_initialization():
     """Test basic telemetry initialization"""
@@ -67,8 +67,7 @@ def test_context_manager():
         keywordsai_params={
             "trace_group_identifier": "test_group",
             "custom_param": "test_value"
-        },
-        enable_content_tracing=True
+        }
     ):
         @task(name="context_task")
         def context_task():

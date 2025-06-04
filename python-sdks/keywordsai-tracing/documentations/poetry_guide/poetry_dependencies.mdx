@@ -3,7 +3,6 @@
 # Add dependencies to a group
 poetry add pytest --group test
 poetry add black flake8 --group dev
-poetry add traceloop-sdk --group trace
 
 # Make a group optional
 poetry group add dev --optional
@@ -40,7 +39,7 @@ Add to `pyproject.toml`:
 auth = []  
 
 # For features with dependencies (must match group dependencies)
-trace = ["traceloop-sdk", "opentelemetry-instrumentation-redis"]
+trace = ["opentelemetry-instrumentation-redis"]
 ```
 
 ## Installation Commands

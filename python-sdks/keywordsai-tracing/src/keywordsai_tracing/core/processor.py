@@ -2,7 +2,6 @@ from typing import Optional, Callable
 from opentelemetry import context as context_api
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
 from opentelemetry.context import Context
-from opentelemetry.semconv_ai import SpanAttributes
 
 
 class KeywordsAISpanProcessor:
