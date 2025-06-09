@@ -1,10 +1,10 @@
 from contextlib import contextmanager
 import logging
-from typing import Any, Dict, Union, Optional
-from opentelemetry import trace, context as context_api
+from typing import Any, Dict, Union
+from opentelemetry import trace
 from opentelemetry.trace.span import Span
 from keywordsai_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams
+from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
 from keywordsai_tracing.core.tracer import KeywordsAITracer
 

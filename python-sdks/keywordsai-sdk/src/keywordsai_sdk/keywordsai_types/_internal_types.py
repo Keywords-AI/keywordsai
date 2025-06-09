@@ -205,7 +205,6 @@ class ToolChoiceFunction(KeywordsAIBaseModel):
 class ToolChoice(KeywordsAIBaseModel):
     type: str
     function: Optional[ToolChoiceFunction] = None
-
     model_config = ConfigDict(extra="allow")
 
 
@@ -226,7 +225,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
     stream_options: Optional[dict] = None
     temperature: Optional[float] = None
     timeout: Optional[float] = None
-    tools: Optional[List[FunctionTool]] = None
+    tools: Optional[List[dict]] = None
     response_format: Optional[Dict] = None
     reasoning_effort: Optional[Union[str, None]] = None
     tool_choice: Optional[Union[Literal["auto", "none", "required"], ToolChoice]] = None

@@ -112,7 +112,6 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
     FunctionTool,
 
     Function,
-    LLMParams,
     AnthropicResponse,
     AnthropicTextResponseContent,
     AnthropicToolResponseContent,
@@ -121,6 +120,7 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
     AnthropicStreamContentBlock,
     CacheControl,
 )
+from keywordsai_sdk.keywordsai_types.param_types import LLMParams
 from openai.types.chat.chat_completion import ChatCompletion as ModelResponse
 
 def anthropic_messages_to_llm_messages(

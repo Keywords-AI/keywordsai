@@ -1,4 +1,3 @@
-from keywordsai_sdk.keywordsai_types._internal_types import KeywordsAIParams
 from enum import Enum
 
 class KeywordsAISpanAttributes(Enum):
