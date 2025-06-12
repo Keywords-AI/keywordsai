@@ -21,6 +21,14 @@ class KeywordsAISpanAttributes(Enum):
     # Metadata
     KEYWORDSAI_METADATA = "keywordsai.metadata" # This is a pattern, it can be  any "keywordsai.metadata.key" where key is customizable
 
+    # Logging
+    LOG_METHOD = "keywordsai.entity.log_method"
+    LOG_TYPE = "keywordsai.entity.log_type"
+    LOG_ID = "keywordsai.entity.log_id"
+    LOG_PARENT_ID = "keywordsai.entity.log_parent_id"
+    LOG_ROOT_ID = "keywordsai.entity.log_root_id"
+    LOG_SOURCE = "keywordsai.entity.log_source"
+
 KEYWORDSAI_SPAN_ATTRIBUTES_MAP = {
     "customer_identifier": KeywordsAISpanAttributes.KEYWORDSAI_CUSTOMER_PARAMS_ID.value,
     "customer_email": KeywordsAISpanAttributes.KEYWORDSAI_CUSTOMER_PARAMS_EMAIL.value,

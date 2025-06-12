@@ -1,6 +1,5 @@
 import { trace, context, AttributeValue } from '@opentelemetry/api';
-import { KeywordsAIParams } from '../types/baseTypes';
-import { KEYWORDSAI_SPAN_ATTRIBUTES_MAP } from '../types/spanTypes';
+import { KeywordsAIParams, KEYWORDSAI_SPAN_ATTRIBUTES_MAP } from '@keywordsai/keywordsai-sdk';
 
 /**
  * A context manager for setting KeywordsAI-specific attributes on the current span

@@ -1,0 +1,98 @@
+[
+  {
+    "span_name": "data_processing.TraceloopSpanKindValues.TASK",
+    "trace_id": "b5d9fc881f9b0a83a964ed64e8fd85c6",
+    "span_id": "b377869dd6fa7bd9",
+    "parent_id": "188a722f122c68e9",
+    "start_time": 1749691592350092000,
+    "end_time": 1749691592350114000,
+    "duration_ms": 0.022,
+    "status": {
+      "code": "UNSET",
+      "description": null
+    },
+    "attributes": {
+      "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
+      "traceloop.entity.name": "data_processing",
+      "keywordsai.entity.log_method": "python_tracing",
+      "traceloop.entity.input": "{\"args\": [\"hello world\"], \"kwargs\": {}}",
+      "traceloop.entity.output": "{\"processed\": \"HELLO WORLD\", \"length\": 11, \"metadata\": {\"processed_at\": \"2024-01-01\"}}"
+    },
+    "events": [],
+    "resource": {
+      "service.name": "export_test"
+    }
+  },
+  {
+    "span_name": "data_processing.TraceloopSpanKindValues.TASK",
+    "trace_id": "b5d9fc881f9b0a83a964ed64e8fd85c6",
+    "span_id": "e30ce249d63f5bea",
+    "parent_id": "188a722f122c68e9",
+    "start_time": 1749691592350206000,
+    "end_time": 1749691592350220000,
+    "duration_ms": 0.014,
+    "status": {
+      "code": "UNSET",
+      "description": null
+    },
+    "attributes": {
+      "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
+      "traceloop.entity.name": "data_processing",
+      "keywordsai.entity.log_method": "python_tracing",
+      "traceloop.entity.input": "{\"args\": [\"testing export\"], \"kwargs\": {}}",
+      "traceloop.entity.output": "{\"processed\": \"TESTING EXPORT\", \"length\": 14, \"metadata\": {\"processed_at\": \"2024-01-01\"}}"
+    },
+    "events": [],
+    "resource": {
+      "service.name": "export_test"
+    }
+  },
+  {
+    "span_name": "main_workflow.TraceloopSpanKindValues.WORKFLOW",
+    "trace_id": "b5d9fc881f9b0a83a964ed64e8fd85c6",
+    "span_id": "188a722f122c68e9",
+    "parent_id": null,
+    "start_time": 1749691592350006000,
+    "end_time": 1749691592350253000,
+    "duration_ms": 0.247,
+    "status": {
+      "code": "UNSET",
+      "description": null
+    },
+    "attributes": {
+      "traceloop.span.kind": "TraceloopSpanKindValues.WORKFLOW",
+      "traceloop.entity.name": "main_workflow",
+      "keywordsai.entity.log_method": "python_tracing",
+      "traceloop.entity.input": "{\"args\": [], \"kwargs\": {}}",
+      "traceloop.entity.output": "{\"results\": [{\"processed\": \"HELLO WORLD\", \"length\": 11, \"metadata\": {\"processed_at\": \"2024-01-01\"}}, {\"processed\": \"TESTING EXPORT\", \"length\": 14, \"metadata\": {\"processed_at\": \"2024-01-01\"}}]}"
+    },
+    "events": [],
+    "resource": {
+      "service.name": "export_test"
+    }
+  },
+  {
+    "span_name": "inspection_task.TraceloopSpanKindValues.TASK",
+    "trace_id": "72e15c20ca01b7095bf49610a8259935",
+    "span_id": "1bcb5108bcd93631",
+    "parent_id": null,
+    "start_time": 1749691592351284000,
+    "end_time": 1749691592351307000,
+    "duration_ms": 0.023,
+    "status": {
+      "code": "UNSET",
+      "description": null
+    },
+    "attributes": {
+      "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
+      "traceloop.entity.name": "inspection_task",
+      "keywordsai.entity.log_method": "python_tracing",
+      "traceloop.entity.input": "{\"args\": [], \"kwargs\": {}}",
+      "traceloop.entity.output": "\"test_output\""
+    },
+    "events": [],
+    "resource": {
+      "service.name": "export_test"
+    }
+  }
+]

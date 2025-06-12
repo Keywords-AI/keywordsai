@@ -30,6 +30,24 @@ Logging params types:
 4. GENERAL_FUNCTION
 """
 
+LogType = Literal[
+    "text",
+    "response",
+    "embedding",
+    "transcription",
+    "speech",
+    "workflow",
+    "task",
+    "tool",
+    "agent",
+    "handoff",
+    "guardrail",
+    "function",
+    "custom",
+    "generation",
+    "unknown",
+]
+
 
 class OverrideConfig(KeywordsAIBaseModel):
     messages_override_mode: Optional[Literal["override", "append"]] = "override"
@@ -230,7 +248,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     recommendations_dict: Optional[dict] = None
     warnings: Optional[str] = None
     warnings_dict: Optional[dict] = None
-    has_warnings: Optional[bool] = None # Deprecated, covered by status's literal casings
+    has_warnings: Optional[bool] = (
+        None  # Deprecated, covered by status's literal casings
+    )
     # endregion: error handling
     status: Optional[str] = None
     status_code: Optional[int] = None
@@ -342,24 +362,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
     mock_response: Optional[str] = None
     log_method: Optional[str] = None
-    log_type: Optional[
-        Literal[
-            "text",
-            "embedding",
-            "transcription",
-            "speech",
-            "workflow",
-            "task",
-            "tool",
-            "agent",
-            "unknown",
-            "handoff",
-            "function",
-            "guardrail",
-            "custom",
-            "generation",
-        ]
-    ] = None
+    log_type: Optional[LogType] = None
     # endregion: keywordsai logging control
 
     # region: keywordsai proxy options
@@ -383,7 +386,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     audio_input_file: Optional[str] = None
     audio_output_file: Optional[str] = None
     # endregion: audio
-    
+
     # region: evaluation
     note: Optional[str] = None
     category: Optional[str] = None
@@ -432,7 +435,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     # region: llm response timing metrics
     generation_time: Optional[float] = None
     latency: Optional[float] = None
-    ttft: Optional[float] = None # Exposed as the public param, translates to time_to_first_token in the BE
+    ttft: Optional[float] = (
+        None  # Exposed as the public param, translates to time_to_first_token in the BE
+    )
     time_to_first_token: Optional[float] = None
     routing_time: Optional[float] = None
     tokens_per_second: Optional[float] = None
@@ -442,9 +447,6 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     total_request_tokens: Optional[int] = None
     trace_unique_id: Optional[str] = None
     trace_name: Optional[str] = None
-    trace_group_identifier: Optional[str] = (
-        None  # The customizable id for grouping traces together
-    )
     span_unique_id: Optional[str] = None
     span_name: Optional[str] = None
     span_parent_id: Optional[str] = None
@@ -452,9 +454,14 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     span_handoffs: Optional[List[str]] = None
     span_tools: Optional[List[str]] = None
     span_workflow_name: Optional[str] = None
-
+    session_identifier: Optional[str] = None
+    trace_group_identifier: Optional[str] = (
+        None  # The customizable id for grouping traces together
+    )
     # region: thread, deprecated
-    thread_identifier: Optional[Union[str, int]] = None # 2025-06-04: Deprecated, merged into tracing as a special case
+    thread_identifier: Optional[Union[str, int]] = (
+        None  # 2025-06-04: Deprecated, merged into tracing as a special case
+    )
     thread_unique_id: Optional[str] = None
     # endregion: thread, deprecated
 
@@ -472,13 +479,18 @@ class KeywordsAIParams(KeywordsAIBaseModel):
                 "KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute"
             )
 
-        _name_mapping = {"time_to_first_token": "ttft", "latency": "generation_time"}
+        _raw_data_to_db_column_mapping = {
+            "ttft": "time_to_first_token",
+            "generation_time": "latency",
+            # 2025-06-12: trace_group and threads are going to be merged into trace sessions
+            "thread_identifier": "session_identifier",
+            "trace_group_identifier": "session_identifier",  # This has higher priority than threads in defining session id, placed later than thread_identifier for overriding
+        }
+
         # Map field names
-        for key, value in _name_mapping.items():
+        for key, value in _raw_data_to_db_column_mapping.items():
             if key in data:
-                data[key] = data.pop(key)
-            else:
-                data[key] = data.get(value)
+                data[value] = data[key]
 
         # Handle related fields
         for field_name in cls.__annotations__:
@@ -565,6 +577,7 @@ class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingPa
             "trace_unique_id",
             "span_unique_id",
             "trace_group_identifier",
+            "session_identifier",
             "span_name",
             "span_parent_id",
             "span_path",

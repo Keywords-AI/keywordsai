@@ -91,8 +91,8 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
     span = tracer.start_span(f"{entity_name}.{span_kind}")
     
     # Set KeywordsAI-specific attributes
-    span.set_attribute("keywordsai.span.kind", span_kind)
-    span.set_attribute("keywordsai.entity.name", entity_name)
+    span.set_attribute(SpanAttributes.TRACELOOP_SPAN_KIND, tlp_span_kind.value)
+    span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
 ```
 
 ### 2. Metadata Injection
@@ -103,7 +103,7 @@ class KeywordsAISpanProcessor:
         # Add workflow name, entity path, trace group ID, etc.
         workflow_name = context_api.get_value("keywordsai_workflow_name")
         if workflow_name:
-            span.set_attribute("keywordsai.workflow.name", workflow_name)
+            span.set_attribute(SpanAttributes.TRACELOOP_WORKFLOW_NAME, workflow_name)
 ```
 
 ### 3. Export to KeywordsAI

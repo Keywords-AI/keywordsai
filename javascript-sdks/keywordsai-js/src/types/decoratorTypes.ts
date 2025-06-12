@@ -1,4 +1,4 @@
-import { DecoratorConfig } from "@traceloop/node-server-sdk";
+import { DecoratorConfig } from "../decorators/base";
 
 // Define the generic function type that matches Traceloop's pattern
 export type WithFunctionType = <
@@ -10,10 +10,10 @@ export type WithFunctionType = <
     config: DecoratorConfig,
     fn: F,
     ...args: A
-) => Promise<any>;
+) => ReturnType<F>;
 
 // Now we can define our specific function types
 export type WithAgentType = WithFunctionType;
 export type WithTaskType = WithFunctionType;
 export type WithWorkflowType = WithFunctionType;
-export type DecoratorConfigType = DecoratorConfig;
+export type WithToolType = WithFunctionType;

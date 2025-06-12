@@ -5,7 +5,7 @@
     "outDir": "./dist",
     "declaration": true,
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "es2022"],
+    "lib": ["es2022", "dom"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -21,7 +21,8 @@
     "noEmit": false,
     "jsx": "react-jsx",
     "skipDefaultLibCheck": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "test-dist"]

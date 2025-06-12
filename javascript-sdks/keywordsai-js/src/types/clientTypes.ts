@@ -1,53 +1,125 @@
-
-
+import { SpanExporter, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { TextMapPropagator, ContextManager } from "@opentelemetry/api";
 
 /**
  * Options for initializing the KeywordsAI SDK.
  */
 export interface KeywordsAIOptions {
     /**
-     * The app name to be used when reporting traces.
+     * The app name to be used when reporting traces. Optional.
+     * Defaults to the package name.
      */
     appName?: string;
 
     /**
-     * Sends traces and spans without batching, for local development.
+     * The API Key for sending traces data. Optional.
+     * Defaults to the KEYWORDS_AI_API_KEY environment variable.
+     */
+    apiKey?: string;
+
+    /**
+     * The OTLP endpoint for sending traces data. Optional.
+     * Defaults to KEYWORDS_AI_BASE_URL environment variable or https://api.keywordsai.co/
+     */
+    baseUrl?: string;
+
+    /**
+     * Sends traces and spans without batching, for local development. Optional.
      * Defaults to false.
      */
     disableBatch?: boolean;
 
     /**
-     * The API endpoint for sending data.
+     * Defines default log level for SDK and all instrumentations. Optional.
+     * Defaults to error.
      */
-    baseUrl?: string;
+    logLevel?: "debug" | "info" | "warn" | "error";
 
     /**
-     * The API Key for authentication.
+     * Whether to log prompts, completions and embeddings on traces. Optional.
+     * Defaults to true.
      */
-    apiKey: string;
+    traceContent?: boolean;
 
     /**
-     * Explicitly specify modules to instrument.
+     * The OpenTelemetry SpanExporter to be used for sending traces data. Optional.
+     * Defaults to the OTLP exporter.
+     */
+    exporter?: SpanExporter;
+
+    /**
+     * The headers to be sent with the traces data. Optional.
+     */
+    headers?: Record<string, string>;
+
+    /**
+     * The OpenTelemetry SpanProcessor to be used for processing traces data. Optional.
+     * Defaults to the BatchSpanProcessor.
+     */
+    processor?: SpanProcessor;
+
+    /**
+     * The OpenTelemetry Propagator to use. Optional.
+     * Defaults to OpenTelemetry SDK defaults.
+     */
+    propagator?: TextMapPropagator;
+
+    /**
+     * The OpenTelemetry ContextManager to use. Optional.
+     * Defaults to OpenTelemetry SDK defaults.
+     */
+    contextManager?: ContextManager;
+
+    /**
+     * Whether to silence the initialization message. Optional.
+     * Defaults to false.
+     */
+    silenceInitializationMessage?: boolean;
+
+    /**
+     * Whether to enable tracing. Optional.
+     * Defaults to true.
+     */
+    tracingEnabled?: boolean;
+
+    /**
+     * Explicitly specify modules to instrument. Optional.
+     * This is a workaround specific to Next.js and other environments where
+     * dynamic imports might not work properly.
+     * 
+     * Usage example:
+     * ```typescript
+     * import OpenAI from 'openai';
+     * import Anthropic from '@anthropic-ai/sdk';
+     * 
+     * const keywordsAI = new KeywordsAITelemetry({
+     *   instrumentModules: {
+     *     openAI: OpenAI,
+     *     anthropic: Anthropic,
+     *   }
+     * });
+     * ```
      */
     instrumentModules?: {
-        openAI?: any;
-        anthropic?: any;
-        azureOpenAI?: any;
-        cohere?: any;
-        bedrock?: any;
-        google_vertexai?: any;
-        google_aiplatform?: any;
-        pinecone?: any;
+        openAI?: any; // typeof import('openai').OpenAI
+        anthropic?: any; // typeof import('@anthropic-ai/sdk')
+        azureOpenAI?: any; // typeof import('@azure/openai')
+        cohere?: any; // typeof import('cohere-ai')
+        bedrock?: any; // typeof import('@aws-sdk/client-bedrock-runtime')
+        google_vertexai?: any; // typeof import('@google-cloud/vertexai')
+        google_aiplatform?: any; // typeof import('@google-cloud/aiplatform')
+        pinecone?: any; // typeof import('@pinecone-database/pinecone')
+        together?: any; // typeof import('together-ai').Together
         langchain?: {
-            chainsModule?: any;
-            agentsModule?: any;
-            toolsModule?: any;
-            runnablesModule?: any;
-            vectorStoreModule?: any;
+            chainsModule?: any; // typeof import('langchain/chains')
+            agentsModule?: any; // typeof import('langchain/agents')
+            toolsModule?: any; // typeof import('langchain/tools')
+            runnablesModule?: any; // typeof import('@langchain/core/runnables')
+            vectorStoreModule?: any; // typeof import('@langchain/core/vectorstores')
         };
-        llamaIndex?: any;
-        chromadb?: any;
-        qdrant?: any;
+        llamaIndex?: any; // typeof import('llamaindex')
+        chromadb?: any; // typeof import('chromadb')
+        qdrant?: any; // typeof import('@qdrant/js-client-rest')
     };
 }
 

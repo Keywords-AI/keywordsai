@@ -21,7 +21,7 @@
     "examples:basic": "yarn build && cd examples && yarn basic",
     "examples:advanced": "yarn build && cd examples && yarn dev"
   },
-  "repository": "https://github.com/Keywords-AI/keywordsai.git",
+  "repository": "https://github.com/Keywords-AI/keywordsai-public.git",
   "author": "Raymond Huang",
   "license": "Apache-2.0",
   "dependencies": {

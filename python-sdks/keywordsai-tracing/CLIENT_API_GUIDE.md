@@ -279,7 +279,6 @@ def step2(data):
     start_time = client.get_context_value("workflow_start_time")
     # ... processing
 ```
-
 ## Best Practices
 
 ### 1. Use Global `get_client()`

@@ -21,7 +21,7 @@ from .exporter import KeywordsAISpanExporter
 from ..instruments import Instruments
 from ..utils.notebook import is_notebook
 from ..utils.instrumentation import init_instrumentations
-
+from ..constants.tracing import TRACER_NAME
 
 class KeywordsAITracer:
     """
@@ -53,6 +53,7 @@ class KeywordsAITracer:
         propagator: Optional[TextMapPropagator] = None,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
         enabled: bool = True,
+        enable_threading_instrumentation: bool = True,
     ):
         # Prevent re-initialization
         if hasattr(self, '_initialized'):
@@ -75,7 +76,8 @@ class KeywordsAITracer:
             api_endpoint, api_key, headers, disable_batch, span_postprocess_callback
         )
         self._setup_propagation(propagator)
-        self._setup_threading()
+        if enable_threading_instrumentation:
+            self._setup_threading()
         self._setup_instrumentations(instruments, block_instruments)
         
         # Register cleanup
@@ -135,7 +137,7 @@ class KeywordsAITracer:
         """Initialize library instrumentations"""
         init_instrumentations(instruments, block_instruments)
     
-    def get_tracer(self, name: str = "keywordsai.tracer"):
+    def get_tracer(self, name: str = TRACER_NAME):
         """Get OpenTelemetry tracer instance"""
         if not self.enabled:
             return trace.NoOpTracer()

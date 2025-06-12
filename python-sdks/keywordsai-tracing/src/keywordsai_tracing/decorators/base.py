@@ -2,12 +2,15 @@ import json
 import inspect
 from functools import wraps
 from typing import Optional, TypeVar, Callable, Any, ParamSpec, Awaitable
-
 from opentelemetry import trace, context as context_api
 from opentelemetry.trace.status import Status, StatusCode
-from opentelemetry.semconv_ai import TraceloopSpanKindValues
-
+from opentelemetry.semconv_ai import TraceloopSpanKindValues, SpanAttributes
+from keywordsai_sdk.constants.llm_logging import (
+    LogMethodChoices
+)
+from keywordsai_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
 from keywordsai_tracing.core.tracer import KeywordsAITracer
+
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -32,33 +35,44 @@ def _is_async_method(fn):
 def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None):
     """Setup OpenTelemetry span and context"""
     # Ensure span_kind is a string
-    span_kind_str = str(span_kind) if hasattr(span_kind, 'value') else str(span_kind)
-    
+    span_kind_str = str(span_kind) if hasattr(span_kind, "value") else str(span_kind)
+
     # Set workflow name for workflow spans
-    if span_kind_str in [TraceloopSpanKindValues.WORKFLOW.value, TraceloopSpanKindValues.AGENT.value]:
-        context_api.attach(context_api.set_value("keywordsai_workflow_name", entity_name))
-    
+    if span_kind_str in [
+        TraceloopSpanKindValues.WORKFLOW.value,
+        TraceloopSpanKindValues.AGENT.value,
+    ]:
+        context_api.attach(
+            context_api.set_value("keywordsai_workflow_name", entity_name)
+        )
+
     # Set entity path for task spans
-    if span_kind_str in [TraceloopSpanKindValues.TASK.value, TraceloopSpanKindValues.TOOL.value]:
+    if span_kind_str in [
+        TraceloopSpanKindValues.TASK.value,
+        TraceloopSpanKindValues.TOOL.value,
+    ]:
         current_path = context_api.get_value("keywordsai_entity_path") or ""
         entity_path = f"{current_path}.{entity_name}" if current_path else entity_name
         context_api.attach(context_api.set_value("keywordsai_entity_path", entity_path))
-    
+
     # Get tracer and start span
     tracer = KeywordsAITracer().get_tracer()
     span_name = f"{entity_name}.{span_kind_str}"
     span = tracer.start_span(span_name)
-    
+
     # Set span attributes
-    span.set_attribute("keywordsai.span.kind", span_kind_str)
-    span.set_attribute("keywordsai.entity.name", entity_name)
+    span.set_attribute(SpanAttributes.TRACELOOP_SPAN_KIND, span_kind_str)
+    span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
+    span.set_attribute(
+        KeywordsAISpanAttributes.LOG_METHOD.value, LogMethodChoices.PYTHON_TRACING.value
+    )
     if version:
-        span.set_attribute("keywordsai.entity.version", version)
-    
+        span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_VERSION, version)
+
     # Set span in context
     ctx = trace.set_span_in_context(span)
     ctx_token = context_api.attach(ctx)
-    
+
     return span, ctx_token
 
 
@@ -68,11 +82,10 @@ def _handle_span_input(span, args, kwargs):
         if _should_send_prompts():
             json_input = json.dumps({"args": list(args), "kwargs": kwargs})
             if _is_json_size_valid(json_input):
-                span.set_attribute("keywordsai.entity.input", json_input)
+                span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_INPUT, json_input)
     except (TypeError, ValueError) as e:
         # Skip if serialization fails
         pass
-
 
 def _handle_span_output(span, result):
     """Handle entity output logging"""
@@ -80,7 +93,7 @@ def _handle_span_output(span, result):
         if _should_send_prompts():
             json_output = json.dumps(result)
             if _is_json_size_valid(json_output):
-                span.set_attribute("keywordsai.entity.output", json_output)
+                span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_OUTPUT, json_output)
     except (TypeError, ValueError) as e:
         # Skip if serialization fails
         pass
@@ -125,7 +138,7 @@ def _create_entity_method(
     span_kind: str = "task",
 ) -> Callable[[F], F]:
     """Create entity decorator for methods or classes"""
-    
+
     if method_name is not None:
         # Class decorator
         return _create_entity_class(name, version, method_name, span_kind)
@@ -140,10 +153,10 @@ def _create_entity_method_decorator(
     span_kind: str = "task",
 ) -> Callable[[F], F]:
     """Create method decorator"""
-    
+
     def decorator(fn: F) -> F:
         entity_name = name or fn.__name__
-        
+
         if _is_async_method(fn):
             if inspect.isasyncgenfunction(fn):
                 # Async generator
@@ -151,7 +164,7 @@ def _create_entity_method_decorator(
                 async def async_gen_wrapper(*args: Any, **kwargs: Any) -> Any:
                     span, ctx_token = _setup_span(entity_name, span_kind, version)
                     _handle_span_input(span, args, kwargs)
-                    
+
                     try:
                         result = fn(*args, **kwargs)
                         async for item in _ahandle_generator(span, ctx_token, result):
@@ -161,7 +174,7 @@ def _create_entity_method_decorator(
                         span.record_exception(e)
                         _cleanup_span(span, ctx_token)
                         raise
-                
+
                 return async_gen_wrapper
             else:
                 # Regular async function
@@ -169,7 +182,7 @@ def _create_entity_method_decorator(
                 async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                     span, ctx_token = _setup_span(entity_name, span_kind, version)
                     _handle_span_input(span, args, kwargs)
-                    
+
                     try:
                         result = await fn(*args, **kwargs)
                         _handle_span_output(span, result)
@@ -180,7 +193,7 @@ def _create_entity_method_decorator(
                         raise
                     finally:
                         _cleanup_span(span, ctx_token)
-                
+
                 return async_wrapper
         else:
             # Sync function
@@ -188,10 +201,10 @@ def _create_entity_method_decorator(
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 span, ctx_token = _setup_span(entity_name, span_kind, version)
                 _handle_span_input(span, args, kwargs)
-                
+
                 try:
                     result = fn(*args, **kwargs)
-                    
+
                     # Handle generators
                     if inspect.isgeneratorfunction(fn):
                         return _handle_generator(span, ctx_token, result)
@@ -205,9 +218,9 @@ def _create_entity_method_decorator(
                 finally:
                     if not inspect.isgeneratorfunction(fn):
                         _cleanup_span(span, ctx_token)
-            
+
             return sync_wrapper
-    
+
     return decorator
 
 
@@ -218,21 +231,21 @@ def _create_entity_class(
     span_kind: str = "task",
 ):
     """Create class decorator"""
-    
+
     def decorator(cls):
         entity_name = name or cls.__name__
-        
+
         # Get the original method
         original_method = getattr(cls, method_name)
-        
+
         # Create decorated method
         decorated_method = _create_entity_method_decorator(
             entity_name, version, span_kind
         )(original_method)
-        
+
         # Replace the method
         setattr(cls, method_name, decorated_method)
-        
+
         return cls
-    
+
     return decorator

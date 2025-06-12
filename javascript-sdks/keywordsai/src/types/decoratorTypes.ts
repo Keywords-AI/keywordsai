@@ -1,19 +1,9 @@
-import { DecoratorConfig } from "@traceloop/node-server-sdk";
+// Decorator types for KeywordsAI SDK
+// This file contains type definitions for decorators used in the SDK
 
-// Define the generic function type that matches Traceloop's pattern
-export type WithFunctionType = <
-    // 'A' represents an array of argument types
-    A extends unknown[],
-    // 'F' represents a function type that takes those arguments and returns something
-    F extends (...args: A) => ReturnType<F>,
->(
-    config: DecoratorConfig,
-    fn: F,
-    ...args: A
-) => Promise<any>;
+export interface DecoratorOptions {
+  // Add decorator options here as needed
+}
 
-// Now we can define our specific function types
-export type WithAgentType = WithFunctionType;
-export type WithTaskType = WithFunctionType;
-export type WithWorkflowType = WithFunctionType;
-export type DecoratorConfigType = DecoratorConfig;
+// Add more decorator types as needed
+export type DecoratorFunction = (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => any; 

@@ -56,25 +56,20 @@ class KeywordsAITelemetry:
             os.getenv("KEYWORDSAI_DISABLE_BATCH", "False").lower() == "true"
         )
         
-        # Set default blocked instruments
-        if block_instruments is None:
-            block_instruments = {Instruments.REDIS, Instruments.REQUESTS}
-        
         # Initialize the tracer
-        with suppress_stdout():
-            self.tracer = KeywordsAITracer(
-                app_name=app_name,
-                api_endpoint=base_url,
-                api_key=api_key,
-                disable_batch=disable_batch,
-                instruments=instruments,
-                block_instruments=block_instruments,
-                headers=headers,
-                resource_attributes=resource_attributes,
-                span_postprocess_callback=span_postprocess_callback,
-                enabled=enabled,
-                enable_threading_instrumentation=enable_threading_instrumentation,
-            )
+        self.tracer = KeywordsAITracer(
+            app_name=app_name,
+            api_endpoint=base_url,
+            api_key=api_key,
+            disable_batch=disable_batch,
+            instruments=instruments,
+            block_instruments=block_instruments,
+            headers=headers,
+            resource_attributes=resource_attributes,
+            span_postprocess_callback=span_postprocess_callback,
+            enabled=enabled,
+            enable_threading_instrumentation=enable_threading_instrumentation,
+        )
         
         if enabled:
             logging.info(f"KeywordsAI telemetry initialized, sending to {base_url}")

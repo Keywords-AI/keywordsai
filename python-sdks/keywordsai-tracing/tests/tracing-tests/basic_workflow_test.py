@@ -175,26 +175,22 @@ def audience_interaction(joke: str):
     read_joke_comments(comments=comments)
 
 
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
-
 
 @workflow(name="pirate_joke_plus_audience_reactions")
 def pirate_joke_plus_audience():
-    with keywordsai_span_attributes(
-        keywordsai_params={"trace_group_identifier": "1234567890"}
-    ):
-        joke = (
-            joke_workflow()
-        )  # This show case the basic workflow usage and compatibility with the OpenAI SDK
-        reactions = audience_reaction(
-            joke=joke
-        )  # This show case the the display of multi-workflow under the same trace
-        audience_interaction(
-            joke=joke
-        )  # This show case the compatibility with the anthropic SDK
-        logging_joke(
-            joke=joke, reactions=reactions
-        )  # THis show case the tracing of a function with arbitrary inputs/outputs
+
+    joke = (
+        joke_workflow()
+    )  # This show case the basic workflow usage and compatibility with the OpenAI SDK
+    reactions = audience_reaction(
+        joke=joke
+    )  # This show case the the display of multi-workflow under the same trace
+    audience_interaction(
+        joke=joke
+    )  # This show case the compatibility with the anthropic SDK
+    logging_joke(
+        joke=joke, reactions=reactions
+    )  # THis show case the tracing of a function with arbitrary inputs/outputs
 
 
 pirate_joke_plus_audience()

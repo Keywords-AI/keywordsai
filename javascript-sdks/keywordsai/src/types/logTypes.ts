@@ -21,6 +21,16 @@ export const LOG_TYPE_VALUES = [
 
 export type LogType = typeof LOG_TYPE_VALUES[number];
 
+export const LOG_METHOD_VALUES = [
+  "inference",
+  "logging_api",
+  "batch",
+  "python_tracing",
+  "ts_tracing",
+] as const;
+
+export type LogMethod = typeof LOG_METHOD_VALUES[number];
+
 // Basic utility schemas
 const StringOrNumberSchema = z.union([z.string(), z.number()]);
 const DateTimeSchema = z.union([z.string(), z.date()]);
@@ -481,7 +491,7 @@ const KeywordsAIParamsSchema = z.object({
   is_log_omitted: z.boolean().optional(),
   keywordsai_api_controls: KeywordsAIAPIControlParamsSchema.optional(),
   mock_response: z.string().optional(),
-  log_method: z.string().optional(),
+  log_method: z.enum(LOG_METHOD_VALUES).optional(),
   log_type: z.enum(LOG_TYPE_VALUES).optional(),
   //#endregion keywordsai logging control
 
