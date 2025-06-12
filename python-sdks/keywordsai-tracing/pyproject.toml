@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-tracing"
-version = "0.0.25"
+version = "0.0.27"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"

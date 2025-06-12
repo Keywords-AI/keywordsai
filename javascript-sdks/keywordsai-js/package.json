@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,28 +15,53 @@
   },
   "scripts": {
     "build": "tsc",
-    "watch:test": "tsc -p tsconfig.test.json --watch"
+    "watch:test": "tsc -p tsconfig.test.json --watch",
+    "dev": "yarn build && cd examples && yarn dev",
+    "examples:install": "cd examples && yarn install",
+    "examples:basic": "yarn build && cd examples && yarn basic",
+    "examples:advanced": "yarn build && cd examples && yarn dev"
   },
   "repository": "https://github.com/Keywords-AI/keywordsai.git",
   "author": "Raymond Huang",
   "license": "Apache-2.0",
   "dependencies": {
-    "@traceloop/node-server-sdk": "^0.12.2",
-    "openai": "^4.80.1",
-    "zod": "^3.24.2"
+    "@keywordsai/keywordsai-sdk": "^0.0.4",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^1.26.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.56.0",
+    "@opentelemetry/instrumentation-http": "^0.202.0",
+    "@opentelemetry/resources": "^1.26.0",
+    "@opentelemetry/sdk-node": "^0.56.0",
+    "@opentelemetry/sdk-trace-base": "^1.26.0",
+    "@opentelemetry/sdk-trace-node": "^1.26.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
+    "@traceloop/ai-semantic-conventions": "^0.13.0"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^1.3.6",
-    "@keywordsai/tracing": "^1.0.18",
     "@vercel/otel": "^1.10.4",
     "ai": "^4.2.10",
     "dotenv": "^16.4.7",
+    "openai": "^4.80.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "zod": "^3.24.2"
   },
   "optionalDependencies": {
-    "fsevents": "^2.3.3"
+    "@elastic/opentelemetry-instrumentation-openai": "^0.5.0",
+    "@traceloop/instrumentation-anthropic": "^0.13.0",
+    "@traceloop/instrumentation-azure": "^0.13.0",
+    "@traceloop/instrumentation-bedrock": "^0.13.0",
+    "@traceloop/instrumentation-chromadb": "^0.13.0",
+    "@traceloop/instrumentation-cohere": "^0.13.0",
+    "@traceloop/instrumentation-langchain": "^0.13.0",
+    "@traceloop/instrumentation-llamaindex": "^0.13.0",
+    "@traceloop/instrumentation-openai": "^0.13.0",
+    "@traceloop/instrumentation-pinecone": "^0.13.0",
+    "@traceloop/instrumentation-qdrant": "^0.13.0",
+    "@traceloop/instrumentation-together": "^0.13.0",
+    "@traceloop/instrumentation-vertexai": "^0.13.0"
   },
   "os": [
     "darwin",
