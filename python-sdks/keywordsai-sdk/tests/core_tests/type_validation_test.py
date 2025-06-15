@@ -1,6 +1,7 @@
+from keywordsai_sdk.keywordsai_types._internal_types import LiteLLMCompletionParams
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
 
-NEW_SESSION_IDENTIFIER = "new_session_identifier"
+NEW_SESSION_IDENTIFIER = 1234
 
 
 class TypeValidationData:
@@ -35,3 +36,15 @@ assert params.session_identifier == NEW_SESSION_IDENTIFIER
 # to_validate = TypeValidationData()
 # params = KeywordsAITextLogParams.from_orm(to_validate)
 # print(params)
+
+data = {
+    "messages": [
+        {
+            "role": "user",
+            "content": "Hello, world!"
+        }
+    ]
+}
+validated_data = LiteLLMCompletionParams.model_validate(data).model_dump()
+
+assert "thinking" not in validated_data

@@ -143,6 +143,8 @@ class Message(KeywordsAIBaseModel):
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
     tool_calls: Optional[List[Union[ToolCall, dict]]] = None
+    reasoning_content: Optional[str] = None
+    thinking_blocks: Optional[List[dict]] = None
 
     @field_validator("content")
     def validate_content(cls, v):
@@ -237,6 +239,9 @@ class BasicLLMParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
     model_config = ConfigDict(protected_namespaces=())
+
+class LiteLLMCompletionParams(BasicLLMParams):
+    thinking: Optional[dict] = None
 
 
 class Usage(KeywordsAIBaseModel):

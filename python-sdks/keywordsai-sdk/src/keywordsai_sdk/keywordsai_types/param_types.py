@@ -7,6 +7,7 @@ from ._internal_types import (
     BasicThreadParams,
     KeywordsAIBaseModel,
     BasicEmbeddingParams,
+    LiteLLMCompletionParams,
     Message,
     Usage,
     BasicTextToSpeechParams,
@@ -454,8 +455,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     span_handoffs: Optional[List[str]] = None
     span_tools: Optional[List[str]] = None
     span_workflow_name: Optional[str] = None
-    session_identifier: Optional[str] = None
-    trace_group_identifier: Optional[str] = (
+    session_identifier: Optional[Union[str, int]] = None
+    trace_group_identifier: Optional[Union[str, int]] = (
         None  # The customizable id for grouping traces together
     )
     # region: thread, deprecated
@@ -547,7 +548,9 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
-class KeywordsAITextLogParams(KeywordsAIParams, BasicLLMParams, BasicEmbeddingParams):
+class KeywordsAITextLogParams(
+    KeywordsAIParams, LiteLLMCompletionParams, BasicEmbeddingParams
+):
     """
     A type definition of the input parameters for creating a Keywords AI RequestLog object.
     """

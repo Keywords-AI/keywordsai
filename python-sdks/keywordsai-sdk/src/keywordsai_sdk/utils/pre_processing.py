@@ -1,3 +1,4 @@
+from keywordsai_sdk.keywordsai_types._internal_types import LiteLLMCompletionParams
 from keywordsai_sdk.keywordsai_types.param_types import (
     KeywordsAIParams,
     RetryParams,
@@ -177,7 +178,7 @@ def separate_params(params: dict, remove_none=True, raise_exception=False):
 
 def validate_and_separate_params(
     params: dict,
-) -> tuple[BasicLLMParams, KeywordsAIParams]:
+) -> tuple[LiteLLMCompletionParams, KeywordsAIParams]:
     """
     Validate and separate the params into llm_params and keywordsai_params using Pydantic models
     Returns:
@@ -185,7 +186,7 @@ def validate_and_separate_params(
     keywords_ai: KeywordsAIParams
     """
 
-    basic_llm = BasicLLMParams.model_validate(params)
+    basic_llm = LiteLLMCompletionParams.model_validate(params)
     keywords_ai = KeywordsAIParams.model_validate(params)
 
     return basic_llm, keywords_ai

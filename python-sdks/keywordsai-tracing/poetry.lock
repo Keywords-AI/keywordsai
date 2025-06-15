@@ -463,13 +463,13 @@ all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2
 
 [[package]]
 name = "importlib-metadata"
-version = "8.6.1"
+version = "8.7.0"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "importlib_metadata-8.6.1-py3-none-any.whl", hash = "sha256:02a89390c1e15fdfdc0d7c6b25cb3e62650d0494005c97d6f148bf5b9787525e"},
-    {file = "importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580"},
+    {file = "importlib_metadata-8.7.0-py3-none-any.whl", hash = "sha256:e5dd1551894c77868a30651cef00984d50e1002d06942a7101d34870c5f02afd"},
+    {file = "importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000"},
 ]
 
 [package.dependencies]
@@ -583,13 +583,13 @@ files = [
 
 [[package]]
 name = "keywordsai-sdk"
-version = "0.4.32"
+version = "0.4.37"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 optional = false
 python-versions = "<4.0,>3.9"
 files = [
-    {file = "keywordsai_sdk-0.4.32-py3-none-any.whl", hash = "sha256:38a1bed0608fac0bcc06955b8867499fad9f69b3335ecae9a8c629feb8b3888c"},
-    {file = "keywordsai_sdk-0.4.32.tar.gz", hash = "sha256:6dbc93a499a0e08251d90e14808e6209be0203972eff06cc791d1f0024dac69f"},
+    {file = "keywordsai_sdk-0.4.37-py3-none-any.whl", hash = "sha256:5c2a186b6e77277457b9cb86f19d275e6570fec5ef25a5954bb66f9537343219"},
+    {file = "keywordsai_sdk-0.4.37.tar.gz", hash = "sha256:0f7ce19d6c3b5c36d5b2db69ff7ce225d68fc23dedfcc1845b216652599b22cb"},
 ]
 
 [package.dependencies]
@@ -1647,13 +1647,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20250602"
+version = "2.32.4.20250611"
 description = "Typing stubs for requests"
 optional = true
 python-versions = ">=3.9"
 files = [
-    {file = "types_requests-2.32.0.20250602-py3-none-any.whl", hash = "sha256:f4f335f87779b47ce10b8b8597b409130299f6971ead27fead4fe7ba6ea3e726"},
-    {file = "types_requests-2.32.0.20250602.tar.gz", hash = "sha256:ee603aeefec42051195ae62ca7667cd909a2f8128fdf8aad9e8a5219ecfab3bf"},
+    {file = "types_requests-2.32.4.20250611-py3-none-any.whl", hash = "sha256:ad2fe5d3b0cb3c2c902c8815a70e7fb2302c4b8c1f77bdcd738192cdb3878072"},
+    {file = "types_requests-2.32.4.20250611.tar.gz", hash = "sha256:741c8777ed6425830bf51e54d6abe245f79b4dcb9019f1622b773463946bf826"},
 ]
 
 [package.dependencies]
@@ -1880,4 +1880,4 @@ openai-agents = ["httpx", "openai-agents"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.10,<3.13"
-content-hash = "16957d640594deaec808d1417fa8b4e91732bd31e6d8880d80593428ed2edc2e"
+content-hash = "3dc72172e08dbb194ac2e345e2a8f370a864eeda4014d5cde9be4ef156fe0b37"
