@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
