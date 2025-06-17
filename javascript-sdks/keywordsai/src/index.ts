@@ -1,3 +1,3 @@
 // KeywordsAI SDK - Main Entry Point
-export * from "./types";
-export * from "./constants"; 
+export * from "./types/index.js";
+export * from "./constants/index.js";

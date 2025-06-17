@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/keywordsai-sdk",
   "type": "module",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "description": "KeywordsAI typing SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc",
     "version": "npm version",
-    "publish": "yarn npm publish"
+    "publish": "yarn npm publish",
+    "release": "yarn build &&yarn version patch && yarn publish"
   },
   "packageManager": "yarn@4.6.0",
   "dependencies": {

@@ -1,2 +1,2 @@
-export * from "./decoratorTypes";
-export * from "./clientTypes";
+export * from "./decoratorTypes.js";
+export * from "./clientTypes.js";

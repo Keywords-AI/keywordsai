@@ -14,7 +14,7 @@
     "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
     "module": "es2022",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "sourceMap": true,
