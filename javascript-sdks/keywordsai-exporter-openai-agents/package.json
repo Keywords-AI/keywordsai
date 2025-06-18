@@ -1,0 +1,33 @@
+{
+  "name": "@keywordsai/exporter-openai-agents",
+  "version": "0.0.1",
+  "description": "Exporter for OpenAI agents traces to KeywordsAI",
+  "author": "KeywordsAI <team@keywordsai.co>",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "publish": "yarn npm publish",
+    "release": "yarn build && yarn version patch && yarn publish"
+  },
+  "dependencies": {
+    "@keywordsai/keywordsai-sdk": "^0.0.8",
+    "@openai/agents": "^0.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@4.9.2"
+}

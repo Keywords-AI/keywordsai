@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "handoffs",
+  "dependencies": {
+    "@openai/agents": "workspace:*",
+    "@openai/agents-core": "workspace:*",
+    "zod": "~3.25.40"
+  },
+  "scripts": {
+    "build-check": "tsc --noEmit",
+    "start": "tsx index.ts",
+    "start:types": "tsx types.ts"
+  }
+}

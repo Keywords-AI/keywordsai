@@ -1,0 +1,11 @@
+import { Agent, run } from '@openai/agents';
+
+const agent = new Agent({
+  name: 'Storyteller',
+  instructions:
+    'You are a storyteller. You will be given a topic and you will tell a story about it.',
+});
+
+const result = await run(agent, 'Tell me a story about a cat.', {
+  stream: true,
+});

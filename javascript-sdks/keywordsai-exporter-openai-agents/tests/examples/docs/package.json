@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "name": "docs",
+  "dependencies": {
+    "@openai/agents": "workspace:*",
+    "@openai/agents-core": "workspace:*",
+    "@openai/agents-realtime": "workspace:*",
+    "@openai/agents-extensions": "workspace:*",
+    "@ai-sdk/openai": "^1.0.0",
+    "server-only": "^0.0.1",
+    "openai": "^5.0.1",
+    "zod": "~3.25.40"
+  },
+  "scripts": {
+    "build-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typedoc-plugin-zod": "^1.4.1"
+  }
+}

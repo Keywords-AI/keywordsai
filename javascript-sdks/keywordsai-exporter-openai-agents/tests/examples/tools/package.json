@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "name": "tools",
+  "dependencies": {
+    "@openai/agents": "workspace:*",
+    "playwright": "^1.52.0",
+    "zod": "~3.25.40"
+  },
+  "scripts": {
+    "build-check": "tsc --noEmit",
+    "start:computer-use": "tsx computer-use.ts",
+    "start:file-search": "tsx file-search.ts",
+    "start:web-search": "tsx web-search.ts",
+    "start:code-interpreter": "tsx code-interpreter.ts",
+    "start:image-generation": "tsx image-generation.ts"
+  }
+}

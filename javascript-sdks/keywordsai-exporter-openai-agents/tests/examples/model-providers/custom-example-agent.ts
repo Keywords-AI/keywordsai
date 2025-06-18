@@ -1,0 +1,37 @@
+import { z } from 'zod';
+import {
+  Agent,
+  run,
+  withTrace,
+  OpenAIChatCompletionsModel,
+  tool,
+} from '@openai/agents';
+import { OpenAI } from 'openai';
+
+const getWeatherTool = tool({
+  name: 'get_weather',
+  description: 'Get the weather for a given city',
+  parameters: z.object({ city: z.string() }),
+  execute: async (input) => {
+    return `The weather in ${input.city} is sunny`;
+  },
+});
+
+const client = new OpenAI();
+const agent = new Agent({
+  name: 'Assistant',
+  model: new OpenAIChatCompletionsModel(client, 'gpt-4o'),
+  instructions: 'You only respond in haikus.',
+  tools: [getWeatherTool],
+});
+
+async function main() {
+  await withTrace('ChatCompletions Assistant Example', async () => {
+    const result = await run(agent, "What's the weather in Tokyo?");
+    console.log(`\n\nFinal response:\n${result.finalOutput}`);
+  });
+}
+
+main().catch((error) => {
+  console.error('Error:', error);
+});

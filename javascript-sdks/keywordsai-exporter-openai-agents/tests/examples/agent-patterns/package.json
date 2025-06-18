@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "name": "agent-patterns",
+  "dependencies": {
+    "@openai/agents": "workspace:*",
+    "chalk": "^5.4.1",
+    "zod": "~3.25.40"
+  },
+  "scripts": {
+    "build-check": "tsc --noEmit",
+    "start:agents-as-tools": "tsx agents-as-tools.ts",
+    "start:deterministic": "tsx deterministic.ts",
+    "start:forcing-tool-use": "tsx forcing-tool-use.ts -t default",
+    "start:human-in-the-loop-stream": "tsx human-in-the-loop-stream.ts",
+    "start:human-in-the-loop": "tsx human-in-the-loop.ts",
+    "start:input-guardrails": "tsx input-guardrails.ts",
+    "start:llm-as-a-judge": "tsx llm-as-a-judge.ts",
+    "start:output-guardrails": "tsx output-guardrails.ts",
+    "start:parallelization": "tsx parallelization.ts",
+    "start:routing": "tsx routing.ts",
+    "start:streamed": "tsx streamed.ts",
+    "start:streaming-guardrails": "tsx streaming-guardrails.ts"
+  }
+}

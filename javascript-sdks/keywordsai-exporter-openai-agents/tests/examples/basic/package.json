@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "name": "basic",
+  "dependencies": {
+    "@openai/agents": "workspace:*",
+    "zod": "~3.25.40"
+  },
+  "scripts": {
+    "build-check": "tsc --noEmit",
+    "start": "tsx index.ts",
+    "start:agent-lifecycle-example": "tsx agent-lifecycle-example.ts",
+    "start:chat": "tsx chat.ts",
+    "start:dynamic-system-prompt": "tsx dynamic-system-prompt.ts",
+    "start:hello-world": "tsx hello-world.ts",
+    "start:lifecycle-example": "tsx lifecycle-example.ts",
+    "start:local-image": "tsx local-image.ts",
+    "start:previous-response-id": "tsx previous-response-id.ts",
+    "start:prompt": "tsx prompt-id.ts",
+    "start:remote-image": "tsx remote-image.ts",
+    "start:stream-items": "tsx stream-items.ts",
+    "start:stream-text": "tsx stream-text.ts",
+    "start:json-schema-output-type": "tsx json-schema-output-type.ts",
+    "start:tool-use-behavior": "tsx tool-use-behavior.ts",
+    "start:tools": "tsx tools.ts",
+    "start:reasoning": "tsx reasoning.ts",
+    "start:local-file": "tsx local-file.ts"
+  }
+}

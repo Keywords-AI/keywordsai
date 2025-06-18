@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Realtime Demo</title>
+  </head>
+  <body class="max-h-screen overflow-hidden h-screen flex justify-center">
+    <div class="max-w-6xl w-full p-4 flex flex-col">
+      <header class="flex-none flex justify-between items-center pb-4">
+        <h1 class="text-2xl font-bold">Realtime Agent Demo</h1>
+        <div class="flex gap-2">
+          <button
+            id="muteButton"
+            class="h-9 px-4 py-2 border-2 border-gray-100 text-gray-800 hover:bg-gray-100 hover:text-black inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+            style="display: none"
+          >
+            Mute
+          </button>
+          <button
+            id="connectButton"
+            class="h-9 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-md text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+          >
+            Connect
+          </button>
+          <button
+            id="disconnectButton"
+            class="h-9 px-4 py-2 bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300 rounded-md text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            style="display: none"
+          >
+            Disconnect
+          </button>
+        </div>
+      </header>
+      <h2 class="font-bold uppercase text-xs text-gray-500 mb-2">
+        Raw Event Log
+      </h2>
+      <div
+        class="overflow-scroll flex-1 p-4 border border-gray-300 rounded-lg [&_pre]:bg-gray-100 [&_pre]:p-4 [&_summary]:mb-2 [&>details]:border-b [&>details]:border-gray-200 [&>details]:py-2 text-xs"
+        id="eventLog"
+      ></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
