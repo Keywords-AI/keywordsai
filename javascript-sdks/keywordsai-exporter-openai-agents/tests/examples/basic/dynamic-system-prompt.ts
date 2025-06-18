@@ -1,5 +1,12 @@
 import { Agent, RunContext, run } from '@openai/agents';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
 type Style = 'haiku' | 'pirate' | 'robot';
 
 interface CustomContext {

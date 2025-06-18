@@ -1,6 +1,19 @@
-import { Agent, run, tool } from '@openai/agents';
+import { Agent, BatchTraceProcessor, run, setTraceProcessors, tool, withTrace } from '@openai/agents';
 import { z } from 'zod';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
 
+setTraceProcessors([
+new BatchTraceProcessor(
+  new KeywordsAIOpenAIAgentsTracingExporter(),
+),
+]);  
 // Tool that returns a random integer between 1 and 10
 const howManyJokesTool = tool({
   name: 'how_many_jokes',
@@ -17,7 +30,9 @@ async function main() {
     tools: [howManyJokesTool],
   });
 
-  const stream = await run(agent, 'Hello', { stream: true });
+  const stream = await withTrace('Stream Items', async () => {
+    return run(agent, 'Hello', { stream: true });
+  });
   console.log('=== Run starting ===');
   for await (const event of stream.toStream()) {
     // We'll ignore the raw responses event deltas

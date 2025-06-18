@@ -1,5 +1,18 @@
-import { Agent, run } from '@openai/agents';
+import { Agent, run, BatchTraceProcessor, setTraceProcessors, withTrace } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);   
 async function main() {
   const agent = new Agent({
     name: 'Assistant',
@@ -41,9 +54,11 @@ async function mainStream() {
   }
   console.log();
 
-  result = await run(agent, 'What is the capital of that country?', {
-    stream: true,
-    previousResponseId: result.lastResponseId,
+  result = await withTrace('Previous Response ID', async () => {
+    return run(agent, 'What is the capital of that country?', {
+      stream: true,
+      previousResponseId: result.lastResponseId,
+    });
   });
 
   // toTextStream() automatically returns a readable stream of strings intended to be displayed

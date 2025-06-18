@@ -41,6 +41,7 @@ const ImageURLSchema = z.object({
   detail: z.string().optional(),
 });
 
+
 const CacheControlSchema = z.object({
   type: z.string(),
 });
@@ -57,6 +58,19 @@ const TextContentSchema = BaseContentSchema.extend({
 const ImageContentSchema = BaseContentSchema.extend({
   image_url: z.union([ImageURLSchema, z.string()]),
 });
+
+
+const InputImageSchema = BaseContentSchema.extend({
+  file: z.string(),
+  providerData: z.record(z.any()).optional(),
+});
+
+
+const FileContentSchema = BaseContentSchema.extend({
+  file: z.string(),
+  providerData: z.record(z.any()).optional(),
+});
+
 
 const ToolUseContentSchema = BaseContentSchema.extend({
   id: z.string().optional(),
@@ -90,9 +104,11 @@ const MessageContentSchema = z
       z.union([
         TextContentSchema,
         ImageContentSchema,
+        FileContentSchema,
         ToolUseContentSchema,
         ToolResultContentSchema,
         OutputTextContentSchema,
+        InputImageSchema,
         z.object({
           type: z.string(),
           text: z.string(),

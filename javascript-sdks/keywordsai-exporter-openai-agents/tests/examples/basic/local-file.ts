@@ -1,7 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { Agent, run } from '@openai/agents';
+import { Agent, BatchTraceProcessor, run, setTraceProcessors } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { withTrace } from '@openai/agents';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);
 const filePath = path.join(
   __dirname,
   'media/partial_o3-and-o4-mini-system-card.pdf',
@@ -19,7 +33,8 @@ async function main() {
   });
 
   const b64File = fileToBase64(filePath);
-  const result = await run(agent, [
+  const result = await withTrace('Local File', async () => {
+    return run(agent, [
     {
       role: 'user',
       content: [
@@ -37,8 +52,9 @@ async function main() {
       content: 'What is the first sentence of the introduction?',
     },
   ]);
+  });
 
-  console.log(result.finalOutput);
+  // console.log(result.finalOutput);
   // OpenAI o3 and OpenAI o4-mini combine state-of-the-art reasoning with full tool capabilities — web browsing, Python, image and file analysis, image generation, canvas, automations, file search, and memory.
 }
 

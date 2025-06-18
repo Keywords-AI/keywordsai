@@ -11,7 +11,14 @@ import {
 import { createInterface } from 'node:readline/promises';
 import { z } from 'zod';
 import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
 
 setTraceProcessors([
   new BatchTraceProcessor(

@@ -2,7 +2,9 @@
   "private": true,
   "name": "basic",
   "dependencies": {
-    "@openai/agents": "workspace:*",
+    "@openai/agents": "^0.0.8",
+    "@types/node": "^24.0.3",
+    "dotenv": "^16.5.0",
     "zod": "~3.25.40"
   },
   "scripts": {
@@ -24,5 +26,8 @@
     "start:tools": "tsx tools.ts",
     "start:reasoning": "tsx reasoning.ts",
     "start:local-file": "tsx local-file.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3"
   }
 }

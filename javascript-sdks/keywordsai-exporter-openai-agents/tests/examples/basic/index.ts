@@ -1,6 +1,19 @@
 import { z } from 'zod';
-import { Agent, run, tool } from '@openai/agents';
+import { Agent, BatchTraceProcessor, run, setTraceProcessors, tool, withTrace } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);
 const getWeatherTool = tool({
   name: 'get_weather',
   description: 'Get the weather for a given city',
@@ -24,7 +37,9 @@ const agent = new Agent({
 });
 
 async function main() {
-  const result = await run(agent, 'What is the weather in San Francisco?');
+  const result = await withTrace('Basic test agent', async () => {
+    return run(agent, 'What is the weather in San Francisco?');
+  });
 
   console.log(result.finalOutput);
 }

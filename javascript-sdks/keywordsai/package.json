@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/keywordsai-sdk",
   "type": "module",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "description": "KeywordsAI typing SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,6 +26,7 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^2.0.1",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "typescript": "^5.8.3",
     "zod": "^3.25.58"
   },
   "devDependencies": {

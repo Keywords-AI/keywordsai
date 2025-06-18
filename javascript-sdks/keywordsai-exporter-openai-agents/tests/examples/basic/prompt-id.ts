@@ -1,18 +1,32 @@
-import { Agent, run } from '@openai/agents';
-
+import { Agent, BatchTraceProcessor, run, setTraceProcessors, withTrace } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);  
 async function main() {
   const agent = new Agent({
     name: 'Assistant',
     prompt: {
-      promptId: 'pmpt_684b3b772e648193b92404d7d0101d8a07f7a7903e519946',
+      promptId: 'pmpt_6852d4818a3881909718eab68030a8600bedfd507cb7b39e',
       version: '1',
       variables: {
-        poem_style: 'limerick',
+       
       },
     },
   });
 
-  const result = await run(agent, 'Write about unrequited love.');
+  const result = await withTrace('Prompt ID', async () => {
+    return run(agent, 'Write about unrequited love.');
+  });
   console.log(result.finalOutput);
 }
 

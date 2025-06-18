@@ -13,6 +13,7 @@ __metadata:
     "@opentelemetry/core": "npm:^2.0.1"
     "@opentelemetry/sdk-trace-base": "npm:^2.0.1"
     "@types/node": "npm:^22.15.29"
+    typescript: "npm:^5.8.3"
     zod: "npm:^3.25.58"
   languageName: unknown
   linkType: soft
@@ -68,11 +69,31 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^22.15.29":
-  version: 22.15.31
-  resolution: "@types/node@npm:22.15.31"
+  version: 22.15.32
+  resolution: "@types/node@npm:22.15.32"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/ef7d5dc890da41cfd554d35ab8998bc18be9e3a0caa642e720599ac4410a94a4879766e52b3c9cafa06c66b7b8aebdc51f322cf67df23a6489927890196a316d
+  checksum: 10c0/63a2fa52adf1134d1b3bee8b1862d4b8e4550fffc190551068d3d41a41d9e5c0c8f1cb81faa18767b260637360f662115c26c5e4e7718868ead40c4a57cbc0e3
+  languageName: node
+  linkType: hard
+
+"typescript@npm:^5.8.3":
+  version: 5.8.3
+  resolution: "typescript@npm:5.8.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/5f8bb01196e542e64d44db3d16ee0e4063ce4f3e3966df6005f2588e86d91c03e1fb131c2581baf0fb65ee79669eea6e161cd448178986587e9f6844446dbb48
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A^5.8.3#optional!builtin<compat/typescript>":
+  version: 5.8.3
+  resolution: "typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=5786d5"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/39117e346ff8ebd87ae1510b3a77d5d92dae5a89bde588c747d25da5c146603a99c8ee588c7ef80faaf123d89ed46f6dbd918d534d641083177d5fac38b8a1cb
   languageName: node
   linkType: hard
 
@@ -84,8 +105,8 @@ __metadata:
   linkType: hard
 
 "zod@npm:^3.25.58":
-  version: 3.25.58
-  resolution: "zod@npm:3.25.58"
-  checksum: 10c0/3525e9104adcb84b48ff2c166a44175e2f4fd502bcab045bde7cb898097a3ff0cc8b03469d949f1c14455266fd9bedeea0b411ec624b42827db48ad942ffb3b1
+  version: 3.25.67
+  resolution: "zod@npm:3.25.67"
+  checksum: 10c0/80a0cab3033272c4ab9312198081f0c4ea88e9673c059aa36dc32024906363729db54bdb78f3dc9d5529bd1601f74974d5a56c0a23e40c6f04a9270c9ff22336
   languageName: node
   linkType: hard

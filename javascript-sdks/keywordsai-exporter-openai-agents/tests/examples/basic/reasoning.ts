@@ -1,8 +1,21 @@
 import { styleText } from 'node:util';
-import { Agent, run } from '@openai/agents';
+import { Agent, BatchTraceProcessor, run, setTraceProcessors, withTrace } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
 
-const ASSISTANT_PREFIX = styleText(['bgGreen', 'black'], 'Assistant');
-const THINKING_PREFIX = styleText(['bgGray', 'black'], 'Thought');
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);       
+const ASSISTANT_PREFIX = 'Assistant';
+const THINKING_PREFIX = 'Thought';
 
 async function main() {
   const agent = new Agent({
@@ -18,7 +31,9 @@ async function main() {
     },
   });
 
-  const result = await run(agent, 'How many r are in strawberry?');
+  const result = await withTrace('Reasoning', async () => {
+    return run(agent, 'How many r are in strawberry?');
+  });
 
   for (const item of result.newItems) {
     if (item.type === 'reasoning_item') {

@@ -1,6 +1,20 @@
-import { Agent, run, tool } from '@openai/agents';
+import { Agent, BatchTraceProcessor, run, setTraceProcessors, tool, withTrace } from '@openai/agents';
 import { z } from 'zod';
+import * as dotenv from 'dotenv';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
 
+dotenv.config(
+    {
+        path: '../../../.env',
+        override: true
+    }
+);
+
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);
 const randomNumberTool = tool({
   name: 'random_number',
   description: 'Generate a random number up to the provided maximum.',
@@ -57,7 +71,9 @@ attachHooks(startAgent);
 attachHooks(multiplyAgent);
 
 async function main() {
-  const result = await run(startAgent, 'Generate a random number up to 10');
+  const result = await withTrace('Agent Lifecycle Example', async () => {
+    return run(startAgent, 'Generate a random number up to 10');
+  });
   console.log(result.finalOutput);
 }
 

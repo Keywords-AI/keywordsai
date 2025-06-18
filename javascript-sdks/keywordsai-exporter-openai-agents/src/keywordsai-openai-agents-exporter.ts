@@ -80,8 +80,7 @@ function responseDataToKeywordsAILog(
   spanData: ResponseSpanData
 ): void {
   data.span_name = spanData.type; // response
-  data.log_type = "text"; // The corresponding keywordsai log type
-
+  data.log_type = "response"; // The correct keywordsai log type for response spans
   try {
     // Extract prompt messages from _input if available
     if (spanData._input) {
@@ -90,15 +89,16 @@ function responseDataToKeywordsAILog(
         const messages: any[] = [];
         for (const item of spanData._input) {
           try {
-            if (item.type === "message") {
+            if (item.role) {
               // Convert OpenAI Agents message format to KeywordsAI format
-              const message = {
-                role: item.role,
-                content: Array.isArray(item.content) 
-                  ? item.content.map((c: any) => c.text || c.type === "input_text" ? c.text : String(c)).join(" ")
-                  : String(item.content)
-              };
-              messages.push(message);
+              // const message = {
+              //   role: item.role,
+              //   content: Array.isArray(item.content) 
+              //     ? item.content.map((c: any) => c.text || c.type === "input_text" ? c.text : String(c)).join(" ")
+              //     : String(item.content)
+              // };
+              // console.log('message', message);
+              messages.push(item);
             } else if (item.type === "function_call" || item.type === "function_call_result") {
               data.tool_calls = data.tool_calls || [];
               data.tool_calls.push({
@@ -110,6 +110,8 @@ function responseDataToKeywordsAILog(
                 },
                 ...(item.output && { result: typeof item.output === "string" ? item.output : JSON.stringify(item.output) })
               });
+            } else {
+              messages.push(item);
             }
           } catch (e) {
             console.warn(`Failed to convert item to Message: ${e}, item:`, item);
@@ -151,12 +153,39 @@ function responseDataToKeywordsAILog(
             if (itemType === "message" && (item as any).role === "assistant") {
               // Convert assistant message
               const content = Array.isArray((item as any).content) 
-                ? (item as any).content.map((c: any) => c.text || String(c)).join(" ")
+                ? (item as any).content.map((c: any) => {
+                    if (typeof c === "object" && c !== null && (c.type === "output_text" || c.type === "text")) {
+                      // Handle output_text and text content with annotations
+                      const contentItem: any = { 
+                        type: c.type,
+                        text: c.text 
+                      };
+                      if (c.annotations && Array.isArray(c.annotations)) {
+                        contentItem.annotations = c.annotations;
+                      }
+                      if (c.cache_control) {
+                        contentItem.cache_control = c.cache_control;
+                      }
+                      return contentItem;
+                    }
+                    return c.text || String(c);
+                  })
                 : String((item as any).content);
-              completionMessages.push({
+              
+              const message: any = {
                 role: "assistant",
                 content: content
-              });
+              };
+              
+              // If content is an array and has structured items with annotations, preserve the structure
+              if (Array.isArray(content) && content.some((c: any) => typeof c === "object" && (c.type === "output_text" || c.type === "text"))) {
+                message.content = content;
+              } else if (Array.isArray(content)) {
+                // Convert to string if no structured content
+                message.content = content.map((c: any) => typeof c === "object" ? c.text || String(c) : String(c)).join(" ");
+              }
+              
+              completionMessages.push(message);
             } else if (itemType === "function_call") {
               data.tool_calls = data.tool_calls || [];
               data.tool_calls.push({
@@ -260,7 +289,7 @@ function handoffDataToKeywordsAILog(
   spanData: HandoffSpanData
 ): void {
   data.span_name = spanData.type; // handoff
-  data.log_type = "handoff"; // The corresponding keywordsai log type
+  data.log_type = "handoff"; // The correct keywordsai log type
   data.span_handoffs = [`${spanData.from_agent} -> ${spanData.to_agent}`];
   data.metadata = {
     from_agent: spanData.from_agent,
@@ -290,7 +319,7 @@ function agentDataToKeywordsAILog(
   spanData: AgentSpanData
 ): void {
   data.span_name = spanData.name;
-  data.log_type = "agent"; // The corresponding keywordsai log type
+  data.log_type = "agent"; // The correct keywordsai log type
   data.span_workflow_name = spanData.name;
 
   // Add tools if available
@@ -315,7 +344,7 @@ function guardrailDataToKeywordsAILog(
   spanData: GuardrailSpanData
 ): void {
   data.span_name = `guardrail:${spanData.name}`;
-  data.log_type = "guardrail"; // The corresponding keywordsai log type
+  data.log_type = "guardrail"; // The correct keywordsai log type
   data.has_warnings = spanData.triggered;
   if (spanData.triggered) {
     data.warnings_dict = data.warnings_dict || {};
@@ -373,7 +402,8 @@ export class KeywordsAISpanExporter implements TracingExporter {
         trace_unique_id: item.traceId,
         span_unique_id: item.traceId,
         span_name: item.name,
-        log_type: "agent",
+        log_type: "agent", // Root trace should be agent type
+        span_workflow_name: item.name,
       };
     } else if (this.isSpan(item)) {
       // Get the span ID - it could be named span_id or id depending on the implementation
@@ -400,7 +430,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
         const spanData = item.spanData;
         
         // Log the span data for debugging
-        console.log('Processing span data:', JSON.stringify(spanData, null, 2));
+        // console.log('Processing span data:', JSON.stringify(spanData, null, 2));
         
         if (this.isResponseSpanData(spanData)) {
           responseDataToKeywordsAILog(data, spanData);
@@ -418,7 +448,18 @@ export class KeywordsAISpanExporter implements TracingExporter {
           guardrailDataToKeywordsAILog(data, spanData);
         } else {
           console.warn(`Unknown span data type:`, spanData);
-          return null;
+          // Don't return null, create a basic span with the available data
+          data.span_name = spanData?.type || spanData?.name || "unknown_span";
+          data.log_type = "custom";
+          data.metadata = spanData;
+        }
+        
+        // Ensure all spans have required fields for KeywordsAI
+        if (!data.span_name) {
+          data.span_name = spanData?.type || spanData?.name || item.spanId;
+        }
+        if (!data.log_type) {
+          data.log_type = "custom";
         }
         
         return data;

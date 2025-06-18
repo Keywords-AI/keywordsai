@@ -1,5 +1,18 @@
-import { Agent, run, JsonSchemaDefinition } from '@openai/agents';
+import { Agent, run, JsonSchemaDefinition, BatchTraceProcessor, setTraceProcessors, withTrace } from '@openai/agents';
+import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import * as dotenv from 'dotenv';
 
+dotenv.config(
+  {
+      path: '../../../.env',
+      override: true
+  }
+);
+setTraceProcessors([
+  new BatchTraceProcessor(
+    new KeywordsAIOpenAIAgentsTracingExporter(),
+  ),
+]);
 const WeatherSchema: JsonSchemaDefinition = {
   type: 'json_schema',
   name: 'Weather',
@@ -19,7 +32,9 @@ async function main() {
     outputType: WeatherSchema,
   });
 
-  const result = await run(agent, 'What is the weather in London?');
+  const result = await withTrace('JSON Schema Output Type', async () => {
+    return run(agent, 'What is the weather in London?');
+  });
   console.log(result.finalOutput);
   // { city: 'London', forecast: '...'}
 }
