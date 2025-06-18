@@ -15,9 +15,7 @@ import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
 
 setTraceProcessors([
   new BatchTraceProcessor(
-    new KeywordsAIOpenAIAgentsTracingExporter({
-      apiKey: process.env.KEYWORDS_AI_API_KEY,
-    }),
+    new KeywordsAIOpenAIAgentsTracingExporter(),
   ),
 ]);
 async function ask(prompt: string) {

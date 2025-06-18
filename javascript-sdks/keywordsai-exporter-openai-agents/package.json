@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
+    "dotenv": "^16.5.0",
     "typescript": "^5.0.0"
   },
   "packageManager": "yarn@4.9.2"

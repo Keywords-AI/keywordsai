@@ -1,1 +1,5 @@
-export * from "./keywordsai-openai-agents-exporter.js"
+export {
+  KeywordsAISpanExporter,
+  KeywordsAIOpenAIAgentsTracingExporter,
+  KeywordsAITraceProcessor,
+} from './keywordsai-openai-agents-exporter';
