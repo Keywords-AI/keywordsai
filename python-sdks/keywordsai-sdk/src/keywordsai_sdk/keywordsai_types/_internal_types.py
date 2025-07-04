@@ -79,11 +79,30 @@ class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
+class InputTextContent(KeywordsAIBaseModel):
+    type: Literal["input_text"] = "input_text"
+    text: str
+    cache_control: Optional[CacheControl] = None
+
+class OutputTextContent(KeywordsAIBaseModel):
+    type: Literal["output_text"] = "output_text"
+    text: str
+    cache_control: Optional[CacheControl] = None
 
 
 class FileContent(KeywordsAIBaseModel):
     type: Literal["file"] = "file"
     file: Dict[str, Any] = {}
+
+class InputFileContent(KeywordsAIBaseModel):
+    type: Literal["input_file"] = "input_file"
+    file: str
+    providerData: Optional[dict] = None
+
+class InputImageContent(KeywordsAIBaseModel):
+    type: Literal["input_image"] = "input_image"
+    image: str
+    providerData: Optional[dict] = None
 
 
 class OutputTextContent(KeywordsAIBaseModel):
@@ -115,9 +134,12 @@ MessageContentType = Annotated[
     Union[
         ImageContent,
         TextContent,
-        FileContent,
-        ToolUseContent,
+        InputTextContent,
         OutputTextContent,
+        FileContent,
+        InputFileContent,
+        InputImageContent,
+        ToolUseContent,
         "AnthropicImageContent",
         "AnthropicToolResultContent",
     ],

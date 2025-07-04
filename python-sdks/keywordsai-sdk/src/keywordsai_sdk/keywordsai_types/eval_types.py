@@ -240,6 +240,7 @@ class EvalErrorType(KeywordsAIBaseModel):
 class EvalConfigurations(KeywordsAIBaseModel):
     id: str
     organization_id: int
+    unique_organization_id: str = ""
     model: Union[str, None] = None
     enabled: bool = False
     sample_percentage: Union[float, None] = None

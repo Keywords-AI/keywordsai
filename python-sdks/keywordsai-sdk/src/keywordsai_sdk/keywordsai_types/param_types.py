@@ -545,6 +545,19 @@ class KeywordsAIParams(KeywordsAIBaseModel):
             raise ValueError("Customer identifier must be less than 120 characters")
         return v
 
+    @field_validator("input")
+    def validate_input(cls, v):
+        import json
+        from keywordsai_sdk.utils.serialization import json_serial
+        if v:
+            if isinstance(v, dict):
+                return json.dumps(v, default=json_serial) # Eats any unknown type as string
+            elif isinstance(v, list):
+                return json.dumps(v, default=json_serial)
+            else:
+                return v
+        return v
+
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
@@ -565,7 +578,12 @@ class KeywordsAITextLogParams(
 
     @model_validator(mode="before")
     def _preprocess_data(cls, data):
+
         data = KeywordsAIParams._preprocess_data(data)
+        # Special response format handling for backward compatibility
+        if "response_format" in data:
+            if type(data["response_format"]) == str:
+                data["response_format"] = {"type": data["response_format"]}
         return data
 
     def serialize_for_logging(self, exclude_fields: List[str] = []) -> dict:

@@ -361,13 +361,21 @@ export class KeywordsAISpanExporter implements TracingExporter {
   private baseDelay: number;
   private maxDelay: number;
 
+  private resolveEndpoint(baseURL: string | undefined): string {
+    if (!baseURL) {
+      return "https://api.keywordsai.co/api/openai/v1/traces/ingest";
+    }
+    if (baseURL.endsWith("/api")) {
+      return `${baseURL}/openai/v1/traces/ingest`;
+    }
+    return `${baseURL}/api/openai/v1/traces/ingest`;
+  }
+
   constructor({
     apiKey = process.env.KEYWORDSAI_API_KEY || process.env.OPENAI_API_KEY || null,
     organization = process.env.OPENAI_ORG_ID || null,
     project = process.env.OPENAI_PROJECT_ID || null,
-    endpoint = process.env.KEYWORDSAI_BASE_URL ? 
-      `${process.env.KEYWORDSAI_BASE_URL}/openai/v1/traces/ingest` : 
-      "https://api.keywordsai.co/api/openai/v1/traces/ingest",
+    endpoint = this.resolveEndpoint(process.env.KEYWORDSAI_BASE_URL),
     maxRetries = 3,
     baseDelay = 1.0,
     maxDelay = 30.0,

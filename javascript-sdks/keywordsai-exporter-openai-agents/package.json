@@ -1,6 +1,6 @@
 {
   "name": "@keywordsai/exporter-openai-agents",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Exporter for OpenAI agents traces to KeywordsAI",
   "author": "KeywordsAI <team@keywordsai.co>",
   "type": "module",
