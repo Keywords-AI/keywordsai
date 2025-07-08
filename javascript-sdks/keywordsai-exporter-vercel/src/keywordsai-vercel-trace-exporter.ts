@@ -285,7 +285,7 @@ export class KeywordsAIExporter implements SpanExporter {
   ): any[] {
     const message = {
       role: "assistant",
-      content: String(span.attributes["ai.response.text"] || ""),
+      content: String(span.attributes["ai.response.text"] || span.attributes["ai.response.object"].response || ""),
       ...(toolCalls && toolCalls.length > 0 && { tool_calls: toolCalls }),
     };
 
