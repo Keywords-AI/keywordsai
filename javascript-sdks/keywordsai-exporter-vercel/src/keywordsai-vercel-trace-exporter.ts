@@ -401,13 +401,13 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parsePromptTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.input_tokens"] || "0")
+      String(span.attributes["gen_ai.usage.input_tokens"] || span.attributes["gen_ai.usage.prompt_tokens"] || "0")
     );
   }
 
   private parseCompletionTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.output_tokens"] || "0")
+      String(span.attributes["gen_ai.usage.output_tokens"] || span.attributes["gen_ai.usage.completion_tokens"] || "0")
     );
   }
 
