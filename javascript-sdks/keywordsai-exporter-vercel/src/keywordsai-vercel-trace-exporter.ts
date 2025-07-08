@@ -283,9 +283,23 @@ export class KeywordsAIExporter implements SpanExporter {
     span: ReadableSpan,
     toolCalls?: any[]
   ): any[] {
+    let content = "";
+    
+    if (span.attributes["ai.response.object"]) {
+      try {
+        const response = JSON.parse(String(span.attributes["ai.response.object"]));
+        content = String(response.response || "");
+      } catch (error) {
+        this.logDebug("Error parsing ai.response.object:", error);
+        content = String(span.attributes["ai.response.text"] || "");
+      }
+    } else {
+      content = String(span.attributes["ai.response.text"] || "");
+    }
+    
     const message = {
       role: "assistant",
-      content: String(span.attributes["ai.response.text"] || span.attributes["ai.response.object"].response || ""),
+      content,
       ...(toolCalls && toolCalls.length > 0 && { tool_calls: toolCalls }),
     };
 
