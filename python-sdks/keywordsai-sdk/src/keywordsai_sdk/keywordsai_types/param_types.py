@@ -466,6 +466,12 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     thread_unique_id: Optional[str] = None
     # endregion: thread, deprecated
 
+    # region: dataset
+    dataset_id: Optional[str] = None
+    ds_run_at: Optional[datetime] = None # The time when the dataset run was triggered
+    original_copy_storage_object_key: Optional[str] = None
+    # endregion: dataset
+
     # endregion: tracing
 
     @model_validator(mode="before")
@@ -586,7 +592,7 @@ class KeywordsAITextLogParams(
                 data["response_format"] = {"type": data["response_format"]}
         return data
 
-    def serialize_for_logging(self, exclude_fields: List[str] = []) -> dict:
+    def serialize_for_logging(self, exclude_fields: List[str] = [], extra_fields: List[str] = []) -> dict:
         # Define fields to include based on Django model columns
         # Using a set for O(1) lookup
         FIELDS_TO_INCLUDE = {
@@ -693,8 +699,14 @@ class KeywordsAITextLogParams(
             "has_warnings",
             "prompt_version_number",
             "deployment_name",
+
+            # region: dataset
+            "dataset_id",
+            "ds_run_at",
+            "original_copy_storage_object_key",
+            # endregion: dataset
         }
-        FIELDS_TO_INCLUDE = set(FIELDS_TO_INCLUDE) - set(exclude_fields)
+        FIELDS_TO_INCLUDE = (set(FIELDS_TO_INCLUDE) - set(exclude_fields)) | set(extra_fields)
         if self.disable_log:
             FIELDS_TO_INCLUDE.discard("full_request")
             FIELDS_TO_INCLUDE.discard("full_response")
