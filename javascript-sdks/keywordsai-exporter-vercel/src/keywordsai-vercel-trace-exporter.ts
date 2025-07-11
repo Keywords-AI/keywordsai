@@ -283,9 +283,23 @@ export class KeywordsAIExporter implements SpanExporter {
     span: ReadableSpan,
     toolCalls?: any[]
   ): any[] {
+    let content = "";
+    
+    if (span.attributes["ai.response.object"]) {
+      try {
+        const response = JSON.parse(String(span.attributes["ai.response.object"]));
+        content = String(response.response || "");
+      } catch (error) {
+        this.logDebug("Error parsing ai.response.object:", error);
+        content = String(span.attributes["ai.response.text"] || "");
+      }
+    } else {
+      content = String(span.attributes["ai.response.text"] || "");
+    }
+    
     const message = {
       role: "assistant",
-      content: String(span.attributes["ai.response.text"] || ""),
+      content,
       ...(toolCalls && toolCalls.length > 0 && { tool_calls: toolCalls }),
     };
 
@@ -387,13 +401,13 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parsePromptTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.input_tokens"] || "0")
+      String(span.attributes["gen_ai.usage.input_tokens"] || span.attributes["gen_ai.usage.prompt_tokens"] || "0")
     );
   }
 
   private parseCompletionTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.output_tokens"] || "0")
+      String(span.attributes["gen_ai.usage.output_tokens"] || span.attributes["gen_ai.usage.completion_tokens"] || "0")
     );
   }
 
