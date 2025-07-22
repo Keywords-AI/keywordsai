@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,7 +25,7 @@
   "author": "Raymond Huang",
   "license": "Apache-2.0",
   "dependencies": {
-    "@keywordsai/keywordsai-sdk": "^0.0.4",
+    "@keywordsai/keywordsai-sdk": "^0.0.11",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^1.26.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.56.0",
