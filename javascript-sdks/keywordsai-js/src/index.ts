@@ -1,5 +1,5 @@
-export { KeywordsAITelemetry } from "./main";
-export * from "./decorators";
-export * from "./contexts";
-export * from "./types";
-export * from "./utils";
+export { KeywordsAITelemetry } from "./main.js";
+export * from "./decorators/index.js";
+export * from "./contexts/index.js";
+export * from "./types/index.js";
+export * from "./utils/index.js";

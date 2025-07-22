@@ -3,6 +3,7 @@ from .core.client import KeywordsAIClient
 from .decorators import workflow, task, agent, tool
 from .contexts.span import keywordsai_span_attributes
 from .instruments import Instruments
+from .utils.logging import get_keywordsai_logger, get_main_logger
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 
 __all__ = [
@@ -16,4 +17,6 @@ __all__ = [
     "keywordsai_span_attributes",
     "Instruments",
     "KeywordsAIParams",
+    "get_keywordsai_logger",
+    "get_main_logger",
 ]

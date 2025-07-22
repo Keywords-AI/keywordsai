@@ -7,7 +7,7 @@ import {
   getTracer,
   WORKFLOW_NAME_KEY,
   shouldSendTraces,
-} from "../utils/tracing";
+} from "../utils/tracing.js";
 import {
   CONTEXT_KEY_ALLOW_TRACE_CONTENT,
   SpanAttributes,

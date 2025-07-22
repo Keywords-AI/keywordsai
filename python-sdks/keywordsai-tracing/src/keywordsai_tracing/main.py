@@ -1,14 +1,13 @@
 import os
 import logging
-from typing import Optional, Set, Dict, Callable
+from typing import Optional, Set, Dict, Callable, Literal, Union
 from opentelemetry.sdk.trace import ReadableSpan
-
 from .decorators import workflow, task, agent, tool
 from .core.tracer import KeywordsAITracer
 from .core.client import KeywordsAIClient
 from .instruments import Instruments
-from .contexts.stdio import suppress_stdout
-
+from .constants.generic import LOGGER_NAME
+from .utils.logging import get_main_logger
 
 class KeywordsAITelemetry:
     """
@@ -19,6 +18,10 @@ class KeywordsAITelemetry:
         app_name: Name of the application for telemetry identification
         api_key: KeywordsAI API key (can also be set via KEYWORDSAI_API_KEY env var)
         base_url: KeywordsAI API base URL (can also be set via KEYWORDSAI_BASE_URL env var)
+        log_level: Logging level for KeywordsAI tracing (default: "INFO"). 
+                  Can be "DEBUG", "INFO", "WARNING", "ERROR", or "CRITICAL".
+                  Set to "DEBUG" to see detailed debug messages.
+                  Can also be set via KEYWORDSAI_LOG_LEVEL environment variable.
         disable_batch: Whether to disable batch span processing (useful for debugging)
         instruments: Set of instruments to enable (if None, enables default set)
         block_instruments: Set of instruments to explicitly disable
@@ -38,6 +41,7 @@ class KeywordsAITelemetry:
         app_name: str = "keywordsai",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
+        log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
         disable_batch: Optional[bool] = None,
         instruments: Optional[Set[Instruments]] = None,
         block_instruments: Optional[Set[Instruments]] = None,
@@ -55,6 +59,16 @@ class KeywordsAITelemetry:
         disable_batch = disable_batch or (
             os.getenv("KEYWORDSAI_DISABLE_BATCH", "False").lower() == "true"
         )
+        
+        # Get log level from environment variable if not explicitly set
+        env_log_level = os.getenv("KEYWORDSAI_LOG_LEVEL")
+        if env_log_level and log_level == "INFO":  # Only use env var if user didn't specify
+            valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+            if env_log_level.upper() in valid_levels:
+                log_level = env_log_level.upper()  # type: ignore
+        
+        # Configure logging level for KeywordsAI tracing
+        self._configure_logging(log_level)
         
         # Initialize the tracer
         self.tracer = KeywordsAITracer(
@@ -75,6 +89,31 @@ class KeywordsAITelemetry:
             logging.info(f"KeywordsAI telemetry initialized, sending to {base_url}")
         else:
             logging.info("KeywordsAI telemetry is disabled")
+
+    def _configure_logging(self, log_level: Union[str, int]):
+        """Configure logging level for KeywordsAI tracing"""
+        # Get the KeywordsAI logger using the utility function
+        keywordsai_logger = get_main_logger()
+        
+        # Convert string log level to logging constant if needed
+        if isinstance(log_level, str):
+            log_level = getattr(logging, log_level.upper(), logging.INFO)
+        
+        # Set the log level
+        keywordsai_logger.setLevel(log_level)
+        
+        # Ensure there's a handler if none exists
+        if not keywordsai_logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            keywordsai_logger.addHandler(handler)
+        
+        # Prevent duplicate messages from propagating to root logger
+        # but allow child loggers to inherit the level
+        keywordsai_logger.propagate = False
 
     def flush(self):
         """Force flush all pending spans"""

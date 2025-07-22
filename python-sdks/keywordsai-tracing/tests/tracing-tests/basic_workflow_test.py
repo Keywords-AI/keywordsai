@@ -6,9 +6,8 @@ loaded = load_dotenv("./tests/.env", override=True)
 import os
 from keywordsai_tracing.main import KeywordsAITelemetry
 
-print(os.environ["KEYWORDSAI_BASE_URL"])
-print(os.environ["KEYWORDSAI_API_KEY"])
-k_tl = KeywordsAITelemetry()
+# Initialize with debug logging enabled
+k_tl = KeywordsAITelemetry(log_level="DEBUG")
 # endregion: setup
 import time
 from openai import OpenAI
@@ -44,7 +43,7 @@ def create_joke():
         stop=["\n"],
         logprobs=True,
     )
-    joke = completion.choices[0].message.content
+    joke = completion.choices[0].message.content or ""
     store_joke(joke)
 
     return joke
@@ -59,7 +58,7 @@ def generate_signature(joke: str):
         ],
     )
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message.content or ""
 
 
 @task(name="pirate_joke_translation")
@@ -74,7 +73,7 @@ def translate_joke_to_pirate(joke: str):
         ],
     )
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message.content or ""
 
 
 @workflow(name="pirate_joke_generator")
@@ -98,7 +97,7 @@ def audience_laughs(joke: str):
         max_tokens=10,
     )
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message.content or ""
 
 
 @task(name="audience_claps")
@@ -114,7 +113,7 @@ def audience_claps():
         max_tokens=5,
     )
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message.content or ""
 
 
 @task(name="audience_applaud")
@@ -131,11 +130,11 @@ def audience_applaud(joke: str):
         max_tokens=10,
     )
 
-    return completion.choices[0].message.content
+    return completion.choices[0].message.content or ""
 
 
 @workflow(name="audience_reaction")
-def audience_reaction(joke: StopIteration):
+def audience_reaction(joke: str):
     laughter = audience_laughs(joke=joke)
     applauds = audience_applaud(joke=joke)
 
@@ -161,7 +160,12 @@ def ask_for_comments(joke: str):
         max_tokens=100,
     )
 
-    return completion.content[0].text
+    # Handle anthropic response content properly
+    if completion.content and len(completion.content) > 0:
+        content_block = completion.content[0]
+        if hasattr(content_block, 'text'):
+            return content_block.text
+    return ""
 
 
 @task(name="read_joke_comments")

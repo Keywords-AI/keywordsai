@@ -48,6 +48,11 @@ export class KeywordsAIExporter implements SpanExporter {
     }
     this.baseUrl = params.baseUrl ?? "https://api.keywordsai.co/api";
     this.url = this.resolveURL(this.baseUrl);
+    this.logDebug("KeywordsAIExporter initialized", {
+      url: this.url,
+      apiKey: this.apiKey.slice(0, 4) + "..." + this.apiKey.slice(-4),
+      baseUrl: this.baseUrl,
+    });
   }
 
   async export(
@@ -328,7 +333,7 @@ export class KeywordsAIExporter implements SpanExporter {
     }
 
     try {
-      this.logDebug(`Sending ${payloads.length} payloads to Keywords`);
+      this.logDebug(`Sending ${payloads.length} payloads to Keywords at ${this.url}`);
 
       const response = await fetch(this.url, {
         method: "POST",

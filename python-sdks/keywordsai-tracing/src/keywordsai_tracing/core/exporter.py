@@ -2,10 +2,14 @@ from typing import Dict, Optional, Sequence
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
+import logging
+from ..utils.logging import get_keywordsai_logger
+
+logger = get_keywordsai_logger('core.exporter')
 
 
 class KeywordsAISpanExporter:
-    """
+    """ 
     Custom span exporter for KeywordsAI that wraps the OTLP HTTP exporter
     with proper authentication and endpoint handling.
     """
@@ -27,7 +31,7 @@ class KeywordsAISpanExporter:
         
         # Ensure we're using the traces endpoint
         traces_endpoint = self._build_traces_endpoint(endpoint)
-        
+        logger.debug(f"Traces endpoint: {traces_endpoint}")
         # Initialize the underlying OTLP exporter
         self.exporter = OTLPSpanExporter(
             endpoint=traces_endpoint,
@@ -41,11 +45,7 @@ class KeywordsAISpanExporter:
         
         # Add traces path if not already present
         if not base_endpoint.endswith('/v1/traces'):
-            if base_endpoint.endswith('/api'):
-                # KeywordsAI specific endpoint structure
-                return f"{base_endpoint}/v1/traces"
-            else:
-                return f"{base_endpoint}/v1/traces"
+            return f"{base_endpoint}/v1/traces"
         
         return base_endpoint
     

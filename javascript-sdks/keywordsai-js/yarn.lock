@@ -222,14 +222,15 @@
   resolved "https://registry.npmjs.org/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz"
   integrity sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==
 
-"@keywordsai/keywordsai-sdk@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.npmjs.org/@keywordsai/keywordsai-sdk/-/keywordsai-sdk-0.0.4.tgz"
-  integrity sha512-c10Dcu16AscR1Z06loFRGFPaCZqPj7y3hJZ2JVBGVnROVGMYyVQGjudlIs+zDAHsGyEBpqaO2JnCJwprnKN8KQ==
+"@keywordsai/keywordsai-sdk@^0.0.11":
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/@keywordsai/keywordsai-sdk/-/keywordsai-sdk-0.0.11.tgz#5a702986278ddce31b4bd6293c9d71f264493b73"
+  integrity sha512-URoJVTwmVHShvlj7ibHCPLFu+XsaBi5yuvV3vzxG7c6jEONxR4NufeZIUvxR9K+064HgV9hvZkxebDZPzFmslQ==
   dependencies:
     "@opentelemetry/api" "^1.9.0"
     "@opentelemetry/core" "^2.0.1"
     "@opentelemetry/sdk-trace-base" "^2.0.1"
+    typescript "^5.8.3"
     zod "^3.25.58"
 
 "@opentelemetry/api-logs@0.200.0", "@opentelemetry/api-logs@^0.200.0":
@@ -1355,6 +1356,11 @@ typescript@^5.7.3:
   version "5.7.3"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.7.3.tgz"
   integrity sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==
+
+typescript@^5.8.3:
+  version "5.8.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.8.3.tgz#92f8a3e5e3cf497356f4178c34cd65a7f5e8440e"
+  integrity sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==
 
 undici-types@~5.26.4:
   version "5.26.5"

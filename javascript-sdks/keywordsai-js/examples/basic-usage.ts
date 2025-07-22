@@ -3,8 +3,8 @@ import OpenAI from 'openai';
 
 // Initialize the SDK
 const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDS_AI_API_KEY,
-    baseUrl: process.env.KEYWORDS_AI_BASE_URL,
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    baseUrl: process.env.KEYWORDSAI_BASE_URL,
     appName: 'basic-example',
     disableBatch: true, // For development
     logLevel: 'info'

@@ -1,9 +1,70 @@
-import { withTask, withWorkflow, withAgent, withTool } from "./decorators";
-import { WithFunctionType } from "./types/decoratorTypes";
-import { KeywordsAIOptions } from "./types/clientTypes";
-import { withKeywordsAISpanAttributes } from "./contexts/span";
-import { startTracing, enableInstrumentation, forceFlush } from "./utils/tracing";
+import { withTask, withWorkflow, withAgent, withTool } from "./decorators/index.js";
+import { WithFunctionType } from "./types/decoratorTypes.js";
+import { KeywordsAIOptions } from "./types/clientTypes.js";
+import { withKeywordsAISpanAttributes } from "./contexts/span.js";
+import { startTracing, enableInstrumentation, forceFlush } from "./utils/tracing.js";
 
+/**
+ * KeywordsAI client for trace management and instrumentation.
+ * This class provides an interface for initializing and managing OpenTelemetry-based tracing
+ * for various AI/ML services and frameworks.
+ * 
+ * ## Instrumentation Management
+ * 
+ * ### Automatic Discovery (Default)
+ * By default, KeywordsAI will attempt to load all available instrumentations automatically:
+ * ```typescript
+ * const keywordsAI = new KeywordsAITelemetry({
+ *   apiKey: 'your-api-key',
+ *   logLevel: 'info' // Shows what gets loaded successfully
+ * });
+ * ```
+ * 
+ * ### Manual Instrumentation (Next.js/Webpack environments)
+ * For environments where dynamic imports don't work properly:
+ * ```typescript
+ * import OpenAI from 'openai';
+ * import Anthropic from '@anthropic-ai/sdk';
+ * 
+ * const keywordsAI = new KeywordsAITelemetry({
+ *   apiKey: 'your-api-key',
+ *   instrumentModules: {
+ *     openAI: OpenAI,
+ *     anthropic: Anthropic
+ *   }
+ * });
+ * ```
+ * 
+ * ### Disable Specific Instrumentations
+ * Block instrumentations you don't want to use:
+ * ```typescript
+ * const keywordsAI = new KeywordsAITelemetry({
+ *   apiKey: 'your-api-key',
+ *   disabledInstrumentations: ['bedrock', 'chromaDB', 'qdrant']
+ * });
+ * ```
+ * 
+ * ### Available Instrumentations (consistent camelCase naming)
+ * - `openAI` - OpenAI API instrumentation
+ * - `anthropic` - Anthropic API instrumentation  
+ * - `azureOpenAI` - Azure OpenAI instrumentation
+ * - `cohere` - Cohere API instrumentation
+ * - `bedrock` - AWS Bedrock instrumentation
+ * - `googleVertexAI` - Google Vertex AI instrumentation
+ * - `googleAIPlatform` - Google AI Platform instrumentation
+ * - `pinecone` - Pinecone vector database instrumentation
+ * - `together` - Together AI instrumentation
+ * - `langChain` - LangChain framework instrumentation
+ * - `llamaIndex` - LlamaIndex framework instrumentation
+ * - `chromaDB` - ChromaDB vector database instrumentation
+ * - `qdrant` - Qdrant vector database instrumentation
+ * 
+ * ### Debugging Instrumentation Loading
+ * Set `logLevel: 'info'` or `logLevel: 'debug'` to see:
+ * - Which instrumentations loaded successfully
+ * - Which ones failed and installation instructions
+ * - Which ones were disabled by configuration
+ */
 export class KeywordsAITelemetry {
     private options: KeywordsAIOptions;
     private initialized: boolean = false;
@@ -11,11 +72,12 @@ export class KeywordsAITelemetry {
 
     constructor(options: KeywordsAIOptions) {
         this.options = {
-            appName: options.appName || process.env.KEYWORDS_AI_APP_NAME || "default",
+            appName: options.appName || process.env.KEYWORDSAI_APP_NAME || "default",
             disableBatch: options.disableBatch || false,
-            baseUrl: options.baseUrl || process.env.KEYWORDS_AI_BASE_URL || "https://api.keywordsai.co",
-            apiKey: options.apiKey || process.env.KEYWORDS_AI_API_KEY || "",
+            baseUrl: options.baseUrl || process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+            apiKey: options.apiKey || process.env.KEYWORDSAI_API_KEY || "",
             instrumentModules: options.instrumentModules || {},
+            disabledInstrumentations: options.disabledInstrumentations || [],
             tracingEnabled: options.tracingEnabled !== false,
             traceContent: options.traceContent !== false,
             logLevel: options.logLevel || "error",

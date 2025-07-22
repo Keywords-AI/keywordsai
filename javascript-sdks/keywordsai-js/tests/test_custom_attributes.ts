@@ -4,7 +4,7 @@ import { KeywordsAITelemetry } from "@keywordsai/tracing";
 
 const apiKey = process.env.KEYWORDSAI_API_KEY || "";
 const baseUrl = process.env.KEYWORDSAI_BASE_URL || "";
-const appName = process.env.KEYWORDS_AI_APP_NAME || "default";
+const appName = process.env.KEYWORDSAI_APP_NAME || "default";
 
 const keywordsAI = new KeywordsAITelemetry({
   apiKey,

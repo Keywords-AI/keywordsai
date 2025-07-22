@@ -9,9 +9,10 @@ from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
 
 from .tracer import KeywordsAITracer
+from ..utils.logging import get_keywordsai_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_keywordsai_logger('core.client')
 
 
 class KeywordsAIClient:

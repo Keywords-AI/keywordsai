@@ -7,8 +7,8 @@ import Anthropic from '@anthropic-ai/sdk';
 // dynamic imports might not work properly
 
 const keywordsAI = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDS_AI_API_KEY || "test-key",
-    baseUrl: process.env.KEYWORDS_AI_BASE_URL || "https://api.keywordsai.co",
+    apiKey: process.env.KEYWORDSAI_API_KEY || "test-key",
+    baseUrl: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
     appName: 'manual-instrumentation-example',
     disableBatch: true, // For development
     logLevel: 'info',

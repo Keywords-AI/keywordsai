@@ -64,8 +64,8 @@ import OpenAI from 'openai';
 
 // Initialize the SDK
 const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDS_AI_API_KEY,
-    baseUrl: process.env.KEYWORDS_AI_BASE_URL,
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    baseUrl: process.env.KEYWORDSAI_BASE_URL,
     appName: 'my-app'
 });
 
@@ -98,8 +98,8 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // Manual instrumentation - pass the actual imported modules
 const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDS_AI_API_KEY,
-    baseUrl: process.env.KEYWORDS_AI_BASE_URL,
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    baseUrl: process.env.KEYWORDSAI_BASE_URL,
     appName: 'my-app',
     // Specify modules to instrument manually
     instrumentModules: {
@@ -271,10 +271,10 @@ The following instrumentations can be enabled dynamically:
 
 ## Environment Variables
 
-- `KEYWORDS_AI_API_KEY`: Your KeywordsAI API key
-- `KEYWORDS_AI_BASE_URL`: KeywordsAI base URL (default: https://api.keywordsai.co)
-- `KEYWORDS_AI_APP_NAME`: Default app name
-- `KEYWORDS_AI_TRACE_CONTENT`: Enable/disable content tracing (default: true)
+- `KEYWORDSAI_API_KEY`: Your KeywordsAI API key
+- `KEYWORDSAI_BASE_URL`: KeywordsAI base URL (default: https://api.keywordsai.co)
+- `KEYWORDSAI_APP_NAME`: Default app name
+- `KEYWORDSAI_TRACE_CONTENT`: Enable/disable content tracing (default: true)
 
 ## Browser Compatibility
 

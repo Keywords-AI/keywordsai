@@ -11,6 +11,8 @@ from keywordsai_sdk.constants import DEFAULT_EVAL_LLM_ENGINE, LLM_ENGINE_FIELD_N
 import random
 import json
 
+from keywordsai_sdk.keywordsai_types.monitoring_types import ConditionParams
+
 Operator = Literal[
     "eq", "neq", "gt", "gte", "lt", "lte", "contains", "starts_with", "ends_with"
 ]
@@ -105,7 +107,7 @@ class ConditionAction(BaseActionType):
 
 
 EvalType = Literal["llm", "function", "human", "grounded"]
-EvalCategory = Literal["ragas", "custom"]
+EvalCategory = Literal["ragas", "custom", "keywordsai"]
 
 
 class FieldType(KeywordsAIBaseModel):
@@ -162,15 +164,13 @@ class ScoreMappingDict(TypedDict):
 class BaseEvalFormType(KeywordsAIBaseModel):
     eval_class: str
     type: EvalType
-    note: str = ""
+    note: str = "" # Note to the user from us developers
     display_name: str  # This is just the title of the form
-    description: str
+    description: str # User specified description
     special_fields: List[FieldType] = []
     required_fields: List[FieldType] = (
         []
     )  # Just tags that tells users what are needed to run this eval, not fields on the form
-    inference_filters: List[FilterAction] = []
-    allow_conditions: bool = True
     conditions: List[ConditionAction] = []
     score_mapping: ScoreMapping = None
     category: EvalCategory = "custom"
@@ -185,6 +185,7 @@ class BaseEvalFormType(KeywordsAIBaseModel):
             if isinstance(field_validator, Callable):
                 field_validator(inputs[field.name])
         return self
+    model_config = ConfigDict(extra="allow")
 
 
 class FilterValue(KeywordsAIBaseModel):
@@ -201,13 +202,14 @@ class EvalParamsDict(TypedDict):
 
 class EvaluatorToRun(KeywordsAIBaseModel):
     evaluator_slug: str
+    run_condition: Optional[ConditionParams] = None
     # TODO: other controlling parameters
 
 class EvalParams(KeywordsAIBaseModel):
     evaluation_identifier: str = ""
-    completion_message: Message
+    completion_message: Message = Message(role="user", content="")
     eval_inputs: EvalInputs = {}
-    prompt_messages: List[Message]
+    prompt_messages: List[Message] = []
     last_n_messages: int = 1
     filter_values: List[FilterValue] = []
     is_paid_user: bool = False
@@ -216,6 +218,29 @@ class EvalParams(KeywordsAIBaseModel):
     def model_dump(self, *args, **kwargs) -> "EvalParamsDict":
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)
+
+    @classmethod
+    def fix_broken_message(cls, message_obj: dict):
+        if not message_obj:
+            return {"role": "user", "content": ""}
+        elif isinstance(message_obj, Message):
+            return message_obj.model_dump()
+        elif isinstance(message_obj, dict):
+            if "role" not in message_obj:
+                message_obj["role"] = "user"
+            if "content" not in message_obj:
+                message_obj["content"] = ""
+        return message_obj
+
+    @field_validator("completion_message", mode="before")
+    def validate_completion_message(cls, value):
+        return cls.fix_broken_message(value)
+
+    @field_validator("prompt_messages", mode="before")
+    def validate_prompt_messages(cls, value):
+        if not value:
+            return []
+        return [cls.fix_broken_message(message) for message in value]
     
 
 
@@ -277,66 +302,5 @@ class EvalConfigurations(KeywordsAIBaseModel):
             )
             if llm_engine_field:
                 self.model = llm_engine_field.value
-
-    def _check_conditions(self, conditions: List[BaseActionType], values: Dict[str, Any]) -> bool:
-        for condition in conditions:
-            operator = condition.operator
-            field_value = condition.value
-            field_name = condition.field
-            value = values.get(field_name)
-
-            # Don't touch. As long as it is falsely, we will skip (not necessarily None)
-            if not field_value:
-                continue
-
-            if operator == "eq":
-                if field_value != value:
-                    return False
-            elif operator == "neq":
-                if field_value == value:
-                    return False
-            elif operator in ["gt", "gte", "lt", "lte"]:
-                if not isinstance(value, (int, float)) or not isinstance(field_value, (int, float)):
-                    return False
-                if operator == "gt" and not (value > field_value):
-                    return False
-                elif operator == "gte" and not (value >= field_value):
-                    return False
-                elif operator == "lt" and not (value < field_value):
-                    return False
-                elif operator == "lte" and not (value <= field_value):
-                    return False
-            elif operator == "contains":
-                if not (isinstance(value, str) and isinstance(field_value, str) and field_value in value):
-                    return False
-            elif operator == "starts_with":
-                if not (isinstance(value, str) and isinstance(field_value, str) and value.startswith(field_value)):
-                    return False
-            elif operator == "ends_with":
-                if not (isinstance(value, str) and isinstance(field_value, str) and value.endswith(field_value)):
-                    return False
-
-        return True
-
-    def running_conditions_met(self, inputs: EvalParams, hard_override: Union[bool, None] = None):
-        if hard_override is not None:
-            return hard_override
-        filter_values = {
-            filter_value.field: filter_value.value
-            for filter_value in inputs.filter_values
-        }
-        if not self._check_conditions(self.configurations.inference_filters, filter_values):
-            return False
-
-        if self.sample_percentage is not None and self.sample_percentage < random.randint(1, 100):
-            return False
-        
-        return self.enabled
-
-    def passing_conditions_met(self, results: Dict[str, Any], hard_override: Union[bool, None] = None):
-        if hard_override is not None:
-            return hard_override
-        
-        return self._check_conditions(self.configurations.conditions, results)
 
     model_config = ConfigDict(from_attributes=True)

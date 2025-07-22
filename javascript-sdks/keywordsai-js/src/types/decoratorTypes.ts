@@ -1,4 +1,4 @@
-import { DecoratorConfig } from "../decorators/base";
+import { DecoratorConfig } from "../decorators/base.js";
 
 // Define the generic function type that matches Traceloop's pattern
 export type WithFunctionType = <

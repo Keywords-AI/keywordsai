@@ -7,9 +7,10 @@ from keywordsai_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTE
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
 from keywordsai_tracing.core.tracer import KeywordsAITracer
+from keywordsai_tracing.utils.logging import get_keywordsai_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_keywordsai_logger('contexts.span')
 
 @contextmanager
 def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], KeywordsAIParams]):

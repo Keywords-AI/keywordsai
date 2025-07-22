@@ -5,3 +5,4 @@ boilerplates/
 **/*/test-dist/
 **/*/node_modules/
 **/*/traceloop-sdk
+**/*/__pycache__/

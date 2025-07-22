@@ -2,6 +2,26 @@ import { SpanExporter, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { TextMapPropagator, ContextManager } from "@opentelemetry/api";
 
 /**
+ * Available instrumentation names for consistent camelCase naming.
+ * Abbreviations like AI, API, DB are kept uppercase.
+ */
+export type InstrumentationName = 
+    | 'http'
+    | 'openAI'
+    | 'anthropic'
+    | 'azureOpenAI'
+    | 'cohere'
+    | 'bedrock'
+    | 'googleVertexAI'
+    | 'googleAIPlatform'
+    | 'pinecone'
+    | 'together'
+    | 'langChain'
+    | 'llamaIndex'
+    | 'chromaDB'
+    | 'qdrant';
+
+/**
  * Options for initializing the KeywordsAI SDK.
  */
 export interface KeywordsAIOptions {
@@ -13,13 +33,13 @@ export interface KeywordsAIOptions {
 
     /**
      * The API Key for sending traces data. Optional.
-     * Defaults to the KEYWORDS_AI_API_KEY environment variable.
+     * Defaults to the KEYWORDSAI_API_KEY environment variable.
      */
     apiKey?: string;
 
     /**
      * The OTLP endpoint for sending traces data. Optional.
-     * Defaults to KEYWORDS_AI_BASE_URL environment variable or https://api.keywordsai.co/
+     * Defaults to KEYWORDSAI_BASE_URL environment variable or https://api.keywordsai.co/
      */
     baseUrl?: string;
 
@@ -106,11 +126,11 @@ export interface KeywordsAIOptions {
         azureOpenAI?: any; // typeof import('@azure/openai')
         cohere?: any; // typeof import('cohere-ai')
         bedrock?: any; // typeof import('@aws-sdk/client-bedrock-runtime')
-        google_vertexai?: any; // typeof import('@google-cloud/vertexai')
-        google_aiplatform?: any; // typeof import('@google-cloud/aiplatform')
+        googleVertexAI?: any; // typeof import('@google-cloud/vertexai')
+        googleAIPlatform?: any; // typeof import('@google-cloud/aiplatform')
         pinecone?: any; // typeof import('@pinecone-database/pinecone')
         together?: any; // typeof import('together-ai').Together
-        langchain?: {
+        langChain?: {
             chainsModule?: any; // typeof import('langchain/chains')
             agentsModule?: any; // typeof import('langchain/agents')
             toolsModule?: any; // typeof import('langchain/tools')
@@ -118,9 +138,23 @@ export interface KeywordsAIOptions {
             vectorStoreModule?: any; // typeof import('@langchain/core/vectorstores')
         };
         llamaIndex?: any; // typeof import('llamaindex')
-        chromadb?: any; // typeof import('chromadb')
+        chromaDB?: any; // typeof import('chromadb')
         qdrant?: any; // typeof import('@qdrant/js-client-rest')
     };
+
+    /**
+     * List of instrumentation modules to disable. Optional.
+     * Useful for preventing certain instrumentations from being loaded.
+     * Uses consistent camelCase naming with abbreviations kept uppercase.
+     * 
+     * Usage example:
+     * ```typescript
+     * const keywordsAI = new KeywordsAITelemetry({
+     *   disabledInstrumentations: ['bedrock', 'chromaDB', 'qdrant']
+     * });
+     * ```
+     */
+    disabledInstrumentations?: InstrumentationName[];
 }
 
 /**

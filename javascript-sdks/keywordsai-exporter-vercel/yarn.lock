@@ -5,11 +5,11 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@keywordsai/exporter-vercel@npm:^1.0.17, @keywordsai/exporter-vercel@workspace:.":
+"@keywordsai/exporter-vercel@npm:^1.0.20, @keywordsai/exporter-vercel@workspace:.":
   version: 0.0.0-use.local
   resolution: "@keywordsai/exporter-vercel@workspace:."
   dependencies:
-    "@keywordsai/exporter-vercel": "npm:^1.0.17"
+    "@keywordsai/exporter-vercel": "npm:^1.0.20"
     "@keywordsai/keywordsai-sdk": "npm:^0.0.8"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/core": "npm:^2.0.1"

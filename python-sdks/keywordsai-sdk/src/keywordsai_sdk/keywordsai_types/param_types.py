@@ -268,6 +268,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     input: Optional[str] = None
     output: Optional[str] = None
     prompt_messages: Optional[List[Message]] = None
+    ideal_output: Optional[str] = None
     completion_message: Optional[Message] = None
     completion_messages: Optional[List[Message]] = None
     completion_tokens: Optional[int] = None
