@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/tracing",
   "type": "module",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "description": "TypeScript support for Keywords AI SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,6 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^1.26.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.56.0",
-    "@opentelemetry/instrumentation-http": "^0.202.0",
     "@opentelemetry/resources": "^1.26.0",
     "@opentelemetry/sdk-node": "^0.56.0",
     "@opentelemetry/sdk-trace-base": "^1.26.0",
