@@ -1,11 +1,67 @@
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, List
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
-import logging
+from opentelemetry.trace import SpanContext
 from ..utils.logging import get_keywordsai_logger
+from ..utils.preprocessing.span_processing import should_make_root_span
 
 logger = get_keywordsai_logger('core.exporter')
+
+
+class ModifiedSpan:
+    """A wrapper class to create a modified version of ReadableSpan with parent_span_id set to None"""
+    
+    def __init__(self, original_span: ReadableSpan):
+        self._original_span = original_span
+        # Create a new span context with no parent
+        self._context = SpanContext(
+            trace_id=original_span.context.trace_id,
+            span_id=original_span.context.span_id,
+            is_remote=original_span.context.is_remote,
+            trace_flags=original_span.context.trace_flags,
+            trace_state=original_span.context.trace_state
+        )
+    
+    @property
+    def name(self):
+        return self._original_span.name
+    
+    @property
+    def context(self):
+        return self._context
+    
+    @property
+    def parent_span_id(self):
+        return None  # This is the key change - no parent
+    
+    @property
+    def start_time(self):
+        return self._original_span.start_time
+    
+    @property
+    def end_time(self):
+        return self._original_span.end_time
+    
+    @property
+    def attributes(self):
+        return self._original_span.attributes
+    
+    @property
+    def events(self):
+        return self._original_span.events
+    
+    @property
+    def links(self):
+        return self._original_span.links
+    
+    @property
+    def status(self):
+        return self._original_span.status
+    
+    @property
+    def kind(self):
+        return self._original_span.kind
 
 
 class KeywordsAISpanExporter:
@@ -50,13 +106,25 @@ class KeywordsAISpanExporter:
         return base_endpoint
     
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
-        """Export spans to KeywordsAI"""
-        return self.exporter.export(spans)
-    
+        """Export spans to KeywordsAI, modifying spans to make user-decorated spans root spans where appropriate"""
+        modified_spans: List[ReadableSpan] = []
+        
+        for span in spans:
+            if should_make_root_span(span):
+                logger.debug(f"[KeywordsAI Debug] Making span a root span: {span.name}")
+                # Create a modified span with no parent
+                modified_span = ModifiedSpan(span)
+                modified_spans.append(modified_span)
+            else:
+                # Use the original span
+                modified_spans.append(span)
+        
+        return self.exporter.export(modified_spans)
+
     def shutdown(self):
         """Shutdown the exporter"""
         return self.exporter.shutdown()
-    
+
     def force_flush(self, timeout_millis: int = 30000):
         """Force flush the exporter"""
         return self.exporter.force_flush(timeout_millis) 

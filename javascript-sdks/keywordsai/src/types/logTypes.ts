@@ -3,6 +3,8 @@ import { z } from "zod";
 // Log type definition
 export const LOG_TYPE_VALUES = [
   "text",
+  "chat",
+  "completion",
   "response", 
   "embedding",
   "transcription",

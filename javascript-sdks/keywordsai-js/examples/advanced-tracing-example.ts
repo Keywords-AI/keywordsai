@@ -14,7 +14,7 @@ import { SpanStatusCode } from "@opentelemetry/api";
 startTracing({
   appName: "advanced-keywordsai-example",
   apiKey: process.env.KEYWORDSAI_API_KEY || "test-key",
-  baseUrl: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+  baseURL: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
   traceContent: true,
   logLevel: "info"
 });

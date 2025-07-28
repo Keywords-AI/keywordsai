@@ -3,12 +3,12 @@ const result = dotenv.config({ override: true });
 import { KeywordsAITelemetry } from "@keywordsai/tracing";
 
 const apiKey = process.env.KEYWORDSAI_API_KEY || "";
-const baseUrl = process.env.KEYWORDSAI_BASE_URL || "";
+const baseURL = process.env.KEYWORDSAI_BASE_URL || "";
 const appName = process.env.KEYWORDSAI_APP_NAME || "default";
 
 const keywordsAI = new KeywordsAITelemetry({
   apiKey,
-  baseUrl,
+  baseURL,
   appName,
   disableBatch: true,
 });

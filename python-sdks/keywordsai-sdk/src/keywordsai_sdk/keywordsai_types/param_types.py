@@ -33,6 +33,8 @@ Logging params types:
 
 LogType = Literal[
     "text",
+    "chat",
+    "completion",
     "response",
     "embedding",
     "transcription",

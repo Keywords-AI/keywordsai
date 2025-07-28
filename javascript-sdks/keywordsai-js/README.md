@@ -65,7 +65,7 @@ import OpenAI from 'openai';
 // Initialize the SDK
 const keywordsAi = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseUrl: process.env.KEYWORDSAI_BASE_URL,
+    baseURL: process.env.KEYWORDSAI_BASE_URL,
     appName: 'my-app'
 });
 
@@ -99,7 +99,7 @@ import Anthropic from '@anthropic-ai/sdk';
 // Manual instrumentation - pass the actual imported modules
 const keywordsAi = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseUrl: process.env.KEYWORDSAI_BASE_URL,
+    baseURL: process.env.KEYWORDSAI_BASE_URL,
     appName: 'my-app',
     // Specify modules to instrument manually
     instrumentModules: {
@@ -153,7 +153,7 @@ const generateContent = async () => {
 interface KeywordsAIOptions {
     appName?: string;                    // App name for traces
     apiKey?: string;                     // KeywordsAI API key
-    baseUrl?: string;                    // KeywordsAI base URL
+    baseURL?: string;                    // KeywordsAI base URL
     disableBatch?: boolean;              // Disable batching for development
     logLevel?: "debug" | "info" | "warn" | "error";
     traceContent?: boolean;              // Log prompts and completions

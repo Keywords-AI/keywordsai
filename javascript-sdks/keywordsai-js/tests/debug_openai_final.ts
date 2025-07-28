@@ -5,8 +5,8 @@ async function debugOpenAIFinal() {
   
   // Initialize KeywordsAI first
   const keywordsAI = new KeywordsAITelemetry({
-    keywordsaiApiKey: 'test-key',
-    keywordsaiBaseUrl: 'http://localhost:8000',
+    apiKey: 'test-key',
+    baseURL: 'http://localhost:8000',
   });
   
   await keywordsAI.initialize();

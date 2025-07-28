@@ -2,7 +2,8 @@ import { withTask, withWorkflow, withAgent, withTool } from "./decorators/index.
 import { WithFunctionType } from "./types/decoratorTypes.js";
 import { KeywordsAIOptions } from "./types/clientTypes.js";
 import { withKeywordsAISpanAttributes } from "./contexts/span.js";
-import { startTracing, enableInstrumentation, forceFlush } from "./utils/tracing.js";
+import { startTracing, forceFlush } from "./utils/tracing.js";
+import { enableInstrumentation } from "./instrumentation/index.js";
 
 /**
  * KeywordsAI client for trace management and instrumentation.
@@ -74,7 +75,7 @@ export class KeywordsAITelemetry {
         this.options = {
             appName: options.appName || process.env.KEYWORDSAI_APP_NAME || "default",
             disableBatch: options.disableBatch || false,
-            baseUrl: options.baseUrl || process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+            baseURL: options.baseURL || process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
             apiKey: options.apiKey || process.env.KEYWORDSAI_API_KEY || "",
             instrumentModules: options.instrumentModules || {},
             disabledInstrumentations: options.disabledInstrumentations || [],

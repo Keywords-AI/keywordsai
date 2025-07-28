@@ -7,8 +7,8 @@ dotenv.config({ override: true, path: '.env' });
 // Initialize KeywordsAI first
 const keywordsAI = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY || "",
-    // baseUrl: process.env.KEYWORDSAI_BASE_URL || "",
-    baseUrl: "https://webhook.site/5d2f431e-1ed6-4639-bd6c-dc19de391a50/chat/completions",
+    // baseURL: process.env.KEYWORDSAI_BASE_URL || "",
+    baseURL: "https://webhook.site/5d2f431e-1ed6-4639-bd6c-dc19de391a50/chat/completions",
     appName: 'test-app',
     disableBatch: true,  // For testing, disable batching
 });

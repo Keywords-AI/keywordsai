@@ -8,7 +8,7 @@ console.log(result);
 // Initialize clients
 const keywordsAi = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY || "",
-    baseUrl: process.env.KEYWORDSAI_BASE_URL || "",
+    baseURL: process.env.KEYWORDSAI_BASE_URL || "",
     appName: 'test-decorator-app',
     disableBatch: true  // For testing, disable batching
 });

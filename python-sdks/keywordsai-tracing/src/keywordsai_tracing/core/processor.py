@@ -1,11 +1,22 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict, Any
 from opentelemetry import context as context_api
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
 from opentelemetry.context import Context
 from opentelemetry.semconv_ai import SpanAttributes
 from keywordsai_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
+import logging
 
 from keywordsai_tracing.constants.generic import SDK_PREFIX
+from keywordsai_tracing.constants.context_constants import (
+    WORKFLOW_NAME_KEY, 
+    ENTITY_PATH_KEY, 
+    TRACE_GROUP_ID_KEY, 
+    PARAMS_KEY
+)
+from keywordsai_tracing.utils.preprocessing.span_processing import should_process_span
+from keywordsai_tracing.utils.context import get_entity_path
+
+logger = logging.getLogger(__name__)
 
 
 class KeywordsAISpanProcessor:
@@ -29,25 +40,36 @@ class KeywordsAISpanProcessor:
 
     def on_start(self, span, parent_context: Optional[Context] = None):
         """Called when a span is started - add KeywordsAI metadata"""
+        # Check if this span is being created within an entity context
+        # If so, add the entityPath attribute so it gets preserved by our filtering
+        entity_path = get_entity_path(parent_context)
+        if entity_path and not span.attributes.get(SpanAttributes.TRACELOOP_SPAN_KIND):
+            # This is an auto-instrumentation span within an entity context
+            # Add the entityPath attribute so it doesn't get filtered out
+            logger.debug(
+                f"[KeywordsAI Debug] Adding entityPath to auto-instrumentation span: {span.name} (entityPath: {entity_path})"
+            )
+            span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
+
         # Add workflow name if present in context
-        workflow_name = context_api.get_value("keywordsai_workflow_name")
+        workflow_name = context_api.get_value(WORKFLOW_NAME_KEY)
         if workflow_name:
             span.set_attribute(SpanAttributes.TRACELOOP_WORKFLOW_NAME, workflow_name)
 
         # Add entity path if present in context
-        entity_path = context_api.get_value("keywordsai_entity_path")
-        if entity_path:
-            span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
+        entity_path_from_context = context_api.get_value(ENTITY_PATH_KEY)
+        if entity_path_from_context:
+            span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path_from_context)
 
         # Add trace group identifier if present
-        trace_group_id = context_api.get_value("keywordsai_trace_group_identifier")
+        trace_group_id = context_api.get_value(TRACE_GROUP_ID_KEY)
         if trace_group_id:
             span.set_attribute(
                 KeywordsAISpanAttributes.KEYWORDSAI_TRACE_GROUP_ID.value, trace_group_id
             )
 
         # Add custom parameters if present
-        keywordsai_params = context_api.get_value("keywordsai_params")
+        keywordsai_params = context_api.get_value(PARAMS_KEY)
         if keywordsai_params and isinstance(keywordsai_params, dict):
             for key, value in keywordsai_params.items():
                 span.set_attribute(f"{SDK_PREFIX}.{key}", value)
@@ -56,8 +78,12 @@ class KeywordsAISpanProcessor:
         self.processor.on_start(span, parent_context)
 
     def on_end(self, span: ReadableSpan):
-        """Called when a span ends"""
-        self.processor.on_end(span)
+        """Called when a span ends - filter spans based on KeywordsAI attributes"""
+        # Apply filtering logic using shared function
+        if should_process_span(span):
+            self.processor.on_end(span)
+        else:
+            logger.debug(f"[KeywordsAI Debug] Skipping filtered span: {span.name}")
 
     def _wrapped_on_end(self, span: ReadableSpan):
         """Wrapped on_end method that calls custom callback first"""

@@ -4,10 +4,10 @@ import {
   ASSOCIATION_PROPERTIES_KEY,
   ENTITY_NAME_KEY,
   getEntityPath,
-  getTracer,
   WORKFLOW_NAME_KEY,
   shouldSendTraces,
-} from "../utils/tracing.js";
+} from "../utils/context.js";
+import { getTracer } from "../utils/span.js";
 import {
   CONTEXT_KEY_ALLOW_TRACE_CONTENT,
   SpanAttributes,

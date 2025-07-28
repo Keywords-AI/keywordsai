@@ -7,7 +7,7 @@ async function debugTimingOrder() {
   console.log("1. Creating KeywordsAI instance...");
   const keywordsai = new KeywordsAITelemetry({
     apiKey: "test-api-key",
-    baseUrl: "http://localhost:3000",
+    baseURL: "http://localhost:3000",
   });
   
   console.log("2. Initializing KeywordsAI tracing...");

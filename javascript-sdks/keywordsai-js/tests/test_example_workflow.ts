@@ -9,7 +9,7 @@ console.log(result);
 // Make sure to set these environment variables or pass them directly
 const keywordsAI = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY || "",
-    baseUrl: process.env.KEYWORDSAI_BASE_URL || "",
+    baseURL: process.env.KEYWORDSAI_BASE_URL || "",
     appName: 'test-app',
     disableBatch: true  // For testing, disable batching
 });

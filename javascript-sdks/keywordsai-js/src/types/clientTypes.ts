@@ -41,7 +41,7 @@ export interface KeywordsAIOptions {
      * The OTLP endpoint for sending traces data. Optional.
      * Defaults to KEYWORDSAI_BASE_URL environment variable or https://api.keywordsai.co/
      */
-    baseUrl?: string;
+    baseURL?: string;
 
     /**
      * Sends traces and spans without batching, for local development. Optional.
@@ -163,7 +163,7 @@ export interface KeywordsAIOptions {
 export interface KeywordsAIClientOptions {
     apiKey: string;
     appName: string;
-    baseUrl?: string;
+    baseURL?: string;
 }
 
 /**

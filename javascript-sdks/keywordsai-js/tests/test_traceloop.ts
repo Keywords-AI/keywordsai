@@ -7,9 +7,9 @@ import OpenAI from "openai";
 traceloop.initialize({
   appName: "app",
   disableBatch: true,
-  baseUrl: "http://localhost:8000/api",
+  baseURL: "http://localhost:8000/api",
   apiKey: "q3L47zcc.YOjSCQTZxjJ0kOxpE7YOSSSyr70YiFsb",
-//   baseUrl: "https://webhook.site/f1193061-a409-4491-a253-ed01944249e4",
+//   baseURL: "https://webhook.site/f1193061-a409-4491-a253-ed01944249e4",
 //   apiKey: "7fdef9b08e595d3af475111c41054eecba42c48ec048bf2878150d8831a4b6b37300cc5b3677ba55b0c2bb2f88263c0e", // This is the traceloop key
   instrumentModules: {
     openAI: OpenAI,

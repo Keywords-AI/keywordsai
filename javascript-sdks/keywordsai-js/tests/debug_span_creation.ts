@@ -6,7 +6,7 @@ async function debugSpanCreation() {
   
   const keywordsAI = new KeywordsAITelemetry({
     apiKey: 'test-key',
-    baseUrl: 'http://localhost:3000/api/otel/v1/traces'
+    baseURL: 'http://localhost:3000/api/otel/v1/traces'
   });
 
   await keywordsAI.initialize();

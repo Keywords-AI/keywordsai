@@ -10,6 +10,11 @@ from keywordsai_sdk.constants.llm_logging import (
 )
 from keywordsai_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
 from keywordsai_tracing.core.tracer import KeywordsAITracer
+from keywordsai_tracing.constants.context_constants import (
+    WORKFLOW_NAME_KEY, 
+    ENTITY_PATH_KEY,
+    ENABLE_CONTENT_TRACING_KEY
+)
 
 
 P = ParamSpec("P")
@@ -24,7 +29,7 @@ def _is_json_size_valid(json_str: str) -> bool:
 
 def _should_send_prompts() -> bool:
     """Check if we should send prompt content in traces"""
-    return context_api.get_value("keywordsai_enable_content_tracing") is not False
+    return context_api.get_value(ENABLE_CONTENT_TRACING_KEY) is not False
 
 
 def _is_async_method(fn):
@@ -43,7 +48,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
         TraceloopSpanKindValues.AGENT.value,
     ]:
         context_api.attach(
-            context_api.set_value("keywordsai_workflow_name", entity_name)
+            context_api.set_value(WORKFLOW_NAME_KEY, entity_name)
         )
 
     # Set entity path for task spans
@@ -51,9 +56,9 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
         TraceloopSpanKindValues.TASK.value,
         TraceloopSpanKindValues.TOOL.value,
     ]:
-        current_path = context_api.get_value("keywordsai_entity_path") or ""
+        current_path = context_api.get_value(ENTITY_PATH_KEY) or ""
         entity_path = f"{current_path}.{entity_name}" if current_path else entity_name
-        context_api.attach(context_api.set_value("keywordsai_entity_path", entity_path))
+        context_api.attach(context_api.set_value(ENTITY_PATH_KEY, entity_path))
 
     # Get tracer and start span
     tracer = KeywordsAITracer().get_tracer()

@@ -9,6 +9,8 @@ class LogMethodChoices(Enum):
 
 class LogTypeChoices(Enum):
     TEXT = "text"
+    CHAT = "chat"
+    COMPLETION = "completion"
     RESPONSE = "response" # OpenAI Response API
     EMBEDDING = "embedding"
     TRANSCRIPTION = "transcription"

@@ -19,7 +19,7 @@ import {
 startTracing({
   appName: "my-ai-app",
   apiKey: "your-api-key",
-  baseUrl: "https://api.keywordsai.co",
+  baseURL: "https://api.keywordsai.co",
   traceContent: true,
   logLevel: "info",
 });

@@ -7,7 +7,7 @@ async function debugTraceloopOpenAI() {
   console.log("1. Creating KeywordsAI instance...");
   const keywordsai = new KeywordsAITelemetry({
     apiKey: "test-api-key",
-    baseUrl: "https://api.keywordsai.co",
+    baseURL: "https://api.keywordsai.co",
   });
 
   console.log("2. Initializing KeywordsAI tracing...");
