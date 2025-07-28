@@ -402,33 +402,74 @@ export class KeywordsAISpanExporter implements TracingExporter {
     console.log(`Keywords AI exporter endpoint changed to: ${endpoint}`);
   }
 
-  private keywordsAIExport(item: Trace | Span<any>): Partial<KeywordsPayload> | null {
+  private keywordsAIExport(item: Trace | Span<any>, allItems?: (Trace | Span<any>)[]): Partial<KeywordsPayload> | null {
     // First try the native export method
     if (this.isTrace(item)) {
-      // This one is going to be the root trace. The span id will be the trace id
-      return {
+      // Trace objects don't have timing data - they represent the workflow container
+      // Calculate timing from child spans if available
+      let startTime = new Date();
+      let endTime = new Date();
+      let latency = 0;
+
+      if (allItems) {
+        // Find all spans belonging to this trace
+        const traceSpans = allItems.filter(i => 
+          this.isSpan(i) && i.traceId === item.traceId
+        ) as Span<any>[];
+
+        if (traceSpans.length > 0) {
+          // Calculate earliest start and latest end from spans
+          const earliestStart = traceSpans.reduce((earliest, span) => {
+            const spanStart = span.startedAt ? new Date(span.startedAt) : null;
+            if (!spanStart) return earliest;
+            return !earliest || spanStart < earliest ? spanStart : earliest;
+          }, null as Date | null);
+          
+          const latestEnd = traceSpans.reduce((latest, span) => {
+            const spanEnd = span.endedAt ? new Date(span.endedAt) : null;
+            if (!spanEnd) return latest;
+            return !latest || spanEnd > latest ? spanEnd : latest;
+          }, null as Date | null);
+
+          if (earliestStart && latestEnd) {
+            startTime = earliestStart;
+            endTime = latestEnd;
+            latency = (latestEnd.getTime() - earliestStart.getTime()) / 1000;
+          }
+        }
+      }
+      
+      const traceData: Partial<KeywordsPayload> = {
         trace_unique_id: item.traceId,
         span_unique_id: item.traceId,
         span_name: item.name,
         log_type: "agent", // Root trace should be agent type
         span_workflow_name: item.name,
-      };
+        start_time: startTime,
+        timestamp: endTime,
+        latency: latency,
+      }
+
+      return traceData;
     } else if (this.isSpan(item)) {
       // Get the span ID - it could be named span_id or id depending on the implementation
       const parentId = item.parentId || item.traceId;
 
       // Create the base data dictionary with common fields
+      // Note: Span timing properties are accessed via the JSON structure
+      const spanJson = JSON.parse(JSON.stringify(item));
       const data: Partial<KeywordsPayload> = {
         trace_unique_id: item.traceId,
         span_unique_id: item.spanId,
         span_parent_id: parentId || undefined,
-        start_time: item.startedAt || undefined,
-        timestamp: item.endedAt || undefined,
+        start_time: spanJson.started_at ? new Date(spanJson.started_at) : undefined,
+        timestamp: spanJson.ended_at ? new Date(spanJson.ended_at) : undefined,
         error_bit: item.error ? 1 : 0,
         status_code: item.error ? 400 : 200,
         error_message: item.error ? String(item.error) : undefined,
       };
 
+      // Calculate latency from timestamps
       if (data.timestamp && data.start_time && data.timestamp instanceof Date && data.start_time instanceof Date) {
         data.latency = (data.timestamp.getTime() - data.start_time.getTime()) / 1000;
       }
@@ -527,10 +568,46 @@ export class KeywordsAISpanExporter implements TracingExporter {
       return;
     }
 
+    // Items processing: Trace objects represent workflow containers, Spans contain actual timing data
+
     // Process each item with our custom exporter
     const processedData = items
-      .map(item => this.keywordsAIExport(item))
+      .map(item => this.keywordsAIExport(item, items))
       .filter((item): item is Partial<KeywordsPayload> => item !== null);
+
+    // If we have spans but no trace, create a synthetic root trace with calculated timing
+    const spans = items.filter(item => this.isSpan(item)) as Span<any>[];
+    const traces = items.filter(item => this.isTrace(item)) as Trace[];
+    
+    if (spans.length > 0 && traces.length === 0) {
+      // Create a synthetic root trace from span data
+      const traceId = spans[0].traceId;
+      const earliestStart = spans.reduce((earliest, span) => {
+        const spanStart = span.startedAt ? new Date(span.startedAt) : null;
+        if (!spanStart) return earliest;
+        return !earliest || spanStart < earliest ? spanStart : earliest;
+      }, null as Date | null);
+      
+      const latestEnd = spans.reduce((latest, span) => {
+        const spanEnd = span.endedAt ? new Date(span.endedAt) : null;
+        if (!spanEnd) return latest;
+        return !latest || spanEnd > latest ? spanEnd : latest;
+      }, null as Date | null);
+
+      if (earliestStart && latestEnd) {
+        const syntheticTrace: Partial<KeywordsPayload> = {
+          trace_unique_id: traceId,
+          span_unique_id: traceId,
+          span_name: "My Trace",
+          log_type: "agent",
+          span_workflow_name: "My Trace",
+          start_time: earliestStart,
+          timestamp: latestEnd,
+          latency: (latestEnd.getTime() - earliestStart.getTime()) / 1000,
+        };
+        processedData.unshift(syntheticTrace);
+      }
+    }
 
     if (!processedData.length) {
       return;
