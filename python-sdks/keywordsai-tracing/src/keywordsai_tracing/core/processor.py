@@ -8,8 +8,6 @@ import logging
 
 from keywordsai_tracing.constants.generic import SDK_PREFIX
 from keywordsai_tracing.constants.context_constants import (
-    WORKFLOW_NAME_KEY, 
-    ENTITY_PATH_KEY, 
     TRACE_GROUP_ID_KEY, 
     PARAMS_KEY
 )
@@ -42,7 +40,7 @@ class KeywordsAISpanProcessor:
         """Called when a span is started - add KeywordsAI metadata"""
         # Check if this span is being created within an entity context
         # If so, add the entityPath attribute so it gets preserved by our filtering
-        entity_path = get_entity_path(parent_context)
+        entity_path = get_entity_path(parent_context)  # Use active context like JS version
         if entity_path and not span.attributes.get(SpanAttributes.TRACELOOP_SPAN_KIND):
             # This is an auto-instrumentation span within an entity context
             # Add the entityPath attribute so it doesn't get filtered out
@@ -52,12 +50,12 @@ class KeywordsAISpanProcessor:
             span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
 
         # Add workflow name if present in context
-        workflow_name = context_api.get_value(WORKFLOW_NAME_KEY)
+        workflow_name = context_api.get_value(SpanAttributes.TRACELOOP_ENTITY_NAME)
         if workflow_name:
             span.set_attribute(SpanAttributes.TRACELOOP_WORKFLOW_NAME, workflow_name)
 
-        # Add entity path if present in context
-        entity_path_from_context = context_api.get_value(ENTITY_PATH_KEY)
+        # Add entity path if present in context (for redundancy)
+        entity_path_from_context = context_api.get_value(SpanAttributes.TRACELOOP_ENTITY_PATH)
         if entity_path_from_context:
             span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path_from_context)
 

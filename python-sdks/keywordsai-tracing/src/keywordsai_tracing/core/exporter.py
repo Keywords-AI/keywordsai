@@ -10,58 +10,16 @@ logger = get_keywordsai_logger('core.exporter')
 
 
 class ModifiedSpan:
-    """A wrapper class to create a modified version of ReadableSpan with parent_span_id set to None"""
+    """A proxy wrapper that forwards all attributes to the original span except parent_span_id"""
     
     def __init__(self, original_span: ReadableSpan):
         self._original_span = original_span
-        # Create a new span context with no parent
-        self._context = SpanContext(
-            trace_id=original_span.context.trace_id,
-            span_id=original_span.context.span_id,
-            is_remote=original_span.context.is_remote,
-            trace_flags=original_span.context.trace_flags,
-            trace_state=original_span.context.trace_state
-        )
     
-    @property
-    def name(self):
-        return self._original_span.name
-    
-    @property
-    def context(self):
-        return self._context
-    
-    @property
-    def parent_span_id(self):
-        return None  # This is the key change - no parent
-    
-    @property
-    def start_time(self):
-        return self._original_span.start_time
-    
-    @property
-    def end_time(self):
-        return self._original_span.end_time
-    
-    @property
-    def attributes(self):
-        return self._original_span.attributes
-    
-    @property
-    def events(self):
-        return self._original_span.events
-    
-    @property
-    def links(self):
-        return self._original_span.links
-    
-    @property
-    def status(self):
-        return self._original_span.status
-    
-    @property
-    def kind(self):
-        return self._original_span.kind
+    def __getattr__(self, name):
+        """Forward all attribute access to the original span"""
+        if name == 'parent_span_id':
+            return None  # Override parent_span_id to None
+        return getattr(self._original_span, name)
 
 
 class KeywordsAISpanExporter:

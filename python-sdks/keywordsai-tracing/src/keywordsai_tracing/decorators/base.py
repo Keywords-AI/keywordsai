@@ -40,7 +40,8 @@ def _is_async_method(fn):
 def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None):
     """Setup OpenTelemetry span and context"""
     # Ensure span_kind is a string
-    span_kind_str = str(span_kind) if hasattr(span_kind, "value") else str(span_kind)
+    span_kind_str = span_kind.value if hasattr(span_kind, "value") else str(span_kind)
+    entity_path = context_api.get_value(SpanAttributes.TRACELOOP_ENTITY_PATH) or ""
 
     # Set workflow name for workflow spans
     if span_kind_str in [
@@ -48,7 +49,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
         TraceloopSpanKindValues.AGENT.value,
     ]:
         context_api.attach(
-            context_api.set_value(WORKFLOW_NAME_KEY, entity_name)
+            context_api.set_value(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
         )
 
     # Set entity path for task spans
@@ -56,9 +57,8 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
         TraceloopSpanKindValues.TASK.value,
         TraceloopSpanKindValues.TOOL.value,
     ]:
-        current_path = context_api.get_value(ENTITY_PATH_KEY) or ""
-        entity_path = f"{current_path}.{entity_name}" if current_path else entity_name
-        context_api.attach(context_api.set_value(ENTITY_PATH_KEY, entity_path))
+        entity_path = f"{entity_path}.{entity_name}" if entity_path else entity_name
+        context_api.attach(context_api.set_value(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path))
 
     # Get tracer and start span
     tracer = KeywordsAITracer().get_tracer()
@@ -68,6 +68,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
     # Set span attributes
     span.set_attribute(SpanAttributes.TRACELOOP_SPAN_KIND, span_kind_str)
     span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
+    span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
     span.set_attribute(
         KeywordsAISpanAttributes.LOG_METHOD.value, LogMethodChoices.PYTHON_TRACING.value
     )
