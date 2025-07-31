@@ -450,6 +450,20 @@ export class KeywordsAISpanExporter implements TracingExporter {
         latency: latency,
       }
 
+      // Extract custom metadata from trace if available
+      try {
+        const traceJson = JSON.parse(JSON.stringify(item));
+        if (traceJson.metadata && typeof traceJson.metadata === 'object') {
+          // Merge trace metadata with any existing metadata
+          traceData.metadata = {
+            ...traceData.metadata,
+            ...traceJson.metadata
+          };
+        }
+      } catch (e) {
+        console.warn(`Failed to extract trace metadata: ${e}`);
+      }
+
       return traceData;
     } else if (this.isSpan(item)) {
       // Get the span ID - it could be named span_id or id depending on the implementation
@@ -605,6 +619,22 @@ export class KeywordsAISpanExporter implements TracingExporter {
           timestamp: latestEnd,
           latency: (latestEnd.getTime() - earliestStart.getTime()) / 1000,
         };
+
+        // Try to extract metadata from the first span if available
+        try {
+          const firstSpan = spans[0];
+          const spanJson = JSON.parse(JSON.stringify(firstSpan));
+          if (spanJson._trace && spanJson._trace.metadata && typeof spanJson._trace.metadata === 'object') {
+            // Merge trace metadata with any existing metadata
+            syntheticTrace.metadata = {
+              ...syntheticTrace.metadata,
+              ...spanJson._trace.metadata
+            };
+          }
+        } catch (e) {
+          console.warn(`Failed to extract metadata from span for synthetic trace: ${e}`);
+        }
+
         processedData.unshift(syntheticTrace);
       }
     }

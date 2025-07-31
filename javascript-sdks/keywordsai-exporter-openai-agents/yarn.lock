@@ -9,7 +9,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@keywordsai/exporter-openai-agents@workspace:."
   dependencies:
-    "@keywordsai/keywordsai-sdk": "npm:^0.0.9"
+    "@keywordsai/keywordsai-sdk": "npm:^0.0.12"
     "@openai/agents": "npm:^0.0.8"
     "@types/node": "npm:^22.15.29"
     dotenv: "npm:^16.5.0"
@@ -17,16 +17,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@keywordsai/keywordsai-sdk@npm:^0.0.9":
-  version: 0.0.9
-  resolution: "@keywordsai/keywordsai-sdk@npm:0.0.9"
+"@keywordsai/keywordsai-sdk@npm:^0.0.12":
+  version: 0.0.12
+  resolution: "@keywordsai/keywordsai-sdk@npm:0.0.12"
   dependencies:
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/core": "npm:^2.0.1"
     "@opentelemetry/sdk-trace-base": "npm:^2.0.1"
     typescript: "npm:^5.8.3"
     zod: "npm:^3.25.58"
-  checksum: 10c0/4caa901c9a0da898ea186cb70ba49a63cf75f6c9e25a7c93c3bd8bee541296b318d86d2beae0b8892445f79a9159b15c84f36aeec1a71c727f794d91d189d43d
+  checksum: 10c0/cd56305de92a90de18ab7b36c1273e9f56c17a11e3dfef6520c735d0eb632cd8a1c1d441e71112977bcc1d4d9725031cce654dd9e70c7d98e898d2f121f76f50
   languageName: node
   linkType: hard
 
