@@ -6,6 +6,10 @@ from keywordsai_sdk.keywordsai_types.param_types import (
     BasicLLMParams,
     KeywordsAIAPIControlParams,
 )
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from keywordsai_sdk.keywordsai_types.log_types import KeywordsAILogParams
 from pydantic import BaseModel, ValidationError
 from typing import Literal
 
@@ -182,7 +186,7 @@ def validate_and_separate_params(
     """
     Validate and separate the params into llm_params and keywordsai_params using Pydantic models
     Returns:
-    basic_llm: BasicLLMParams
+    basic_llm: LiteLLMCompletionParams
     keywords_ai: KeywordsAIParams
     """
 
@@ -190,3 +194,22 @@ def validate_and_separate_params(
     keywords_ai = KeywordsAIParams.model_validate(params)
 
     return basic_llm, keywords_ai
+
+
+def validate_and_separate_log_and_llm_params(
+    params: dict,
+) -> tuple[LiteLLMCompletionParams, "KeywordsAILogParams"]:
+    """
+    Validate and separate the params into llm_params and public keywordsai_log_params using Pydantic models.
+    This function is intended for public-facing APIs and handles mapping of common LLM params to log params.
+
+    Returns:
+    basic_llm: LiteLLMCompletionParams
+    keywords_ai_log: KeywordsAILogParams
+    """
+    from keywordsai_sdk.keywordsai_types.log_types import KeywordsAILogParams
+
+    basic_llm = LiteLLMCompletionParams.model_validate(params)
+    keywords_ai_log = KeywordsAILogParams.model_validate(params)
+
+    return basic_llm, keywords_ai_log

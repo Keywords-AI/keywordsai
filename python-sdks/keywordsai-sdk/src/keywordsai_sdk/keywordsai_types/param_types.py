@@ -1,5 +1,7 @@
 from typing import List, Literal, Optional, Union, Dict, Any
 from pydantic import ConfigDict, field_validator, model_validator
+
+from keywordsai_sdk.constants._internal_constants import RAW_LOG_DATA_TO_DB_COLUMN_MAP
 from ._internal_types import (
     BasicAssistantParams,
     BasicLLMParams,
@@ -17,7 +19,10 @@ from .chat_completion_types import ProviderCredentialType
 from .services_types.linkup_types import LinkupParams
 from .services_types.mem0_types import Mem0Params
 from datetime import datetime
-from ..utils.mixins import PreprocessDataMixin
+from ..utils.mixins import PreprocessLogDataMixin
+from ..constants.llm_logging import (
+    LogType,
+)
 
 """
 Conventions:
@@ -31,26 +36,6 @@ Logging params types:
 3. AUDIO
 4. GENERAL_FUNCTION
 """
-
-LogType = Literal[
-    "text",
-    "chat",
-    "completion",
-    "response",
-    "embedding",
-    "transcription",
-    "speech",
-    "workflow",
-    "task",
-    "tool",
-    "agent",
-    "handoff",
-    "guardrail",
-    "function",
-    "custom",
-    "generation",
-    "unknown",
-]
 
 
 class OverrideConfig(KeywordsAIBaseModel):
@@ -209,7 +194,12 @@ class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
+class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
+    """
+    Internal Keywords AI parameters class that includes all fields used by the backend.
+    This includes both public-facing fields and internal/backend-only fields.
+    """
+
     # region: time
     start_time: Optional[Union[str, datetime]] = None
     timestamp: Optional[Union[str, datetime]] = (
@@ -331,7 +321,9 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     prompt_tokens: Optional[int] = None
     prompt_cache_hit_tokens: Optional[int] = None
     prompt_cache_creation_tokens: Optional[int] = None
-    usage: Optional[Usage] = None
+    usage: Optional[Union[Usage, dict]] = (
+        None  # The usage object of the LLM response, which includes the token usage details; if cannot be parsed, can be a dict
+    )
     # endregion: token usage
     # endregion: usage
 
@@ -380,11 +372,13 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     retry_params: Optional[RetryParams] = None
-    keywordsai_params: Optional[dict] = None
+    keywordsai_params: Optional[dict] = (
+        None  # Nested keywordsai params for special cases
+    )
     # endregion: keywordsai proxy options
 
     # region: embedding
-    embedding: Optional[List[float]] = None
+    embedding: Optional[Union[List[float], str]] = None
     base64_embedding: Optional[str] = None
     provider_id: Optional[str] = None
     # endregion: embedding
@@ -440,11 +434,7 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     # endregion: prompt
 
     # region: llm response timing metrics
-    generation_time: Optional[float] = None
     latency: Optional[float] = None
-    ttft: Optional[float] = (
-        None  # Exposed as the public param, translates to time_to_first_token in the BE
-    )
     time_to_first_token: Optional[float] = None
     routing_time: Optional[float] = None
     tokens_per_second: Optional[float] = None
@@ -474,7 +464,7 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
 
     # region: dataset
     dataset_id: Optional[str] = None
-    ds_run_at: Optional[datetime] = None # The time when the dataset run was triggered
+    ds_run_at: Optional[datetime] = None  # The time when the dataset run was triggered
     original_copy_storage_object_key: Optional[str] = None
     # endregion: dataset
 
@@ -484,19 +474,6 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     @classmethod
     def _preprocess_data(cls, data):
         data = super()._preprocess_data(data)
-
-        _raw_data_to_db_column_mapping = {
-            "ttft": "time_to_first_token",
-            "generation_time": "latency",
-            # 2025-06-12: trace_group and threads are going to be merged into trace sessions
-            "thread_identifier": "session_identifier",
-            "trace_group_identifier": "session_identifier",  # This has higher priority than threads in defining session id, placed later than thread_identifier for overriding
-        }
-
-        # Map field names
-        for key, value in _raw_data_to_db_column_mapping.items():
-            if key in data:
-                data[value] = data[key]
 
         # Handle related fields
         for field_name in cls.__annotations__:
@@ -554,9 +531,12 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     def validate_input(cls, v):
         import json
         from keywordsai_sdk.utils.serialization import json_serial
+
         if v:
             if isinstance(v, dict):
-                return json.dumps(v, default=json_serial) # Eats any unknown type as string
+                return json.dumps(
+                    v, default=json_serial
+                )  # Eats any unknown type as string
             elif isinstance(v, list):
                 return json.dumps(v, default=json_serial)
             else:
@@ -571,6 +551,7 @@ class KeywordsAITextLogParams(
 ):
     """
     A type definition of the input parameters for creating a Keywords AI RequestLog object.
+    This is the INTERNAL type. Only used in keywordsai backend
     """
 
     @field_validator("customer_params", mode="after")
@@ -591,7 +572,9 @@ class KeywordsAITextLogParams(
                 data["response_format"] = {"type": data["response_format"]}
         return data
 
-    def serialize_for_logging(self, exclude_fields: List[str] = [], extra_fields: List[str] = []) -> dict:
+    def serialize_for_logging(
+        self, exclude_fields: List[str] = [], extra_fields: List[str] = []
+    ) -> dict:
         # Define fields to include based on Django model columns
         # Using a set for O(1) lookup
         FIELDS_TO_INCLUDE = {
@@ -654,13 +637,10 @@ class KeywordsAITextLogParams(
             "system_text",
             "prompt_text",
             "completion_text",
-            "prompt_text_vector",
-            "completion_text_vector",
             "error_message",
             "warnings",
             "recommendations",
             "storage_object_key",
-            "system_text_vector",
             "tokens_per_second",
             "is_test",
             "environment",
@@ -698,14 +678,15 @@ class KeywordsAITextLogParams(
             "has_warnings",
             "prompt_version_number",
             "deployment_name",
-
             # region: dataset
             "dataset_id",
             "ds_run_at",
             "original_copy_storage_object_key",
             # endregion: dataset
         }
-        FIELDS_TO_INCLUDE = (set(FIELDS_TO_INCLUDE) - set(exclude_fields)) | set(extra_fields)
+        FIELDS_TO_INCLUDE = (set(FIELDS_TO_INCLUDE) - set(exclude_fields)) | set(
+            extra_fields
+        )
         if self.disable_log:
             FIELDS_TO_INCLUDE.discard("full_request")
             FIELDS_TO_INCLUDE.discard("full_response")

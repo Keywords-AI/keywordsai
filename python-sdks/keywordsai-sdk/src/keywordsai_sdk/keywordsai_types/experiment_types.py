@@ -10,14 +10,7 @@ from ._internal_types import (
 from ..utils.mixins import PreprocessDataMixin
 from typing_extensions import TypedDict
 from ..constants import UTC_EPOCH
-
-
-def generate_unique_id():
-    """Generate a unique ID - placeholder implementation"""
-    import uuid
-
-    return str(uuid.uuid4()).replace("-", "")
-
+from keywordsai_sdk.utils.data_processing.id_processing import generate_unique_id
 
 STATUS_TYPES = Literal[
     "ready", "running", "error", "stopped", "completed"

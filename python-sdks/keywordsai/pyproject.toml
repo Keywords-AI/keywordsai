@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "keywordsai"
+version = "0.1.0"
+description = "A package that helps interacting with Keywords AI monitoring, evaluation & user analytics APIs"
+authors = ["Raymond Huang <raymond@keywordsai.co>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [
+    { include = "keywordsai", from = "./src" }
+]
+
+[tool.poetry.dependencies]
+python = ">3.9,<4.0"
+httpx = "^0.25.0"
+keywordsai-sdk = "^0.4.62"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+pytest-asyncio = "^0.23.0"
+pytest-cov = "^3.0.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
