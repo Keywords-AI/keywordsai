@@ -23,6 +23,7 @@ load_dotenv(override=True)
 from keywordsai.experiments.api import ExperimentAPI
 from keywordsai.types.experiment_types import (
     ExperimentCreate,
+    ExperimentUpdate,
     ExperimentColumnType,
     ExperimentRowType,
     AddExperimentRowsRequest,
@@ -223,6 +224,67 @@ class TestExperimentAPICRUD:
             assert retrieved_experiment.id == created_experiment.id
             assert retrieved_experiment.name == created_experiment.name
             assert retrieved_experiment.description == created_experiment.description
+            
+        finally:
+            # Clean up
+            await experiment_api.adelete(created_experiment.id)
+
+    def test_update_experiment_sync(self, experiment_api, test_column, test_row):
+        """Test updating an experiment synchronously"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create experiment first
+        experiment_data = ExperimentCreate(
+            name=f"SDK_TEST_Update_{timestamp}",
+            description="Test experiment for update operation",
+            columns=[test_column],
+            rows=[test_row]
+        )
+        created_experiment = experiment_api.create(experiment_data)
+        
+        try:
+            # Update experiment
+            update_data = ExperimentUpdate(
+                name=f"SDK_TEST_Updated_{timestamp}",
+                description="Updated description for test experiment"
+            )
+            updated_experiment = experiment_api.update(created_experiment.id, update_data)
+            
+            # Validate response
+            assert updated_experiment.id == created_experiment.id
+            assert updated_experiment.name == update_data.name
+            assert updated_experiment.description == update_data.description
+            
+        finally:
+            # Clean up
+            experiment_api.delete(created_experiment.id)
+
+    @pytest.mark.asyncio
+    async def test_update_experiment_async(self, experiment_api, test_column, test_row):
+        """Test updating an experiment asynchronously"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create experiment first
+        experiment_data = ExperimentCreate(
+            name=f"SDK_TEST_Async_Update_{timestamp}",
+            description="Async test experiment for update operation",
+            columns=[test_column],
+            rows=[test_row]
+        )
+        created_experiment = await experiment_api.acreate(experiment_data)
+        
+        try:
+            # Update experiment
+            update_data = ExperimentUpdate(
+                name=f"SDK_TEST_Async_Updated_{timestamp}",
+                description="Async updated description for test experiment"
+            )
+            updated_experiment = await experiment_api.aupdate(created_experiment.id, update_data)
+            
+            # Validate response
+            assert updated_experiment.id == created_experiment.id
+            assert updated_experiment.name == update_data.name
+            assert updated_experiment.description == update_data.description
             
         finally:
             # Clean up

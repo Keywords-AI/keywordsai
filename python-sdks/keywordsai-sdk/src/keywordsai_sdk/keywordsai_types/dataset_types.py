@@ -1,5 +1,5 @@
 from keywordsai_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from keywordsai_sdk.constants.dataset_constants import (
     DatasetType,
@@ -25,8 +25,8 @@ class Dataset(KeywordsAIBaseModel):
     running_status: DatasetLLMRunStatus = DATASET_LLM_RUN_STATUS_PENDING
     running_at: Optional[datetime] = None
     updated_at: datetime
-    updated_by: Optional[str] = None  # APIUser ID
-    organization: str  # Organization ID
+    updated_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
+    organization: Union[Dict[str, Any], int, str]  # Organization reference, could be a foreign key id or a serialized object
     initial_log_filters: FilterParamDict = {}
     log_ids: List[str] = []
     unique_organization_ids: List[str] = []

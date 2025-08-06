@@ -9,7 +9,7 @@ import httpx
 import asyncio
 from functools import wraps
 from typing import Optional, Dict, Any, Union
-from keywordsai.constants import KEYWORDS_AI_DEFAULT_BASE_URL
+from keywordsai.constants import BASE_URL_SUFFIX, KEYWORDS_AI_DEFAULT_BASE_URL
 import os
 
 
@@ -28,7 +28,10 @@ class KeywordsAIClient:
             base_url = os.getenv("KEYWORDS_AI_BASE_URL", KEYWORDS_AI_DEFAULT_BASE_URL)
         if not api_key:
             api_key = os.getenv("KEYWORDSAI_API_KEY")
-        self.base_url = base_url.rstrip("/")
+        base_url = base_url.rstrip("/")
+        if base_url.endswith(BASE_URL_SUFFIX):
+            base_url = base_url[: -len(BASE_URL_SUFFIX)]
+        self.base_url = base_url
         self.headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

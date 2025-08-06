@@ -147,25 +147,38 @@ async def main():
         await client.aadd_columns(experiment.id, add_columns_request)
         print("✅ Added GPT-4 configuration")
         
-        # Step 4: Check the updated experiment
-        print("\n🔍 Step 4: Checking experiment status...")
+        # Step 4: Update experiment metadata
+        print("\n✏️  Step 4: Updating experiment metadata...")
         
-        updated_experiment = await client.aget(experiment.id)
+        from keywordsai import ExperimentUpdate
+        update_data = ExperimentUpdate(
+            name=f"{experiment_name}_Updated",
+            description="Updated experiment description with more details about the SDK workflow"
+        )
+        updated_experiment = await client.aupdate(experiment.id, update_data)
+        print(f"✅ Updated experiment name to: {updated_experiment.name}")
+        
+        # Step 5: Check the updated experiment
+        print("\n🔍 Step 5: Checking experiment status...")
+        
+        final_experiment = await client.aget(experiment.id)
         print(f"📊 Experiment now has:")
-        print(f"   - {len(updated_experiment.columns)} columns (model configurations)")
-        print(f"   - {len(updated_experiment.rows)} rows (test cases)")
-        print(f"   - Status: {updated_experiment.status}")
+        print(f"   - {len(final_experiment.columns)} columns (model configurations)")
+        print(f"   - {len(final_experiment.rows)} rows (test cases)")
+        print(f"   - Status: {final_experiment.status}")
+        print(f"   - Name: {final_experiment.name}")
+        print(f"   - Description: {final_experiment.description}")
         
-        # Step 5: Run the experiment (optional - may take time)
-        print("\n🚀 Step 5: Running experiment...")
+        # Step 6: Run the experiment (optional - may take time)
+        print("\n🚀 Step 6: Running experiment...")
         print("⚠️  Note: This will make API calls to generate responses and may take time")
         
         run_result = await client.arun_experiment(experiment.id)
         print("✅ Experiment run initiated")
         print(f"📋 Run status: {run_result}")
         
-        # Step 6: Run evaluations (optional)
-        print("\n📊 Step 6: Running evaluations...")
+        # Step 7: Run evaluations (optional)
+        print("\n📊 Step 7: Running evaluations...")
         print("⚠️  Note: This requires the experiment to have outputs")
         
         try:
@@ -178,8 +191,8 @@ async def main():
         except Exception as e:
             print(f"⚠️  Evaluation skipped: {e}")
         
-        # Step 7: List all experiments
-        print("\n📋 Step 7: Listing experiments...")
+        # Step 8: List all experiments
+        print("\n📋 Step 8: Listing experiments...")
         
         experiments = await client.alist(page_size=5)
         print(f"📊 Found {experiments.total} total experiments")

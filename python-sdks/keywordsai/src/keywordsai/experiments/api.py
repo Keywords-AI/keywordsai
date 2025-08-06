@@ -13,8 +13,7 @@ from keywordsai.types.experiment_types import (
     Experiment,
     ExperimentList,
     ExperimentCreate,
-    ExperimentColumnType,
-    ExperimentRowType,
+    ExperimentUpdate,
     AddExperimentRowsRequest,
     RemoveExperimentRowsRequest,
     UpdateExperimentRowsRequest,
@@ -42,7 +41,7 @@ from keywordsai.constants.experiment_constants import (
 )
 
 
-class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, None]):
+class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, ExperimentUpdate]):
     """
     Unified Experiment API client for Keywords AI with both sync and async methods.
 
@@ -306,6 +305,44 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, None])
         """
         return await self.client.delete(f"{EXPERIMENT_BASE_PATH}/{resource_id}")
 
+    async def aupdate(self, resource_id: str, update_data: ExperimentUpdate) -> Experiment:
+        """
+        Update an existing experiment's metadata (asynchronous).
+
+        Modify experiment properties such as name and description. Note that core
+        experiment structure (columns and rows) should be updated using the specific
+        row and column management methods.
+
+        Args:
+            resource_id (str): The unique identifier of the experiment to update
+            update_data (ExperimentUpdate): Update parameters containing:
+                - name (str, optional): New name for the experiment
+                - description (str, optional): New description for the experiment
+
+        Returns:
+            Experiment: The updated experiment object with new properties applied
+
+        Raises:
+            KeywordsAIError: If the experiment is not found, update fails, or
+                invalid parameters are provided
+
+        Example:
+            >>> from keywordsai.types.experiment_types import ExperimentUpdate
+            >>>
+            >>> # Update experiment name and description
+            >>> update_data = ExperimentUpdate(
+            ...     name="Updated Experiment Name",
+            ...     description="Updated description with more details"
+            ... )
+            >>> updated_experiment = await client.aupdate("experiment-123", update_data)
+            >>> print(f"Updated experiment: {updated_experiment.name}")
+        """
+        response = await self.client.patch(
+            f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
+            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+        )
+        return Experiment(**response)
+
     # Synchronous methods (without "a" prefix)
     def create(self, create_data: ExperimentCreate) -> Experiment:
         """Create a new experiment with specified parameters (synchronous)."""
@@ -337,6 +374,14 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, None])
     def delete(self, resource_id: str) -> Dict[str, Any]:
         """Delete an experiment permanently (synchronous)."""
         return self.sync_client.delete(f"{EXPERIMENT_BASE_PATH}/{resource_id}")
+
+    def update(self, resource_id: str, update_data: ExperimentUpdate) -> Experiment:
+        """Update an existing experiment's metadata (synchronous)."""
+        response = self.sync_client.patch(
+            f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
+            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+        )
+        return Experiment(**response)
 
     # Row management methods (both sync and async variants)
     async def aadd_rows(

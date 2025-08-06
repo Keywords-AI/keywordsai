@@ -186,19 +186,19 @@ class ExperimentType(KeywordsAIBaseModel, PreprocessDataMixin):
     column_count: int = 0
     columns: List[ExperimentColumnType] = []
     created_at: Optional[str] = None
-    created_by: Optional[Dict[str, Any]] = None  # APIUser reference
+    created_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
     name: str
-    organization: Optional[Dict[str, Any]] = None  # Organization reference
+    organization: Optional[Union[Dict[str, Any], int, str]] = None  # Organization reference, could be a foreign key id or a serialized object
     row_count: int = 0
     rows: List[ExperimentRowType] = []
     status: str = ""
     test_id: str = ""
     updated_at: Optional[str] = None
-    updated_by: Optional[Dict[str, Any]] = None  # APIUser reference
+    updated_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
     variables: List[str] = []
     variable_definitions: List[Dict[str, Any]] = []
     starred: bool = False
-    tags: List[Dict[str, Any]] = []  # ExperimentTag references
+    tags: List[Union[Dict[str, Any], int, str]] = []  # ExperimentTag references, could be a foreign key id or a serialized object
     description: str = ""
 
     @model_validator(mode="before")
