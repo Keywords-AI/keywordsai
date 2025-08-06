@@ -15,10 +15,8 @@ from keywordsai.types.log_types import (
     KeywordsAIFullLogParams,
     LogList,
 )
-from keywordsai.utils.client import KeywordsAIClient, SyncKeywordsAIClient
-from keywordsai.utils.base import BaseAPI, BaseSyncAPI
+from keywordsai.utils.base import BaseAPI
 from keywordsai.constants.log_constants import (
-    LOG_BASE_PATH,
     LOG_CREATION_PATH,
     LOG_LIST_PATH,
     LOG_GET_PATH,
@@ -27,7 +25,7 @@ from keywordsai.constants.log_constants import (
 
 class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None]):
     """
-    Asynchronous Log API client for Keywords AI.
+    Unified Log API client for Keywords AI with both sync and async methods.
 
     This class provides functionality for managing logs in Keywords AI,
     including creating logs, retrieving individual logs, and listing logs
@@ -44,7 +42,24 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         base_url (str, optional): Base URL for the Keywords AI API.
             Defaults to the standard Keywords AI API endpoint.
 
-    Example:
+    Example (Synchronous):
+        >>> from keywordsai.logs.api import LogAPI
+        >>> from keywordsai.types.log_types import KeywordsAILogParams
+        >>>
+        >>> # Initialize the client
+        >>> client = LogAPI(api_key="your-api-key")
+        >>>
+        >>> # Create a new log (synchronous - no await)
+        >>> log_data = KeywordsAILogParams(
+        ...     model="gpt-4",
+        ...     input="Hello, world!",
+        ...     output="Hi there! How can I help you today?",
+        ...     status_code=200
+        ... )
+        >>> response = client.create(log_data)
+        >>> print(f"Log created: {response['message']}")
+
+    Example (Asynchronous):
         >>> import asyncio
         >>> from keywordsai.logs.api import LogAPI
         >>> from keywordsai.types.log_types import KeywordsAILogParams
@@ -53,21 +68,21 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         ...     # Initialize the client
         ...     client = LogAPI(api_key="your-api-key")
         ...
-        ...     # Create a new log
+        ...     # Create a new log (asynchronous - with await)
         ...     log_data = KeywordsAILogParams(
         ...         model="gpt-4",
         ...         input="Hello, world!",
         ...         output="Hi there! How can I help you today?",
         ...         status_code=200
         ...     )
-        ...     response = await client.create(log_data)
+        ...     response = await client.acreate(log_data)
         ...     print(f"Log created: {response['message']}")
         >>>
         >>> asyncio.run(main())
 
     Note:
-        All methods in this class are asynchronous and should be called with `await`.
-        For synchronous operations, use `SyncLogAPI` instead.
+        - Use await client.amethod() for asynchronous operations
+        - Use client.method() for synchronous operations
         
         Logs do not support update or delete operations - these methods will raise
         NotImplementedError if called.
@@ -85,9 +100,10 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         """
         super().__init__(api_key, base_url)
 
-    async def create(self, create_data: KeywordsAILogParams) -> Dict[str, Any]:
+    # Asynchronous methods (with "a" prefix)
+    async def acreate(self, create_data: KeywordsAILogParams) -> Dict[str, Any]:
         """
-        Create a new log with specified parameters.
+        Create a new log with specified parameters (asynchronous).
 
         This method creates a new log entry in Keywords AI with the provided data.
         The log can include various parameters like model, input/output, status,
@@ -129,7 +145,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             ...     custom_identifier="geography_qa_001",
             ...     timestamp=datetime.utcnow()
             ... )
-            >>> response = await client.create(log_data)
+            >>> response = await client.acreate(log_data)
             >>> print(f"Log creation response: {response['message']}")
         """
         response = await self.client.post(
@@ -138,11 +154,11 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         )
         return response
 
-    async def list(
+    async def alist(
         self, page: Optional[int] = None, page_size: Optional[int] = None, **filters
     ) -> LogList:
         """
-        List logs with optional filtering and pagination.
+        List logs with optional filtering and pagination (asynchronous).
 
         Retrieve a paginated list of logs, optionally filtered by various criteria.
         This method supports filtering by log properties and provides pagination
@@ -171,15 +187,15 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
 
         Example:
             >>> # List all logs
-            >>> logs = await client.list()
+            >>> logs = await client.alist()
             >>> print(f"Found {logs.count} logs")
             >>>
             >>> # List with pagination
-            >>> page1 = await client.list(page=1, page_size=10)
+            >>> page1 = await client.alist(page=1, page_size=10)
             >>>
             >>> # List with filters
-            >>> error_logs = await client.list(error_bit=1)
-            >>> recent_logs = await client.list(
+            >>> error_logs = await client.alist(error_bit=1)
+            >>> recent_logs = await client.alist(
             ...     start_time="2024-01-01T00:00:00Z",
             ...     model="gpt-4"
             ... )
@@ -194,9 +210,9 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = await self.client.get(LOG_LIST_PATH, params=params)
         return LogList(**response)
 
-    async def get(self, resource_id: str) -> KeywordsAIFullLogParams:
+    async def aget(self, resource_id: str) -> KeywordsAIFullLogParams:
         """
-        Retrieve a specific log by its unique identifier.
+        Retrieve a specific log by its unique identifier (asynchronous).
 
         Fetch detailed information about a log including all its parameters
         and metadata. This is useful for inspecting individual logs or
@@ -219,7 +235,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
 
         Example:
             >>> # Get log details
-            >>> log = await client.get("log-123")
+            >>> log = await client.aget("log-123")
             >>> print(f"Log '{log.id}' - Model: {log.model}")
             >>> print(f"Input: {log.input}")
             >>> print(f"Output: {log.output}")
@@ -228,9 +244,9 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = await self.client.get(f"{LOG_GET_PATH}/{resource_id}")
         return KeywordsAIFullLogParams(**response)
 
-    async def update(self, resource_id: str, update_data) -> KeywordsAIFullLogParams:
+    async def aupdate(self, resource_id: str, update_data) -> KeywordsAIFullLogParams:
         """
-        Update operation is not supported for logs.
+        Update operation is not supported for logs (asynchronous).
 
         Args:
             resource_id (str): The log ID (ignored)
@@ -243,9 +259,9 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             "Logs do not support update operations. Logs are immutable once created."
         )
 
-    async def delete(self, resource_id: str) -> Dict[str, Any]:
+    async def adelete(self, resource_id: str) -> Dict[str, Any]:
         """
-        Delete operation is not supported for logs.
+        Delete operation is not supported for logs (asynchronous).
 
         Args:
             resource_id (str): The log ID (ignored)
@@ -257,63 +273,10 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             "Logs do not support delete operations. Logs are immutable for audit purposes."
         )
 
-
-class SyncLogAPI(BaseSyncAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None]):
-    """
-    Synchronous Log API client for Keywords AI.
-
-    This class provides the same functionality as LogAPI but with synchronous
-    method calls. Use this when you prefer traditional blocking calls or when
-    working in environments where async/await is not suitable.
-
-    All methods in this class are direct synchronous equivalents of the async
-    methods in LogAPI. See LogAPI documentation for detailed method
-    descriptions and examples.
-
-    Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-
-    Example:
-        >>> from keywordsai.logs.api import SyncLogAPI
-        >>> from keywordsai.types.log_types import KeywordsAILogParams
-        >>>
-        >>> # Initialize synchronous client
-        >>> client = SyncLogAPI(api_key="your-api-key")
-        >>>
-        >>> # Create log (no await needed)
-        >>> log_data = KeywordsAILogParams(
-        ...     model="gpt-4",
-        ...     input="Hello",
-        ...     output="Hi there!",
-        ...     status_code=200
-        ... )
-        >>> response = client.create(log_data)
-        >>> print(f"Log created: {response['message']}")
-
-    Note:
-        For new projects, consider using the async LogAPI as it provides
-        better performance and scalability for I/O operations.
-        
-        Logs do not support update or delete operations - these methods will raise
-        NotImplementedError if called.
-    """
-
-    def __init__(self, api_key: str = None, base_url: str = None):
-        """
-        Initialize the synchronous Log API client.
-
-        Args:
-            api_key (str, optional): Your Keywords AI API key for authentication.
-                If not provided, reads from KEYWORDSAI_API_KEY environment variable.
-            base_url (str, optional): Custom base URL for the API. If not provided,
-                reads from KEYWORDSAI_BASE_URL environment variable or uses default.
-        """
-        super().__init__(api_key, base_url)
-
+    # Synchronous methods (without "a" prefix)
     def create(self, create_data: KeywordsAILogParams) -> Dict[str, Any]:
         """Create a new log (synchronous)"""
-        response = self.client.post(
+        response = self.sync_client.post(
             LOG_CREATION_PATH,
             json_data=create_data.model_dump(exclude_none=True, mode="json"),
         )
@@ -330,17 +293,17 @@ class SyncLogAPI(BaseSyncAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogPara
             params["page_size"] = page_size
         params.update(filters)
 
-        response = self.client.get(LOG_LIST_PATH, params=params)
+        response = self.sync_client.get(LOG_LIST_PATH, params=params)
         return LogList(**response)
 
     def get(self, resource_id: str) -> KeywordsAIFullLogParams:
         """Retrieve a specific log by ID (synchronous)"""
-        response = self.client.get(f"{LOG_GET_PATH}/{resource_id}")
+        response = self.sync_client.get(f"{LOG_GET_PATH}/{resource_id}")
         return KeywordsAIFullLogParams(**response)
 
     def update(self, resource_id: str, update_data) -> KeywordsAIFullLogParams:
         """
-        Update operation is not supported for logs.
+        Update operation is not supported for logs (synchronous).
 
         Args:
             resource_id (str): The log ID (ignored)
@@ -355,7 +318,7 @@ class SyncLogAPI(BaseSyncAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogPara
 
     def delete(self, resource_id: str) -> Dict[str, Any]:
         """
-        Delete operation is not supported for logs.
+        Delete operation is not supported for logs (synchronous).
 
         Args:
             resource_id (str): The log ID (ignored)
@@ -371,7 +334,7 @@ class SyncLogAPI(BaseSyncAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogPara
 # Convenience functions for creating clients
 def create_log_client(api_key: str = None, base_url: str = None) -> LogAPI:
     """
-    Create an async log API client
+    Create a log API client
 
     Args:
         api_key: Keywords AI API key (optional, reads from KEYWORDSAI_API_KEY env var if not provided)
@@ -381,17 +344,3 @@ def create_log_client(api_key: str = None, base_url: str = None) -> LogAPI:
         LogAPI client instance
     """
     return LogAPI(api_key=api_key, base_url=base_url)
-
-
-def create_sync_log_client(api_key: str = None, base_url: str = None) -> SyncLogAPI:
-    """
-    Create a synchronous log API client
-
-    Args:
-        api_key: Keywords AI API key (optional, reads from KEYWORDSAI_API_KEY env var if not provided)
-        base_url: Base URL for the API (optional, reads from KEYWORDSAI_BASE_URL env var or uses default)
-
-    Returns:
-        SyncLogAPI client instance
-    """
-    return SyncLogAPI(api_key=api_key, base_url=base_url)

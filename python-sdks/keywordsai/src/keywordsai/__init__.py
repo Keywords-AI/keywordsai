@@ -1,8 +1,6 @@
 from keywordsai.datasets import (
     DatasetAPI,
-    SyncDatasetAPI,
     create_dataset_client,
-    create_sync_dataset_client,
     Dataset,
     DatasetCreate,
     DatasetUpdate,
@@ -15,17 +13,34 @@ from keywordsai.datasets import (
 
 from keywordsai.evaluators import (
     EvaluatorAPI,
-    SyncEvaluatorAPI,
     create_evaluator_client,
-    create_sync_evaluator_client,
     Evaluator,
     EvaluatorList,
 )
 from keywordsai.logs import (
     LogAPI,
-    SyncLogAPI,
     create_log_client,
-    create_sync_log_client,
+)
+
+from keywordsai.experiments import (
+    ExperimentAPI,
+    create_experiment_client,
+)
+
+from keywordsai.types.experiment_types import (
+    Experiment,
+    ExperimentList,
+    ExperimentCreate,
+    ExperimentColumnType,
+    ExperimentRowType,
+    AddExperimentRowsRequest,
+    RemoveExperimentRowsRequest,
+    UpdateExperimentRowsRequest,
+    AddExperimentColumnsRequest,
+    RemoveExperimentColumnsRequest,
+    UpdateExperimentColumnsRequest,
+    RunExperimentRequest,
+    RunExperimentEvalsRequest,
 )
 
 from keywordsai.constants.dataset_constants import (
@@ -52,51 +67,60 @@ __version__ = "0.1.0"
 __all__ = [
     # Dataset API
     "DatasetAPI",
-    "SyncDatasetAPI",
     "create_dataset_client",
-    "create_sync_dataset_client",
-    
     # Evaluator API
     "EvaluatorAPI",
-    "SyncEvaluatorAPI", 
     "create_evaluator_client",
-    "create_sync_evaluator_client",
-    
+    # Log API
+    "LogAPI",
+    "create_log_client",
+    # Experiment API
+    "ExperimentAPI",
+    "create_experiment_client",
     # Dataset Types
     "Dataset",
     "DatasetCreate",
-    "DatasetUpdate", 
+    "DatasetUpdate",
     "DatasetList",
     "LogManagementRequest",
-    
     # Evaluator Types
     "Evaluator",
     "EvaluatorList",
     "EvalRunRequest",
     "EvalReport",
     "EvalReportList",
-    
+    # Experiment Types
+    "Experiment",
+    "ExperimentList",
+    "ExperimentCreate",
+    "ExperimentColumnType",
+    "ExperimentRowType",
+    "AddExperimentRowsRequest",
+    "RemoveExperimentRowsRequest",
+    "UpdateExperimentRowsRequest",
+    "AddExperimentColumnsRequest",
+    "RemoveExperimentColumnsRequest",
+    "UpdateExperimentColumnsRequest",
+    "RunExperimentRequest",
+    "RunExperimentEvalsRequest",
     # Constants
     "DatasetType",
-    "DatasetStatus", 
+    "DatasetStatus",
     "DatasetLLMRunStatus",
-    
     # Dataset Type Constants
     "DATASET_TYPE_LLM",
     "DATASET_TYPE_SAMPLING",
-    
     # Dataset Status Constants
     "DATASET_STATUS_INITIALIZING",
     "DATASET_STATUS_READY",
-    "DATASET_STATUS_RUNNING", 
+    "DATASET_STATUS_RUNNING",
     "DATASET_STATUS_COMPLETED",
     "DATASET_STATUS_FAILED",
     "DATASET_STATUS_LOADING",
-    
     # Dataset LLM Run Status Constants
     "DATASET_LLM_RUN_STATUS_PENDING",
     "DATASET_LLM_RUN_STATUS_RUNNING",
     "DATASET_LLM_RUN_STATUS_COMPLETED",
-    "DATASET_LLM_RUN_STATUS_FAILED", 
+    "DATASET_LLM_RUN_STATUS_FAILED",
     "DATASET_LLM_RUN_STATUS_CANCELLED",
 ]

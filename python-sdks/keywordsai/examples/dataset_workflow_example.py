@@ -91,7 +91,7 @@ async def main():
             end_time=now.isoformat() + "Z"
         )
         
-        created_dataset = await dataset_api.create(dataset_data)
+        created_dataset = await dataset_api.acreate(dataset_data)
         print(f"   ✅ Created dataset: {created_dataset.name}")
         print(f"   🆔 Dataset ID: {created_dataset.id}")
         print(f"   📊 Type: {created_dataset.type}, Sampling: {getattr(created_dataset, 'sampling', 'N/A')}")
@@ -111,7 +111,7 @@ async def main():
                 }
             )
             
-            add_result = await dataset_api.add_logs_to_dataset(created_dataset.id, log_request)
+            add_result = await dataset_api.aadd_logs_to_dataset(created_dataset.id, log_request)
             print(f"   ✅ {add_result.get('message', 'Logs added')}")
             if 'count' in add_result:
                 print(f"   📊 Logs processed: {add_result['count']}")
@@ -122,7 +122,7 @@ async def main():
         
         # Step 4: List all datasets
         print("📋 Step 4: Listing all datasets...")
-        datasets = await dataset_api.list(page_size=5)
+        datasets = await dataset_api.alist(page_size=5)
         print(f"   ✅ Found {len(datasets.results)} datasets")
         for i, ds in enumerate(datasets.results[:3], 1):
             print(f"   {i}. {ds.name} (ID: {ds.id})")
@@ -131,13 +131,13 @@ async def main():
         # Step 5: Update the dataset
         print("✏️  Step 5: Updating dataset name...")
         update_data = DatasetUpdate(name=f"{dataset_data.name}_UPDATED")
-        updated_dataset = await dataset_api.update(created_dataset.id, update_data)
+        updated_dataset = await dataset_api.aupdate(created_dataset.id, update_data)
         print(f"   ✅ Updated name: {updated_dataset.name}")
         print()
         
         # Step 6: List available evaluators
         print("🔍 Step 6: Discovering available evaluators...")
-        evaluators = await evaluator_api.list(page_size=5)
+        evaluators = await evaluator_api.alist(page_size=5)
         print(f"   ✅ Found {len(evaluators.results)} evaluators")
         
         if evaluators.results:
@@ -151,7 +151,7 @@ async def main():
             print(f"   🔧 Using evaluator: {evaluator_slug}")
             
             try:
-                eval_result = await dataset_api.run_dataset_evaluation(
+                eval_result = await dataset_api.arun_dataset_evaluation(
                     created_dataset.id, 
                     [evaluator_slug]
                 )
@@ -160,7 +160,7 @@ async def main():
                 
                 # Step 8: Check evaluation results
                 print("📊 Step 8: Checking evaluation results...")
-                reports = await dataset_api.list_evaluation_reports(created_dataset.id)
+                reports = await dataset_api.alist_evaluation_reports(created_dataset.id)
                 print(f"   ✅ Found {len(reports.results)} evaluation reports")
                 
                 if reports.results:
@@ -179,7 +179,7 @@ async def main():
         
         # Step 9: Get dataset details
         print("📖 Step 9: Retrieving final dataset details...")
-        final_dataset = await dataset_api.get(created_dataset.id)
+        final_dataset = await dataset_api.aget(created_dataset.id)
         print(f"   ✅ Dataset: {final_dataset.name}")
         print(f"   📅 Created: {getattr(final_dataset, 'created_at', 'N/A')}")
         print(f"   📝 Description: {final_dataset.description}")
@@ -197,7 +197,7 @@ async def main():
         if created_dataset:
             try:
                 print("\n🗑️  Cleaning up...")
-                await dataset_api.delete(created_dataset.id)
+                await dataset_api.adelete(created_dataset.id)
                 print("   ✅ Test dataset deleted")
             except Exception as cleanup_error:
                 print(f"   ⚠️  Could not delete dataset: {cleanup_error}")

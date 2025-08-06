@@ -10,9 +10,7 @@ This module provides functionality for managing evaluators, including:
 
 from keywordsai.evaluators.api import (
     EvaluatorAPI,
-    SyncEvaluatorAPI,
     create_evaluator_client,
-    create_sync_evaluator_client,
 )
 from keywordsai.types.evaluator_types import (
     Evaluator,
@@ -22,9 +20,7 @@ from keywordsai.types.evaluator_types import (
 # Export main classes and functions
 __all__ = [
     "EvaluatorAPI",
-    "SyncEvaluatorAPI",
     "create_evaluator_client",
-    "create_sync_evaluator_client",
     # Re-export types for convenience
     "Evaluator",
     "EvaluatorList",

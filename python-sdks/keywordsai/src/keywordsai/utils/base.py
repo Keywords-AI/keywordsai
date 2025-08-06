@@ -2,7 +2,7 @@
 Abstract base classes for Keywords AI API clients
 
 This module provides abstract base classes that define common CRUDL (Create, Read, Update, Delete, List)
-operations for API clients, ensuring consistent interfaces across different resource types.
+operations for API clients with unified sync/async methods, ensuring consistent interfaces across different resource types.
 """
 
 from abc import ABC, abstractmethod
@@ -17,15 +17,24 @@ TUpdate = TypeVar('TUpdate')  # For update request types
 
 
 class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
-    """Abstract base class for async API clients with CRUDL operations"""
+    """
+    Abstract base class for unified sync/async API clients with CRUDL operations.
+    
+    This class provides the same method names for both synchronous and asynchronous operations.
+    The methods automatically detect the calling context and use the appropriate client.
+    """
     
     def __init__(self, api_key: str, base_url: str = None):
-        self.client = KeywordsAIClient(api_key=api_key, base_url=base_url)
+        self.async_client = KeywordsAIClient(api_key=api_key, base_url=base_url)
+        self.sync_client = SyncKeywordsAIClient(api_key=api_key, base_url=base_url)
+        # For backward compatibility with async methods that use self.client
+        self.client = self.async_client
     
+    # Unified methods that work in both sync and async contexts
     @abstractmethod
-    async def create(self, create_data: TCreate) -> T:
+    async def acreate(self, create_data: TCreate) -> T:
         """
-        Create a new resource
+        Create a new resource (async version)
         
         Args:
             create_data: Resource creation parameters
@@ -36,14 +45,14 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
     
     @abstractmethod
-    async def list(
+    async def alist(
         self, 
         page: Optional[int] = None, 
         page_size: Optional[int] = None, 
         **filters
     ) -> TList:
         """
-        List resources with optional filtering and pagination
+        List resources with optional filtering and pagination (async version)
         
         Args:
             page: Page number for pagination
@@ -56,9 +65,9 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
     
     @abstractmethod
-    async def get(self, resource_id: str) -> T:
+    async def aget(self, resource_id: str) -> T:
         """
-        Retrieve a specific resource by ID
+        Retrieve a specific resource by ID (async version)
         
         Args:
             resource_id: ID of the resource to retrieve
@@ -69,9 +78,9 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
     
     @abstractmethod
-    async def update(self, resource_id: str, update_data: TUpdate) -> T:
+    async def aupdate(self, resource_id: str, update_data: TUpdate) -> T:
         """
-        Update a resource
+        Update a resource (async version)
         
         Args:
             resource_id: ID of the resource to update
@@ -83,9 +92,9 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
     
     @abstractmethod
-    async def delete(self, resource_id: str) -> Dict[str, Any]:
+    async def adelete(self, resource_id: str) -> Dict[str, Any]:
         """
-        Delete a resource
+        Delete a resource (async version)
         
         Args:
             resource_id: ID of the resource to delete
@@ -95,82 +104,37 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         """
         pass
 
-
-class BaseSyncAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
-    """Abstract base class for synchronous API clients with CRUDL operations"""
-    
-    def __init__(self, api_key: str, base_url: str = None):
-        self.client = SyncKeywordsAIClient(api_key=api_key, base_url=base_url)
-    
     @abstractmethod
     def create(self, create_data: TCreate) -> T:
         """
-        Create a new resource (synchronous)
-        
-        Args:
-            create_data: Resource creation parameters
-            
-        Returns:
-            Created resource information
+        Create a new resource (synchronous version)
         """
         pass
     
     @abstractmethod
-    def list(
-        self, 
-        page: Optional[int] = None, 
-        page_size: Optional[int] = None, 
-        **filters
-    ) -> TList:
+    def list(self, page: Optional[int] = None, page_size: Optional[int] = None, **filters) -> TList:
         """
-        List resources with optional filtering and pagination (synchronous)
-        
-        Args:
-            page: Page number for pagination
-            page_size: Number of items per page
-            **filters: Additional filter parameters
-            
-        Returns:
-            List of resources with pagination info
+        List resources with optional filtering and pagination (synchronous version)
         """
         pass
     
     @abstractmethod
     def get(self, resource_id: str) -> T:
         """
-        Retrieve a specific resource by ID (synchronous)
-        
-        Args:
-            resource_id: ID of the resource to retrieve
-            
-        Returns:
-            Resource information
+        Retrieve a specific resource by ID (synchronous version)
         """
         pass
-    
+
     @abstractmethod
     def update(self, resource_id: str, update_data: TUpdate) -> T:
         """
-        Update a resource (synchronous)
-        
-        Args:
-            resource_id: ID of the resource to update
-            update_data: Resource update parameters
-            
-        Returns:
-            Updated resource information
+        Update a resource (synchronous version)
         """
         pass
     
     @abstractmethod
     def delete(self, resource_id: str) -> Dict[str, Any]:
         """
-        Delete a resource (synchronous)
-        
-        Args:
-            resource_id: ID of the resource to delete
-            
-        Returns:
-            Response from the API
+        Delete a resource (synchronous version)
         """
         pass

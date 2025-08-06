@@ -20,8 +20,7 @@ from keywordsai.types.dataset_types import (
     EvalReport,
     EvalReportList,
 )
-from keywordsai.utils.client import KeywordsAIClient, SyncKeywordsAIClient
-from keywordsai.utils.base import BaseAPI, BaseSyncAPI
+from keywordsai.utils.base import BaseAPI
 from keywordsai.constants.dataset_constants import (
     DATASET_BASE_PATH,
     DATASET_CREATION_PATH,
@@ -33,11 +32,12 @@ from keywordsai.constants.dataset_constants import (
 
 class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
     """
-    Asynchronous Dataset API client for Keywords AI.
+    Unified Dataset API client for Keywords AI with both sync and async methods.
 
     This class provides comprehensive functionality for managing datasets in Keywords AI,
     including creating datasets, managing logs within datasets, running evaluations,
-    and retrieving results.
+    and retrieving results. All operations are available in both synchronous and
+    asynchronous variants.
 
     Features:
         - Create and manage datasets with various filtering options
@@ -51,7 +51,24 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         base_url (str, optional): Base URL for the Keywords AI API.
             Defaults to the standard Keywords AI API endpoint.
 
-    Example:
+    Example (Synchronous):
+        >>> from keywordsai.datasets.api import DatasetAPI
+        >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
+        >>>
+        >>> # Initialize the client
+        >>> client = DatasetAPI(api_key="your-api-key")
+        >>>
+        >>> # Create a new dataset (synchronous - no await)
+        >>> dataset_data = DatasetCreate(
+        ...     name="My Test Dataset",
+        ...     description="Dataset for testing purposes",
+        ...     type="sampling",
+        ...     sampling=100
+        ... )
+        >>> dataset = client.create(dataset_data)
+        >>> print(f"Created dataset: {dataset.name}")
+
+    Example (Asynchronous):
         >>> import asyncio
         >>> from keywordsai.datasets.api import DatasetAPI
         >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
@@ -60,21 +77,21 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         ...     # Initialize the client
         ...     client = DatasetAPI(api_key="your-api-key")
         ...
-        ...     # Create a new dataset
+        ...     # Create a new dataset (asynchronous - with await)
         ...     dataset_data = DatasetCreate(
-        ...         name="My Test Dataset",
-        ...         description="Dataset for testing purposes",
+        ...         name="My Async Dataset",
+        ...         description="Dataset created with async method",
         ...         type="sampling",
         ...         sampling=100
         ...     )
-        ...     dataset = await client.create(dataset_data)
+        ...     dataset = await client.acreate(dataset_data)
         ...     print(f"Created dataset: {dataset.name}")
         >>>
         >>> asyncio.run(main())
 
     Note:
-        All methods in this class are asynchronous and should be called with `await`.
-        For synchronous operations, use `SyncDatasetAPI` instead.
+        - Use await client.amethod() for asynchronous operations
+        - Use client.method() for synchronous operations
     """
 
     def __init__(self, api_key: str, base_url: str = None):
@@ -88,9 +105,10 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         """
         super().__init__(api_key, base_url)
 
-    async def create(self, create_data: DatasetCreate) -> Dataset:
+    # Asynchronous methods (with "a" prefix)
+    async def acreate(self, create_data: DatasetCreate) -> Dataset:
         """
-        Create a new dataset with specified parameters.
+        Create a new dataset with specified parameters (asynchronous).
 
         This method creates a new dataset in Keywords AI with the provided configuration.
         The dataset can be configured for different types of log collection and filtering.
@@ -137,7 +155,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             ...         "status": {"value": "success", "operator": "equals"}
             ...     }
             ... )
-            >>> dataset = await client.create(dataset_data)
+            >>> dataset = await client.acreate(dataset_data)
         """
         response = await self.client.post(
             DATASET_CREATION_PATH,
@@ -145,11 +163,11 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         )
         return Dataset(**response)
 
-    async def list(
+    async def alist(
         self, page: Optional[int] = None, page_size: Optional[int] = None, **filters
     ) -> DatasetList:
         """
-        List datasets with optional filtering and pagination.
+        List datasets with optional filtering and pagination (asynchronous).
 
         Retrieve a paginated list of datasets, optionally filtered by various criteria.
         This method supports filtering by dataset properties and provides pagination
@@ -176,15 +194,15 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Example:
             >>> # List all datasets
-            >>> datasets = await client.list()
+            >>> datasets = await client.alist()
             >>> print(f"Found {datasets.count} datasets")
             >>>
             >>> # List with pagination
-            >>> page1 = await client.list(page=1, page_size=10)
+            >>> page1 = await client.alist(page=1, page_size=10)
             >>>
             >>> # List with filters
-            >>> sampling_datasets = await client.list(type="sampling")
-            >>> recent_datasets = await client.list(
+            >>> sampling_datasets = await client.alist(type="sampling")
+            >>> recent_datasets = await client.alist(
             ...     created_after="2024-01-01T00:00:00Z"
             ... )
         """
@@ -198,9 +216,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         response = await self.client.get(DATASET_LIST_PATH, params=params)
         return DatasetList(**response)
 
-    async def get(self, resource_id: str) -> Dataset:
+    async def aget(self, resource_id: str) -> Dataset:
         """
-        Retrieve a specific dataset by its unique identifier.
+        Retrieve a specific dataset by its unique identifier (asynchronous).
 
         Fetch detailed information about a dataset including its current status,
         configuration, and metadata. This is useful for checking dataset readiness
@@ -226,7 +244,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Example:
             >>> # Get dataset details
-            >>> dataset = await client.get("dataset-123")
+            >>> dataset = await client.aget("dataset-123")
             >>> print(f"Dataset '{dataset.name}' status: {dataset.status}")
             >>>
             >>> # Check if dataset is ready for operations
@@ -238,9 +256,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         response = await self.client.get(f"{DATASET_GET_PATH}/{resource_id}")
         return Dataset(**response)
 
-    async def update(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
+    async def aupdate(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
         """
-        Update an existing dataset's properties.
+        Update an existing dataset's properties (asynchronous).
 
         Modify dataset metadata such as name and description. Note that core
         dataset properties like type and initial filters cannot be changed
@@ -267,7 +285,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             ...     name="Updated Dataset Name",
             ...     description="Updated description with more details"
             ... )
-            >>> updated_dataset = await client.update("dataset-123", update_data)
+            >>> updated_dataset = await client.aupdate("dataset-123", update_data)
             >>> print(f"Updated dataset: {updated_dataset.name}")
         """
         response = await self.client.patch(
@@ -276,9 +294,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         )
         return Dataset(**response)
 
-    async def delete(self, resource_id: str) -> Dict[str, Any]:
+    async def adelete(self, resource_id: str) -> Dict[str, Any]:
         """
-        Delete a dataset permanently.
+        Delete a dataset permanently (asynchronous).
 
         WARNING: This operation is irreversible. The dataset and all its associated
         logs and evaluation reports will be permanently deleted.
@@ -296,7 +314,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Example:
             >>> # Delete a dataset (be careful!)
-            >>> response = await client.delete("dataset-123")
+            >>> response = await client.adelete("dataset-123")
             >>> print(response["message"])  # "Dataset deleted successfully"
 
         Note:
@@ -305,11 +323,52 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         """
         return await self.client.delete(f"{DATASET_BASE_PATH}/{resource_id}")
 
-    async def add_logs_to_dataset(
+    # Synchronous methods (without "a" prefix)
+    def create(self, create_data: DatasetCreate) -> Dataset:
+        """Create a new dataset with specified parameters (synchronous)."""
+        response = self.sync_client.post(
+            DATASET_CREATION_PATH,
+            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+        )
+        return Dataset(**response)
+
+    def list(
+        self, page: Optional[int] = None, page_size: Optional[int] = None, **filters
+    ) -> DatasetList:
+        """List datasets with optional filtering and pagination (synchronous)."""
+        params = {}
+        if page is not None:
+            params["page"] = page
+        if page_size is not None:
+            params["page_size"] = page_size
+        params.update(filters)
+
+        response = self.sync_client.get(DATASET_LIST_PATH, params=params)
+        return DatasetList(**response)
+
+    def get(self, resource_id: str) -> Dataset:
+        """Retrieve a specific dataset by its unique identifier (synchronous)."""
+        response = self.sync_client.get(f"{DATASET_GET_PATH}/{resource_id}")
+        return Dataset(**response)
+
+    def update(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
+        """Update an existing dataset's properties (synchronous)."""
+        response = self.sync_client.patch(
+            f"{DATASET_UPDATE_PATH}/{resource_id}",
+            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+        )
+        return Dataset(**response)
+
+    def delete(self, resource_id: str) -> Dict[str, Any]:
+        """Delete a dataset permanently (synchronous)."""
+        return self.sync_client.delete(f"{DATASET_BASE_PATH}/{resource_id}")
+
+    # Dataset-specific methods (both sync and async variants)
+    async def aadd_logs_to_dataset(
         self, dataset_id: str, log_request: LogManagementRequest
     ) -> Dict[str, Any]:
         """
-        Add logs to an existing dataset based on filters and time range.
+        Add logs to an existing dataset based on filters and time range (asynchronous).
 
         This method allows you to expand a dataset by adding more logs that match
         specific criteria. This is useful for creating comprehensive datasets that
@@ -351,7 +410,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             ...         "status": {"value": "error", "operator": "equals"}
             ...     }
             ... )
-            >>> result = await client.add_logs_to_dataset("dataset-123", log_request)
+            >>> result = await client.aadd_logs_to_dataset("dataset-123", log_request)
             >>> print(f"Added {result['count']} error logs to dataset")
         """
         return await self.client.post(
@@ -359,32 +418,41 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             json_data=log_request.model_dump(exclude_none=True, mode="json"),
         )
 
-    async def remove_logs_from_dataset(
+    def add_logs_to_dataset(
         self, dataset_id: str, log_request: LogManagementRequest
     ) -> Dict[str, Any]:
-        """
-        Remove logs from a dataset
+        """Add logs to an existing dataset based on filters and time range (synchronous)."""
+        return self.sync_client.post(
+            f"{DATASET_BASE_PATH}/{dataset_id}/logs/create",
+            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+        )
 
-        Args:
-            dataset_id: ID of the dataset
-            log_request: Log filtering and time range parameters
-
-        Returns:
-            Response from the API
-        """
+    async def aremove_logs_from_dataset(
+        self, dataset_id: str, log_request: LogManagementRequest
+    ) -> Dict[str, Any]:
+        """Remove logs from a dataset (asynchronous)"""
         return await self.client.delete(
             f"{DATASET_BASE_PATH}/{dataset_id}/logs/delete",
             json_data=log_request.model_dump(exclude_none=True, mode="json"),
         )
 
-    async def list_dataset_logs(
+    def remove_logs_from_dataset(
+        self, dataset_id: str, log_request: LogManagementRequest
+    ) -> Dict[str, Any]:
+        """Remove logs from a dataset (synchronous)"""
+        return self.sync_client.delete(
+            f"{DATASET_BASE_PATH}/{dataset_id}/logs/delete",
+            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+        )
+
+    async def alist_dataset_logs(
         self,
         dataset_id: str,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        List logs contained within a specific dataset.
+        List logs contained within a specific dataset (asynchronous).
 
         Retrieve a paginated list of all logs currently in the dataset.
         This is useful for inspecting dataset contents, verifying log quality,
@@ -416,7 +484,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Example:
             >>> # List first 10 logs in a dataset
-            >>> logs = await client.list_dataset_logs("dataset-123", page_size=10)
+            >>> logs = await client.alist_dataset_logs("dataset-123", page_size=10)
             >>> print(f"Dataset contains {logs['count']} logs")
             >>>
             >>> # Inspect log structure
@@ -433,11 +501,28 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             f"{DATASET_BASE_PATH}/{dataset_id}/logs", params=params
         )
 
-    async def run_dataset_evaluation(
+    def list_dataset_logs(
+        self,
+        dataset_id: str,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """List logs contained within a specific dataset (synchronous)."""
+        params = {}
+        if page is not None:
+            params["page"] = page
+        if page_size is not None:
+            params["page_size"] = page_size
+
+        return self.sync_client.get(
+            f"{DATASET_BASE_PATH}/{dataset_id}/logs", params=params
+        )
+
+    async def arun_dataset_evaluation(
         self, dataset_id: str, evaluator_slugs: List[str], **kwargs
     ) -> Dict[str, Any]:
         """
-        Run evaluation on a dataset using specified evaluators.
+        Run evaluation on a dataset using specified evaluators (asynchronous).
 
         Start an evaluation process that will analyze the logs in the dataset
         using the specified evaluators. This is an asynchronous process that
@@ -467,17 +552,17 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             >>> # First, get available evaluators
             >>> from keywordsai.evaluators.api import EvaluatorAPI
             >>> eval_client = EvaluatorAPI(api_key="your-key")
-            >>> evaluators = await eval_client.list()
+            >>> evaluators = await eval_client.alist()
             >>>
             >>> # Run evaluation with specific evaluators
-            >>> result = await client.run_dataset_evaluation(
+            >>> result = await client.arun_dataset_evaluation(
             ...     "dataset-123",
             ...     ["accuracy-evaluator", "relevance-evaluator"]
             ... )
             >>> print(f"Started evaluation: {result['evaluation_id']}")
 
         Note:
-            Evaluations run asynchronously. Use `list_evaluation_reports()` to
+            Evaluations run asynchronously. Use `alist_evaluation_reports()` to
             check the status and retrieve results when complete.
         """
         request_data = {"evaluator_slugs": evaluator_slugs, **kwargs}
@@ -487,43 +572,41 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             json_data=request_data,
         )
 
-    async def get_evaluation_report(
+    def run_dataset_evaluation(
+        self, dataset_id: str, evaluator_slugs: List[str], **kwargs
+    ) -> Dict[str, Any]:
+        """Run evaluation on a dataset using specified evaluators (synchronous)."""
+        request_data = {"evaluator_slugs": evaluator_slugs, **kwargs}
+
+        return self.sync_client.post(
+            f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/create",
+            json_data=request_data,
+        )
+
+    async def aget_evaluation_report(
         self, dataset_id: str, report_id: str
     ) -> EvalReport:
-        """
-        Retrieve a specific evaluation report by ID
-
-        Args:
-            dataset_id: ID of the dataset
-            report_id: ID of the evaluation report to retrieve
-
-        Returns:
-            Evaluation report information
-        """
+        """Retrieve a specific evaluation report by ID (asynchronous)"""
         response = await self.client.get(
             f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/{report_id}"
         )
         return EvalReport(**response)
 
-    async def list_evaluation_reports(
+    def get_evaluation_report(self, dataset_id: str, report_id: str) -> EvalReport:
+        """Retrieve a specific evaluation report by ID (synchronous)"""
+        response = self.sync_client.get(
+            f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/{report_id}"
+        )
+        return EvalReport(**response)
+
+    async def alist_evaluation_reports(
         self,
         dataset_id: str,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         **filters,
     ) -> EvalReportList:
-        """
-        List evaluation reports for a dataset
-
-        Args:
-            dataset_id: ID of the dataset
-            page: Page number for pagination
-            page_size: Number of items per page
-            **filters: Additional filter parameters
-
-        Returns:
-            List of evaluation reports
-        """
+        """List evaluation reports for a dataset (asynchronous)"""
         params = {}
         if page is not None:
             params["page"] = page
@@ -535,172 +618,6 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/list/", params=params
         )
         return EvalReportList(**response)
-
-
-class SyncDatasetAPI(BaseSyncAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
-    """
-    Synchronous Dataset API client for Keywords AI.
-
-    This class provides the same functionality as DatasetAPI but with synchronous
-    method calls. Use this when you prefer traditional blocking calls or when
-    working in environments where async/await is not suitable.
-
-    All methods in this class are direct synchronous equivalents of the async
-    methods in DatasetAPI. See DatasetAPI documentation for detailed method
-    descriptions and examples.
-
-    Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-
-    Example:
-        >>> from keywordsai.datasets.api import SyncDatasetAPI
-        >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
-        >>>
-        >>> # Initialize synchronous client
-        >>> client = SyncDatasetAPI(api_key="your-api-key")
-        >>>
-        >>> # Create dataset (no await needed)
-        >>> dataset_data = DatasetCreate(
-        ...     name="Sync Dataset",
-        ...     description="Dataset created with sync client",
-        ...     type="sampling",
-        ...     sampling=50
-        ... )
-        >>> dataset = client.create(dataset_data)
-        >>> print(f"Created dataset: {dataset.name}")
-
-    Note:
-        For new projects, consider using the async DatasetAPI as it provides
-        better performance and scalability for I/O operations.
-    """
-
-    def __init__(self, api_key: str, base_url: str = None):
-        """
-        Initialize the synchronous Dataset API client.
-
-        Args:
-            api_key (str): Your Keywords AI API key for authentication
-            base_url (str, optional): Custom base URL for the API
-        """
-        super().__init__(api_key, base_url)
-
-    def create(self, create_data: DatasetCreate) -> Dataset:
-        """Create a new dataset (synchronous)"""
-        response = self.client.post(
-            DATASET_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
-        )
-        return Dataset(**response)
-
-    def list(
-        self, page: Optional[int] = None, page_size: Optional[int] = None, **filters
-    ) -> DatasetList:
-        """List datasets with optional filtering (synchronous)"""
-        params = {}
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["page_size"] = page_size
-        params.update(filters)
-
-        response = self.client.get(DATASET_LIST_PATH, params=params)
-        return DatasetList(**response)
-
-    def get(self, resource_id: str) -> Dataset:
-        """Retrieve a specific dataset by ID (synchronous)"""
-        response = self.client.get(f"{DATASET_BASE_PATH}/{resource_id}")
-        return Dataset(**response)
-
-    def update(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
-        """Update a dataset (synchronous)"""
-        response = self.client.patch(
-            f"{DATASET_BASE_PATH}/{resource_id}",
-            json_data=update_data.model_dump(exclude_none=True, mode="json"),
-        )
-        return Dataset(**response)
-
-    def delete(self, resource_id: str) -> Dict[str, Any]:
-        """
-        Delete a dataset (synchronous)
-
-        Args:
-            resource_id: ID of the dataset to delete
-
-        Returns:
-            Response from the API
-        """
-        return self.client.delete(f"{DATASET_BASE_PATH}/{resource_id}")
-
-    def add_logs_to_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
-    ) -> Dict[str, Any]:
-        """Add logs to a dataset (synchronous)"""
-        return self.client.post(
-            f"{DATASET_BASE_PATH}/{dataset_id}/logs/create",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
-        )
-
-    def remove_logs_from_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
-    ) -> Dict[str, Any]:
-        """Remove logs from a dataset (synchronous)"""
-        return self.client.delete(
-            f"{DATASET_BASE_PATH}/{dataset_id}/logs/delete",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
-        )
-
-    def list_dataset_logs(
-        self,
-        dataset_id: str,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        """List logs in a dataset (synchronous)"""
-        params = {}
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["page_size"] = page_size
-
-        return self.client.get(f"{DATASET_BASE_PATH}/{dataset_id}/logs", params=params)
-
-    def run_dataset_evaluation(
-        self, dataset_id: str, evaluator_slugs: List[str], **kwargs
-    ) -> Dict[str, Any]:
-        """
-        Run evaluation on a dataset using specified evaluators (synchronous)
-
-        Args:
-            dataset_id: ID of the dataset to evaluate
-            evaluator_slugs: List of evaluator slugs to use
-            **kwargs: Additional evaluation parameters
-
-        Returns:
-            Response from the API
-        """
-        request_data = {"evaluator_slugs": evaluator_slugs, **kwargs}
-
-        return self.client.post(
-            f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/create",
-            json_data=request_data,
-        )
-
-    def get_evaluation_report(self, dataset_id: str, report_id: str) -> EvalReport:
-        """
-        Retrieve a specific evaluation report by ID (synchronous)
-
-        Args:
-            dataset_id: ID of the dataset
-            report_id: ID of the evaluation report to retrieve
-
-        Returns:
-            Evaluation report information
-        """
-        response = self.client.get(
-            f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/{report_id}"
-        )
-        return EvalReport(**response)
 
     def list_evaluation_reports(
         self,
@@ -709,18 +626,7 @@ class SyncDatasetAPI(BaseSyncAPI[Dataset, DatasetList, DatasetCreate, DatasetUpd
         page_size: Optional[int] = None,
         **filters,
     ) -> EvalReportList:
-        """
-        List evaluation reports for a dataset (synchronous)
-
-        Args:
-            dataset_id: ID of the dataset
-            page: Page number for pagination
-            page_size: Number of items per page
-            **filters: Additional filter parameters
-
-        Returns:
-            List of evaluation reports
-        """
+        """List evaluation reports for a dataset (synchronous)"""
         params = {}
         if page is not None:
             params["page"] = page
@@ -728,36 +634,25 @@ class SyncDatasetAPI(BaseSyncAPI[Dataset, DatasetList, DatasetCreate, DatasetUpd
             params["page_size"] = page_size
         params.update(filters)
 
-        response = self.client.get(
+        response = self.sync_client.get(
             f"{DATASET_BASE_PATH}/{dataset_id}/eval-reports/list/", params=params
         )
         return EvalReportList(**response)
 
 
-# Convenience functions for creating clients
 def create_dataset_client(api_key: str, base_url: str = None) -> DatasetAPI:
     """
-    Create an async dataset API client
+    Create a unified dataset API client
 
     Args:
         api_key: Keywords AI API key
         base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
 
     Returns:
-        DatasetAPI client instance
+        DatasetAPI client instance with both sync and async methods
     """
     return DatasetAPI(api_key=api_key, base_url=base_url)
 
 
-def create_sync_dataset_client(api_key: str, base_url: str = None) -> SyncDatasetAPI:
-    """
-    Create a synchronous dataset API client
-
-    Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
-
-    Returns:
-        SyncDatasetAPI client instance
-    """
-    return SyncDatasetAPI(api_key=api_key, base_url=base_url)
+# For backward compatibility, create aliases
+SyncDatasetAPI = DatasetAPI  # Same class, just different name for clarity in imports

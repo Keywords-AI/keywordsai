@@ -202,7 +202,7 @@ class TestRealWorldDatasetWorkflow:
                 }
             )
             
-            created_dataset = await dataset_api.create(dataset_create)
+            created_dataset = await dataset_api.acreate(dataset_create)
             
             # Verify dataset creation was successful
             assert created_dataset is not None, "Dataset creation failed - no dataset returned"
@@ -221,7 +221,7 @@ class TestRealWorldDatasetWorkflow:
             # Step 2.5: List datasets to verify our dataset appears in the list
             print(f"📋 Step 2.5: Listing datasets to verify creation...")
             try:
-                recent_datasets = await dataset_api.list(page_size=10)
+                recent_datasets = await dataset_api.alist(page_size=10)
                 print(f"   ✅ Found {len(recent_datasets.results)} total datasets")
                 
                 # Look for our newly created dataset
@@ -247,7 +247,7 @@ class TestRealWorldDatasetWorkflow:
             await asyncio.sleep(5)
             
             print(f"🔍 Checking dataset status by retrieving dataset details...")
-            dataset_status = await dataset_api.get(created_dataset.id)
+            dataset_status = await dataset_api.aget(created_dataset.id)
             
             # Verify we can retrieve the dataset
             assert dataset_status is not None, f"Failed to retrieve dataset with ID: {created_dataset.id}"
@@ -268,7 +268,7 @@ class TestRealWorldDatasetWorkflow:
                 elif retry_count < max_retries - 1:
                     print(f"   ⏳ Dataset status: '{current_status}' - waiting 5 more seconds... (attempt {retry_count + 1}/{max_retries})")
                     await asyncio.sleep(5)
-                    dataset_status = await dataset_api.get(created_dataset.id)
+                    dataset_status = await dataset_api.aget(created_dataset.id)
                     current_status = getattr(dataset_status, 'status', 'unknown')
                     retry_count += 1
                 else:
@@ -279,7 +279,7 @@ class TestRealWorldDatasetWorkflow:
             
             # Step 4: List logs to verify they look correct
             print(f"📋 Step 4: Listing logs in dataset to verify they look correct...")
-            dataset_logs = await dataset_api.list_dataset_logs(created_dataset.id, page_size=10)
+            dataset_logs = await dataset_api.alist_dataset_logs(created_dataset.id, page_size=10)
             
             log_count = len(dataset_logs.get('results', []))
             print(f"   ✅ Found {log_count} logs in dataset")
@@ -385,13 +385,13 @@ class TestRealWorldDatasetWorkflow:
             )
             
             try:
-                add_result = await dataset_api.add_logs_to_dataset(created_dataset.id, error_log_request)
+                add_result = await dataset_api.aadd_logs_to_dataset(created_dataset.id, error_log_request)
                 print(f"   ✅ {add_result.get('message', 'Error logs added successfully')}")
                 if 'count' in add_result:
                     print(f"   📊 Error logs added: {add_result['count']}")
                 
                 # Check updated log count
-                updated_logs = await dataset_api.list_dataset_logs(created_dataset.id, page_size=5)
+                updated_logs = await dataset_api.alist_dataset_logs(created_dataset.id, page_size=5)
                 new_count = len(updated_logs.get('results', []))
                 print(f"   📈 Total logs now: {new_count} (was {log_count})")
                 
@@ -409,14 +409,14 @@ class TestRealWorldDatasetWorkflow:
                 description="Comprehensive production logs analysis: success + error logs from past 2 days"
             )
             
-            updated_dataset = await dataset_api.update(created_dataset.id, update_data)
+            updated_dataset = await dataset_api.aupdate(created_dataset.id, update_data)
             print(f"   ✅ Renamed dataset to: {updated_dataset.name}")
             print(f"   📝 Updated description: {updated_dataset.description}")
             print()
             
             # Step 7: List evaluators and pick first LLM type evaluator
             print(f"🔍 Step 7: Listing evaluators to find LLM type evaluator...")
-            evaluators = await evaluator_api.list(page_size=20)
+            evaluators = await evaluator_api.alist(page_size=20)
             
             print(f"   ✅ Found {len(evaluators.results)} evaluators")
             
@@ -444,7 +444,7 @@ class TestRealWorldDatasetWorkflow:
                 print(f"🎯 Step 8: Running evaluation with {llm_evaluator.name}...")
                 
                 try:
-                    eval_result = await dataset_api.run_dataset_evaluation(
+                    eval_result = await dataset_api.arun_dataset_evaluation(
                         created_dataset.id,
                         [llm_evaluator.slug]
                     )
@@ -468,7 +468,7 @@ class TestRealWorldDatasetWorkflow:
             print(f"📊 Step 9: Checking evaluation results...")
             
             try:
-                eval_reports = await dataset_api.list_evaluation_reports(created_dataset.id)
+                eval_reports = await dataset_api.alist_evaluation_reports(created_dataset.id)
                 report_count = len(eval_reports.results)
                 print(f"   ✅ Found {report_count} evaluation reports")
                 
@@ -487,7 +487,7 @@ class TestRealWorldDatasetWorkflow:
                         # Try to get detailed report
                         if hasattr(dataset_api, 'get_evaluation_report'):
                             try:
-                                detailed_report = await dataset_api.get_evaluation_report(created_dataset.id, report_id)
+                                detailed_report = await dataset_api.aget_evaluation_report(created_dataset.id, report_id)
                                 print(f"      📈 Results available: {detailed_report is not None}")
                             except:
                                 print(f"      📈 Detailed results: Not accessible")
@@ -502,7 +502,7 @@ class TestRealWorldDatasetWorkflow:
             
             # Step 10: Final dataset info (before manual cleanup)
             print(f"🎉 Step 10: Workflow completed! Final dataset summary:")
-            final_dataset = await dataset_api.get(created_dataset.id)
+            final_dataset = await dataset_api.aget(created_dataset.id)
             
             print("=" * 60)
             print(f"📊 DATASET SUCCESSFULLY CREATED AND CONFIGURED")
@@ -541,7 +541,7 @@ class TestRealWorldDatasetWorkflow:
             if created_dataset and os.getenv("AUTO_CLEANUP_ON_ERROR", "false").lower() == "true":
                 try:
                     print(f"\n🗑️  Auto-cleanup enabled, deleting test dataset...")
-                    await dataset_api.delete(created_dataset.id)
+                    await dataset_api.adelete(created_dataset.id)
                     print(f"   ✅ Test dataset deleted")
                 except Exception as cleanup_error:
                     print(f"   ⚠️  Could not delete dataset: {cleanup_error}")

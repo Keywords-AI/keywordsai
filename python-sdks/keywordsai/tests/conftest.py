@@ -9,8 +9,8 @@ load_dotenv(override=True)
 import pytest
 import os
 from unittest.mock import AsyncMock, MagicMock
-from keywordsai.datasets.api import DatasetAPI, SyncDatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
+from keywordsai.datasets.api import DatasetAPI
+from keywordsai.evaluators.api import EvaluatorAPI
 
 
 @pytest.fixture
@@ -142,20 +142,20 @@ def dataset_api_async(api_key, base_url):
 
 @pytest.fixture
 def dataset_api_sync(api_key, base_url):
-    """Sync dataset API client fixture"""
-    return SyncDatasetAPI(api_key=api_key, base_url=base_url)
+    """Sync dataset API client fixture (unified API)"""
+    return DatasetAPI(api_key=api_key, base_url=base_url)
 
 
 @pytest.fixture
 def evaluator_api_async(api_key, base_url):
-    """Async evaluator API client fixture"""
+    """Async evaluator API client fixture (unified API)"""
     return EvaluatorAPI(api_key=api_key, base_url=base_url)
 
 
 @pytest.fixture
 def evaluator_api_sync(api_key, base_url):
-    """Sync evaluator API client fixture"""
-    return SyncEvaluatorAPI(api_key=api_key, base_url=base_url)
+    """Sync evaluator API client fixture (unified API)"""
+    return EvaluatorAPI(api_key=api_key, base_url=base_url)
 
 
 @pytest.fixture

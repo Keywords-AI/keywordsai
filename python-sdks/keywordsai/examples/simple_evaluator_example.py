@@ -44,7 +44,7 @@ async def main():
     try:
         # List all evaluators
         print("📋 Listing all available evaluators...")
-        evaluators = await evaluator_api.list(page_size=10)
+        evaluators = await evaluator_api.alist(page_size=10)
         
         print(f"✅ Found {len(evaluators.results)} evaluators:")
         print()
@@ -62,7 +62,7 @@ async def main():
             first_evaluator = evaluators.results[0]
             print(f"🔍 Getting details for: {first_evaluator.name}")
             
-            detailed_evaluator = await evaluator_api.get(first_evaluator.id)
+            detailed_evaluator = await evaluator_api.aget(first_evaluator.id)
             print(f"✅ Retrieved: {detailed_evaluator.name}")
             print(f"   Slug: {detailed_evaluator.slug}")
             

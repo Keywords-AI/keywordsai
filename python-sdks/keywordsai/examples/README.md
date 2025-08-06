@@ -26,6 +26,18 @@ Demonstrates the full dataset management workflow:
 python examples/dataset_workflow_example.py
 ```
 
+### 🔬 **Experiment Workflow** (`experiment_workflow_example.py`)
+Shows comprehensive experiment management:
+- Create experiments with columns and rows
+- Add test cases and model configurations
+- Run experiments to generate outputs
+- Run evaluations on results
+- Both async and sync examples
+
+```bash
+python examples/experiment_workflow_example.py
+```
+
 ## Quick Start
 
 1. **Set up environment variables**:

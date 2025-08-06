@@ -417,7 +417,7 @@ async def demo_workflow():
     try:
         # Demo: List evaluators
         print("🔍 Demo: Listing available evaluators...")
-        evaluators = await evaluator_api.list(page_size=5)
+        evaluators = await evaluator_api.alist(page_size=5)
         print(f"   ✅ Found {len(evaluators.results)} evaluators")
         
         if evaluators.results:
@@ -440,14 +440,14 @@ async def demo_workflow():
             end_time=now.isoformat() + "Z",
         )
         
-        created_dataset = await dataset_api.create(dataset_data)
+        created_dataset = await dataset_api.acreate(dataset_data)
         print(f"   ✅ Created: {created_dataset.name}")
         print(f"   🆔 ID: {created_dataset.id}")
         print()
         
         # Demo: List datasets
         print("📋 Demo: Listing datasets...")
-        datasets = await dataset_api.list(page_size=5)
+        datasets = await dataset_api.alist(page_size=5)
         print(f"   ✅ Found {len(datasets.results)} datasets")
         for i, ds in enumerate(datasets.results[:3], 1):
             print(f"   {i}. {ds.name}")
@@ -456,7 +456,7 @@ async def demo_workflow():
         # Demo: Update dataset
         print("✏️  Demo: Updating dataset...")
         update_data = DatasetUpdate(name=f"{dataset_data.name}_UPDATED")
-        updated_dataset = await dataset_api.update(created_dataset.id, update_data)
+        updated_dataset = await dataset_api.aupdate(created_dataset.id, update_data)
         print(f"   ✅ Updated name: {updated_dataset.name}")
         print()
         
@@ -474,7 +474,7 @@ async def demo_workflow():
         if created_dataset:
             try:
                 print("\n🗑️  Cleaning up demo dataset...")
-                await dataset_api.delete(created_dataset.id)
+                await dataset_api.adelete(created_dataset.id)
                 print("   ✅ Demo dataset deleted")
             except Exception as cleanup_error:
                 print(f"   ⚠️  Could not delete dataset: {cleanup_error}")

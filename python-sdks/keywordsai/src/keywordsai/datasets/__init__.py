@@ -10,9 +10,7 @@ This module provides functionality for managing datasets, including:
 
 from keywordsai.datasets.api import (
     DatasetAPI,
-    SyncDatasetAPI,
     create_dataset_client,
-    create_sync_dataset_client,
 )
 from keywordsai.types.dataset_types import (
     Dataset,
@@ -28,9 +26,7 @@ from keywordsai.types.dataset_types import (
 # Export main classes and functions
 __all__ = [
     "DatasetAPI",
-    "SyncDatasetAPI",
     "create_dataset_client",
-    "create_sync_dataset_client",
     # Re-export types for convenience
     "Dataset",
     "DatasetCreate",

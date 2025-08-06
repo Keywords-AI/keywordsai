@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-from keywordsai.datasets.api import DatasetAPI, SyncDatasetAPI
+from keywordsai.datasets.api import DatasetAPI
 from keywordsai_sdk.keywordsai_types.dataset_types import (
     DatasetCreate,
     DatasetUpdate,
@@ -52,7 +52,7 @@ def dataset_api(api_key, base_url):
 @pytest.fixture
 def sync_dataset_api(api_key, base_url):
     """Sync Dataset API client"""
-    return SyncDatasetAPI(api_key=api_key, base_url=base_url)
+    return DatasetAPI(api_key=api_key, base_url=base_url)
 
 
 @pytest.fixture
