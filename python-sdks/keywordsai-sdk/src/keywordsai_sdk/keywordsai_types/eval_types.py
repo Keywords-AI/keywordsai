@@ -52,6 +52,8 @@ class EvalInputs(TypedDict, total=False):
     llm_output: str = (
         ""  # Reserved key, automatically populated by the LLM's response.message
     )
+    input: str = "" # As of 2025-07-29, this will be the replacement for llm_input
+    output: str = "" # As of 2025-07-29, this will be the replacement for llm_output
 
     # LLM output related inputs
     ideal_output: Optional[str] = (

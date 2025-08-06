@@ -17,6 +17,7 @@ from .chat_completion_types import ProviderCredentialType
 from .services_types.linkup_types import LinkupParams
 from .services_types.mem0_types import Mem0Params
 from datetime import datetime
+from ..utils.mixins import PreprocessDataMixin
 
 """
 Conventions:
@@ -208,7 +209,7 @@ class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class KeywordsAIParams(KeywordsAIBaseModel):
+class KeywordsAIParams(KeywordsAIBaseModel, PreprocessDataMixin):
     # region: time
     start_time: Optional[Union[str, datetime]] = None
     timestamp: Optional[Union[str, datetime]] = (
@@ -273,6 +274,8 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     ideal_output: Optional[str] = None
     completion_message: Optional[Message] = None
     completion_messages: Optional[List[Message]] = None
+    prompt_message_count: Optional[int] = None
+    completion_message_count: Optional[int] = None
     completion_tokens: Optional[int] = None
     system_text: Optional[str] = None
     prompt_text: Optional[str] = None
@@ -480,14 +483,7 @@ class KeywordsAIParams(KeywordsAIBaseModel):
     @model_validator(mode="before")
     @classmethod
     def _preprocess_data(cls, data):
-        if isinstance(data, dict):
-            pass
-        elif hasattr(data, "__dict__"):
-            data = data.__dict__
-        else:
-            raise ValueError(
-                "KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute"
-            )
+        data = super()._preprocess_data(data)
 
         _raw_data_to_db_column_mapping = {
             "ttft": "time_to_first_token",
