@@ -8,7 +8,7 @@ This module provides functionality for managing experiments, including:
 - Listing and retrieving experiment information
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from keywordsai.types.experiment_types import (
     Experiment,
     ExperimentList,
@@ -129,7 +129,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         super().__init__(api_key, base_url)
 
     # Asynchronous methods (with "a" prefix)
-    async def acreate(self, create_data: ExperimentCreate) -> Experiment:
+    async def acreate(self, create_data: Union[Dict[str, Any], ExperimentCreate]) -> Experiment:
         """
         Create a new experiment with specified parameters (asynchronous).
 
@@ -137,7 +137,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         The experiment includes columns (model configurations) and rows (test cases).
 
         Args:
-            create_data (ExperimentCreate): Experiment creation parameters including:
+            create_data (Union[Dict[str, Any], ExperimentCreate]): Experiment creation parameters including:
                 - name (str): Name of the experiment
                 - description (str): Description of the experiment's purpose
                 - columns (List[ExperimentColumnType]): List of column configurations
@@ -180,9 +180,12 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> experiment = await client.acreate(experiment_data)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, ExperimentCreate)
+        
         response = await self.client.post(
             EXPERIMENT_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Experiment(**response)
 
@@ -305,7 +308,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """
         return await self.client.delete(f"{EXPERIMENT_BASE_PATH}/{resource_id}")
 
-    async def aupdate(self, resource_id: str, update_data: ExperimentUpdate) -> Experiment:
+    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], ExperimentUpdate]) -> Experiment:
         """
         Update an existing experiment's metadata (asynchronous).
 
@@ -315,7 +318,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             resource_id (str): The unique identifier of the experiment to update
-            update_data (ExperimentUpdate): Update parameters containing:
+            update_data (Union[Dict[str, Any], ExperimentUpdate]): Update parameters containing:
                 - name (str, optional): New name for the experiment
                 - description (str, optional): New description for the experiment
 
@@ -337,18 +340,24 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             >>> updated_experiment = await client.aupdate("experiment-123", update_data)
             >>> print(f"Updated experiment: {updated_experiment.name}")
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, ExperimentUpdate)
+        
         response = await self.client.patch(
             f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
-            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Experiment(**response)
 
     # Synchronous methods (without "a" prefix)
-    def create(self, create_data: ExperimentCreate) -> Experiment:
+    def create(self, create_data: Union[Dict[str, Any], ExperimentCreate]) -> Experiment:
         """Create a new experiment with specified parameters (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, ExperimentCreate)
+        
         response = self.sync_client.post(
             EXPERIMENT_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Experiment(**response)
 
@@ -375,17 +384,20 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """Delete an experiment permanently (synchronous)."""
         return self.sync_client.delete(f"{EXPERIMENT_BASE_PATH}/{resource_id}")
 
-    def update(self, resource_id: str, update_data: ExperimentUpdate) -> Experiment:
+    def update(self, resource_id: str, update_data: Union[Dict[str, Any], ExperimentUpdate]) -> Experiment:
         """Update an existing experiment's metadata (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, ExperimentUpdate)
+        
         response = self.sync_client.patch(
             f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
-            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Experiment(**response)
 
     # Row management methods (both sync and async variants)
     async def aadd_rows(
-        self, experiment_id: str, rows_request: AddExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], AddExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """
         Add rows to an existing experiment (asynchronous).
@@ -426,22 +438,28 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             >>> result = await client.aadd_rows("experiment-123", rows_request)
             >>> print(f"Added {result['added_rows']} rows to experiment")
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, AddExperimentRowsRequest)
+        
         return await self.client.post(
             EXPERIMENT_ADD_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def add_rows(
-        self, experiment_id: str, rows_request: AddExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], AddExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """Add rows to an existing experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, AddExperimentRowsRequest)
+        
         return self.sync_client.post(
             EXPERIMENT_ADD_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def aremove_rows(
-        self, experiment_id: str, rows_request: RemoveExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], RemoveExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """
         Remove rows from an experiment (asynchronous).
@@ -450,7 +468,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the target experiment
-            rows_request (RemoveExperimentRowsRequest): Request containing:
+            rows_request (Union[Dict[str, Any], RemoveExperimentRowsRequest]): Request containing:
                 - rows (List[str]): List of row IDs to remove
 
         Returns:
@@ -466,22 +484,28 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> result = await client.aremove_rows("experiment-123", remove_request)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, RemoveExperimentRowsRequest)
+        
         return await self.client.delete(
             EXPERIMENT_REMOVE_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def remove_rows(
-        self, experiment_id: str, rows_request: RemoveExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], RemoveExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """Remove rows from an experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, RemoveExperimentRowsRequest)
+        
         return self.sync_client.delete(
             EXPERIMENT_REMOVE_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def aupdate_rows(
-        self, experiment_id: str, rows_request: UpdateExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], UpdateExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """
         Update existing rows in an experiment (asynchronous).
@@ -490,7 +514,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the target experiment
-            rows_request (UpdateExperimentRowsRequest): Request containing:
+            rows_request (Union[Dict[str, Any], UpdateExperimentRowsRequest]): Request containing:
                 - rows (List[ExperimentRowType]): List of rows to update with their IDs
 
         Returns:
@@ -511,23 +535,29 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> result = await client.aupdate_rows("experiment-123", update_request)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, UpdateExperimentRowsRequest)
+        
         return await self.client.patch(
             EXPERIMENT_UPDATE_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def update_rows(
-        self, experiment_id: str, rows_request: UpdateExperimentRowsRequest
+        self, experiment_id: str, rows_request: Union[Dict[str, Any], UpdateExperimentRowsRequest]
     ) -> Dict[str, Any]:
         """Update existing rows in an experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(rows_request, UpdateExperimentRowsRequest)
+        
         return self.sync_client.patch(
             EXPERIMENT_UPDATE_ROWS_PATH(experiment_id),
-            json_data=rows_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     # Column management methods (both sync and async variants)
     async def aadd_columns(
-        self, experiment_id: str, columns_request: AddExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], AddExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """
         Add columns to an existing experiment (asynchronous).
@@ -536,7 +566,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the target experiment
-            columns_request (AddExperimentColumnsRequest): Request containing:
+            columns_request (Union[Dict[str, Any], AddExperimentColumnsRequest]): Request containing:
                 - columns (List[ExperimentColumnType]): List of column configurations to add
 
         Returns:
@@ -565,22 +595,28 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> result = await client.aadd_columns("experiment-123", columns_request)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, AddExperimentColumnsRequest)
+        
         return await self.client.post(
             EXPERIMENT_ADD_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def add_columns(
-        self, experiment_id: str, columns_request: AddExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], AddExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """Add columns to an existing experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, AddExperimentColumnsRequest)
+        
         return self.sync_client.post(
             EXPERIMENT_ADD_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def aremove_columns(
-        self, experiment_id: str, columns_request: RemoveExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], RemoveExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """
         Remove columns from an experiment (asynchronous).
@@ -589,7 +625,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the target experiment
-            columns_request (RemoveExperimentColumnsRequest): Request containing:
+            columns_request (Union[Dict[str, Any], RemoveExperimentColumnsRequest]): Request containing:
                 - columns (List[str]): List of column IDs to remove
 
         Returns:
@@ -605,22 +641,28 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> result = await client.aremove_columns("experiment-123", remove_request)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, RemoveExperimentColumnsRequest)
+        
         return await self.client.delete(
             EXPERIMENT_REMOVE_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def remove_columns(
-        self, experiment_id: str, columns_request: RemoveExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], RemoveExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """Remove columns from an experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, RemoveExperimentColumnsRequest)
+        
         return self.sync_client.delete(
             EXPERIMENT_REMOVE_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def aupdate_columns(
-        self, experiment_id: str, columns_request: UpdateExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], UpdateExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """
         Update existing columns in an experiment (asynchronous).
@@ -629,7 +671,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the target experiment
-            columns_request (UpdateExperimentColumnsRequest): Request containing:
+            columns_request (Union[Dict[str, Any], UpdateExperimentColumnsRequest]): Request containing:
                 - columns (List[ExperimentColumnType]): List of columns to update
 
         Returns:
@@ -656,23 +698,29 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             ... )
             >>> result = await client.aupdate_columns("experiment-123", update_request)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, UpdateExperimentColumnsRequest)
+        
         return await self.client.patch(
             EXPERIMENT_UPDATE_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def update_columns(
-        self, experiment_id: str, columns_request: UpdateExperimentColumnsRequest
+        self, experiment_id: str, columns_request: Union[Dict[str, Any], UpdateExperimentColumnsRequest]
     ) -> Dict[str, Any]:
         """Update existing columns in an experiment (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(columns_request, UpdateExperimentColumnsRequest)
+        
         return self.sync_client.patch(
             EXPERIMENT_UPDATE_COLUMNS_PATH(experiment_id),
-            json_data=columns_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     # Experiment execution methods (both sync and async variants)
     async def arun_experiment(
-        self, experiment_id: str, run_request: Optional[RunExperimentRequest] = None
+        self, experiment_id: str, run_request: Optional[Union[Dict[str, Any], RunExperimentRequest]] = None
     ) -> Dict[str, Any]:
         """
         Run an experiment to generate outputs (asynchronous).
@@ -682,7 +730,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the experiment to run
-            run_request (RunExperimentRequest, optional): Optional request containing:
+            run_request (Union[Dict[str, Any], RunExperimentRequest], optional): Optional request containing:
                 - columns (List[ExperimentColumnType], optional): Specific columns to run.
                     If not provided, runs all columns in the experiment.
 
@@ -714,7 +762,9 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """
         request_data = {}
         if run_request:
-            request_data = run_request.model_dump(exclude_none=True, mode="json")
+            # Validate and prepare the input data
+            validated_data = self._validate_input(run_request, RunExperimentRequest)
+            request_data = self._prepare_json_data(validated_data)
 
         return await self.client.post(
             EXPERIMENT_RUN_PATH(experiment_id),
@@ -722,12 +772,14 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         )
 
     def run_experiment(
-        self, experiment_id: str, run_request: Optional[RunExperimentRequest] = None
+        self, experiment_id: str, run_request: Optional[Union[Dict[str, Any], RunExperimentRequest]] = None
     ) -> Dict[str, Any]:
         """Run an experiment to generate outputs (synchronous)."""
         request_data = {}
         if run_request:
-            request_data = run_request.model_dump(exclude_none=True, mode="json")
+            # Validate and prepare the input data
+            validated_data = self._validate_input(run_request, RunExperimentRequest)
+            request_data = self._prepare_json_data(validated_data)
 
         return self.sync_client.post(
             EXPERIMENT_RUN_PATH(experiment_id),
@@ -735,7 +787,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         )
 
     async def arun_experiment_evals(
-        self, experiment_id: str, evals_request: RunExperimentEvalsRequest
+        self, experiment_id: str, evals_request: Union[Dict[str, Any], RunExperimentEvalsRequest]
     ) -> Dict[str, Any]:
         """
         Run evaluations on experiment results (asynchronous).
@@ -745,7 +797,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
         Args:
             experiment_id (str): The unique identifier of the experiment to evaluate
-            evals_request (RunExperimentEvalsRequest): Request containing:
+            evals_request (Union[Dict[str, Any], RunExperimentEvalsRequest]): Request containing:
                 - evaluator_slugs (List[str]): List of evaluator slugs to use
 
         Returns:
@@ -772,18 +824,24 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             Evaluations run asynchronously. Use `aget()` to check the status
             and retrieve results when complete.
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(evals_request, RunExperimentEvalsRequest)
+        
         return await self.client.post(
             EXPERIMENT_RUN_EVALS_PATH(experiment_id),
-            json_data=evals_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def run_experiment_evals(
-        self, experiment_id: str, evals_request: RunExperimentEvalsRequest
+        self, experiment_id: str, evals_request: Union[Dict[str, Any], RunExperimentEvalsRequest]
     ) -> Dict[str, Any]:
         """Run evaluations on experiment results (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(evals_request, RunExperimentEvalsRequest)
+        
         return self.sync_client.post(
             EXPERIMENT_RUN_EVALS_PATH(experiment_id),
-            json_data=evals_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
 

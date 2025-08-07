@@ -1,4 +1,5 @@
 from typing import List, Literal, Optional, Union, Dict, Any
+from typing_extensions import deprecated
 from pydantic import ConfigDict, field_validator, model_validator
 
 from keywordsai_sdk.constants._internal_constants import RAW_LOG_DATA_TO_DB_COLUMN_MAP
@@ -194,6 +195,7 @@ class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
+@deprecated("Use log_types.KeywordsAILogParams instead")
 class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     """
     Internal Keywords AI parameters class that includes all fields used by the backend.
@@ -546,6 +548,8 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
+
+@deprecated("Use log_types.KeywordsAIFullLogParams instead")
 class KeywordsAITextLogParams(
     KeywordsAIParams, LiteLLMCompletionParams, BasicEmbeddingParams
 ):

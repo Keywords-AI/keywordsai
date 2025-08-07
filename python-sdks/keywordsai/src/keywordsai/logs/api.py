@@ -9,7 +9,7 @@ This module provides functionality for managing logs, including:
 Note: Logs do not support update or delete operations.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from keywordsai.types.log_types import (
     KeywordsAILogParams,
     KeywordsAIFullLogParams,
@@ -101,7 +101,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         super().__init__(api_key, base_url)
 
     # Asynchronous methods (with "a" prefix)
-    async def acreate(self, create_data: KeywordsAILogParams) -> Dict[str, Any]:
+    async def acreate(self, create_data: Union[Dict[str, Any], KeywordsAILogParams]) -> Dict[str, Any]:
         """
         Create a new log with specified parameters (asynchronous).
 
@@ -110,7 +110,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         and metadata.
 
         Args:
-            create_data (KeywordsAILogParams): Log creation parameters including:
+            create_data (Union[Dict[str, Any], KeywordsAILogParams]): Log creation parameters including:
                 - model (str, optional): Model used for the request
                 - input (str, optional): Input text or prompt
                 - output (str, optional): Generated output
@@ -148,9 +148,12 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             >>> response = await client.acreate(log_data)
             >>> print(f"Log creation response: {response['message']}")
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, KeywordsAILogParams)
+        
         response = await self.client.post(
             LOG_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return response
 
@@ -244,7 +247,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = await self.client.get(f"{LOG_GET_PATH}/{resource_id}")
         return KeywordsAIFullLogParams(**response)
 
-    async def aupdate(self, resource_id: str, update_data) -> KeywordsAIFullLogParams:
+    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> KeywordsAIFullLogParams:
         """
         Update operation is not supported for logs (asynchronous).
 
@@ -274,11 +277,14 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         )
 
     # Synchronous methods (without "a" prefix)
-    def create(self, create_data: KeywordsAILogParams) -> Dict[str, Any]:
+    def create(self, create_data: Union[Dict[str, Any], KeywordsAILogParams]) -> Dict[str, Any]:
         """Create a new log (synchronous)"""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, KeywordsAILogParams)
+        
         response = self.sync_client.post(
             LOG_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return response
 
@@ -301,7 +307,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = self.sync_client.get(f"{LOG_GET_PATH}/{resource_id}")
         return KeywordsAIFullLogParams(**response)
 
-    def update(self, resource_id: str, update_data) -> KeywordsAIFullLogParams:
+    def update(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> KeywordsAIFullLogParams:
         """
         Update operation is not supported for logs (synchronous).
 

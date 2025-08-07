@@ -57,6 +57,8 @@ async def main():
         # Step 1: Create an experiment with initial columns and rows
         print("\n🔬 Step 1: Creating experiment...")
         
+        # Note: You can also use a simple dictionary instead of ExperimentColumnType!
+        # See examples/flexible_input_example.py for dictionary-based usage
         initial_column = ExperimentColumnType(
             model="gpt-3.5-turbo",
             name="Helpful Assistant",

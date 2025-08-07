@@ -8,7 +8,7 @@ This module provides functionality for managing datasets, including:
 - Listing and retrieving dataset information
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from keywordsai_sdk.keywordsai_types.dataset_types import (
     Dataset,
     DatasetCreate,
@@ -106,7 +106,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         super().__init__(api_key, base_url)
 
     # Asynchronous methods (with "a" prefix)
-    async def acreate(self, create_data: DatasetCreate) -> Dataset:
+    async def acreate(self, create_data: Union[Dict[str, Any], DatasetCreate]) -> Dataset:
         """
         Create a new dataset with specified parameters (asynchronous).
 
@@ -114,7 +114,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         The dataset can be configured for different types of log collection and filtering.
 
         Args:
-            create_data (DatasetCreate): Dataset creation parameters including:
+            create_data (Union[Dict[str, Any], DatasetCreate]): Dataset creation parameters including:
                 - name (str): Name of the dataset
                 - description (str): Description of the dataset's purpose
                 - type (str): Dataset type ("sampling" or "llm")
@@ -157,9 +157,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             ... )
             >>> dataset = await client.acreate(dataset_data)
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, DatasetCreate)
+        
         response = await self.client.post(
             DATASET_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Dataset(**response)
 
@@ -256,7 +259,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         response = await self.client.get(f"{DATASET_GET_PATH}/{resource_id}")
         return Dataset(**response)
 
-    async def aupdate(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
+    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], DatasetUpdate]) -> Dataset:
         """
         Update an existing dataset's properties (asynchronous).
 
@@ -266,7 +269,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Args:
             resource_id (str): The unique identifier of the dataset to update
-            update_data (DatasetUpdate): Update parameters containing:
+            update_data (Union[Dict[str, Any], DatasetUpdate]): Update parameters containing:
                 - name (str, optional): New name for the dataset
                 - description (str, optional): New description for the dataset
 
@@ -288,9 +291,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             >>> updated_dataset = await client.aupdate("dataset-123", update_data)
             >>> print(f"Updated dataset: {updated_dataset.name}")
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, DatasetUpdate)
+        
         response = await self.client.patch(
             f"{DATASET_UPDATE_PATH}/{resource_id}",
-            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Dataset(**response)
 
@@ -324,11 +330,14 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         return await self.client.delete(f"{DATASET_BASE_PATH}/{resource_id}")
 
     # Synchronous methods (without "a" prefix)
-    def create(self, create_data: DatasetCreate) -> Dataset:
+    def create(self, create_data: Union[Dict[str, Any], DatasetCreate]) -> Dataset:
         """Create a new dataset with specified parameters (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(create_data, DatasetCreate)
+        
         response = self.sync_client.post(
             DATASET_CREATION_PATH,
-            json_data=create_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Dataset(**response)
 
@@ -351,11 +360,14 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         response = self.sync_client.get(f"{DATASET_GET_PATH}/{resource_id}")
         return Dataset(**response)
 
-    def update(self, resource_id: str, update_data: DatasetUpdate) -> Dataset:
+    def update(self, resource_id: str, update_data: Union[Dict[str, Any], DatasetUpdate]) -> Dataset:
         """Update an existing dataset's properties (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, DatasetUpdate)
+        
         response = self.sync_client.patch(
             f"{DATASET_UPDATE_PATH}/{resource_id}",
-            json_data=update_data.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
         return Dataset(**response)
 
@@ -365,7 +377,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
     # Dataset-specific methods (both sync and async variants)
     async def aadd_logs_to_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
+        self, dataset_id: str, log_request: Union[Dict[str, Any], LogManagementRequest]
     ) -> Dict[str, Any]:
         """
         Add logs to an existing dataset based on filters and time range (asynchronous).
@@ -376,7 +388,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
         Args:
             dataset_id (str): The unique identifier of the target dataset
-            log_request (LogManagementRequest): Log selection criteria containing:
+            log_request (Union[Dict[str, Any], LogManagementRequest]): Log selection criteria containing:
                 - start_time (str): Start time for log collection (format: "YYYY-MM-DD HH:MM:SS")
                 - end_time (str): End time for log collection (format: "YYYY-MM-DD HH:MM:SS")
                 - filters (dict): Log filters such as:
@@ -413,36 +425,48 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             >>> result = await client.aadd_logs_to_dataset("dataset-123", log_request)
             >>> print(f"Added {result['count']} error logs to dataset")
         """
+        # Validate and prepare the input data
+        validated_data = self._validate_input(log_request, LogManagementRequest)
+        
         return await self.client.post(
             f"{DATASET_BASE_PATH}/{dataset_id}/logs/create",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def add_logs_to_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
+        self, dataset_id: str, log_request: Union[Dict[str, Any], LogManagementRequest]
     ) -> Dict[str, Any]:
         """Add logs to an existing dataset based on filters and time range (synchronous)."""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(log_request, LogManagementRequest)
+        
         return self.sync_client.post(
             f"{DATASET_BASE_PATH}/{dataset_id}/logs/create",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def aremove_logs_from_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
+        self, dataset_id: str, log_request: Union[Dict[str, Any], LogManagementRequest]
     ) -> Dict[str, Any]:
         """Remove logs from a dataset (asynchronous)"""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(log_request, LogManagementRequest)
+        
         return await self.client.delete(
             f"{DATASET_BASE_PATH}/{dataset_id}/logs/delete",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     def remove_logs_from_dataset(
-        self, dataset_id: str, log_request: LogManagementRequest
+        self, dataset_id: str, log_request: Union[Dict[str, Any], LogManagementRequest]
     ) -> Dict[str, Any]:
         """Remove logs from a dataset (synchronous)"""
+        # Validate and prepare the input data
+        validated_data = self._validate_input(log_request, LogManagementRequest)
+        
         return self.sync_client.delete(
             f"{DATASET_BASE_PATH}/{dataset_id}/logs/delete",
-            json_data=log_request.model_dump(exclude_none=True, mode="json"),
+            json_data=self._prepare_json_data(validated_data),
         )
 
     async def alist_dataset_logs(

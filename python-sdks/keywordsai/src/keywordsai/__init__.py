@@ -27,6 +27,11 @@ from keywordsai.experiments import (
     create_experiment_client,
 )
 
+from keywordsai.prompts import (
+    PromptAPI,
+    create_prompt_client,
+)
+
 from keywordsai.types.experiment_types import (
     Experiment,
     ExperimentList,
@@ -42,6 +47,17 @@ from keywordsai.types.experiment_types import (
     UpdateExperimentColumnsRequest,
     RunExperimentRequest,
     RunExperimentEvalsRequest,
+)
+
+from keywordsai.types.prompt_types import (
+    Prompt,
+    PromptVersion,
+    PromptCreateResponse,
+    PromptListResponse,
+    PromptRetrieveResponse,
+    PromptVersionCreateResponse,
+    PromptVersionListResponse,
+    PromptVersionRetrieveResponse,
 )
 
 from keywordsai.constants.dataset_constants import (
@@ -63,6 +79,19 @@ from keywordsai.constants.dataset_constants import (
     DATASET_LLM_RUN_STATUS_CANCELLED,
 )
 
+from keywordsai.constants.prompt_constants import (
+    MessageRoleType,
+    ResponseFormatType,
+    ToolChoiceType,
+    ReasoningEffortType,
+    ActivityType,
+    DEFAULT_MODEL,
+    ACTIVITY_TYPE_PROMPT_CREATION,
+    ACTIVITY_TYPE_COMMIT,
+    ACTIVITY_TYPE_UPDATE,
+    ACTIVITY_TYPE_DELETE,
+)
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -78,6 +107,9 @@ __all__ = [
     # Experiment API
     "ExperimentAPI",
     "create_experiment_client",
+    # Prompt API
+    "PromptAPI",
+    "create_prompt_client",
     # Dataset Types
     "Dataset",
     "DatasetCreate",
@@ -105,6 +137,15 @@ __all__ = [
     "UpdateExperimentColumnsRequest",
     "RunExperimentRequest",
     "RunExperimentEvalsRequest",
+    # Prompt Types
+    "Prompt",
+    "PromptVersion",
+    "PromptCreateResponse",
+    "PromptListResponse",
+    "PromptRetrieveResponse",
+    "PromptVersionCreateResponse",
+    "PromptVersionListResponse",
+    "PromptVersionRetrieveResponse",
     # Constants
     "DatasetType",
     "DatasetStatus",
@@ -125,4 +166,15 @@ __all__ = [
     "DATASET_LLM_RUN_STATUS_COMPLETED",
     "DATASET_LLM_RUN_STATUS_FAILED",
     "DATASET_LLM_RUN_STATUS_CANCELLED",
+    # Prompt Constants
+    "MessageRoleType",
+    "ResponseFormatType",
+    "ToolChoiceType",
+    "ReasoningEffortType",
+    "ActivityType",
+    "DEFAULT_MODEL",
+    "ACTIVITY_TYPE_PROMPT_CREATION",
+    "ACTIVITY_TYPE_COMMIT",
+    "ACTIVITY_TYPE_UPDATE",
+    "ACTIVITY_TYPE_DELETE",
 ]

@@ -23,6 +23,18 @@ from ._internal_types import (
     BasicEmbeddingParams,
 )
 
+# Prompt types
+from .prompt_types import (
+    Prompt,
+    PromptVersion,
+    PromptCreateResponse,
+    PromptListResponse,
+    PromptRetrieveResponse,
+    PromptVersionCreateResponse,
+    PromptVersionListResponse,
+    PromptVersionRetrieveResponse,
+)
+
 __all__ = [
     # Public logging types
     "KeywordsAILogParams", # For creation
@@ -47,4 +59,14 @@ __all__ = [
     "Usage",
     "LiteLLMCompletionParams",
     "BasicEmbeddingParams",
+    
+    # Prompt types
+    "Prompt",
+    "PromptVersion",
+    "PromptCreateResponse",
+    "PromptListResponse",
+    "PromptRetrieveResponse",
+    "PromptVersionCreateResponse",
+    "PromptVersionListResponse",
+    "PromptVersionRetrieveResponse",
 ]

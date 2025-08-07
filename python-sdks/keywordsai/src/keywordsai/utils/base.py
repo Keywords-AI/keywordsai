@@ -6,8 +6,9 @@ operations for API clients with unified sync/async methods, ensuring consistent 
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, TypeVar, Generic
+from typing import Optional, Dict, Any, TypeVar, Generic, Union
 from keywordsai.utils.client import KeywordsAIClient, SyncKeywordsAIClient
+from pydantic import BaseModel
 
 # Generic type variables for flexibility
 T = TypeVar('T')  # For individual resource types
@@ -30,14 +31,62 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         # For backward compatibility with async methods that use self.client
         self.client = self.async_client
     
+    def _validate_input(self, data: Union[Dict[str, Any], BaseModel], model_class: type) -> BaseModel:
+        """
+        Validate and convert input data to Pydantic model.
+        
+        Args:
+            data: Either a dictionary or a Pydantic model instance
+            model_class: The Pydantic model class to validate against
+            
+        Returns:
+            Validated Pydantic model instance
+            
+        Raises:
+            ValueError: If the data is invalid or cannot be converted
+        """
+        if isinstance(data, dict):
+            try:
+                return model_class(**data)
+            except Exception as e:
+                raise ValueError(f"Invalid data for {model_class.__name__}: {str(e)}")
+        elif isinstance(data, BaseModel):
+            # If it's already a Pydantic model, validate it's the correct type
+            if not isinstance(data, model_class):
+                # Try to convert if it's a different Pydantic model
+                try:
+                    return model_class(**data.model_dump())
+                except Exception as e:
+                    raise ValueError(f"Cannot convert {type(data).__name__} to {model_class.__name__}: {str(e)}")
+            return data
+        else:
+            raise ValueError(f"Data must be a dictionary or {model_class.__name__} instance, got {type(data)}")
+    
+    def _prepare_json_data(self, data: Union[Dict[str, Any], BaseModel]) -> Dict[str, Any]:
+        """
+        Prepare data for JSON serialization.
+        
+        Args:
+            data: Either a dictionary or a Pydantic model instance
+            
+        Returns:
+            Dictionary ready for JSON serialization
+        """
+        if isinstance(data, BaseModel):
+            return data.model_dump(exclude_none=True, mode="json")
+        elif isinstance(data, dict):
+            return data
+        else:
+            raise ValueError(f"Data must be a dictionary or Pydantic model, got {type(data)}")
+    
     # Unified methods that work in both sync and async contexts
     @abstractmethod
-    async def acreate(self, create_data: TCreate) -> T:
+    async def acreate(self, create_data: Union[Dict[str, Any], TCreate]) -> T:
         """
         Create a new resource (async version)
         
         Args:
-            create_data: Resource creation parameters
+            create_data: Resource creation parameters (dict or Pydantic model)
             
         Returns:
             Created resource information
@@ -78,13 +127,13 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
     
     @abstractmethod
-    async def aupdate(self, resource_id: str, update_data: TUpdate) -> T:
+    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], TUpdate]) -> T:
         """
         Update a resource (async version)
         
         Args:
             resource_id: ID of the resource to update
-            update_data: Resource update parameters
+            update_data: Resource update parameters (dict or Pydantic model)
             
         Returns:
             Updated resource information
@@ -105,7 +154,7 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
 
     @abstractmethod
-    def create(self, create_data: TCreate) -> T:
+    def create(self, create_data: Union[Dict[str, Any], TCreate]) -> T:
         """
         Create a new resource (synchronous version)
         """
@@ -126,7 +175,7 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         pass
 
     @abstractmethod
-    def update(self, resource_id: str, update_data: TUpdate) -> T:
+    def update(self, resource_id: str, update_data: Union[Dict[str, Any], TUpdate]) -> T:
         """
         Update a resource (synchronous version)
         """

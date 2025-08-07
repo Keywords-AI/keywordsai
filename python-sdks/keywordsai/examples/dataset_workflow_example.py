@@ -82,6 +82,8 @@ async def main():
         
         # Step 2: Create a new dataset
         print("📝 Step 2: Creating a new dataset...")
+        # Note: You can also use a simple dictionary instead of DatasetCreate!
+        # See examples/flexible_input_example.py for dictionary-based usage
         dataset_data = DatasetCreate(
             name=f"EXAMPLE_DATASET_{int(now.timestamp())}",
             description="Example dataset created by SDK workflow",
