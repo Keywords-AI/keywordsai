@@ -15,6 +15,8 @@ from keywordsai import (
     ExperimentCreate,
     DatasetCreate,
 )
+from keywordsai.prompts.api import PromptAPI
+from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
 
 
 async def main():
@@ -24,6 +26,7 @@ async def main():
     experiment_client = ExperimentAPI(api_key="your-api-key")
     dataset_client = DatasetAPI(api_key="your-api-key") 
     log_client = LogAPI(api_key="your-api-key")
+    prompt_client = PromptAPI(api_key="your-api-key")
     
     print("=== EXPERIMENTS API - Flexible Input Examples ===\n")
     
@@ -195,9 +198,81 @@ async def main():
     print("✓ Much more user-friendly for quick prototyping")
 
 
+async def prompt_examples():
+    """Demonstrate flexible input for Prompt API"""
+    prompt_client = PromptAPI(api_key="your-api-key")
+    
+    print("=== PROMPTS API - Flexible Input Examples ===\n")
+    
+    # Option 1: Dictionary input for prompt creation
+    print("1. Creating prompt with dictionary input:")
+    prompt_dict = {
+        "name": "Customer Support Bot",
+        "description": "AI assistant for customer support"
+    }
+    print(f"Dictionary: {prompt_dict}")
+    # result = await prompt_client.acreate(prompt_dict)
+    print("✅ Would create prompt using dictionary\n")
+    
+    # Option 2: Pydantic model for prompt creation
+    print("2. Creating prompt with Pydantic model:")
+    prompt_model = Prompt(
+        name="Customer Support Bot", 
+        description="AI assistant for customer support"
+    )
+    print(f"Pydantic model: {prompt_model}")
+    # result = await prompt_client.acreate(prompt_model)
+    print("✅ Would create prompt using Pydantic model\n")
+    
+    # Option 3: Dictionary input for prompt version
+    print("3. Creating prompt version with dictionary input:")
+    version_dict = {
+        "description": "Version 1 with basic configuration",
+        "messages": [
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": "{{customer_question}}"}
+        ],
+        "model": "gpt-4o-mini",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "variables": {"customer_question": "Customer's inquiry"}
+    }
+    print(f"Dictionary: {version_dict}")
+    # result = await prompt_client.acreate_version("prompt-id", version_dict)
+    print("✅ Would create version using dictionary\n")
+    
+    # Option 4: Pydantic model for prompt version
+    print("4. Creating prompt version with Pydantic model:")
+    from datetime import datetime, timezone
+    version_model = PromptVersion(
+        prompt_version_id="version-001",
+        description="Version 1 with basic configuration",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        version=1,
+        messages=[
+            {"role": "system", "content": "You are a helpful customer support assistant."},
+            {"role": "user", "content": "{{customer_question}}"}
+        ],
+        model="gpt-4o-mini",
+        temperature=0.7,
+        max_tokens=2048,
+        variables={"customer_question": "Customer's inquiry"},
+        parent_prompt="prompt-id"
+    )
+    print(f"Pydantic model: {version_model}")
+    # result = await prompt_client.acreate_version("prompt-id", version_model)
+    print("✅ Would create version using Pydantic model\n")
+
+
 if __name__ == "__main__":
     # Run the async example
     asyncio.run(main())
+    
+    print("\n" + "="*60)
+    
+    # Run prompt examples
+    asyncio.run(prompt_examples())
     
     print("\n" + "="*60)
     print("QUICK COMPARISON - Before vs After")

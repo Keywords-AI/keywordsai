@@ -8,8 +8,6 @@ A comprehensive Python SDK for Keywords AI monitoring, evaluation, and analytics
 - **🔬 Experiment Framework** - Run A/B tests with different prompts and model configurations
 - **📈 AI Evaluation** - Evaluate model outputs with built-in and custom evaluators
 - **📝 Log Management** - Comprehensive logging and monitoring for AI applications
-- **⚡ Async/Sync Support** - Full support for both synchronous and asynchronous operations
-- **🎯 Type Safety** - Complete type hints and validation for better developer experience
 
 ## 📦 Installation
 
@@ -199,12 +197,14 @@ Check out the [`examples/`](./examples/) directory for complete workflows:
 - **[Simple Evaluator Example](./examples/simple_evaluator_example.py)** - Basic evaluator operations
 - **[Dataset Workflow](./examples/dataset_workflow_example.py)** - Complete dataset management
 - **[Experiment Workflow](./examples/experiment_workflow_example.py)** - A/B testing with experiments
+- **[Prompt Workflow](./examples/prompt_workflow_example.py)** - Prompt and version management
 
 ```bash
 # Run examples
 python examples/simple_evaluator_example.py
 python examples/dataset_workflow_example.py
 python examples/experiment_workflow_example.py
+python examples/prompt_workflow_example.py
 ```
 
 ## 🧪 Testing
@@ -231,6 +231,7 @@ python -m pytest tests/test_experiment_api_real.py -v
 - **`ExperimentAPI`** - A/B testing and experimentation  
 - **`EvaluatorAPI`** - AI model evaluation tools
 - **`LogAPI`** - Application logging and monitoring
+- **`PromptAPI`** - Prompt and version management
 
 ### Type Safety
 
@@ -241,7 +242,11 @@ from keywordsai import (
     Dataset, DatasetCreate, DatasetUpdate,
     Experiment, ExperimentCreate, ExperimentUpdate,
     Evaluator, EvaluatorList,
-    KeywordsAILogParams, LogList
+    KeywordsAILogParams, LogList,
+    PromptAPI
+)
+from keywordsai_sdk.keywordsai_types.prompt_types import (
+    Prompt, PromptVersion
 )
 ```
 
@@ -258,7 +263,8 @@ KEYWORDSAI_BASE_URL=https://api.keywordsai.co # Optional
 
 ```python
 # Using environment variables
-client = DatasetAPI()  # Reads from KEYWORDSAI_API_KEY
+dataset_client = DatasetAPI()  # Reads from KEYWORDSAI_API_KEY
+prompt_client = PromptAPI()    # Reads from KEYWORDSAI_API_KEY
 
 # Explicit configuration
 client = DatasetAPI(

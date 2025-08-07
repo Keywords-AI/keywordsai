@@ -16,8 +16,10 @@ load_dotenv()
 
 from keywordsai.datasets.api import DatasetAPI, SyncDatasetAPI
 from keywordsai.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
+from keywordsai.prompts.api import PromptAPI, SyncPromptAPI
 from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate, DatasetUpdate, LogManagementRequest
 from keywordsai.types.evaluator_types import Evaluator, EvaluatorList
+from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
 
 
 def main():
@@ -32,6 +34,8 @@ def main():
     print("   📊 SyncDatasetAPI (sync) - Manage datasets synchronously") 
     print("   🔍 EvaluatorAPI (async) - Work with evaluators")
     print("   🔍 SyncEvaluatorAPI (sync) - Work with evaluators synchronously")
+    print("   📝 PromptAPI (async) - Manage prompts and versions")
+    print("   📝 SyncPromptAPI (sync) - Manage prompts and versions synchronously")
     print()
     
     # 2. Show initialization
@@ -49,11 +53,15 @@ def main():
     sync_dataset_api = SyncDatasetAPI(api_key=api_key, base_url=base_url)
     evaluator_api = EvaluatorAPI(api_key=api_key, base_url=base_url)
     sync_evaluator_api = SyncEvaluatorAPI(api_key=api_key, base_url=base_url)
+    prompt_api = PromptAPI(api_key=api_key, base_url=base_url)
+    sync_prompt_api = SyncPromptAPI(api_key=api_key, base_url=base_url)
     
     print("   ✅ DatasetAPI (async) initialized")
     print("   ✅ SyncDatasetAPI initialized")  
     print("   ✅ EvaluatorAPI (async) initialized")
     print("   ✅ SyncEvaluatorAPI initialized")
+    print("   ✅ PromptAPI (async) initialized")
+    print("   ✅ SyncPromptAPI initialized")
     print()
     
     # 3. Show available methods
@@ -69,7 +77,15 @@ def main():
         print(f"   • {method}()")
     print()
     
-    # 4. Show data types
+    # 4. Show available prompt methods
+    print("📋 Available Prompt Methods:")
+    prompt_methods = [method for method in dir(prompt_api) if not method.startswith('_') and callable(getattr(prompt_api, method))]
+    for method in prompt_methods[:8]:  # Show first 8 methods
+        print(f"      • {method}")
+    print(f"      ... and {len(prompt_methods) - 8} more methods")
+    print()
+
+    # 5. Show data types
     print("📝 Available Data Types:")
     print("   📊 Dataset Types:")
     print("      • DatasetCreate - For creating new datasets")
@@ -79,6 +95,10 @@ def main():
     print("   🔍 Evaluator Types:")
     print("      • Evaluator - Individual evaluator model")
     print("      • EvaluatorList - List of evaluators with pagination")
+    print()
+    print("   📝 Prompt Types:")
+    print("      • Prompt - Individual prompt model")
+    print("      • PromptVersion - Prompt version model")
     print()
     
     # 5. Show example usage patterns (no API calls)
@@ -102,14 +122,22 @@ def main():
     print()
     
     # 6. Show workflow overview
-    print("🔄 Typical Workflow:")
-    print("   1. Initialize API client")
-    print("   2. List available evaluators")
-    print("   3. Create a dataset")
-    print("   4. Add logs to dataset")
-    print("   5. Run evaluation on dataset")
-    print("   6. Get evaluation results")
-    print("   7. Update or delete dataset")
+    print("🔄 Typical Workflows:")
+    print()
+    print("   📊 Dataset Workflow:")
+    print("      1. Initialize API client")
+    print("      2. List available evaluators")
+    print("      3. Create a dataset")
+    print("      4. Add logs to dataset")
+    print("      5. Run evaluation on dataset")
+    print("      6. Get evaluation results")
+    print()
+    print("   📝 Prompt Workflow:")
+    print("      1. Initialize PromptAPI client")
+    print("      2. Create a new prompt")
+    print("      3. Create versions with different configurations")
+    print("      4. List and retrieve prompts and versions")
+    print("      5. Update prompt and version properties")
     print()
     
     print("✅ SDK structure demo complete!")

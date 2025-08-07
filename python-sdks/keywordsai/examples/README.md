@@ -38,6 +38,47 @@ Shows comprehensive experiment management:
 python examples/experiment_workflow_example.py
 ```
 
+### 📝 **Prompt Workflow** (`prompt_workflow_example.py`)
+Demonstrates complete prompt management workflow:
+- Create and update prompts
+- Create versions with different configurations
+- List and retrieve prompts and versions
+- Update prompt and version properties
+- Both async and sync examples
+
+```bash
+python examples/prompt_workflow_example.py
+```
+
+### 🔧 **Flexible Input** (`flexible_input_example.py`)
+Shows flexible input options across all APIs:
+- Use dictionaries instead of Pydantic models
+- Simplified API usage patterns
+- Cross-API examples
+
+```bash
+python examples/flexible_input_example.py
+```
+
+### 📊 **Logs Operations** (`logs_operation_example.py`)
+Basic log operations example:
+- List available logs
+- Simple log API usage
+
+```bash
+python examples/logs_operation_example.py
+```
+
+### 🏗️ **SDK Structure Demo** (`sdk_structure_demo.py`)
+Shows SDK structure and initialization:
+- Available API clients overview
+- Client initialization patterns
+- SDK architecture demonstration
+
+```bash
+python examples/sdk_structure_demo.py
+```
+
 ## Quick Start
 
 1. **Set up environment variables**:
