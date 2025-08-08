@@ -8,10 +8,13 @@ from keywordsai_sdk.keywordsai_types._internal_types import (
 
 from keywordsai_sdk.keywordsai_types.generic_types import ParamType
 from keywordsai_sdk.constants import DEFAULT_EVAL_LLM_ENGINE, LLM_ENGINE_FIELD_NAME
-import random
 import json
 
+from keywordsai_sdk.keywordsai_types.mixin_types.filter_mixin import (
+    BaseFilterMixinPydantic,
+)
 from keywordsai_sdk.keywordsai_types.monitoring_types import ConditionParams
+from keywordsai_sdk.utils.mixins import PreprocessDataMixin
 
 Operator = Literal[
     "eq", "neq", "gt", "gte", "lt", "lte", "contains", "starts_with", "ends_with"
@@ -41,8 +44,9 @@ FieldInputType = Literal[
     "textarea_array",  # This is for array of strings
     "input_arrays",  # This is for array of arrays of strings
     "textarea_arrays",  # This is for array of arrays of strings
-    "json"
+    "json",
 ]
+
 
 class EvalInputs(TypedDict, total=False):
     # Default inputs, automatically populated by Keywords AI
@@ -52,8 +56,8 @@ class EvalInputs(TypedDict, total=False):
     llm_output: str = (
         ""  # Reserved key, automatically populated by the LLM's response.message
     )
-    input: str = "" # As of 2025-07-29, this will be the replacement for llm_input
-    output: str = "" # As of 2025-07-29, this will be the replacement for llm_output
+    input: str = ""  # As of 2025-07-29, this will be the replacement for llm_input
+    output: str = ""  # As of 2025-07-29, this will be the replacement for llm_output
 
     # LLM output related inputs
     ideal_output: Optional[str] = (
@@ -74,38 +78,9 @@ class EvalInputs(TypedDict, total=False):
     model_config = ConfigDict(extra="allow")
 
 
-
-
 class ChoiceType(KeywordsAIBaseModel):
     name: str
     value: ValueType
-
-
-class BaseActionType(KeywordsAIBaseModel):
-    field: str
-    operator: Operator
-    value: ValueType = None
-    field_type: FieldInputType = "input"
-    choices: List[ChoiceType] = []
-
-    @model_validator(mode="after")
-    def validate_value(self):
-        if self.choices and self.value is not None:
-            if self.value not in [choice.value for choice in self.choices]:
-                raise ValueError(f"Value {self.value} is not a valid choice")
-        if self.field_type == "input_number" and self.value:
-            try:
-                self.value = float(self.value)
-            except ValueError:
-                raise ValueError(f"Value {self.value} is not a valid number")
-        return self
-
-class FilterAction(BaseActionType):
-    field: FilterType
-    pass
-class ConditionAction(BaseActionType):
-    param_info: Union[ParamType, None] = None
-    pass
 
 
 EvalType = Literal["llm", "function", "human", "grounded"]
@@ -133,17 +108,14 @@ class FieldType(KeywordsAIBaseModel):
                 self.value = float(self.value)
             except ValueError:
                 raise ValueError(f"Value {self.value} is not a valid number")
-            
+
         if self.type == "json" and self.value and not isinstance(self.value, dict):
-            
+
             try:
                 self.value = json.loads(self.value)
             except json.JSONDecodeError:
                 raise ValueError(f"Value {self.value} is not a valid JSON")
         return self
-
-    
-
 
 
 class ScoreMapping(KeywordsAIBaseModel):
@@ -156,6 +128,7 @@ class ScoreMapping(KeywordsAIBaseModel):
     def reverse_mapping(self):
         return {v: k for k, v in self.model_dump().items() if v is not None}
 
+
 class ScoreMappingDict(TypedDict):
     primary_score: Union[str, None] = None
     secondary_score: Union[str, None] = None
@@ -163,19 +136,23 @@ class ScoreMappingDict(TypedDict):
     quaternary_score: Union[str, None] = None
 
 
-class BaseEvalFormType(KeywordsAIBaseModel):
+class BaseEvalFormType(PreprocessDataMixin, KeywordsAIBaseModel):
     eval_class: str
     type: EvalType
-    note: str = "" # Note to the user from us developers
+    note: str = ""  # Note to the user from us developers
     display_name: str  # This is just the title of the form
-    description: str # User specified description
+    description: str  # User specified description
     special_fields: List[FieldType] = []
     required_fields: List[FieldType] = (
         []
     )  # Just tags that tells users what are needed to run this eval, not fields on the form
-    conditions: List[ConditionAction] = []
+    passing_conditions: List[BaseFilterMixinPydantic] = []
     score_mapping: ScoreMapping = None
     category: EvalCategory = "custom"
+
+    @model_validator(mode="before")
+    def _preprocess_data(self):
+        data = super()._preprocess_data()
 
     def validate_required_inputs(self, inputs: Dict[str, ValueType]):
         for field in self.required_fields:
@@ -187,6 +164,7 @@ class BaseEvalFormType(KeywordsAIBaseModel):
             if isinstance(field_validator, Callable):
                 field_validator(inputs[field.name])
         return self
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -202,10 +180,12 @@ class EvalParamsDict(TypedDict):
     last_n_messages: int = 1
     filter_values: List[FilterValue]
 
+
 class EvaluatorToRun(KeywordsAIBaseModel):
     evaluator_slug: str
     run_condition: Optional[ConditionParams] = None
     # TODO: other controlling parameters
+
 
 class EvalParams(KeywordsAIBaseModel):
     evaluation_identifier: str = ""
@@ -215,7 +195,7 @@ class EvalParams(KeywordsAIBaseModel):
     last_n_messages: int = 1
     filter_values: List[FilterValue] = []
     is_paid_user: bool = False
-    evaluators: List[EvaluatorToRun] = [] # The list of evaluator slugs to run
+    evaluators: List[EvaluatorToRun] = []  # The list of evaluator slugs to run
 
     def model_dump(self, *args, **kwargs) -> "EvalParamsDict":
         kwargs["exclude_none"] = True
@@ -243,8 +223,6 @@ class EvalParams(KeywordsAIBaseModel):
         if not value:
             return []
         return [cls.fix_broken_message(message) for message in value]
-    
-
 
 
 # EvalInputsDict = TypedDict('EvalInputsDict', **{k: v.outer_type_ for k, v in EvalInputs.model_fields.items()})
@@ -254,10 +232,12 @@ class EvalCost(KeywordsAIBaseModel):
     output_tokens: Union[int, None] = None
     model: Union[str, None] = None
 
+
 class EvalResultType(KeywordsAIBaseModel):
     scores: Dict[str, Any]
     cost: EvalCost
     passed: bool
+
 
 class EvalErrorType(KeywordsAIBaseModel):
     error: str
@@ -286,7 +266,7 @@ class EvalConfigurations(KeywordsAIBaseModel):
         return to_return
 
     @field_validator("model")
-    def validate_model(cls,value):
+    def validate_model(cls, value):
         if not value:
             return DEFAULT_EVAL_LLM_ENGINE
         return value

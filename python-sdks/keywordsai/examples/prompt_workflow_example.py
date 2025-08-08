@@ -313,6 +313,6 @@ if __name__ == "__main__":
 
     print("\n🎉 All examples completed!")
     print("\nFor more information, check out:")
-    print("- Keywords AI Documentation")
-    print("- API Reference")
-    print("- Testing Guide: TESTING_STRATEGY.md")
+    print("- Keywords AI Documentation: https://docs.keywordsai.co")
+    print("- API Reference: https://docs.keywordsai.co/api")
+    print("- Testing Guide: https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/TESTING_STRATEGY.md")

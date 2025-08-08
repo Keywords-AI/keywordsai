@@ -192,12 +192,12 @@ asyncio.run(main())
 
 ## 📚 Examples
 
-Check out the [`examples/`](./examples/) directory for complete workflows:
+Check out the [`examples/`](https://github.com/Keywords-AI/keywordsai/tree/main/python-sdks/keywordsai/examples) directory for complete workflows:
 
-- **[Simple Evaluator Example](./examples/simple_evaluator_example.py)** - Basic evaluator operations
-- **[Dataset Workflow](./examples/dataset_workflow_example.py)** - Complete dataset management
-- **[Experiment Workflow](./examples/experiment_workflow_example.py)** - A/B testing with experiments
-- **[Prompt Workflow](./examples/prompt_workflow_example.py)** - Prompt and version management
+- **[Simple Evaluator Example](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/simple_evaluator_example.py)** - Basic evaluator operations
+- **[Dataset Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/dataset_workflow_example.py)** - Complete dataset management
+- **[Experiment Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/experiment_workflow_example.py)** - A/B testing with experiments
+- **[Prompt Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/prompt_workflow_example.py)** - Prompt and version management
 
 ```bash
 # Run examples
@@ -281,17 +281,17 @@ client = DatasetAPI(
 
 ## 📄 License
 
-Apache 2.0 - see [LICENSE](LICENSE) for details.
+Apache 2.0 - see [LICENSE](https://github.com/Keywords-AI/keywordsai/blob/main/LICENSE) for details.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/Keywords-AI/keywordsai/blob/main/CONTRIBUTING.md) for details.
 
 ## 📞 Support
 
 - 📧 Email: [team@keywordsai.co](mailto:team@keywordsai.co)
 - 📖 Documentation: [https://docs.keywordsai.co](https://docs.keywordsai.co)
-- 🐛 Issues: [GitHub Issues](https://github.com/keywordsai/python-sdk/issues)
+- 🐛 Issues: [GitHub Issues](https://github.com/Keywords-AI/keywordsai/issues)
 
 ---
 

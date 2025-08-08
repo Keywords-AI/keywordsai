@@ -23,3 +23,8 @@ RAW_LOG_DATA_TO_DB_COLUMN_MAP: LogDataToDBColumnMap = {
         "action": "append",
     },
 }
+
+
+RAW_EVAL_FORM_TO_DB_COLUMN_MAP: LogDataToDBColumnMap = {
+    "conditions": "passing_conditions",  # As of 2025-08-07, deprecated conditions to use centralized passing_condition based on MetricFilterParamPydantic
+}
