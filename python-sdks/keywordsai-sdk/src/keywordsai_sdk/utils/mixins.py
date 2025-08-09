@@ -1,54 +1,61 @@
 from pydantic import model_validator
 
-from keywordsai_sdk.constants._internal_constants import RAW_LOG_DATA_TO_DB_COLUMN_MAP
+from keywordsai_sdk.constants._internal_constants import (
+    RAW_EVAL_FORM_TO_DB_COLUMN_MAP,
+    RAW_LOG_DATA_TO_DB_COLUMN_MAP,
+    RawDataToDBColumnMap,
+)
+
+def _map_fields_to_db_column(data: dict, mapping: RawDataToDBColumnMap):
+    for key, value in mapping.items():
+        if key in data:
+            if isinstance(value, str):
+                data[value] = data[key]
+            elif isinstance(value, dict):
+                if value["action"] == "append":
+                    data[value["column_name"]] = data[key]
+                elif value["action"] == "replace":
+                    data[value["column_name"]] = data.pop(key)
+    return data
 
 
 class PreprocessDataMixin:
     """
     A mixin class that provides basic data preprocessing functionality for Pydantic models.
-    This mixin converts objects with __dict__ attribute to dictionaries before validation.
+    This mixin map some columns in the raw data to a different column for db storage & the validation of the pydantic model that inherits from it.
     """
+
+    raw_data_to_db_column_map: RawDataToDBColumnMap = {}
+
+    @classmethod
+    def _object_to_dict(self, obj):
+        if isinstance(obj, dict):
+            return obj
+        elif hasattr(obj, "__dict__"):
+            return obj.__dict__
+        else:
+            class_name = (
+                self.__class__.__name__
+                if hasattr(self.__class__, "__name__")
+                else "Unknown"
+            )
+            raise ValueError(
+                f"{class_name} can only be initialized with a dict or an object with a __dict__ attribute"
+            )
 
     @model_validator(mode="before")
     @classmethod
     def _preprocess_data(cls, data):
-        if isinstance(data, dict):
-            pass
-        elif hasattr(data, "__dict__"):
-            data = data.__dict__
-        else:
-            class_name = cls.__name__ if hasattr(cls, "__name__") else "Unknown"
-            raise ValueError(
-                f"{class_name} can only be initialized with a dict or an object with a __dict__ attribute"
-            )
+        if data is None:
+            return data
+        data = cls._object_to_dict(data)
+        data = _map_fields_to_db_column(data, mapping=cls.raw_data_to_db_column_map)
         return data
 
 
 class PreprocessLogDataMixin(PreprocessDataMixin):
-    """
-    A mixin class that provides log data preprocessing functionality for Pydantic models.
-    This mixin converts objects with __dict__ attribute to dictionaries before validation
-    and applies field name mappings for log data.
-    """
+    raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_LOG_DATA_TO_DB_COLUMN_MAP
 
-    @model_validator(mode="before")
-    @classmethod
-    def _preprocess_data(cls, data):
-        data = super()._preprocess_data(data)
-        
-        # Ensure data is not None
-        if data is None:
-            return data
-            
-        # Map field names
-        for key, value in RAW_LOG_DATA_TO_DB_COLUMN_MAP.items():
-            if key in data:
-                if isinstance(value, str):
-                    data[value] = data[key]
-                elif isinstance(value, dict):
-                    if value["action"] == "append":
-                        data[value["column_name"]] = data[key]
-                    elif value["action"] == "replace":
-                        data[value["column_name"]] = data.pop(key)
-        
-        return data
+
+class PreprocessEvalFormMixin(PreprocessDataMixin):
+    raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_EVAL_FORM_TO_DB_COLUMN_MAP

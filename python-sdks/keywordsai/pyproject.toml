@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai"
-version = "1.0.2"
+version = "1.0.3"
 description = "A package that helps interacting with Keywords AI monitoring, evaluation & user analytics APIs"
 authors = ["Raymond Huang <raymond@keywordsai.co>"]
 license = "Apache 2.0"

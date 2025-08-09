@@ -151,6 +151,36 @@ print(f"Evaluator: {evaluator.name}")
 print(f"Description: {evaluator.description}")
 ```
 
+### Prompt API
+Manage prompts and their versions:
+
+```python
+from keywordsai import PromptAPI
+from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+
+client = PromptAPI(api_key="your-api-key")
+
+# Create a prompt
+prompt = client.create()
+
+# Create a version for the prompt
+version = client.create_version(prompt.id, PromptVersion(
+    prompt_version_id="v1",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    model="gpt-4o-mini",
+    temperature=0.7
+))
+
+# List all prompts
+prompts = client.list()
+
+# Get specific prompt with versions
+prompt_details = client.get(prompt.id)
+```
+
 ### Log API
 Create and manage AI application logs:
 

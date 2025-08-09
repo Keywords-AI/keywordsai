@@ -5,8 +5,6 @@ from typing_extensions import TypedDict
 from keywordsai_sdk.keywordsai_types._internal_types import (
     Message,
 )
-
-from keywordsai_sdk.keywordsai_types.generic_types import ParamType
 from keywordsai_sdk.constants import DEFAULT_EVAL_LLM_ENGINE, LLM_ENGINE_FIELD_NAME
 import json
 
@@ -14,7 +12,7 @@ from keywordsai_sdk.keywordsai_types.mixin_types.filter_mixin import (
     BaseFilterMixinPydantic,
 )
 from keywordsai_sdk.keywordsai_types.monitoring_types import ConditionParams
-from keywordsai_sdk.utils.mixins import PreprocessDataMixin
+from keywordsai_sdk.utils.mixins import PreprocessEvalFormMixin
 
 Operator = Literal[
     "eq", "neq", "gt", "gte", "lt", "lte", "contains", "starts_with", "ends_with"
@@ -45,6 +43,7 @@ FieldInputType = Literal[
     "input_arrays",  # This is for array of arrays of strings
     "textarea_arrays",  # This is for array of arrays of strings
     "json",
+    "code"
 ]
 
 
@@ -119,10 +118,17 @@ class FieldType(KeywordsAIBaseModel):
 
 
 class ScoreMapping(KeywordsAIBaseModel):
+    # region: Fields for different types of results
     primary_score: Union[str, None] = None
+    string_result: Union[str, None] = None
+    boolean_result: Union[str, None] = None
+    # endregion
+
+    # region: reserved fields for additional numeric scores
     secondary_score: Union[str, None] = None
     tertiary_score: Union[str, None] = None
     quaternary_score: Union[str, None] = None
+    # endregion
 
     @property
     def reverse_mapping(self):
@@ -136,7 +142,7 @@ class ScoreMappingDict(TypedDict):
     quaternary_score: Union[str, None] = None
 
 
-class BaseEvalFormType(PreprocessDataMixin, KeywordsAIBaseModel):
+class BaseEvalFormType(PreprocessEvalFormMixin, KeywordsAIBaseModel):
     eval_class: str
     type: EvalType
     note: str = ""  # Note to the user from us developers
@@ -149,10 +155,6 @@ class BaseEvalFormType(PreprocessDataMixin, KeywordsAIBaseModel):
     passing_conditions: List[BaseFilterMixinPydantic] = []
     score_mapping: ScoreMapping = None
     category: EvalCategory = "custom"
-
-    @model_validator(mode="before")
-    def _preprocess_data(self):
-        data = super()._preprocess_data()
 
     def validate_required_inputs(self, inputs: Dict[str, ValueType]):
         for field in self.required_fields:
@@ -253,6 +255,7 @@ class EvalConfigurations(KeywordsAIBaseModel):
     sample_percentage: Union[float, None] = None
     eval_class: str
     configurations: BaseEvalFormType
+    eval_code_snippet: str = ""
     name: str = ""
 
     def __init__(self, **kwargs):
