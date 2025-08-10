@@ -56,6 +56,21 @@ class ExperimentColumnType(KeywordsAIBaseModel, PreprocessDataMixin):
         return data
 
 
+class ExperimentLLMInferenceMetrics(KeywordsAIBaseModel):
+    """
+    LLM inference metrics for a experiment cell
+    """
+
+    prompt_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+    prompt_tokens_details: Optional[Dict[str, Any]] = None
+    completion_tokens_details: Optional[Dict[str, Any]] = None
+    latency: Optional[float] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
 class ExperimentResultItemType(KeywordsAIBaseModel, PreprocessDataMixin):
     """
     Represents a single result item within an experiment row.
@@ -89,6 +104,7 @@ class ExperimentResultItemType(KeywordsAIBaseModel, PreprocessDataMixin):
     ran_at: str = UTC_EPOCH
     status: STATUS_TYPES = "ready"
     evaluation_result: Optional[Dict[str, Any]] = None
+    llm_inference_metrics: Optional[ExperimentLLMInferenceMetrics] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -186,19 +202,27 @@ class ExperimentType(KeywordsAIBaseModel, PreprocessDataMixin):
     column_count: int = 0
     columns: List[ExperimentColumnType] = []
     created_at: Optional[str] = None
-    created_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
+    created_by: Optional[Union[Dict[str, Any], int, str]] = (
+        None  # APIUser reference, could be a foreign key id or a serialized object
+    )
     name: str
-    organization: Optional[Union[Dict[str, Any], int, str]] = None  # Organization reference, could be a foreign key id or a serialized object
+    organization: Optional[Union[Dict[str, Any], int, str]] = (
+        None  # Organization reference, could be a foreign key id or a serialized object
+    )
     row_count: int = 0
     rows: List[ExperimentRowType] = []
     status: str = ""
     test_id: str = ""
     updated_at: Optional[str] = None
-    updated_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
+    updated_by: Optional[Union[Dict[str, Any], int, str]] = (
+        None  # APIUser reference, could be a foreign key id or a serialized object
+    )
     variables: List[str] = []
     variable_definitions: List[Dict[str, Any]] = []
     starred: bool = False
-    tags: List[Union[Dict[str, Any], int, str]] = []  # ExperimentTag references, could be a foreign key id or a serialized object
+    tags: List[Union[Dict[str, Any], int, str]] = (
+        []
+    )  # ExperimentTag references, could be a foreign key id or a serialized object
     description: str = ""
 
     @model_validator(mode="before")
