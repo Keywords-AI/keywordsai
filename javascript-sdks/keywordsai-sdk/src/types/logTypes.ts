@@ -542,13 +542,13 @@ const KeywordsAIParamsSchema = z.object({
 });
 
 // Combined KeywordsPayloadSchema that merges KeywordsAIParams, BasicLLMParams, and BasicEmbeddingParams
-export const KeywordsPayloadSchema = KeywordsAIParamsSchema.merge(
+export const KeywordsAIPayloadSchema = KeywordsAIParamsSchema.merge(
   BasicLLMParamsSchema
 )
   .merge(BasicEmbeddingParamsSchema)
   .catchall(z.any());
 
-export type KeywordsPayload = z.infer<typeof KeywordsPayloadSchema>;
+export type KeywordsAIPayload = z.infer<typeof KeywordsAIPayloadSchema>;
 
 // Export individual schemas for use elsewhere
 export {
