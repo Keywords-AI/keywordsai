@@ -5,7 +5,7 @@ export const LOG_TYPE_VALUES = [
   "text",
   "chat",
   "completion",
-  "response", 
+  "response",
   "embedding",
   "transcription",
   "speech",
@@ -21,7 +21,7 @@ export const LOG_TYPE_VALUES = [
   "unknown",
 ] as const;
 
-export type LogType = typeof LOG_TYPE_VALUES[number];
+export type LogType = (typeof LOG_TYPE_VALUES)[number];
 
 export const LOG_METHOD_VALUES = [
   "inference",
@@ -31,7 +31,7 @@ export const LOG_METHOD_VALUES = [
   "ts_tracing",
 ] as const;
 
-export type LogMethod = typeof LOG_METHOD_VALUES[number];
+export type LogMethod = (typeof LOG_METHOD_VALUES)[number];
 
 // Basic utility schemas
 const StringOrNumberSchema = z.union([z.string(), z.number()]);
@@ -42,7 +42,6 @@ const ImageURLSchema = z.object({
   url: z.string(),
   detail: z.string().optional(),
 });
-
 
 const CacheControlSchema = z.object({
   type: z.string(),
@@ -61,18 +60,15 @@ const ImageContentSchema = BaseContentSchema.extend({
   image_url: z.union([ImageURLSchema, z.string()]),
 });
 
-
 const InputImageSchema = BaseContentSchema.extend({
   file: z.string(),
   providerData: z.record(z.any()).optional(),
 });
 
-
 const FileContentSchema = BaseContentSchema.extend({
   file: z.string(),
   providerData: z.record(z.any()).optional(),
 });
-
 
 const ToolUseContentSchema = BaseContentSchema.extend({
   id: z.string().optional(),
@@ -164,27 +160,34 @@ const ToolCallSchema = z
   .transform((data) => {
     // Create a shallow copy to avoid modifying the original
     const result: Record<string, any> = { ...data };
-    
+
     // Handle ID mapping for consistency (only if needed)
-    if (!result.id && ((data as any).toolCallId || (data as any).tool_call_id)) {
+    if (
+      !result.id &&
+      ((data as any).toolCallId || (data as any).tool_call_id)
+    ) {
       result.id = (data as any).toolCallId || (data as any).tool_call_id;
     }
-    
+
     // If we have args/toolName but no function object, create basic structure
-    if (((data as any).toolName || (data as any).name || (data as any).args) && !result.function) {
+    if (
+      ((data as any).toolName || (data as any).name || (data as any).args) &&
+      !result.function
+    ) {
       result.function = {};
-      
+
       if ((data as any).toolName || (data as any).name) {
         result.function.name = (data as any).toolName || (data as any).name;
       }
-      
+
       if ((data as any).args) {
-        result.function.arguments = typeof (data as any).args === 'string' 
-          ? (data as any).args 
-          : JSON.stringify((data as any).args);
+        result.function.arguments =
+          typeof (data as any).args === "string"
+            ? (data as any).args
+            : JSON.stringify((data as any).args);
       }
     }
-    
+
     return result;
   });
 
@@ -255,7 +258,10 @@ const UsageSchema = z.object({
 
 // Supporting schemas for KeywordsAI params
 const OverrideConfigSchema = z.object({
-  messages_override_mode: z.enum(["override", "append"]).optional().default("override"),
+  messages_override_mode: z
+    .enum(["override", "append"])
+    .optional()
+    .default("override"),
 });
 
 const EvaluatorToRunSchema = z.record(z.any()); // Placeholder for evaluator schema
@@ -272,7 +278,9 @@ const EvaluationParamsSchema = z.object({
 const LoadBalanceModelSchema = z.object({
   model: z.string(),
   credentials: z.record(z.any()).optional(),
-  weight: z.number().refine((val) => val > 0, "Weight has to be greater than 0"),
+  weight: z
+    .number()
+    .refine((val) => val > 0, "Weight has to be greater than 0"),
 });
 
 const LoadBalanceGroupSchema = z.object({
@@ -305,8 +313,16 @@ const CacheOptionsSchema = z.object({
 });
 
 const RetryParamsSchema = z.object({
-  num_retries: z.number().optional().default(3).refine((val) => val > 0, "num_retries has to be greater than 0"),
-  retry_after: z.number().optional().default(0.2).refine((val) => val > 0, "retry_after has to be greater than 0"),
+  num_retries: z
+    .number()
+    .optional()
+    .default(3)
+    .refine((val) => val > 0, "num_retries has to be greater than 0"),
+  retry_after: z
+    .number()
+    .optional()
+    .default(0.2)
+    .refine((val) => val > 0, "retry_after has to be greater than 0"),
   retry_enabled: z.boolean().optional().default(true),
 });
 
@@ -350,7 +366,9 @@ const BasicLLMParamsSchema = z.object({
   tools: z.array(FunctionToolSchema).optional(),
   response_format: z.record(z.any()).optional(),
   reasoning_effort: z.string().optional(),
-  tool_choice: z.union([z.enum(["auto", "none", "required"]), ToolChoiceSchema]).optional(),
+  tool_choice: z
+    .union([z.enum(["auto", "none", "required"]), ToolChoiceSchema])
+    .optional(),
   top_logprobs: z.number().optional(),
   top_p: z.number().optional(),
 });
@@ -369,106 +387,53 @@ const KeywordsAIParamsSchema = z.object({
   //#region time
   start_time: DateTimeSchema.optional(),
   timestamp: DateTimeSchema.optional(),
-  hour_group: DateTimeSchema.optional(),
-  minute_group: DateTimeSchema.optional(),
   //#endregion time
 
-  //#region authentication
-  api_key: z.string().optional(),
-  user_id: StringOrNumberSchema.optional(),
-  user_email: z.string().optional(),
-  organization_id: StringOrNumberSchema.optional(),
-  organization_name: z.string().optional(),
-  unique_organization_id: z.string().optional(),
-  organization_key_id: z.string().optional(),
-  organization_key_name: z.string().optional(),
-  //#endregion authentication
-
-  //#region environment
-  is_test: z.boolean().optional(),
-  environment: z.string().optional(),
-  //#endregion environment
-
   //#region unique identifiers
-  id: StringOrNumberSchema.optional(),
-  unique_id: z.string().optional(),
   custom_identifier: StringOrNumberSchema.optional(),
   response_id: z.string().optional(),
   //#endregion unique identifiers
 
   //#region status
   //#region error handling
-  error_bit: z.number().optional(),
   error_message: z.string().optional(),
-  recommendations: z.string().optional(),
-  recommendations_dict: z.record(z.any()).optional(),
   warnings: z.string().optional(),
-  warnings_dict: z.record(z.any()).optional(),
-  has_warnings: z.boolean().optional(),
   //#endregion error handling
-  status: z.string().optional(),
   status_code: z.number().optional(),
   //#endregion status
 
   //#region log identifier/grouping
-  load_balance_group_id: z.string().optional(),
   group_identifier: StringOrNumberSchema.optional(),
   evaluation_identifier: StringOrNumberSchema.optional(),
   //#endregion log identifier/grouping
 
   //#region log input/output
-  storage_object_key: z.string().optional(),
   input: z.string().optional(),
   output: z.string().optional(),
   prompt_messages: z.array(MessageSchema).optional(),
   completion_message: MessageSchema.optional(),
   completion_messages: z.array(MessageSchema).optional(),
   completion_tokens: z.number().optional(),
-  system_text: z.string().optional(),
-  prompt_text: z.string().optional(),
-  completion_text: z.string().optional(),
-  input_array: z.array(z.string()).optional(),
   full_request: z.union([z.record(z.any()), z.array(z.any())]).optional(),
   full_response: z.union([z.record(z.any()), z.array(z.any())]).optional(),
-  is_fts_enabled: z.boolean().optional(),
-  full_text: z.string().optional(),
   //#region special response types
   tool_calls: z.array(z.record(z.any())).optional(),
-  has_tool_calls: z.boolean().optional(),
   reasoning: z.array(z.record(z.any())).optional(),
   //#endregion special response types
   //#endregion log input/output
 
-  //#region display
-  blurred: z.boolean().optional(),
-  //#endregion display
-
   //#region cache params
   cache_enabled: z.boolean().optional(),
-  cache_hit: z.boolean().optional(),
-  cache_bit: z.number().optional(),
-  cache_miss_bit: z.number().optional(),
   cache_options: CacheOptionsSchema.optional(),
   cache_ttl: z.number().optional(),
-  cache_key: z.string().optional(),
-  redis_cache_ttl: z.number().optional(),
-  cache_request_content: z.string().optional(),
   //#endregion cache params
 
   //#region usage
   //#region cost related
   cost: z.number().optional(),
-  covered_by: z.string().optional(),
-  evaluation_cost: z.number().optional(),
   prompt_unit_price: z.number().optional(),
   completion_unit_price: z.number().optional(),
-  used_custom_credential: z.boolean().optional(),
   //#endregion cost related
-
-  //#region time period
-  period_start: DateTimeSchema.optional(),
-  period_end: DateTimeSchema.optional(),
-  //#endregion time period
 
   //#region token usage
   prompt_tokens: z.number().optional(),
@@ -478,23 +443,10 @@ const KeywordsAIParamsSchema = z.object({
   //#endregion token usage
   //#endregion usage
 
-  //#region llm proxy credentials
-  credential_override: z.record(z.record(z.any())).optional(),
-  customer_credentials: z.record(ProviderCredentialTypeSchema).optional(),
-  //#endregion llm proxy credentials
-
-  //#region llm deployment
-  models: z.array(z.string()).optional(),
-  model_name_map: z.record(z.string()).optional(),
-  deployment_name: z.string().optional(),
-  full_model_name: z.string().optional(),
-  //#endregion llm deployment
-
   //#region user analytics
   customer_email: z.string().optional(),
   customer_name: z.string().optional(),
   customer_identifier: StringOrNumberSchema.optional(),
-  customer_user_unique_id: z.string().optional(),
   customer_params: CustomerSchema.optional(),
   //#endregion user analytics
 
@@ -506,9 +458,7 @@ const KeywordsAIParamsSchema = z.object({
   //#endregion keywordsai llm response control
 
   //#region keywordsai logging control
-  is_log_omitted: z.boolean().optional(),
   keywordsai_api_controls: KeywordsAIAPIControlParamsSchema.optional(),
-  mock_response: z.string().optional(),
   log_method: z.enum(LOG_METHOD_VALUES).optional(),
   log_type: z.enum(LOG_TYPE_VALUES).optional(),
   //#endregion keywordsai logging control
@@ -522,13 +472,18 @@ const KeywordsAIParamsSchema = z.object({
   load_balance_models: z.array(LoadBalanceModelSchema).optional(),
   retry_params: RetryParamsSchema.optional(),
   keywordsai_params: z.record(z.any()).optional(),
+  //#region deprecated
+  model_name_map: z.record(z.string()).optional(),
+  //#endregion deprecated
   //#endregion keywordsai proxy options
 
   //#region embedding
   embedding: z.array(z.number()).optional(),
-  base64_embedding: z.string().optional(),
-  provider_id: z.string().optional(),
   //#endregion embedding
+
+  //#region model information
+  provider_id: z.string().optional(),
+  //#endregion model information
 
   //#region audio
   audio_input_file: z.string().optional(),
@@ -543,11 +498,6 @@ const KeywordsAIParamsSchema = z.object({
   positive_feedback: z.boolean().optional(),
   //#endregion evaluation
 
-  //#region request metadata
-  ip_address: z.string().optional(),
-  request_url_path: z.string().optional(),
-  //#endregion request metadata
-
   //#region technical integrations
   linkup_params: LinkupParamsSchema.optional(),
   mem0_params: Mem0ParamsSchema.optional(),
@@ -556,19 +506,10 @@ const KeywordsAIParamsSchema = z.object({
 
   //#region custom properties
   metadata: z.record(z.any()).optional(),
-  //#region Deprecated, clickhouse allow filters to be applied efficiently enough
-  metadata_indexed_string_1: z.string().optional(),
-  metadata_indexed_string_2: z.string().optional(),
-  metadata_indexed_numerical_1: z.number().optional(),
-  //#endregion deprecated
   //#endregion custom properties
 
   //#region prompt
   prompt: z.union([PromptParamSchema, z.string()]).optional(),
-  prompt_id: z.string().optional(),
-  prompt_name: z.string().optional(),
-  prompt_version_number: z.number().optional(),
-  prompt_messages_template: z.array(MessageSchema).optional(),
   variables: z.record(z.any()).optional(),
   //#endregion prompt
 
@@ -582,7 +523,6 @@ const KeywordsAIParamsSchema = z.object({
   //#endregion llm response timing metrics
 
   //#region tracing
-  total_request_tokens: z.number().optional(),
   trace_unique_id: z.string().optional(),
   trace_name: z.string().optional(),
   trace_group_identifier: z.string().optional(),
@@ -594,26 +534,26 @@ const KeywordsAIParamsSchema = z.object({
   span_tools: z.array(z.string()).optional(),
   span_workflow_name: z.string().optional(),
 
-  //#region thread, deprecated
+  //#region thread
   thread_identifier: StringOrNumberSchema.optional(),
-  thread_unique_id: z.string().optional(),
-  //#endregion thread, deprecated
+  //#endregion thread
 
   //#endregion tracing
 });
 
 // Combined KeywordsPayloadSchema that merges KeywordsAIParams, BasicLLMParams, and BasicEmbeddingParams
-export const KeywordsPayloadSchema = KeywordsAIParamsSchema
-  .merge(BasicLLMParamsSchema)
+export const KeywordsPayloadSchema = KeywordsAIParamsSchema.merge(
+  BasicLLMParamsSchema
+)
   .merge(BasicEmbeddingParamsSchema)
   .catchall(z.any());
 
 export type KeywordsPayload = z.infer<typeof KeywordsPayloadSchema>;
 
 // Export individual schemas for use elsewhere
-export { 
-  KeywordsAIParamsSchema, 
-  BasicLLMParamsSchema, 
+export {
+  KeywordsAIParamsSchema,
+  BasicLLMParamsSchema,
   BasicEmbeddingParamsSchema,
   MessageSchema,
   ToolCallSchema,
@@ -631,4 +571,3 @@ export {
   PromptParamSchema,
   OverrideConfigSchema,
 };
-

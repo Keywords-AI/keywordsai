@@ -16,7 +16,7 @@ import json
 # But these specific types are defined early in param_types.py before KeywordsAIParams
 from ..utils.mixins import PreprocessLogDataMixin
 from .param_types import (
-    PromptParam, 
+    PromptParam,
     EvaluationParams,
     CacheOptions,
     Customer,
@@ -199,6 +199,29 @@ class KeywordsAILogParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     trace_group_identifier: Optional[Union[str, int]] = None
     # endregion: tracing
 
+    # region: keywordsai proxy options
+    disable_fallback: Optional[bool] = False
+    exclude_models: Optional[List[str]] = None
+    exclude_providers: Optional[List[str]] = None
+    fallback_models: Optional[List[str]] = None
+    load_balance_group: Optional[LoadBalanceGroup] = None
+    load_balance_models: Optional[List[LoadBalanceModel]] = None
+    retry_params: Optional[RetryParams] = None
+    keywordsai_params: Optional[dict] = None
+    # region: deprecated
+    model_name_map: Optional[Dict[str, str]] = (
+        None  #  Map an available model on Keywords AI to a custom name at inference time
+    )
+    # endregion: deprecated
+    # endregion: keywordsai proxy options
+
+    # region: keywordsai llm response control
+    field_name: Optional[str] = "data: "
+    delimiter: Optional[str] = "\n\n"
+    disable_log: Optional[bool] = False
+    request_breakdown: Optional[bool] = False
+    # endregion: keywordsai llm response control
+
     @model_validator(mode="before")
     @classmethod
     def _preprocess_data_for_public(cls, data):
@@ -236,7 +259,7 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     NONE of these fields can be set by the user (there will be no effect if they are set)
     This is used for parsing the retrieved logs in the list/detail endpoints in the SDK
     """
-    
+
     # region: authentication (missing from public)
     api_key: Optional[str] = None
     user_id: Optional[Union[int, str]] = None
@@ -263,7 +286,7 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     error_bit: Optional[int] = None
     recommendations: Optional[str] = None
     recommendations_dict: Optional[dict] = None
-    status: Optional[str] = None # This is controlled by the status_code
+    status: Optional[str] = None  # This is controlled by the status_code
     warnings_dict: Optional[dict] = None
     has_warnings: Optional[bool] = None
     # endregion: status
@@ -313,7 +336,6 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
 
     # region: llm deployment
     models: Optional[List[str]] = None
-    model_name_map: Optional[Dict[str, str]] = None
     deployment_name: Optional[str] = None
     full_model_name: Optional[str] = None
     # endregion: llm deployment
@@ -322,13 +344,6 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     customer_user_unique_id: Optional[str] = None
     # endregion: user analytics
 
-    # region: keywordsai llm response control
-    field_name: Optional[str] = "data: "
-    delimiter: Optional[str] = "\n\n"
-    disable_log: Optional[bool] = False
-    request_breakdown: Optional[bool] = False
-    # endregion: keywordsai llm response control
-
     # region: keywordsai logging control
     is_log_omitted: Optional[bool] = None
     keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
@@ -336,17 +351,6 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     log_method: Optional[str] = None
     log_type: Optional[LogType] = None
     # endregion: keywordsai logging control
-
-    # region: keywordsai proxy options
-    disable_fallback: Optional[bool] = False
-    exclude_models: Optional[List[str]] = None
-    exclude_providers: Optional[List[str]] = None
-    fallback_models: Optional[List[str]] = None
-    load_balance_group: Optional[LoadBalanceGroup] = None
-    load_balance_models: Optional[List[LoadBalanceModel]] = None
-    retry_params: Optional[RetryParams] = None
-    keywordsai_params: Optional[dict] = None
-    # endregion: keywordsai proxy options
 
     # region: embedding (additional)
     base64_embedding: Optional[str] = None
@@ -381,8 +385,13 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     tokens_per_second: Optional[float] = None
     # endregion: llm response timing metrics
 
+    # region: usage (additional)
+    total_request_tokens: Optional[int] = (
+        None  # Calculated from prompt + completion tokens
+    )
+    # endregion: usage (additional)
+
     # region: tracing (additional)
-    total_request_tokens: Optional[int] = None
     thread_identifier: Optional[Union[str, int]] = None
     thread_unique_id: Optional[str] = None
     # endregion: tracing
@@ -403,7 +412,7 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     def validate_hour_group(cls, v):
         return parse_datetime(v)
 
-    @field_validator("minute_group") 
+    @field_validator("minute_group")
     def validate_minute_group(cls, v):
         return parse_datetime(v)
 
