@@ -12,7 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">3.9,<4.0"
 httpx = "^0.25.0"
-keywordsai-sdk = "^0.4.68"
+keywordsai-sdk = "^0.4.79"
 
 
 [tool.poetry.group.dev.dependencies]

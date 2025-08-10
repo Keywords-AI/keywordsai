@@ -476,13 +476,13 @@ files = [
 
 [[package]]
 name = "keywordsai-sdk"
-version = "0.4.68"
+version = "0.4.79"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 optional = false
 python-versions = "<4.0,>3.9"
 files = [
-    {file = "keywordsai_sdk-0.4.68-py3-none-any.whl", hash = "sha256:1850218fbde3b47227e5faa427b1ec957b95c5f4a2548f65febc4e809c979512"},
-    {file = "keywordsai_sdk-0.4.68.tar.gz", hash = "sha256:c80e651665a07aecdea08c67ac522d2a60ad3aa4a62304abf921c3b7f47a9f2b"},
+    {file = "keywordsai_sdk-0.4.79-py3-none-any.whl", hash = "sha256:b126fcf2788400ac8d34aed2255fb472175749e0123197575f8ec3173eac026e"},
+    {file = "keywordsai_sdk-0.4.79.tar.gz", hash = "sha256:585f229af22928482bba6371b2e881c9345b6b833ad9d9e706eb92a6ab9e9b7d"},
 ]
 
 [package.dependencies]
@@ -1063,4 +1063,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.9,<4.0"
-content-hash = "787d03b62087eddf81b45c90a01c3e152647a11d975258d47ef533a03a1d0061"
+content-hash = "d4ba8cee5ab209edf6f62855b32f7baa126c70be2471fced96f35560ee9d790b"

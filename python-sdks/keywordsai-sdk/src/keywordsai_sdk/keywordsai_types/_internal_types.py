@@ -168,12 +168,6 @@ class Message(KeywordsAIBaseModel):
     reasoning_content: Optional[str] = None
     thinking_blocks: Optional[List[dict]] = None
 
-    @field_validator("content")
-    def validate_content(cls, v):
-        # if isinstance(v, list) and not v:
-        #     raise ValueError("Empty list not allowed for content")
-        return v
-
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
         return super().model_dump(*args, **kwargs)

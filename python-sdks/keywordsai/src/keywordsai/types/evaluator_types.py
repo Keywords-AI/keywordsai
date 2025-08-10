@@ -139,15 +139,12 @@ Custom Evaluators:
 """
 
 # Re-export all evaluator types from keywordsai-sdk
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+from keywordsai_sdk.keywordsai_types.evaluator_types import (
     Evaluator,
+    EvaluatorList,
 )
-from keywordsai.types.generic_types import PaginatedResponseType
-
-EvaluatorList = PaginatedResponseType[Evaluator]
 
 __all__ = [
     "Evaluator",
     "EvaluatorList",
-    "EvalRunRequest",
 ]

@@ -10,7 +10,7 @@ from keywordsai_sdk.constants.dataset_constants import (
     DATASET_LLM_RUN_STATUS_PENDING,
 )
 from keywordsai_sdk.keywordsai_types.filter_types import FilterParamDict
-
+from keywordsai_sdk.keywordsai_types.generic_types import PaginatedResponseType
 
 
 class Dataset(KeywordsAIBaseModel):
@@ -25,8 +25,12 @@ class Dataset(KeywordsAIBaseModel):
     running_status: DatasetLLMRunStatus = DATASET_LLM_RUN_STATUS_PENDING
     running_at: Optional[datetime] = None
     updated_at: datetime
-    updated_by: Optional[Union[Dict[str, Any], int, str]] = None  # APIUser reference, could be a foreign key id or a serialized object
-    organization: Union[Dict[str, Any], int, str]  # Organization reference, could be a foreign key id or a serialized object
+    updated_by: Optional[Union[Dict[str, Any], int, str]] = (
+        None  # APIUser reference, could be a foreign key id or a serialized object
+    )
+    organization: Union[
+        Dict[str, Any], int, str
+    ]  # Organization reference, could be a foreign key id or a serialized object
     initial_log_filters: FilterParamDict = {}
     log_ids: List[str] = []
     unique_organization_ids: List[str] = []
@@ -95,26 +99,6 @@ class EvalReportList(KeywordsAIBaseModel):
     """Evaluation report list response"""
 
     results: List[EvalReport]
-    count: Optional[int] = None
-    next: Optional[str] = None
-    previous: Optional[str] = None
-
-
-class Evaluator(KeywordsAIBaseModel):
-    """Evaluator model"""
-
-    id: str
-    name: str
-    slug: str
-    description: str = ""
-    created_at: datetime
-    updated_at: datetime
-
-
-class EvaluatorList(KeywordsAIBaseModel):
-    """Evaluator list response"""
-
-    results: List[Evaluator]
     count: Optional[int] = None
     next: Optional[str] = None
     previous: Optional[str] = None
