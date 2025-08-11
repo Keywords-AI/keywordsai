@@ -548,7 +548,7 @@ export const KeywordsAIPayloadSchema = KeywordsAIParamsSchema.merge(
   .merge(BasicEmbeddingParamsSchema)
   .catchall(z.any());
 
-export type KeywordsAIPayload = z.infer<typeof KeywordsAIPayloadSchema>;
+export type KeywordsAIPayload = z.input<typeof KeywordsAIPayloadSchema>;
 
 // Export individual schemas for use elsewhere
 export {

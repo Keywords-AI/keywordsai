@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/keywordsai-sdk",
   "type": "module",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "KeywordsAI typing SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
