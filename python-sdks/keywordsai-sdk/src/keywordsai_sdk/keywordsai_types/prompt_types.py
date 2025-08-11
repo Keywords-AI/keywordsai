@@ -1,9 +1,40 @@
 from pydantic import Field, ConfigDict
-from typing import Any, List, Union, Dict, Optional
+from typing import Any, List, Union, Dict, Optional, Literal
 from datetime import datetime
 from .base_types import KeywordsAIBaseModel
 from ._internal_types import Message
 from .generic_types import PaginatedResponseType
+from typing_extensions import TypedDict, Annotated
+
+
+class TextVariableValueType(TypedDict):
+    """Variable dictionary type"""
+
+    _type: Literal["text"]
+    value: str
+
+
+class ImageURLVariableValueType(TypedDict):
+    """Variable dictionary type"""
+
+    _type: Literal["image_url"]
+    value: str
+
+
+class JSONVariableValueType(TypedDict):
+    """Variable dictionary type"""
+
+    _type: Literal["json"]
+    value: dict
+
+
+VariableValueType = Annotated[
+    Union[TextVariableValueType, ImageURLVariableValueType, JSONVariableValueType],
+    Field(discriminator="_type"),
+]
+
+
+VariableDictType = Dict[str, Union[str, VariableValueType]]
 
 
 class PromptVersion(KeywordsAIBaseModel):
@@ -25,7 +56,7 @@ class PromptVersion(KeywordsAIBaseModel):
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
     reasoning_effort: Optional[str] = None
-    variables: Dict[str, Any] = {}
+    variables: VariableDictType = {}
     readonly: bool = False
     fallback_models: Optional[List[str]] = None
     load_balance_models: Optional[List[Dict[str, Any]]] = None
