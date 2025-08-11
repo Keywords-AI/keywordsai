@@ -1,0 +1,28 @@
+{
+  "name": "@keywordsai/keywordsai-sdk",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "KeywordsAI typing SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Raymond Huang <raymond@keywordsai.com>",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "version": "npm version",
+    "publish": "yarn npm publish",
+    "release": "yarn build &&yarn version patch && yarn publish"
+  },
+  "packageManager": "yarn@4.6.0",
+  "dependencies": {
+    "@keywordsai/keywordsai-sdk": "^0.0.14"
+  }
+}

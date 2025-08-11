@@ -36,7 +36,6 @@ VariableValueType = Annotated[
 
 VariableDictType = Dict[str, Union[str, VariableValueType]]
 
-
 class PromptVersion(KeywordsAIBaseModel):
     """Prompt version type based on Django model and API responses"""
 
