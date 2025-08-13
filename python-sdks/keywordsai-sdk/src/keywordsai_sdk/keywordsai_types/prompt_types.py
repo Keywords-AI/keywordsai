@@ -1,10 +1,11 @@
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, field_validator
 from typing import Any, List, Union, Dict, Optional, Literal
 from datetime import datetime
 from .base_types import KeywordsAIBaseModel
 from ._internal_types import Message
 from .generic_types import PaginatedResponseType
 from typing_extensions import TypedDict, Annotated
+import json
 
 
 class TextVariableValueType(TypedDict):
@@ -36,6 +37,7 @@ VariableValueType = Annotated[
 
 VariableDictType = Dict[str, Union[str, VariableValueType]]
 
+
 class PromptVersion(KeywordsAIBaseModel):
     """Prompt version type based on Django model and API responses"""
 
@@ -61,13 +63,21 @@ class PromptVersion(KeywordsAIBaseModel):
     load_balance_models: Optional[List[Dict[str, Any]]] = None
     tools: Optional[List[Dict[str, Any]]] = None
     tool_choice: Optional[Union[str, Dict[str, Any]]] = None
-    response_format: Optional[Dict[str, Any]] = None
-    json_schema: Optional[Dict[str, Any]] = None
+    response_format: Optional[Union[str, Dict[str, Any], None]] = None
     is_enforcing_response_format: bool = False
     prompt: Optional[Union[int, str]] = None  # Reference to parent prompt
     parent_prompt: Optional[str] = None  # Parent prompt ID
 
     model_config = ConfigDict(from_attributes=True, extra="allow")
+
+    @field_validator("response_format")
+    def validate_response_format(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
 
 
 class Prompt(KeywordsAIBaseModel):
@@ -80,12 +90,13 @@ class Prompt(KeywordsAIBaseModel):
     prompt_slug: Optional[str] = ""
     full_prompt_id: Optional[str] = None  # Same as prompt_id in responses
     current_version: Optional[PromptVersion] = None
-    live_version: Optional[PromptVersion] = None
+    live_version: Optional[Union[PromptVersion, None]] = None
     prompt_versions: Optional[List[PromptVersion]] = None
     prompt_activities: Optional[List[Dict[str, Any]]] = None
     commit_count: int = 0
     starred: bool = False
     tags: List[Dict[str, Any]] = []
+    deploy: Optional[bool] = None  # Field to trigger deployment when updating
 
     model_config = ConfigDict(from_attributes=True, extra="allow")
 

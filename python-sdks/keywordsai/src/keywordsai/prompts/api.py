@@ -357,6 +357,79 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         """Delete a prompt permanently (synchronous)."""
         return self.sync_client.delete(f"{PROMPT_DELETE_PATH}/{resource_id}")
 
+    # Deploy methods (both sync and async variants)
+    async def adeploy(self, resource_id: str) -> PromptRetrieveResponse:
+        """
+        Deploy a prompt by setting its live version (asynchronous).
+
+        This method deploys a prompt by sending an update request with deploy=True.
+        This triggers the deployment of the most recent readonly version as the live version.
+
+        Args:
+            resource_id (str): The unique identifier of the prompt to deploy
+
+        Returns:
+            PromptRetrieveResponse: The updated prompt object with deployment status
+
+        Raises:
+            KeywordsAIError: If the prompt is not found, deployment fails, or
+                no readonly version is available for deployment
+
+        Example:
+            >>> # Deploy a prompt
+            >>> deployed_prompt = await client.adeploy("prompt-123")
+            >>> print(f"Deployed prompt: {deployed_prompt.name}")
+            >>> print(f"Live version: {deployed_prompt.live_version}")
+
+        Note:
+            The prompt must have at least one readonly (committed) version to be deployable.
+            Draft versions cannot be deployed directly.
+        """
+        # Create update data with deploy flag
+        deploy_data = {"deploy": True}
+
+        response = await self.client.patch(
+            f"{PROMPT_UPDATE_PATH}/{resource_id}",
+            json_data=deploy_data,
+        )
+        return PromptRetrieveResponse(**response)
+
+    def deploy(self, resource_id: str) -> PromptRetrieveResponse:
+        """
+        Deploy a prompt by setting its live version (synchronous).
+
+        This method deploys a prompt by sending an update request with deploy=True.
+        This triggers the deployment of the most recent readonly version as the live version.
+
+        Args:
+            resource_id (str): The unique identifier of the prompt to deploy
+
+        Returns:
+            PromptRetrieveResponse: The updated prompt object with deployment status
+
+        Raises:
+            KeywordsAIError: If the prompt is not found, deployment fails, or
+                no readonly version is available for deployment
+
+        Example:
+            >>> # Deploy a prompt
+            >>> deployed_prompt = client.deploy("prompt-123")
+            >>> print(f"Deployed prompt: {deployed_prompt.name}")
+            >>> print(f"Live version: {deployed_prompt.live_version}")
+
+        Note:
+            The prompt must have at least one readonly (committed) version to be deployable.
+            Draft versions cannot be deployed directly.
+        """
+        # Create update data with deploy flag
+        deploy_data = {"deploy": True}
+
+        response = self.sync_client.patch(
+            f"{PROMPT_UPDATE_PATH}/{resource_id}",
+            json_data=deploy_data,
+        )
+        return PromptRetrieveResponse(**response)
+
     # Prompt version-specific methods (both sync and async variants)
     async def acreate_version(
         self, prompt_id: str, version_data: Union[Dict[str, Any], PromptVersion]

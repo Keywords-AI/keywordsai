@@ -810,13 +810,13 @@ test = ["ipykernel", "pre-commit", "pytest (<9)", "pytest-cov", "pytest-timeout"
 
 [[package]]
 name = "keywordsai-sdk"
-version = "0.4.79"
+version = "0.4.80"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 optional = false
 python-versions = "<4.0,>3.9"
 files = [
-    {file = "keywordsai_sdk-0.4.79-py3-none-any.whl", hash = "sha256:b126fcf2788400ac8d34aed2255fb472175749e0123197575f8ec3173eac026e"},
-    {file = "keywordsai_sdk-0.4.79.tar.gz", hash = "sha256:585f229af22928482bba6371b2e881c9345b6b833ad9d9e706eb92a6ab9e9b7d"},
+    {file = "keywordsai_sdk-0.4.80-py3-none-any.whl", hash = "sha256:a64966fbc8462e465d2930b5d34118bb117bea23824899269f825a72013a71e7"},
+    {file = "keywordsai_sdk-0.4.80.tar.gz", hash = "sha256:fae6d02ae524b6d85d1467f1028f18dd2d90c4fdc30dbbe9c389d4c92ae69f37"},
 ]
 
 [package.dependencies]
@@ -1758,4 +1758,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.9,<4.0"
-content-hash = "136203e346bbecbd844cce08ea83910b333f087df7eb7c9917802394f11aa5b7"
+content-hash = "60a489188801f17bab6de519a51bd0b5d12d2273e8bc92e26e3d61f200d52e55"

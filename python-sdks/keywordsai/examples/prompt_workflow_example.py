@@ -67,8 +67,19 @@ async def prompt_workflow_example():
         print(f"✅ Updated prompt: {updated_prompt.name}")
         print(f"🔍 JSON Response: {updated_prompt.model_dump_json(indent=2)}")
 
-        # Step 3: Create a prompt version with specific configuration
-        print("\n🔧 Step 3: Creating a prompt version...")
+        # Step 3: List all prompts to show the newly created one
+        print("\n📋 Step 3: Listing all prompts to showcase the list feature...")
+        prompts_list = await client.alist(page_size=10)
+        print(f"✅ Found {prompts_list.count} total prompts")
+        print(f"📊 Showing first {len(prompts_list.results)} prompts:")
+        for i, p in enumerate(prompts_list.results[:5], 1):  # Show first 5
+            is_our_prompt = "👈 Our new prompt!" if p.prompt_id == updated_prompt.prompt_id else ""
+            print(f"   {i}. {p.name} (ID: {p.prompt_id}) {is_our_prompt}")
+            print(f"      Description: {p.description}")
+            print(f"      Versions: {p.commit_count}")
+
+        # Step 4: Create a prompt version with specific configuration
+        print("\n🔧 Step 4: Creating a prompt version...")
         version_data = PromptVersion(
             prompt_version_id="version-001",
             description="Initial customer support version with professional tone",
@@ -99,8 +110,8 @@ async def prompt_workflow_example():
         print(f"   Messages: {len(version.messages)} messages")
         print(f"🔍 JSON Response: {version.model_dump_json(indent=2)}")
 
-        # Step 4: Create another version with different settings
-        print("\n🔧 Step 4: Creating a second version with different settings...")
+        # Step 5: Create another version with different settings
+        print("\n🔧 Step 5: Creating a second version with different settings...")
         version_data_v2 = PromptVersion(
             prompt_version_id="version-002",
             description="More creative version with higher temperature",
@@ -128,13 +139,6 @@ async def prompt_workflow_example():
         print(f"✅ Created version {version_v2.version}")
         print(f"   Model: {version_v2.model}")
         print(f"   Temperature: {version_v2.temperature}")
-
-        # Step 5: List all prompts
-        print("\n📋 Step 5: Listing all prompts...")
-        prompts_list = await client.alist(page_size=5)
-        print(f"✅ Found {prompts_list.count} total prompts")
-        for p in prompts_list.results[:3]:  # Show first 3
-            print(f"   - {p.name} (ID: {p.prompt_id})")
 
         # Step 6: List versions for our prompt
         print(f"\n📋 Step 6: Listing versions for prompt {prompt.prompt_id}...")
@@ -173,13 +177,35 @@ async def prompt_workflow_example():
             print(f"   New max_tokens: {updated_version.max_tokens}")
             print(f"🔍 JSON Response: {updated_version.model_dump_json(indent=2)}")
 
-        # Step 9: Demonstrate synchronous API usage
-        print("\n🔄 Step 9: Demonstrating synchronous API usage...")
+        # Step 9: Deploy the prompt (make it live)
+        print("\n🚀 Step 9: Deploying the prompt...")
+        try:
+            deployed_prompt = await client.adeploy(prompt.prompt_id)
+            print(f"✅ Successfully deployed prompt!")
+            print(f"   Live version: {deployed_prompt.live_version.version if deployed_prompt.live_version else 'None'}")
+            print(f"   Prompt is now ready for use with OpenAI SDK")
+            
+            # Verify deployment by checking prompt details
+            deployment_check = await client.aget(prompt.prompt_id)
+            if deployment_check.live_version:
+                print(f"   🔍 Deployment confirmed - Live version {deployment_check.live_version.version} is active")
+            else:
+                print("   ⚠️  No live version found after deployment attempt")
+                
+        except Exception as deploy_error:
+            print(f"❌ Deployment failed: {str(deploy_error)}")
+            print("💡 This might happen if:")
+            print("   - No readonly version is available")
+            print("   - All versions are still in draft state")
+            print("   - API deployment endpoint is not available")
+
+        # Step 10: Demonstrate synchronous API usage
+        print("\n🔄 Step 10: Demonstrating synchronous API usage...")
         sync_prompts = client.list(page_size=3)  # No await needed
         print(f"✅ Synchronously retrieved {len(sync_prompts.results)} prompts")
 
-        # Step 10: Get the updated prompt details
-        print(f"\n🔍 Step 10: Getting final prompt details...")
+        # Step 11: Get the updated prompt details
+        print(f"\n🔍 Step 11: Getting final prompt details...")
         final_prompt = await client.aget(prompt.prompt_id)
         print(f"✅ Final prompt state:")
         print(f"   Name: {final_prompt.name}")
