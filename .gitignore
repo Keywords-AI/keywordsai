@@ -6,3 +6,4 @@ boilerplates/
 **/*/node_modules/
 **/*/traceloop-sdk
 **/*/__pycache__/
+/.env

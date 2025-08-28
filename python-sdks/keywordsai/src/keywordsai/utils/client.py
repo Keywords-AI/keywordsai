@@ -72,6 +72,7 @@ class KeywordsAIClient:
         endpoint: str,
         json_data: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Make a POST request
@@ -88,7 +89,10 @@ class KeywordsAIClient:
         if headers:
             request_headers.update(headers)
 
-        async with httpx.AsyncClient() as client:
+        # Configure timeout properly for httpx
+        timeout_config = httpx.Timeout(timeout) if timeout else None
+
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             response = await client.post(
                 f"{self.base_url}/{endpoint.lstrip('/')}",
                 json=json_data,
@@ -132,6 +136,7 @@ class KeywordsAIClient:
         endpoint: str,
         json_data: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Make a DELETE request
@@ -140,6 +145,7 @@ class KeywordsAIClient:
             endpoint: API endpoint (without base URL)
             json_data: JSON data to send
             headers: Additional headers
+            timeout: Timeout in seconds
 
         Returns:
             Response JSON data
@@ -148,7 +154,10 @@ class KeywordsAIClient:
         if headers:
             request_headers.update(headers)
 
-        async with httpx.AsyncClient() as client:
+        # Configure timeout properly for httpx
+        timeout_config = httpx.Timeout(timeout) if timeout else None
+
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             response = await client.delete(
                 f"{self.base_url}/{endpoint.lstrip('/')}",
                 json=json_data,
