@@ -486,7 +486,6 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """
         # Validate and prepare the input data
         validated_data = self._validate_input(rows_request, RemoveExperimentRowsRequest)
-        
         return await self.client.delete(
             EXPERIMENT_REMOVE_ROWS_PATH(experiment_id),
             json_data=self._prepare_json_data(validated_data),
@@ -765,10 +764,10 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             # Validate and prepare the input data
             validated_data = self._validate_input(run_request, RunExperimentRequest)
             request_data = self._prepare_json_data(validated_data)
-
         return await self.client.post(
             EXPERIMENT_RUN_PATH(experiment_id),
             json_data=request_data,
+            timeout=600,
         )
 
     def run_experiment(

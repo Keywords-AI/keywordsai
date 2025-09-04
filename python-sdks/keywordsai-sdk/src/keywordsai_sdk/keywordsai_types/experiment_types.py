@@ -11,7 +11,7 @@ from ..utils.mixins import PreprocessDataMixin
 from typing_extensions import TypedDict
 from ..constants import UTC_EPOCH
 from keywordsai_sdk.utils.data_processing.id_processing import generate_unique_id
-
+from .generic_types import PaginatedResponseType
 STATUS_TYPES = Literal[
     "ready", "running", "error", "stopped", "completed"
 ]  # Ready means ready to go
@@ -244,13 +244,7 @@ class CreateExperimentRequest(KeywordsAIBaseModel):
     description: str = ""
 
 
-class ListExperimentsResponse(KeywordsAIBaseModel):
-    """Response for listing experiments"""
-
-    experiments: List[ExperimentType]
-    total: int = 0
-    page: int = 1
-    page_size: int = 50
+ListExperimentsResponse = PaginatedResponseType[ExperimentType]
 
 
 class AddExperimentRowsRequest(KeywordsAIBaseModel):
