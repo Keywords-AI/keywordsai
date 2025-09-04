@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-sdk"
-version = "0.4.80"
+version = "0.4.84"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 authors = ["Keywords AI <team@keywordsai.co>"]
 license = "MIT"
@@ -15,7 +15,7 @@ requests = "^2.31.0"
 typing-extensions = "^4.12.2"
 dateparser = "^1.2.0"
 pydantic = "^2.10.3"
-openai = "^1.57.4"
+openai = "1.99.5"
 
 
 [tool.poetry.group.dev.dependencies]

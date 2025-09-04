@@ -1,8 +1,6 @@
 from typing import List, Literal, Optional, Union, Dict, Any
 from typing_extensions import deprecated
 from pydantic import ConfigDict, field_validator, model_validator
-
-from keywordsai_sdk.constants._internal_constants import RAW_LOG_DATA_TO_DB_COLUMN_MAP
 from ._internal_types import (
     BasicAssistantParams,
     BasicLLMParams,
@@ -546,7 +544,6 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
         return v
 
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
-
 
 
 @deprecated("Use log_types.KeywordsAIFullLogParams instead")

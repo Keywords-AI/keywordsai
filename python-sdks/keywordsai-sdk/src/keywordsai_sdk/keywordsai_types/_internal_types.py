@@ -79,10 +79,13 @@ class TextContent(KeywordsAIBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
+
+
 class InputTextContent(KeywordsAIBaseModel):
     type: Literal["input_text"] = "input_text"
     text: str
     cache_control: Optional[CacheControl] = None
+
 
 class OutputTextContent(KeywordsAIBaseModel):
     type: Literal["output_text"] = "output_text"
@@ -94,10 +97,12 @@ class FileContent(KeywordsAIBaseModel):
     type: Literal["file"] = "file"
     file: Dict[str, Any] = {}
 
+
 class InputFileContent(KeywordsAIBaseModel):
     type: Literal["input_file"] = "input_file"
     file: str
     providerData: Optional[dict] = None
+
 
 class InputImageContent(KeywordsAIBaseModel):
     type: Literal["input_image"] = "input_image"
@@ -249,12 +254,15 @@ class BasicLLMParams(KeywordsAIBaseModel):
     tool_choice: Optional[Union[Literal["auto", "none", "required"], ToolChoice]] = None
     top_logprobs: Optional[int] = None
     top_p: Optional[float] = None
+    verbosity: Optional[str] = None
+    extra_headers: Optional[Dict[str, str]] = None
 
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = exclude_none
         return super().model_dump(*args, **kwargs)
 
     model_config = ConfigDict(protected_namespaces=())
+
 
 class LiteLLMCompletionParams(BasicLLMParams):
     thinking: Optional[dict] = None

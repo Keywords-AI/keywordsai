@@ -342,3 +342,14 @@ if __name__ == "__main__":
     print("- Keywords AI Documentation: https://docs.keywordsai.co")
     print("- API Reference: https://docs.keywordsai.co/api")
     print("- Testing Guide: https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/TESTING_STRATEGY.md")
+
+
+from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+
+prompt_api = PromptAPI(api_key=os.getenv("KEYWORDSAI_API_KEY"), base_url=os.getenv("KEYWORDSAI_BASE_URL"))
+
+prompt_api.create(
+    create_data=Prompt(
+        name=23434
+    ) 
+)

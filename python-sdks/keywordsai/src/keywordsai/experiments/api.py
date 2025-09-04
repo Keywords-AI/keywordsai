@@ -340,12 +340,12 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             >>> updated_experiment = await client.aupdate("experiment-123", update_data)
             >>> print(f"Updated experiment: {updated_experiment.name}")
         """
-        # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, ExperimentUpdate)
-        
+                # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, ExperimentUpdate, partial=True)
+
         response = await self.client.patch(
             f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return Experiment(**response)
 
@@ -386,12 +386,12 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
     def update(self, resource_id: str, update_data: Union[Dict[str, Any], ExperimentUpdate]) -> Experiment:
         """Update an existing experiment's metadata (synchronous)."""
-        # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, ExperimentUpdate)
-        
+                # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, ExperimentUpdate, partial=True)
+
         response = self.sync_client.patch(
             f"{EXPERIMENT_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return Experiment(**response)
 

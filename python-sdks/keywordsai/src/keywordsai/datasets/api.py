@@ -291,12 +291,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             >>> updated_dataset = await client.aupdate("dataset-123", update_data)
             >>> print(f"Updated dataset: {updated_dataset.name}")
         """
-        # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, DatasetUpdate)
-        
+                # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, DatasetUpdate, partial=True)
+
         response = await self.client.patch(
             f"{DATASET_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return Dataset(**response)
 
@@ -362,12 +362,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
     def update(self, resource_id: str, update_data: Union[Dict[str, Any], DatasetUpdate]) -> Dataset:
         """Update an existing dataset's properties (synchronous)."""
-        # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, DatasetUpdate)
-        
+                # Validate and prepare the input data
+        validated_data = self._validate_input(update_data, DatasetUpdate, partial=True)
+
         response = self.sync_client.patch(
             f"{DATASET_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return Dataset(**response)
 

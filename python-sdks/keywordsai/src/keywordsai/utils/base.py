@@ -31,13 +31,14 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         # For backward compatibility with async methods that use self.client
         self.client = self.async_client
     
-    def _validate_input(self, data: Union[Dict[str, Any], BaseModel], model_class: type) -> BaseModel:
+    def _validate_input(self, data: Union[Dict[str, Any], BaseModel], model_class: type, partial: bool = False) -> BaseModel:
         """
         Validate and convert input data to Pydantic model.
         
         Args:
             data: Either a dictionary or a Pydantic model instance
             model_class: The Pydantic model class to validate against
+            partial: If True, only validate provided fields for partial updates
             
         Returns:
             Validated Pydantic model instance
@@ -47,7 +48,13 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
         """
         if isinstance(data, dict):
             try:
-                return model_class(**data)
+                if partial:
+                    # For partial updates, only create model with provided fields
+                    # This prevents default values from being set for unspecified fields
+                    return model_class.model_validate(data)
+                else:
+                    # For full validation, use standard constructor
+                    return model_class(**data)
             except Exception as e:
                 raise ValueError(f"Invalid data for {model_class.__name__}: {str(e)}")
         elif isinstance(data, BaseModel):
@@ -55,25 +62,36 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
             if not isinstance(data, model_class):
                 # Try to convert if it's a different Pydantic model
                 try:
-                    return model_class(**data.model_dump())
+                    if partial:
+                        # For partial updates, only include fields that were explicitly set
+                        dump_data = data.model_dump(exclude_unset=True)
+                        return model_class.model_validate(dump_data)
+                    else:
+                        return model_class(**data.model_dump())
                 except Exception as e:
                     raise ValueError(f"Cannot convert {type(data).__name__} to {model_class.__name__}: {str(e)}")
             return data
         else:
             raise ValueError(f"Data must be a dictionary or {model_class.__name__} instance, got {type(data)}")
     
-    def _prepare_json_data(self, data: Union[Dict[str, Any], BaseModel]) -> Dict[str, Any]:
+    def _prepare_json_data(self, data: Union[Dict[str, Any], BaseModel], partial: bool = False) -> Dict[str, Any]:
         """
         Prepare data for JSON serialization.
         
         Args:
             data: Either a dictionary or a Pydantic model instance
+            partial: If True, only include fields that were explicitly set (for partial updates)
             
         Returns:
             Dictionary ready for JSON serialization
         """
         if isinstance(data, BaseModel):
-            return data.model_dump(exclude_none=True, mode="json")
+            if partial:
+                # For partial updates, exclude unset fields to prevent overriding with defaults
+                return data.model_dump(exclude_unset=True, mode="json")
+            else:
+                # For full operations, exclude None values as before
+                return data.model_dump(exclude_none=True, mode="json")
         elif isinstance(data, dict):
             return data
         else:

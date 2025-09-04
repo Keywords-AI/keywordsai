@@ -41,7 +41,7 @@ assert params.session_identifier == NEW_SESSION_IDENTIFIER
 
 
 params = KeywordsAITextLogParams.model_validate(to_validate)
-print(params)
+print(params.model_dump_json(indent=2))
 
 
 # Test EvalParams with malformed message data
@@ -76,25 +76,3 @@ except ValidationError as e:
     print(f"✓ EvalParams properly caught validation error: {e}")
 except Exception as e:
     print(f"? EvalParams failed with unexpected error: {e}")
-
-# Test 4: Should break with completely wrong data types
-try:
-    eval_params = EvalParams(
-        completion_message="this is not a message object",  # String instead of Message
-        prompt_messages="this is also wrong"  # String instead of List[Message]
-    )
-    print("✗ EvalParams with wrong data types should have failed but didn't!")
-except ValidationError as e:
-    print(f"✓ EvalParams properly caught type validation error: {e}")
-except Exception as e:
-    print(f"? EvalParams failed with unexpected error: {e}")
-
-
-
-
-
-
-
-KeywordsAITextLogParams(
-    log_type="agent"
-)

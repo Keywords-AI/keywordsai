@@ -371,13 +371,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.67.0"
+version = "1.99.5"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.67.0-py3-none-any.whl", hash = "sha256:dbbb144f38739fc0e1d951bc67864647fca0b9ffa05aef6b70eeea9f71d79663"},
-    {file = "openai-1.67.0.tar.gz", hash = "sha256:3b386a866396daa4bf80e05a891c50a7746ecd7863b8a27423b62136e3b8f6bc"},
+    {file = "openai-1.99.5-py3-none-any.whl", hash = "sha256:4e870f9501b7c36132e2be13313ce3c4d6915a837e7a299c483aab6a6d4412e9"},
+    {file = "openai-1.99.5.tar.gz", hash = "sha256:aa97ac3326cac7949c5e4ac0274c454c1d19c939760107ae0d3948fc26a924ca"},
 ]
 
 [package.dependencies]
@@ -391,8 +391,10 @@ tqdm = ">4"
 typing-extensions = ">=4.11,<5"
 
 [package.extras]
+aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.8)"]
 datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
-realtime = ["websockets (>=13,<15)"]
+realtime = ["websockets (>=13,<16)"]
+voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "packaging"
@@ -883,4 +885,4 @@ dev = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.9,<4.0"
-content-hash = "a9be7b19dedfb52a6217d752e4675e04266be065bd3c6199df264bf56e1c2727"
+content-hash = "4d8ef387b57e32f088fd28a096c1b39694cec650174823bcec0d2b21c25d0228"

@@ -25,7 +25,7 @@ class PreprocessDataMixin:
     This mixin map some columns in the raw data to a different column for db storage & the validation of the pydantic model that inherits from it.
     """
 
-    raw_data_to_db_column_map: RawDataToDBColumnMap = {}
+    _raw_data_to_db_column_map: RawDataToDBColumnMap = {}
 
     @classmethod
     def _object_to_dict(self, obj):
@@ -49,13 +49,13 @@ class PreprocessDataMixin:
         if data is None:
             return data
         data = cls._object_to_dict(data)
-        data = _map_fields_to_db_column(data, mapping=cls.raw_data_to_db_column_map)
+        data = _map_fields_to_db_column(data, mapping=cls._raw_data_to_db_column_map)
         return data
 
 
 class PreprocessLogDataMixin(PreprocessDataMixin):
-    raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_LOG_DATA_TO_DB_COLUMN_MAP
+    _raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_LOG_DATA_TO_DB_COLUMN_MAP
 
 
 class PreprocessEvalFormMixin(PreprocessDataMixin):
-    raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_EVAL_FORM_TO_DB_COLUMN_MAP
+    _raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_EVAL_FORM_TO_DB_COLUMN_MAP

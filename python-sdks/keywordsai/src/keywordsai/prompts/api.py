@@ -275,11 +275,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
             >>> print(f"Updated prompt: {updated_prompt.name}")
         """
         # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, Prompt)
+        validated_data = self._validate_input(update_data, Prompt, partial=True)
 
         response = await self.client.patch(
             f"{PROMPT_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return PromptRetrieveResponse(**response)
 
@@ -345,11 +345,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
     ) -> PromptRetrieveResponse:
         """Update an existing prompt's properties (synchronous)."""
         # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, Prompt)
+        validated_data = self._validate_input(update_data, Prompt, partial=True)
 
         response = self.sync_client.patch(
             f"{PROMPT_UPDATE_PATH}/{resource_id}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return PromptRetrieveResponse(**response)
 
@@ -694,11 +694,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
             >>> print(f"Updated version {updated_version.version}")
         """
         # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, PromptVersion)
+        validated_data = self._validate_input(update_data, PromptVersion, partial=True)
 
         response = await self.client.patch(
             f"{PROMPT_VERSION_UPDATE_PATH(prompt_id)}/{version_number}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return PromptVersionRetrieveResponse(**response)
 
@@ -710,11 +710,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
     ) -> PromptVersionRetrieveResponse:
         """Update an existing prompt version's properties (synchronous)."""
         # Validate and prepare the input data
-        validated_data = self._validate_input(update_data, PromptVersion)
+        validated_data = self._validate_input(update_data, PromptVersion, partial=True)
 
         response = self.sync_client.patch(
             f"{PROMPT_VERSION_UPDATE_PATH(prompt_id)}/{version_number}",
-            json_data=self._prepare_json_data(validated_data),
+            json_data=self._prepare_json_data(validated_data, partial=True),
         )
         return PromptVersionRetrieveResponse(**response)
 

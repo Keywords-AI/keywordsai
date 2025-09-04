@@ -8,6 +8,7 @@ class LogMethodChoices(Enum):
     BATCH = "batch"  # Log from a batch create api call
     PYTHON_TRACING = "python_tracing"  # Log from a python tracing call
     TS_TRACING = "ts_tracing"  # Log from a typescript tracing call
+    TRACING_INTEGRATION = "tracing_integration"  # Log from a tracing integration call
 
 
 LOG_TYPE_TEXT = "text"
