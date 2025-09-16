@@ -20,6 +20,7 @@ opentelemetry-instrumentation-threading = "^0.55b1"
 opentelemetry-exporter-otlp = "^1.33.1"
 keywordsai-exporter-openai-agents = "^0.1.3"
 pytest = "^8.4.1"
+opentelemetry-semantic-conventions-ai = "^0.3.0"
 
 
 
@@ -32,6 +33,8 @@ pytest-asyncio = "^0.25.3"
 unimport = "^1.2.1"
 anthropic = "^0.52.2"
 opentelemetry-instrumentation-requests = "^0.55b1"
+httpx = "^0.27.2"
+openai = "^1.55.1"
 
 [tool.poetry.group.dev]
 optional = true
