@@ -14,6 +14,10 @@ from opentelemetry.semconv_ai import SpanAttributes
 from keywordsai_tracing import KeywordsAITelemetry, workflow, task
 
 
+# Per request: disable mocked tests in favor of live tests
+pytestmark = pytest.mark.skip(reason="Mock transport disabled; using live test with real OpenAI API")
+
+
 def _serialize_span(span: ReadableSpan) -> Dict[str, Any]:
     attrs = getattr(span, "attributes", {}) or {}
     status = getattr(getattr(span, "status", None), "status_code", None)
