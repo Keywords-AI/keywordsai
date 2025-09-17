@@ -3,7 +3,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import SpanContext
-from ..utils.logging import get_keywordsai_logger
+from ..utils.logging import get_keywordsai_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
 
 logger = get_keywordsai_logger('core.exporter')
@@ -79,53 +79,7 @@ class KeywordsAISpanExporter:
         # Debug: print a sanitized preview of what will be exported
         try:
             if logger.isEnabledFor(10):  # logging.DEBUG
-                preview: List[Dict[str, Any]] = []
-                for s in modified_spans:
-                    try:
-                        ctx: SpanContext = s.get_span_context()  # type: ignore[attr-defined]
-                        attrs: Dict[str, Any] = getattr(s, "attributes", {}) or {}
-
-                        def _safe(val: Any) -> Any:
-                            try:
-                                if isinstance(val, (bytes, bytearray)):
-                                    return f"<bytes {len(val)}B>"
-                                if isinstance(val, (list, tuple)):
-                                    # Convert list/tuple items safely
-                                    return [str(item)[:500] for item in val]
-                                if isinstance(val, dict):
-                                    # Convert dict values safely
-                                    return {str(k): str(v)[:500] for k, v in val.items()}
-                                s_val = str(val)
-                                return s_val if len(s_val) <= 1000 else s_val[:1000] + "...<truncated>"
-                            except Exception:
-                                return "<unserializable>"
-
-                        # Highlight likely prompt/message fields if present
-                        highlighted_keys = [
-                            k for k in attrs.keys()
-                            if any(x in str(k).lower() for x in [
-                                "prompt", "message", "messages", "input", "content",
-                                "entity_input", "ai.", "openai", "request.body"
-                            ])
-                        ]
-
-                        preview.append(
-                            {
-                                "name": getattr(s, "name", "<unknown>"),
-                                "trace_id": format(ctx.trace_id, '032x') if ctx else None,
-                                "span_id": format(ctx.span_id, '016x') if ctx else None,
-                                "parent_span_id": getattr(s, "parent_span_id", None),
-                                "kind": attrs.get("traceloop.span.kind"),
-                                "entity_path": attrs.get("traceloop.entity.path"),
-                                "attributes_count": len(attrs),
-                                "highlighted_attributes": {
-                                    str(k): _safe(attrs.get(k)) for k in highlighted_keys
-                                },
-                            }
-                        )
-                    except Exception as e:
-                        preview.append({"error": f"failed_to_preview_span: {e}"})
-
+                preview = build_spans_export_preview(modified_spans)
                 logger.debug("[KeywordsAI Debug] Export preview (sanitized): %s", preview)
         except Exception:
             # Never fail export due to debug logging issues
