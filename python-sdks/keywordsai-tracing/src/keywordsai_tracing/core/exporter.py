@@ -1,9 +1,9 @@
-from typing import Dict, Optional, Sequence, List
+from typing import Dict, Optional, Sequence, List, Any
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import SpanContext
-from ..utils.logging import get_keywordsai_logger
+from ..utils.logging import get_keywordsai_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
 
 logger = get_keywordsai_logger('core.exporter')
@@ -76,7 +76,15 @@ class KeywordsAISpanExporter:
             else:
                 # Use the original span
                 modified_spans.append(span)
-        
+        # Debug: print a sanitized preview of what will be exported
+        try:
+            if logger.isEnabledFor(10):  # logging.DEBUG
+                preview = build_spans_export_preview(modified_spans)
+                logger.debug("[KeywordsAI Debug] Export preview (sanitized): %s", preview)
+        except Exception:
+            # Never fail export due to debug logging issues
+            pass
+
         return self.exporter.export(modified_spans)
 
     def shutdown(self):
