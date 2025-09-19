@@ -623,18 +623,17 @@ openai-agents = ">=0.0.18,<0.0.19"
 
 [[package]]
 name = "keywordsai-sdk"
-version = "0.4.57"
+version = "0.4.85"
 description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
 optional = false
 python-versions = "<4.0,>3.9"
 files = [
-    {file = "keywordsai_sdk-0.4.57-py3-none-any.whl", hash = "sha256:014cc8e1591c7df4e679d1298336efb9e4aa8c00b056fbded676db56711b8ddf"},
-    {file = "keywordsai_sdk-0.4.57.tar.gz", hash = "sha256:abe03a852d66cb9d4a8a418643331eb1fc85fe7765c9112cd819ce26e2e90a06"},
+    {file = "keywordsai_sdk-0.4.85-py3-none-any.whl", hash = "sha256:2f66e18b9440fcf9afe03afac2f55931a2e14f5f16865e4fec21f6c5e47ec34d"},
+    {file = "keywordsai_sdk-0.4.85.tar.gz", hash = "sha256:9b663491aefbcbdd3976b75efab50a9f9ae4628f9c4aefb1bfaf258d6d5c7d31"},
 ]
 
 [package.dependencies]
 dateparser = ">=1.2.0,<2.0.0"
-openai = ">=1.57.4,<2.0.0"
 pydantic = ">=2.10.3,<3.0.0"
 requests = ">=2.31.0,<3.0.0"
 typing-extensions = ">=4.12.2,<5.0.0"
@@ -2026,4 +2025,4 @@ openai-agents = ["keywordsai-exporter-openai-agents"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.10,<3.13"
-content-hash = "e885b8877948012363a3699b742cc7e496a6a9b1d3ad1e7c29f6f1ac27e45cf2"
+content-hash = "e986dfc1dc906edd8ccd67c650d07b780678f181c22670e7adfba8236a31de4a"

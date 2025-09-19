@@ -6,6 +6,7 @@ inherit from the main KeywordsAI logger, avoiding the confusing dependency
 on __name__ matching the logger prefix.
 """
 
+import json
 import logging
 from keywordsai_tracing.constants.generic_constants import LOGGER_NAME
 from typing import Any, Dict, List
@@ -47,7 +48,7 @@ def get_main_logger() -> logging.Logger:
     Returns:
         The main KeywordsAI logger instance
     """
-    return logging.getLogger(LOGGER_NAME) 
+    return logging.getLogger(LOGGER_NAME)
 
 
 def _safe_value_for_preview(value: Any) -> Any:
@@ -78,23 +79,29 @@ def build_spans_export_preview(spans: List[Any]) -> List[Dict[str, Any]]:
             attrs: Dict[str, Any] = getattr(s, "attributes", {}) or {}
 
             highlighted_keys = [
-                k for k in attrs.keys()
-                if any(x in str(k).lower() for x in HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS)
+                k
+                for k in attrs.keys()
+                if any(
+                    x in str(k).lower() for x in HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS
+                )
             ]
 
             preview.append(
                 {
                     "name": getattr(s, "name", "<unknown>"),
-                    "trace_id": format(ctx.trace_id, '032x') if ctx else None,
-                    "span_id": format(ctx.span_id, '016x') if ctx else None,
+                    "trace_id": format(ctx.trace_id, "032x") if ctx else None,
+                    "span_id": format(ctx.span_id, "016x") if ctx else None,
                     "parent_span_id": getattr(s, "parent_span_id", None),
                     "kind": attrs.get("traceloop.span.kind"),
                     "entity_path": attrs.get("traceloop.entity.path"),
                     "attributes_count": len(attrs),
-                    "highlighted_attributes": {str(k): _safe_value_for_preview(attrs.get(k)) for k in highlighted_keys},
+                    "highlighted_attributes": {
+                        str(k): _safe_value_for_preview(attrs.get(k))
+                        for k in highlighted_keys
+                    },
                 }
             )
         except Exception as e:
             preview.append({"error": f"failed_to_preview_span: {e}"})
 
-    return preview
+    return json.dumps(preview, indent=2, default=str)
