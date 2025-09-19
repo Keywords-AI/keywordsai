@@ -340,7 +340,7 @@ class KeywordsAISpanExporter(BackendSpanExporter):
         api_key: Union[str, None] = None,
         organization: Union[str, None] = None,
         project: Union[str, None] = None,
-        endpoint: str = "https://api.keywordsai.co/api/",
+        endpoint: str = "https://api.keywordsai.co/api/openai/v1/traces/ingest",
         max_retries: int = 3,
         base_delay: float = 1.0,
         max_delay: float = 30.0,
