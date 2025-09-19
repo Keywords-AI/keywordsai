@@ -6,7 +6,7 @@ from opentelemetry.semconv_ai import SpanAttributes
 from keywordsai_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
 import logging
 
-from keywordsai_tracing.constants.generic import SDK_PREFIX
+from keywordsai_tracing.constants.generic_constants import SDK_PREFIX
 from keywordsai_tracing.constants.context_constants import (
     TRACE_GROUP_ID_KEY, 
     PARAMS_KEY

@@ -6,7 +6,7 @@ from .decorators import workflow, task, agent, tool
 from .core.tracer import KeywordsAITracer
 from .core.client import KeywordsAIClient
 from .instruments import Instruments
-from .constants.generic import LOGGER_NAME
+from .constants.generic_constants import LOGGER_NAME
 from .utils.logging import get_main_logger
 
 class KeywordsAITelemetry:
