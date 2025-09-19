@@ -1,0 +1,15 @@
+langchain
+langchain-community 
+langchain-openai
+langchain-experimental
+python-dotenv
+langchain_ollama
+reportlab
+langfuse
+keywordsai-tracing
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-langchain
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-urllib3
+opentelemetry-exporter-otlp
