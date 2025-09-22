@@ -543,6 +543,12 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
                 return v
         return v
 
+    @field_validator("span_name", mode="after")
+    def validate_span_name(cls, v):
+        if v:
+            return v[:255]  # The DB column is varchar(255)
+        return v
+
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
