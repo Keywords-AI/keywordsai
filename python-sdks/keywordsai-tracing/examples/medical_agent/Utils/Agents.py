@@ -1,8 +1,9 @@
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from keywordsai_tracing.decorators import tool, task
+from keywordsai_tracing.decorators import task, tool, agent
 
 class Agent:
+    @agent(name="Agent")
     def __init__(self, medical_report=None, role=None, extra_info=None):
         self.medical_report = medical_report
         self.role = role

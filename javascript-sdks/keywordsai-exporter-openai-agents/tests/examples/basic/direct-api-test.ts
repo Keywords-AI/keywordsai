@@ -7,7 +7,7 @@ dotenv.config({
 
 async function testDirectAPI() {
   const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const endpoint = 'https://api.keywordsai.co/api/openai/v1/traces/ingest';
+  const endpoint = 'https://api.keywordsai.co/api/v1/traces/ingest';
   
   if (!apiKey) {
     console.error('KEYWORDSAI_API_KEY not found');

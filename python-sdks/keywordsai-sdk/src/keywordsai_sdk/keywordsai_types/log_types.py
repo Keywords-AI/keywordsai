@@ -252,6 +252,12 @@ class KeywordsAILogParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
             return json.dumps(v, default=str)
         return v
 
+    @field_validator("span_name", mode="after")
+    def stringify_span_name(cls, v):
+        if v:
+            return v[:255]  # The DB column is varchar(255)
+        return v
+
 
 class KeywordsAIFullLogParams(KeywordsAILogParams):
     """

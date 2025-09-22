@@ -93,28 +93,42 @@ function responseDataToKeywordsAILog(
               // Convert OpenAI Agents message format to KeywordsAI format
               // const message = {
               //   role: item.role,
-              //   content: Array.isArray(item.content) 
+              //   content: Array.isArray(item.content)
               //     ? item.content.map((c: any) => c.text || c.type === "input_text" ? c.text : String(c)).join(" ")
               //     : String(item.content)
               // };
               // console.log('message', message);
               messages.push(item);
-            } else if (item.type === "function_call" || item.type === "function_call_result") {
+            } else if (
+              item.type === "function_call" ||
+              item.type === "function_call_result"
+            ) {
               data.tool_calls = data.tool_calls || [];
               data.tool_calls.push({
                 type: "function",
                 id: item.callId || item.id,
                 function: {
                   name: item.name,
-                  arguments: typeof item.arguments === "string" ? item.arguments : JSON.stringify(item.arguments || {}),
+                  arguments:
+                    typeof item.arguments === "string"
+                      ? item.arguments
+                      : JSON.stringify(item.arguments || {}),
                 },
-                ...(item.output && { result: typeof item.output === "string" ? item.output : JSON.stringify(item.output) })
+                ...(item.output && {
+                  result:
+                    typeof item.output === "string"
+                      ? item.output
+                      : JSON.stringify(item.output),
+                }),
               });
             } else {
               messages.push(item);
             }
           } catch (e) {
-            console.warn(`Failed to convert item to Message: ${e}, item:`, item);
+            console.warn(
+              `Failed to convert item to Message: ${e}, item:`,
+              item
+            );
             data.output = (data.output || "") + String(item);
           }
         }
@@ -152,13 +166,17 @@ function responseDataToKeywordsAILog(
             const itemType = (item as any).type;
             if (itemType === "message" && (item as any).role === "assistant") {
               // Convert assistant message
-              const content = Array.isArray((item as any).content) 
+              const content = Array.isArray((item as any).content)
                 ? (item as any).content.map((c: any) => {
-                    if (typeof c === "object" && c !== null && (c.type === "output_text" || c.type === "text")) {
+                    if (
+                      typeof c === "object" &&
+                      c !== null &&
+                      (c.type === "output_text" || c.type === "text")
+                    ) {
                       // Handle output_text and text content with annotations
-                      const contentItem: any = { 
+                      const contentItem: any = {
                         type: c.type,
-                        text: c.text 
+                        text: c.text,
                       };
                       if (c.annotations && Array.isArray(c.annotations)) {
                         contentItem.annotations = c.annotations;
@@ -171,20 +189,31 @@ function responseDataToKeywordsAILog(
                     return c.text || String(c);
                   })
                 : String((item as any).content);
-              
+
               const message: any = {
                 role: "assistant",
-                content: content
+                content: content,
               };
-              
+
               // If content is an array and has structured items with annotations, preserve the structure
-              if (Array.isArray(content) && content.some((c: any) => typeof c === "object" && (c.type === "output_text" || c.type === "text"))) {
+              if (
+                Array.isArray(content) &&
+                content.some(
+                  (c: any) =>
+                    typeof c === "object" &&
+                    (c.type === "output_text" || c.type === "text")
+                )
+              ) {
                 message.content = content;
               } else if (Array.isArray(content)) {
                 // Convert to string if no structured content
-                message.content = content.map((c: any) => typeof c === "object" ? c.text || String(c) : String(c)).join(" ");
+                message.content = content
+                  .map((c: any) =>
+                    typeof c === "object" ? c.text || String(c) : String(c)
+                  )
+                  .join(" ");
               }
-              
+
               completionMessages.push(message);
             } else if (itemType === "function_call") {
               data.tool_calls = data.tool_calls || [];
@@ -194,7 +223,7 @@ function responseDataToKeywordsAILog(
                 function: {
                   name: (item as any).name,
                   arguments: (item as any).arguments,
-                }
+                },
               });
             } else {
               data.output = (data.output || "") + String(item);
@@ -306,7 +335,13 @@ function customDataToKeywordsAILog(
   data.metadata = spanData.data;
 
   // If the custom data contains specific fields that map to KeywordsAI fields, extract them
-  const keys = ["input", "output", "model", "prompt_tokens", "completion_tokens"];
+  const keys = [
+    "input",
+    "output",
+    "model",
+    "prompt_tokens",
+    "completion_tokens",
+  ];
   for (const key of keys) {
     if (key in spanData.data) {
       (data as any)[key] = spanData.data[key];
@@ -363,16 +398,18 @@ export class KeywordsAISpanExporter implements TracingExporter {
 
   private resolveEndpoint(baseURL: string | undefined): string {
     if (!baseURL) {
-      return "https://api.keywordsai.co/api/openai/v1/traces/ingest";
+      return `https://api.keywordsai.co/api/v1/traces/ingest`;
     }
     if (baseURL.endsWith("/api")) {
-      return `${baseURL}/openai/v1/traces/ingest`;
+      return `${baseURL}/v1/traces/ingest`;
     }
-    return `${baseURL}/api/openai/v1/traces/ingest`;
+    return `${baseURL}/api/v1/traces/ingest`;
   }
 
   constructor({
-    apiKey = process.env.KEYWORDSAI_API_KEY || process.env.OPENAI_API_KEY || null,
+    apiKey = process.env.KEYWORDSAI_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      null,
     organization = process.env.OPENAI_ORG_ID || null,
     project = process.env.OPENAI_PROJECT_ID || null,
     endpoint = this.resolveEndpoint(process.env.KEYWORDSAI_BASE_URL),
@@ -402,7 +439,10 @@ export class KeywordsAISpanExporter implements TracingExporter {
     console.log(`Keywords AI exporter endpoint changed to: ${endpoint}`);
   }
 
-  private keywordsAIExport(item: Trace | Span<any>, allItems?: (Trace | Span<any>)[]): Partial<KeywordsPayload> | null {
+  private keywordsAIExport(
+    item: Trace | Span<any>,
+    allItems?: (Trace | Span<any>)[]
+  ): Partial<KeywordsPayload> | null {
     // First try the native export method
     if (this.isTrace(item)) {
       // Trace objects don't have timing data - they represent the workflow container
@@ -413,8 +453,8 @@ export class KeywordsAISpanExporter implements TracingExporter {
 
       if (allItems) {
         // Find all spans belonging to this trace
-        const traceSpans = allItems.filter(i => 
-          this.isSpan(i) && i.traceId === item.traceId
+        const traceSpans = allItems.filter(
+          (i) => this.isSpan(i) && i.traceId === item.traceId
         ) as Span<any>[];
 
         if (traceSpans.length > 0) {
@@ -424,7 +464,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
             if (!spanStart) return earliest;
             return !earliest || spanStart < earliest ? spanStart : earliest;
           }, null as Date | null);
-          
+
           const latestEnd = traceSpans.reduce((latest, span) => {
             const spanEnd = span.endedAt ? new Date(span.endedAt) : null;
             if (!spanEnd) return latest;
@@ -438,7 +478,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
           }
         }
       }
-      
+
       const traceData: Partial<KeywordsPayload> = {
         trace_unique_id: item.traceId,
         span_unique_id: item.traceId,
@@ -448,16 +488,16 @@ export class KeywordsAISpanExporter implements TracingExporter {
         start_time: startTime,
         timestamp: endTime,
         latency: latency,
-      }
+      };
 
       // Extract custom metadata from trace if available
       try {
         const traceJson = JSON.parse(JSON.stringify(item));
-        if (traceJson.metadata && typeof traceJson.metadata === 'object') {
+        if (traceJson.metadata && typeof traceJson.metadata === "object") {
           // Merge trace metadata with any existing metadata
           traceData.metadata = {
             ...traceData.metadata,
-            ...traceJson.metadata
+            ...traceJson.metadata,
           };
         }
       } catch (e) {
@@ -476,7 +516,9 @@ export class KeywordsAISpanExporter implements TracingExporter {
         trace_unique_id: item.traceId,
         span_unique_id: item.spanId,
         span_parent_id: parentId || undefined,
-        start_time: spanJson.started_at ? new Date(spanJson.started_at) : undefined,
+        start_time: spanJson.started_at
+          ? new Date(spanJson.started_at)
+          : undefined,
         timestamp: spanJson.ended_at ? new Date(spanJson.ended_at) : undefined,
         error_bit: item.error ? 1 : 0,
         status_code: item.error ? 400 : 200,
@@ -484,17 +526,23 @@ export class KeywordsAISpanExporter implements TracingExporter {
       };
 
       // Calculate latency from timestamps
-      if (data.timestamp && data.start_time && data.timestamp instanceof Date && data.start_time instanceof Date) {
-        data.latency = (data.timestamp.getTime() - data.start_time.getTime()) / 1000;
+      if (
+        data.timestamp &&
+        data.start_time &&
+        data.timestamp instanceof Date &&
+        data.start_time instanceof Date
+      ) {
+        data.latency =
+          (data.timestamp.getTime() - data.start_time.getTime()) / 1000;
       }
 
       // Process the span data based on its type
       try {
         const spanData = item.spanData;
-        
+
         // Log the span data for debugging
         // console.log('Processing span data:', JSON.stringify(spanData, null, 2));
-        
+
         if (this.isResponseSpanData(spanData)) {
           responseDataToKeywordsAILog(data, spanData);
         } else if (this.isFunctionSpanData(spanData)) {
@@ -516,7 +564,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
           data.log_type = "custom";
           data.metadata = spanData;
         }
-        
+
         // Ensure all spans have required fields for KeywordsAI
         if (!data.span_name) {
           data.span_name = spanData?.type || spanData?.name || item.spanId;
@@ -524,7 +572,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
         if (!data.log_type) {
           data.log_type = "custom";
         }
-        
+
         return data;
       } catch (e) {
         console.error(`Error converting span data to KeywordsAI log: ${e}`);
@@ -537,42 +585,61 @@ export class KeywordsAISpanExporter implements TracingExporter {
 
   // Type guards
   private isTrace(item: Trace | Span<any>): item is Trace {
-    return 'traceId' in item && 'name' in item && !('spanId' in item);
+    return "traceId" in item && "name" in item && !("spanId" in item);
   }
 
   private isSpan(item: Trace | Span<any>): item is Span<any> {
-    return 'spanId' in item && 'spanData' in item;
+    return "spanId" in item && "spanData" in item;
   }
 
   private isResponseSpanData(data: any): data is ResponseSpanData {
-    return data && data.type === 'response';
+    return data && data.type === "response";
   }
 
   private isFunctionSpanData(data: any): data is FunctionSpanData {
-    return data && data.type === 'function' && typeof data.name === 'string';
+    return data && data.type === "function" && typeof data.name === "string";
   }
 
   private isGenerationSpanData(data: any): data is GenerationSpanData {
-    return data && data.type === 'generation';
+    return data && data.type === "generation";
   }
 
   private isHandoffSpanData(data: any): data is HandoffSpanData {
-    return data && data.type === 'handoff' && 'from_agent' in data && 'to_agent' in data;
+    return (
+      data &&
+      data.type === "handoff" &&
+      "from_agent" in data &&
+      "to_agent" in data
+    );
   }
 
   private isCustomSpanData(data: any): data is CustomSpanData {
-    return data && typeof data.name === 'string' && 'data' in data && data.type !== 'agent' && data.type !== 'function' && data.type !== 'response';
+    return (
+      data &&
+      typeof data.name === "string" &&
+      "data" in data &&
+      data.type !== "agent" &&
+      data.type !== "function" &&
+      data.type !== "response"
+    );
   }
 
   private isAgentSpanData(data: any): data is AgentSpanData {
-    return data && data.type === 'agent' && typeof data.name === 'string';
+    return data && data.type === "agent" && typeof data.name === "string";
   }
 
   private isGuardrailSpanData(data: any): data is GuardrailSpanData {
-    return data && typeof data.name === 'string' && typeof data.triggered === 'boolean';
+    return (
+      data &&
+      typeof data.name === "string" &&
+      typeof data.triggered === "boolean"
+    );
   }
 
-  async export(items: (Trace | Span<any>)[], signal?: AbortSignal): Promise<void> {
+  async export(
+    items: (Trace | Span<any>)[],
+    signal?: AbortSignal
+  ): Promise<void> {
     if (!items.length) {
       return;
     }
@@ -586,13 +653,13 @@ export class KeywordsAISpanExporter implements TracingExporter {
 
     // Process each item with our custom exporter
     const processedData = items
-      .map(item => this.keywordsAIExport(item, items))
+      .map((item) => this.keywordsAIExport(item, items))
       .filter((item): item is Partial<KeywordsPayload> => item !== null);
 
     // If we have spans but no trace, create a synthetic root trace with calculated timing
-    const spans = items.filter(item => this.isSpan(item)) as Span<any>[];
-    const traces = items.filter(item => this.isTrace(item)) as Trace[];
-    
+    const spans = items.filter((item) => this.isSpan(item)) as Span<any>[];
+    const traces = items.filter((item) => this.isTrace(item)) as Trace[];
+
     if (spans.length > 0 && traces.length === 0) {
       // Create a synthetic root trace from span data
       const traceId = spans[0].traceId;
@@ -601,7 +668,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
         if (!spanStart) return earliest;
         return !earliest || spanStart < earliest ? spanStart : earliest;
       }, null as Date | null);
-      
+
       const latestEnd = spans.reduce((latest, span) => {
         const spanEnd = span.endedAt ? new Date(span.endedAt) : null;
         if (!spanEnd) return latest;
@@ -624,15 +691,21 @@ export class KeywordsAISpanExporter implements TracingExporter {
         try {
           const firstSpan = spans[0];
           const spanJson = JSON.parse(JSON.stringify(firstSpan));
-          if (spanJson._trace && spanJson._trace.metadata && typeof spanJson._trace.metadata === 'object') {
+          if (
+            spanJson._trace &&
+            spanJson._trace.metadata &&
+            typeof spanJson._trace.metadata === "object"
+          ) {
             // Merge trace metadata with any existing metadata
             syntheticTrace.metadata = {
               ...syntheticTrace.metadata,
-              ...spanJson._trace.metadata
+              ...spanJson._trace.metadata,
             };
           }
         } catch (e) {
-          console.warn(`Failed to extract metadata from span for synthetic trace: ${e}`);
+          console.warn(
+            `Failed to extract metadata from span for synthetic trace: ${e}`
+          );
         }
 
         processedData.unshift(syntheticTrace);
@@ -682,7 +755,9 @@ export class KeywordsAISpanExporter implements TracingExporter {
         // If the response is a client error (4xx), we won't retry
         if (response.status >= 400 && response.status < 500) {
           const errorText = await response.text();
-          console.error(`Keywords AI client error ${response.status}: ${errorText}`);
+          console.error(
+            `Keywords AI client error ${response.status}: ${errorText}`
+          );
           return;
         }
 
@@ -705,7 +780,7 @@ export class KeywordsAISpanExporter implements TracingExporter {
 
       // Exponential backoff + jitter
       const sleepTime = delay + Math.random() * 0.1 * delay; // 10% jitter
-      await new Promise(resolve => setTimeout(resolve, sleepTime * 1000));
+      await new Promise((resolve) => setTimeout(resolve, sleepTime * 1000));
       delay = Math.min(delay * 2, this.maxDelay);
     }
   }
@@ -729,12 +804,14 @@ export class KeywordsAITraceProcessor extends BatchTraceProcessor {
   private keywordsExporter: KeywordsAISpanExporter;
 
   constructor({
-    apiKey = process.env.KEYWORDSAI_API_KEY || process.env.OPENAI_API_KEY || null,
+    apiKey = process.env.KEYWORDSAI_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      null,
     organization = process.env.OPENAI_ORG_ID || null,
     project = process.env.OPENAI_PROJECT_ID || null,
-    endpoint = process.env.KEYWORDSAI_BASE_URL ? 
-      `${process.env.KEYWORDSAI_BASE_URL}/openai/v1/traces/ingest` : 
-      "https://api.keywordsai.co/api/openai/v1/traces/ingest",
+    endpoint = process.env.KEYWORDSAI_BASE_URL
+      ? `${process.env.KEYWORDSAI_BASE_URL}/v1/traces/ingest`
+      : "https://api.keywordsai.co/api/v1/traces/ingest",
     maxRetries = 3,
     baseDelay = 1.0,
     maxDelay = 30.0,

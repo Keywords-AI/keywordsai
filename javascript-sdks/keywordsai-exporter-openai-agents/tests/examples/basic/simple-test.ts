@@ -53,8 +53,8 @@ console.log('📡 KeywordsAI Exporter Configuration:');
 console.log('  API Key:', process.env.KEYWORDSAI_API_KEY ? '***' + process.env.KEYWORDSAI_API_KEY.slice(-4) : 'Not set');
 console.log('  Base URL:', process.env.KEYWORDSAI_BASE_URL || 'Using default');
 console.log('  Expected Endpoint:', process.env.KEYWORDSAI_BASE_URL ? 
-  `${process.env.KEYWORDSAI_BASE_URL}/openai/v1/traces/ingest` : 
-  'https://api.keywordsai.co/api/openai/v1/traces/ingest');
+  `${process.env.KEYWORDSAI_BASE_URL}/v1/traces/ingest` : 
+  'https://api.keywordsai.co/api/v1/traces/ingest');
 
 // Set up our custom exporter
 setTraceProcessors([

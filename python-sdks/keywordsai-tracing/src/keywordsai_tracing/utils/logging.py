@@ -85,13 +85,12 @@ def build_spans_export_preview(spans: List[Any]) -> List[Dict[str, Any]]:
                     x in str(k).lower() for x in HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS
                 )
             ]
-
             preview.append(
                 {
                     "name": getattr(s, "name", "<unknown>"),
                     "trace_id": format(ctx.trace_id, "032x") if ctx else None,
                     "span_id": format(ctx.span_id, "016x") if ctx else None,
-                    "parent_span_id": getattr(s, "parent_span_id", None),
+                    "parent_span_id": getattr(s._parent, "span_id", None),
                     "kind": attrs.get("traceloop.span.kind"),
                     "entity_path": attrs.get("traceloop.entity.path"),
                     "attributes_count": len(attrs),
