@@ -531,9 +531,58 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parseTools(span: ReadableSpan): KeywordsPayload["tools"] | undefined {
     try {
-      const tools = span.attributes["ai.prompt.tools"] || [];
-      const parsed = Array.isArray(tools) ? tools : [tools];
-      return parsed.map((tool) => JSON.parse(String(tool)));
+      const tools = span.attributes["ai.prompt.tools"];
+      if (!tools) return undefined;
+
+      const rawList = Array.isArray(tools) ? tools : [tools];
+
+      // Normalize tool definitions to KeywordsAI FunctionToolSchema
+      const normalized = rawList
+        .map((tool) => {
+          try {
+            return typeof tool === "string" ? JSON.parse(tool) : tool;
+          } catch {
+            return undefined;
+          }
+        })
+        .filter((t): t is Record<string, any> => !!t)
+        .map((t) => {
+          // If already in expected shape, return as is
+          if (
+            t &&
+            typeof t === "object" &&
+            t.type === "function" &&
+            t.function &&
+            typeof t.function === "object"
+          ) {
+            return t;
+          }
+
+          // Handle OpenAI/Vercel AI SDK style: { type: 'function', name, description, parameters }
+          if (
+            t &&
+            typeof t === "object" &&
+            (t as any).type === "function" &&
+            ("name" in t || "parameters" in t || "description" in t)
+          ) {
+            const name = (t as any).name;
+            const description = (t as any).description;
+            const parameters = (t as any).parameters;
+            return {
+              type: "function",
+              function: {
+                ...(typeof name === "string" ? { name } : {}),
+                ...(typeof description === "string" ? { description } : {}),
+                ...(parameters !== undefined ? { parameters } : {}),
+              },
+            } as any;
+          }
+
+          // Fallback: return as-is; schema will catch if invalid
+          return t as any;
+        });
+
+      return normalized as any;
     } catch {
       return undefined;
     }
