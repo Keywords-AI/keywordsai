@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Any, Dict, Optional, Union
 from opentelemetry import trace, context as context_api
 from opentelemetry.trace.span import Span
@@ -7,6 +8,7 @@ from opentelemetry.trace import Status, StatusCode
 from keywordsai_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
 from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
+from opentelemetry.semconv_ai import SpanAttributes
 
 from .tracer import KeywordsAITracer
 from ..utils.logging import get_keywordsai_logger
@@ -136,9 +138,11 @@ class KeywordsAIClient:
                 if isinstance(keywordsai_params, KeywordsAIParams) 
                 else KeywordsAIParams.model_validate(keywordsai_params)
             )
-            
+            # Dump once so we can re-use normalized values
+            values = validated_params.model_dump(mode="json")
+
             # Set attributes based on the mapping
-            for key, value in validated_params.model_dump(mode="json").items():
+            for key, value in values.items():
                 if key in KEYWORDSAI_SPAN_ATTRIBUTES_MAP and key != "metadata":
                     try:
                         span.set_attribute(KEYWORDSAI_SPAN_ATTRIBUTES_MAP[key], value)
@@ -159,6 +163,32 @@ class KeywordsAIClient:
                             logger.warning(
                                 f"Failed to set metadata attribute {metadata_key}={metadata_value}: {str(e)}"
                             )
+
+            # Special handling: allow overriding entity input/output directly
+            # We serialize to JSON if complex, otherwise keep strings as-is
+            def _serialize_io(v: Any) -> str:
+                if isinstance(v, str):
+                    return v
+                try:
+                    return json.dumps(v)
+                except Exception:
+                    return str(v)
+
+            if "input" in values and values.get("input") is not None:
+                try:
+                    span.set_attribute(
+                        SpanAttributes.TRACELOOP_ENTITY_INPUT, _serialize_io(values.get("input"))
+                    )
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Failed to set entity input attribute: {str(e)}")
+
+            if "output" in values and values.get("output") is not None:
+                try:
+                    span.set_attribute(
+                        SpanAttributes.TRACELOOP_ENTITY_OUTPUT, _serialize_io(values.get("output"))
+                    )
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Failed to set entity output attribute: {str(e)}")
                             
         except ValidationError as e:
             logger.warning(f"Failed to validate KeywordsAI params: {str(e.errors(include_url=False))}")

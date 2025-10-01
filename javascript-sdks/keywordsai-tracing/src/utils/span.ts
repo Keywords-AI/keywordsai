@@ -1,4 +1,5 @@
 import { trace, Tracer, Span, SpanStatusCode } from "@opentelemetry/api";
+import { SpanAttributes } from "@traceloop/ai-semantic-conventions";
 import { KEYWORDSAI_PACKAGE_NAME } from "../constants/index.js";
 import {
   KeywordsAIParamsSchema,
@@ -83,6 +84,47 @@ export const updateCurrentSpan = (
     // Set KeywordsAI-specific attributes
     if (keywordsaiParams) {
       setKeywordsAIAttributes(currentSpan, keywordsaiParams);
+
+      // Special handling: allow overriding entity input/output directly via keywordsaiParams
+      try {
+        const maybeInput = (keywordsaiParams as any)["input"];
+        if (maybeInput !== undefined && maybeInput !== null) {
+          const serialized =
+            typeof maybeInput === "string" ? maybeInput : JSON.stringify(maybeInput);
+          currentSpan.setAttribute(
+            SpanAttributes.TRACELOOP_ENTITY_INPUT,
+            serialized
+          );
+          console.debug(
+            "[KeywordsAI Debug] Overrode span input via keywordsaiParams.input"
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "[KeywordsAI Debug] Failed to set entity input from keywordsaiParams:",
+          error
+        );
+      }
+
+      try {
+        const maybeOutput = (keywordsaiParams as any)["output"];
+        if (maybeOutput !== undefined && maybeOutput !== null) {
+          const serialized =
+            typeof maybeOutput === "string" ? maybeOutput : JSON.stringify(maybeOutput);
+          currentSpan.setAttribute(
+            SpanAttributes.TRACELOOP_ENTITY_OUTPUT,
+            serialized
+          );
+          console.debug(
+            "[KeywordsAI Debug] Overrode span output via keywordsaiParams.output"
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "[KeywordsAI Debug] Failed to set entity output from keywordsaiParams:",
+          error
+        );
+      }
     }
 
     // Set generic attributes
