@@ -30,5 +30,8 @@ def update_attributes_test(input: str):
         name=f"update_attributes_test",
     )
 
+    some_desired_output = "Some desired output"
+    return some_desired_output
+
 if __name__ == "__main__":
     update_attributes_test("Some input")
