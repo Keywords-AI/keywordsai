@@ -17,8 +17,7 @@ def update_attributes_test(input: str):
     force_set_attributes = {
         SpanAttributes.TRACELOOP_ENTITY_INPUT: json.dumps(
             {"args": [], "kwargs": {"text": "hiiiiiii"}}
-        ),
-        SpanAttributes.TRACELOOP_ENTITY_OUTPUT: json.dumps("byeeee"),
+        )
     }
 
     client.update_current_span(
@@ -32,6 +31,7 @@ def update_attributes_test(input: str):
 
     some_desired_output = "Some desired output"
     return some_desired_output
+
 
 if __name__ == "__main__":
     update_attributes_test("Some input")
