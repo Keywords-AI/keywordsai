@@ -9,8 +9,6 @@ from keywordsai_tracing.decorators import workflow
 import os
 
 k_tl = KeywordsAITelemetry()
-os.environ["KEYWORDSAI_API_KEY"] = "test"
-
 client = k_tl.get_client()
 
 
