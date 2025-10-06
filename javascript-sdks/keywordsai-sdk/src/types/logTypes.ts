@@ -203,14 +203,40 @@ const ToolChoiceSchema = z
   .optional();
 
 // Function tool schema for BasicLLMParams
-const FunctionToolSchema = z.object({
-  type: z.literal("function"),
-  function: z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    parameters: z.record(z.any()).optional(),
-  }),
-});
+// Accept both OpenAI-style nested `{ type: "function", function: { ... } }`
+// and flattened `{ type: "function", name, description, parameters }` shapes.
+const FunctionToolSchema = z
+  .union([
+    z.object({
+      type: z.literal("function"),
+      function: z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        parameters: z.record(z.any()).optional(),
+      }),
+    }),
+    z.object({
+      type: z.literal("function"),
+      name: z.string(),
+      description: z.string().optional(),
+      parameters: z.record(z.any()).optional(),
+    }),
+  ])
+  .transform((data) => {
+    if ("function" in data && data.function) {
+      return data;
+    }
+    // Normalize flat shape into nested function object
+    const { name, description, parameters, ...rest } = data as any;
+    return {
+      ...rest,
+      function: {
+        name,
+        ...(description ? { description } : {}),
+        ...(parameters ? { parameters } : {}),
+      },
+    };
+  });
 
 // Base message schema with flexible role
 const MessageSchema = z

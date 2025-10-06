@@ -533,7 +533,33 @@ export class KeywordsAIExporter implements SpanExporter {
     try {
       const tools = span.attributes["ai.prompt.tools"] || [];
       const parsed = Array.isArray(tools) ? tools : [tools];
-      return parsed.map((tool) => JSON.parse(String(tool)));
+      return parsed
+        .map((tool) => {
+          try {
+            return JSON.parse(String(tool));
+          } catch {
+            return undefined;
+          }
+        })
+        .filter(Boolean)
+        .map((tool: any) => {
+          // Accept both nested and flat shapes; normalize to nested
+          if (tool && tool.type === "function") {
+            if (tool.function && typeof tool.function === "object") return tool;
+            // Flat shape -> wrap
+            const { name, description, parameters, ...rest } = tool as any;
+            return {
+              ...rest,
+              type: "function",
+              function: {
+                name,
+                ...(description ? { description } : {}),
+                ...(parameters ? { parameters } : {}),
+              },
+            };
+          }
+          return tool;
+        });
     } catch {
       return undefined;
     }
