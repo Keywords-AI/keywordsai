@@ -28,3 +28,7 @@ RAW_LOG_DATA_TO_DB_COLUMN_MAP: RawDataToDBColumnMap = {
 RAW_EVAL_FORM_TO_DB_COLUMN_MAP: RawDataToDBColumnMap = {
     "conditions": "passing_conditions",  # As of 2025-08-07, deprecated conditions to use centralized passing_condition based on MetricFilterParamPydantic
 }
+
+RAW_EVAL_CONFIGURATIONS_TO_DB_COLUMN_MAP: RawDataToDBColumnMap = {
+    "human_annotation_choices": "categorical_choices",
+}

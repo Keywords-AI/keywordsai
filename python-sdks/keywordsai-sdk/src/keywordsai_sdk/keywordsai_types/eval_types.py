@@ -12,7 +12,7 @@ from keywordsai_sdk.keywordsai_types.mixin_types.filter_mixin import (
     BaseFilterMixinPydantic,
 )
 from keywordsai_sdk.keywordsai_types.monitoring_types import ConditionParams
-from keywordsai_sdk.utils.mixins import PreprocessEvalFormMixin
+from keywordsai_sdk.utils.mixins import PreprocessEvalConfigurationsMixin, PreprocessEvalFormMixin
 
 Operator = Literal[
     "eq", "neq", "gt", "gte", "lt", "lte", "contains", "starts_with", "ends_with"
@@ -43,7 +43,7 @@ FieldInputType = Literal[
     "input_arrays",  # This is for array of arrays of strings
     "textarea_arrays",  # This is for array of arrays of strings
     "json",
-    "code"
+    "code",
 ]
 
 
@@ -246,7 +246,7 @@ class EvalErrorType(KeywordsAIBaseModel):
     error_type: str
 
 
-class EvalConfigurations(KeywordsAIBaseModel):
+class EvalConfigurations(PreprocessEvalConfigurationsMixin, KeywordsAIBaseModel):
     id: str
     organization_id: int
     unique_organization_id: str = ""
@@ -256,6 +256,7 @@ class EvalConfigurations(KeywordsAIBaseModel):
     eval_class: str
     configurations: BaseEvalFormType
     eval_code_snippet: str = ""
+    categorical_choices: Optional[List[dict]] = []
     name: str = ""
 
     def __init__(self, **kwargs):

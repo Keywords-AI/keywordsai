@@ -1,10 +1,12 @@
 from pydantic import model_validator
 
 from keywordsai_sdk.constants._internal_constants import (
+    RAW_EVAL_CONFIGURATIONS_TO_DB_COLUMN_MAP,
     RAW_EVAL_FORM_TO_DB_COLUMN_MAP,
     RAW_LOG_DATA_TO_DB_COLUMN_MAP,
     RawDataToDBColumnMap,
 )
+
 
 def _map_fields_to_db_column(data: dict, mapping: RawDataToDBColumnMap):
     for key, value in mapping.items():
@@ -59,3 +61,9 @@ class PreprocessLogDataMixin(PreprocessDataMixin):
 
 class PreprocessEvalFormMixin(PreprocessDataMixin):
     _raw_data_to_db_column_map: RawDataToDBColumnMap = RAW_EVAL_FORM_TO_DB_COLUMN_MAP
+
+
+class PreprocessEvalConfigurationsMixin(PreprocessDataMixin):
+    _raw_data_to_db_column_map: RawDataToDBColumnMap = (
+        RAW_EVAL_CONFIGURATIONS_TO_DB_COLUMN_MAP
+    )

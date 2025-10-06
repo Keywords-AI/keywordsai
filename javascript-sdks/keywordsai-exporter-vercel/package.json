@@ -1,7 +1,7 @@
 {
   "name": "@keywordsai/exporter-vercel",
   "type": "module",
-  "version": "1.0.21",
+  "version": "1.0.23",
   "packageManager": "yarn@4.9.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

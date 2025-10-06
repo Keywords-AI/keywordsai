@@ -230,6 +230,7 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     # region: unique identifiers
     id: Optional[Union[int, str]] = None
     unique_id: Optional[str] = None
+    original_copy_unique_id: Optional[str] = None
     custom_identifier: Optional[Union[str, int]] = None
     response_id: Optional[str] = None  # The id of the response from the llm provider
     # endregion: unique identifiers

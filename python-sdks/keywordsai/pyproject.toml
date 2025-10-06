@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai"
-version = "1.0.3"
+version = "1.0.4"
 description = "A package that helps interacting with Keywords AI monitoring, evaluation & user analytics APIs"
 authors = ["Raymond Huang <raymond@keywordsai.co>"]
 license = "Apache 2.0"
@@ -11,7 +11,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">3.9,<4.0"
-httpx = "^0.25.0"
+httpx = "^0.28.1"
 keywordsai-sdk = "^0.4.83"
 
 
