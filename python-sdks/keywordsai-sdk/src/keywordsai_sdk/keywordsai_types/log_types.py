@@ -32,7 +32,7 @@ from .services_types.mem0_types import Mem0Params
 from .chat_completion_types import ProviderCredentialType
 
 
-class KeywordsAILogParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
+class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
     """
     Public-facing logging parameters for Keywords AI.
     These are the parameters that users can control when logging requests, used in creation method in the SDK

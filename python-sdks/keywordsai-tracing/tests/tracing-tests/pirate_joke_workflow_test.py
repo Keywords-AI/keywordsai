@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-loaded = load_dotenv("./tests/.env", override=True)
+loaded = load_dotenv(".env", override=True)
 
 # region: setup
 import os
@@ -182,7 +182,6 @@ def audience_interaction(joke: str):
 
 @workflow(name="pirate_joke_plus_audience_reactions")
 def pirate_joke_plus_audience():
-
     joke = (
         joke_workflow()
     )  # This show case the basic workflow usage and compatibility with the OpenAI SDK

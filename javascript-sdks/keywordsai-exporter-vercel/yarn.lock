@@ -9,7 +9,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@keywordsai/exporter-vercel@workspace:."
   dependencies:
-    "@keywordsai/keywordsai-sdk": "npm:^0.0.8"
+    "@keywordsai/keywordsai-sdk": "npm:^0.0.18"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/core": "npm:^2.0.1"
     "@opentelemetry/sdk-trace-base": "npm:^2.0.1"
@@ -17,15 +17,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@keywordsai/keywordsai-sdk@npm:^0.0.8":
-  version: 0.0.8
-  resolution: "@keywordsai/keywordsai-sdk@npm:0.0.8"
+"@keywordsai/keywordsai-sdk@npm:^0.0.18":
+  version: 0.0.18
+  resolution: "@keywordsai/keywordsai-sdk@npm:0.0.18"
   dependencies:
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/core": "npm:^2.0.1"
     "@opentelemetry/sdk-trace-base": "npm:^2.0.1"
-    zod: "npm:^3.25.58"
-  checksum: 10c0/f1f73cd8c7869f173e24c1af9ac9cf0f6239506e00439dc0c4dfda45160a60cfc451d2233332ba1c596b742d17c3f0298f47b3c88756cea12d96ef88267e2396
+    typescript: "npm:^5.8.3"
+    zod: "npm:^4.1.12"
+  checksum: 10c0/cdd7273f5df7fcd7b2f310f4143729ed5ecdde407db24d528c93db32b06077ac7016608948e56468f9e6714a8d5980de30edd688d936a7818f37180649e80fc5
   languageName: node
   linkType: hard
 
@@ -88,6 +89,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:^5.8.3":
+  version: 5.9.3
+  resolution: "typescript@npm:5.9.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A^5.8.3#optional!builtin<compat/typescript>":
+  version: 5.9.3
+  resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/ad09fdf7a756814dce65bc60c1657b40d44451346858eea230e10f2e95a289d9183b6e32e5c11e95acc0ccc214b4f36289dcad4bf1886b0adb84d711d336a430
+  languageName: node
+  linkType: hard
+
 "undici-types@npm:~7.8.0":
   version: 7.8.0
   resolution: "undici-types@npm:7.8.0"
@@ -95,9 +116,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.25.58":
-  version: 3.25.63
-  resolution: "zod@npm:3.25.63"
-  checksum: 10c0/ce09c6ae327a66629e67340856ec19b6b4ba2c28691a2de1e618a5cc717685c2b4e9baa370cf81c34f453fc652733ecfc9a7d5d966570a22472999931abd5ada
+"zod@npm:^4.1.12":
+  version: 4.1.12
+  resolution: "zod@npm:4.1.12"
+  checksum: 10c0/b64c1feb19e99d77075261eaf613e0b2be4dfcd3551eff65ad8b4f2a079b61e379854d066f7d447491fcf193f45babd8095551a9d47973d30b46b6d8e2c46774
   languageName: node
   linkType: hard

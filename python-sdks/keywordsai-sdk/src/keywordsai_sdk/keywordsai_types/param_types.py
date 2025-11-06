@@ -44,7 +44,7 @@ class OverrideConfig(KeywordsAIBaseModel):
 class PromptParam(KeywordsAIBaseModel):
     prompt_id: Optional[str] = None
     is_custom_prompt: Optional[bool] = False
-    version: Optional[int] = None
+    version: Optional[Union[int, Literal["latest"]]] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
     override: Optional[bool] = (
@@ -259,8 +259,8 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
 
     # region: log input/output
     storage_object_key: Optional[str] = None
-    input: Optional[str] = None
-    output: Optional[str] = None
+    input: Optional[Union[str, dict, list]] = None
+    output: Optional[Union[str, dict, list]] = None
     prompt_messages: Optional[List[Message]] = None
     ideal_output: Optional[str] = None
     completion_message: Optional[Message] = None

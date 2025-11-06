@@ -17,7 +17,8 @@ def update_attributes_test(input: str):
     force_set_attributes = {
         SpanAttributes.TRACELOOP_ENTITY_INPUT: json.dumps(
             {"args": [], "kwargs": {"text": "hiiiiiii"}}
-        )
+        ),
+        "cost": 100
     }
 
     client.update_current_span(

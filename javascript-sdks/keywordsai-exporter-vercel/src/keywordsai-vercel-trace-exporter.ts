@@ -1,8 +1,8 @@
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 import { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import {
-  KeywordsPayload,
-  KeywordsPayloadSchema,
+  KeywordsAIPayload,
+  KeywordsAIPayloadSchema,
   LogType,
 } from "@keywordsai/keywordsai-sdk";
 import { VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE } from "./constants/index.js";
@@ -29,7 +29,7 @@ export class KeywordsAIExporter implements SpanExporter {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly url: string;
-  private resolveURL(baseURL: string|undefined) {
+  private resolveURL(baseURL: string | undefined) {
     if (!baseURL) {
       return "https://api.keywordsai.co/api/integrations/v1/traces/ingest";
     }
@@ -75,25 +75,27 @@ export class KeywordsAIExporter implements SpanExporter {
 
       // Deduplicate spans - prefer doStream/doGenerate over their parent spans
       const deduplicatedSpans = this.deduplicateSpans(aiSdkSpans);
+      // const deduplicatedSpans = aiSdkSpans; // try keeping all spans for now
+
       this.logDebug(
         `Filtered ${aiSdkSpans.length} spans to ${deduplicatedSpans.length} after deduplication`
       );
 
       // Prepare all payloads
-      const allPayloads: KeywordsPayload[] = [];
+      const allPayloads: KeywordsAIPayload[] = [];
 
       for (const span of deduplicatedSpans) {
         try {
           this.logDebug("Creating payload for span", span);
           const rawPayload = await this.createPayload(span, sortedSpans);
           try {
-            const validatedPayload = KeywordsPayloadSchema.parse(rawPayload);
+            const validatedPayload = KeywordsAIPayloadSchema.parse(rawPayload);
             allPayloads.push(validatedPayload);
           } catch (error) {
             this.logDebug("Payload validation failed", error);
             // If validation fails, include the raw payload in full_request
             try {
-              const fallbackPayload = KeywordsPayloadSchema.parse({
+              const fallbackPayload = KeywordsAIPayloadSchema.parse({
                 ...rawPayload,
                 full_request: rawPayload,
               });
@@ -101,7 +103,7 @@ export class KeywordsAIExporter implements SpanExporter {
             } catch (fallbackError) {
               this.logDebug("Fallback validation also failed", fallbackError);
               // Last resort - create minimal valid payload with error info
-              const minimalPayload = KeywordsPayloadSchema.parse({
+              const minimalPayload = KeywordsAIPayloadSchema.parse({
                 model: "unknown",
                 prompt_messages: [
                   { role: "system", content: "Error processing span" },
@@ -142,14 +144,14 @@ export class KeywordsAIExporter implements SpanExporter {
   private async createPayload(
     span: ReadableSpan,
     relatedSpans: ReadableSpan[]
-  ): Promise<KeywordsPayload> {
+  ): Promise<KeywordsAIPayload> {
     const metadata = this.parseMetadata(span);
     const isError = span.status.code !== 0;
     const model = this.parseModel(span);
     const toolCalls = this.parseToolCalls(span);
     const messages = this.parseCompletionMessages(span, toolCalls);
 
-    const payload: KeywordsPayload = {
+    const payload: KeywordsAIPayload = {
       model,
       start_time: this.formatTimestamp(span.startTime),
       timestamp: this.formatTimestamp(span.endTime),
@@ -167,6 +169,12 @@ export class KeywordsAIExporter implements SpanExporter {
         ...metadata,
         span_type: span.name, // Add span type to metadata
       },
+      ...(metadata.prompt_unit_price && {
+        prompt_unit_price: parseFloat(metadata.prompt_unit_price),
+      }),
+      ...(metadata.completion_unit_price && {
+        completion_unit_price: parseFloat(metadata.completion_unit_price),
+      }),
       environment: process.env.NODE_ENV || "prod",
       time_to_first_token: this.parseTimeToFirstToken(span),
       trace_unique_id: span.spanContext().traceId,
@@ -289,10 +297,12 @@ export class KeywordsAIExporter implements SpanExporter {
     toolCalls?: any[]
   ): any[] {
     let content = "";
-    
+
     if (span.attributes["ai.response.object"]) {
       try {
-        const response = JSON.parse(String(span.attributes["ai.response.object"]));
+        const response = JSON.parse(
+          String(span.attributes["ai.response.object"])
+        );
         content = String(response.response || "");
       } catch (error) {
         this.logDebug("Error parsing ai.response.object:", error);
@@ -301,7 +311,7 @@ export class KeywordsAIExporter implements SpanExporter {
     } else {
       content = String(span.attributes["ai.response.text"] || "");
     }
-    
+
     const message = {
       role: "assistant",
       content,
@@ -326,14 +336,16 @@ export class KeywordsAIExporter implements SpanExporter {
     return span.duration[0] / 1e9 + span.duration[1] / 1e9;
   }
 
-  private async sendToKeywords(payloads: KeywordsPayload[]): Promise<void> {
+  private async sendToKeywords(payloads: KeywordsAIPayload[]): Promise<void> {
     if (payloads.length === 0) {
       this.logDebug("No payloads to send");
       return;
     }
 
     try {
-      this.logDebug(`Sending ${payloads.length} payloads to Keywords at ${this.url}`);
+      this.logDebug(
+        `Sending ${payloads.length} payloads to Keywords at ${this.url}`
+      );
 
       const response = await fetch(this.url, {
         method: "POST",
@@ -387,12 +399,14 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parsePromptMessages(
     span: ReadableSpan
-  ): KeywordsPayload["prompt_messages"] {
+  ): KeywordsAIPayload["prompt_messages"] {
     try {
       const messages = span.attributes["ai.prompt.messages"];
       const parsedMessages = messages ? JSON.parse(String(messages)) : [];
 
-      return KeywordsPayloadSchema.shape.prompt_messages.parse(parsedMessages);
+      return KeywordsAIPayloadSchema.shape.prompt_messages.parse(
+        parsedMessages
+      );
     } catch (error) {
       this.logDebug("Error parsing messages:", error);
       return [
@@ -406,13 +420,21 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parsePromptTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.input_tokens"] || span.attributes["gen_ai.usage.prompt_tokens"] || "0")
+      String(
+        span.attributes["gen_ai.usage.input_tokens"] ||
+          span.attributes["gen_ai.usage.prompt_tokens"] ||
+          "0"
+      )
     );
   }
 
   private parseCompletionTokens(span: ReadableSpan): number {
     return parseInt(
-      String(span.attributes["gen_ai.usage.output_tokens"] || span.attributes["gen_ai.usage.completion_tokens"] || "0")
+      String(
+        span.attributes["gen_ai.usage.output_tokens"] ||
+          span.attributes["gen_ai.usage.completion_tokens"] ||
+          "0"
+      )
     );
   }
 
@@ -513,7 +535,7 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parseToolChoice(
     span: ReadableSpan
-  ): KeywordsPayload["tool_choice"] | undefined {
+  ): KeywordsAIPayload["tool_choice"] | undefined {
     try {
       const toolChoice = span.attributes["gen_ai.usage.tool_choice"];
       if (!toolChoice) return undefined;
@@ -529,7 +551,9 @@ export class KeywordsAIExporter implements SpanExporter {
     }
   }
 
-  private parseTools(span: ReadableSpan): KeywordsPayload["tools"] | undefined {
+  private parseTools(
+    span: ReadableSpan
+  ): KeywordsAIPayload["tools"] | undefined {
     try {
       const tools = span.attributes["ai.prompt.tools"] || [];
       const parsed = Array.isArray(tools) ? tools : [tools];

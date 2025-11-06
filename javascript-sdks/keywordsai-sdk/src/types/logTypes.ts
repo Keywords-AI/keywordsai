@@ -62,22 +62,22 @@ const ImageContentSchema = BaseContentSchema.extend({
 
 const InputImageSchema = BaseContentSchema.extend({
   file: z.string(),
-  providerData: z.record(z.any()).optional(),
+  providerData: z.record(z.string(), z.any()).optional(),
 });
 
 const FileContentSchema = BaseContentSchema.extend({
   file: z.string(),
-  providerData: z.record(z.any()).optional(),
+  providerData: z.record(z.string(), z.any()).optional(),
 });
 
 const ToolUseContentSchema = BaseContentSchema.extend({
   id: z.string().optional(),
   name: z.string().optional(),
-  input: z.record(z.any()).optional(),
+  input: z.record(z.string(), z.any()).optional(),
 });
 
 const ToolResultContentSchema = BaseContentSchema.extend({
-  tool_use_id: z.string(),
+  tool_use_id: z.any(),
   content: z.string(),
 }).transform((data) => {
   if ("tool_use_id" in data) return data;
@@ -90,7 +90,7 @@ const ToolResultContentSchema = BaseContentSchema.extend({
 
 const OutputTextContentSchema = BaseContentSchema.extend({
   text: z.string(),
-  annotations: z.array(z.union([z.record(z.any()), z.string()])).optional(),
+  annotations: z.array(z.union([z.record(z.string(), z.any()), z.string()])).optional(),
   cache_control: CacheControlSchema.optional(),
 });
 
@@ -112,7 +112,7 @@ const MessageContentSchema = z
           text: z.string(),
         }),
         // Catch-all for other content types
-        z.record(z.any()),
+        z.record(z.string(), z.any()),
       ])
     ),
   ])
@@ -146,7 +146,7 @@ const MessageContentSchema = z
 const ToolCallFunctionSchema = z
   .object({
     name: z.string().optional(),
-    arguments: z.union([z.string(), z.record(z.any())]).optional(),
+    arguments: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
   })
   .catchall(z.any()); // Allow additional properties
 
@@ -212,14 +212,14 @@ const FunctionToolSchema = z
       function: z.object({
         name: z.string(),
         description: z.string().optional(),
-        parameters: z.record(z.any()).optional(),
+        parameters: z.record(z.string(), z.any()).optional(),
       }),
     }),
     z.object({
       type: z.literal("function"),
       name: z.string(),
       description: z.string().optional(),
-      parameters: z.record(z.any()).optional(),
+      parameters: z.record(z.string(), z.any()).optional(),
     }),
   ])
   .transform((data) => {
@@ -244,8 +244,8 @@ const MessageSchema = z
     role: z.string(),
     content: MessageContentSchema.optional(),
     name: z.string().optional(),
-    tool_call_id: z.string().optional(),
-    tool_calls: z.array(ToolCallSchema).optional(),
+    tool_call_id: z.any().optional(),
+    tool_calls: z.array(z.record(z.string(), z.any())).optional(),
     experimental_providerMetadata: z
       .object({
         anthropic: z.object({
@@ -268,7 +268,7 @@ const MessageSchema = z
   });
 
 // Metadata schema
-const MetadataSchema = z.record(z.any()).optional();
+const MetadataSchema = z.record(z.string(), z.any()).optional();
 
 // Usage schema
 const UsageSchema = z.object({
@@ -278,8 +278,8 @@ const UsageSchema = z.object({
   cache_creation_input_tokens: z.number().optional(),
   cache_creation_prompt_tokens: z.number().optional(),
   cache_read_input_tokens: z.number().optional(),
-  completion_tokens_details: z.record(z.any()).optional(),
-  prompt_tokens_details: z.record(z.any()).optional(),
+  completion_tokens_details: z.record(z.string(), z.any()).optional(),
+  prompt_tokens_details: z.record(z.string(), z.any()).optional(),
 });
 
 // Supporting schemas for KeywordsAI params
@@ -290,8 +290,8 @@ const OverrideConfigSchema = z.object({
     .default("override"),
 });
 
-const EvaluatorToRunSchema = z.record(z.any()); // Placeholder for evaluator schema
-const EvalInputsSchema = z.record(z.any()); // Placeholder for eval inputs schema
+const EvaluatorToRunSchema = z.record(z.string(), z.any()); // Placeholder for evaluator schema
+const EvalInputsSchema = z.record(z.string(), z.any()); // Placeholder for eval inputs schema
 
 const EvaluationParamsSchema = z.object({
   evaluators: z.array(EvaluatorToRunSchema).optional().default([]),
@@ -303,7 +303,7 @@ const EvaluationParamsSchema = z.object({
 
 const LoadBalanceModelSchema = z.object({
   model: z.string(),
-  credentials: z.record(z.any()).optional(),
+  credentials: z.record(z.string(), z.any()).optional(),
   weight: z
     .number()
     .refine((val) => val > 0, "Weight has to be greater than 0"),
@@ -329,7 +329,7 @@ const CustomerSchema = z.object({
   period_budget: z.number().optional(),
   markup_percentage: z.number().optional(),
   total_budget: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   rate_limit: z.number().optional(),
 });
 
@@ -360,23 +360,23 @@ const PromptParamSchema = z.object({
   prompt_id: z.string().optional(),
   is_custom_prompt: z.boolean().optional().default(false),
   version: z.number().optional(),
-  variables: z.record(z.any()).optional(),
+  variables: z.record(z.string(), z.any()).optional(),
   echo: z.boolean().optional().default(true),
   override: z.boolean().optional().default(false),
-  override_params: z.record(z.any()).optional(), // BasicLLMParams placeholder
+  override_params: z.record(z.string(), z.any()).optional(), // BasicLLMParams placeholder
   override_config: OverrideConfigSchema.optional(),
 });
 
-const LinkupParamsSchema = z.record(z.any()); // Placeholder
-const Mem0ParamsSchema = z.record(z.any()); // Placeholder
-const ProviderCredentialTypeSchema = z.record(z.any()); // Placeholder
+const LinkupParamsSchema = z.record(z.string(), z.any()); // Placeholder
+const Mem0ParamsSchema = z.record(z.string(), z.any()); // Placeholder
+const ProviderCredentialTypeSchema = z.record(z.string(), z.any()); // Placeholder
 
 // Basic LLM Parameters Schema
 const BasicLLMParamsSchema = z.object({
   echo: z.boolean().optional(),
   frequency_penalty: z.number().optional(),
   logprobs: z.boolean().optional(),
-  logit_bias: z.record(z.number()).optional(),
+  logit_bias: z.record(z.string(), z.number()).optional(),
   messages: z.array(MessageSchema).optional(),
   model: z.string().optional(),
   max_tokens: z.number().optional(),
@@ -386,11 +386,11 @@ const BasicLLMParamsSchema = z.object({
   presence_penalty: z.number().optional(),
   stop: z.union([z.array(z.string()), z.string()]).optional(),
   stream: z.boolean().optional(),
-  stream_options: z.record(z.any()).optional(),
+  stream_options: z.record(z.string(), z.any()).optional(),
   temperature: z.number().optional(),
   timeout: z.number().optional(),
   tools: z.array(FunctionToolSchema).optional(),
-  response_format: z.record(z.any()).optional(),
+  response_format: z.record(z.string(), z.any()).optional(),
   reasoning_effort: z.string().optional(),
   tool_choice: z
     .union([z.enum(["auto", "none", "required"]), ToolChoiceSchema])
@@ -440,11 +440,11 @@ const KeywordsAIParamsSchema = z.object({
   completion_message: MessageSchema.optional(),
   completion_messages: z.array(MessageSchema).optional(),
   completion_tokens: z.number().optional(),
-  full_request: z.union([z.record(z.any()), z.array(z.any())]).optional(),
-  full_response: z.union([z.record(z.any()), z.array(z.any())]).optional(),
+  full_request: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
+  full_response: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
   //#region special response types
-  tool_calls: z.array(z.record(z.any())).optional(),
-  reasoning: z.array(z.record(z.any())).optional(),
+  tool_calls: z.array(z.record(z.string(), z.any())).optional(),
+  reasoning: z.array(z.record(z.string(), z.any())).optional(),
   //#endregion special response types
   //#endregion log input/output
 
@@ -497,9 +497,9 @@ const KeywordsAIParamsSchema = z.object({
   load_balance_group: LoadBalanceGroupSchema.optional(),
   load_balance_models: z.array(LoadBalanceModelSchema).optional(),
   retry_params: RetryParamsSchema.optional(),
-  keywordsai_params: z.record(z.any()).optional(),
+  keywordsai_params: z.record(z.string(), z.any()).optional(),
   //#region deprecated
-  model_name_map: z.record(z.string()).optional(),
+  model_name_map: z.record(z.string(), z.string()).optional(),
   //#endregion deprecated
   //#endregion keywordsai proxy options
 
@@ -531,12 +531,12 @@ const KeywordsAIParamsSchema = z.object({
   //#endregion technical integrations
 
   //#region custom properties
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   //#endregion custom properties
 
   //#region prompt
   prompt: z.union([PromptParamSchema, z.string()]).optional(),
-  variables: z.record(z.any()).optional(),
+  variables: z.record(z.string(), z.any()).optional(),
   //#endregion prompt
 
   //#region llm response timing metrics
@@ -575,6 +575,9 @@ export const KeywordsAIPayloadSchema = KeywordsAIParamsSchema.merge(
   .catchall(z.any());
 
 export type KeywordsAIPayload = z.input<typeof KeywordsAIPayloadSchema>;
+
+// Backward-compatible alias
+export type KeywordsPayload = KeywordsAIPayload;
 
 // Export individual schemas for use elsewhere
 export {

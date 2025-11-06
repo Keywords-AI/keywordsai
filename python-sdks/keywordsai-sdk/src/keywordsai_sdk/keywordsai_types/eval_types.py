@@ -120,8 +120,10 @@ class FieldType(KeywordsAIBaseModel):
 class ScoreMapping(KeywordsAIBaseModel):
     # region: Fields for different types of results
     primary_score: Union[str, None] = None
-    string_result: Union[str, None] = None
-    boolean_result: Union[str, None] = None
+    string_value: Union[str, None] = None
+    boolean_value: Union[str, None] = None
+    categorical_value: Union[str, None] = None
+    json_value: Union[str, None] = None
     # endregion
 
     # region: reserved fields for additional numeric scores
@@ -184,7 +186,8 @@ class EvalParamsDict(TypedDict):
 
 
 class EvaluatorToRun(KeywordsAIBaseModel):
-    evaluator_slug: str
+    evaluator_id: str
+    evaluator_slug: str = None
     run_condition: Optional[ConditionParams] = None
     # TODO: other controlling parameters
 
@@ -258,6 +261,9 @@ class EvalConfigurations(PreprocessEvalConfigurationsMixin, KeywordsAIBaseModel)
     eval_code_snippet: str = ""
     categorical_choices: Optional[List[dict]] = []
     name: str = ""
+    score_value_type: Optional[str] = (
+        "numerical"  # Type of score value (numerical, single_select, boolean, etc.)
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
