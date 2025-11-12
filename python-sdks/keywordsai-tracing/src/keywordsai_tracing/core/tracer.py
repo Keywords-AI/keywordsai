@@ -12,7 +12,6 @@ from opentelemetry.sdk.trace.export import (
     SimpleSpanProcessor,
     BatchSpanProcessor,
 )
-from opentelemetry.instrumentation.threading import ThreadingInstrumentor
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.textmap import TextMapPropagator
 
@@ -46,23 +45,23 @@ class KeywordsAITracer:
         api_endpoint: str = "https://api.keywordsai.co/api",
         api_key: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
-        disable_batch: bool = False,
+        is_batching_enabled: bool = True,
         resource_attributes: Optional[Dict[str, str]] = None,
         instruments: Optional[Set[Instruments]] = None,
         block_instruments: Optional[Set[Instruments]] = None,
         propagator: Optional[TextMapPropagator] = None,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
-        enabled: bool = True,
-        enable_threading_instrumentation: bool = True,
+        is_enabled: bool = True,
+        custom_exporter: Optional[SpanExporter] = None,
     ):
         # Prevent re-initialization
         if hasattr(self, '_initialized'):
             return
             
         self._initialized = True
-        self.enabled = enabled
+        self.is_enabled = is_enabled
         
-        if not enabled:
+        if not is_enabled:
             logging.info("KeywordsAI tracing is disabled")
             return
             
@@ -73,17 +72,18 @@ class KeywordsAITracer:
         # Initialize OpenTelemetry components
         self._setup_tracer_provider(resource_attributes)
         self._setup_span_processor(
-            api_endpoint, api_key, headers, disable_batch, span_postprocess_callback
+            api_endpoint, api_key, headers, is_batching_enabled, span_postprocess_callback, custom_exporter
         )
         self._setup_propagation(propagator)
-        if enable_threading_instrumentation:
-            self._setup_threading()
         self._setup_instrumentations(instruments, block_instruments)
         
         # Register cleanup
         atexit.register(self._cleanup)
         
-        logging.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
+        if custom_exporter:
+            logging.info(f"KeywordsAI tracing initialized with custom exporter")
+        else:
+            logging.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
     
     def _setup_tracer_provider(self, resource_attributes: Dict[str, str]):
         """Initialize the OpenTelemetry TracerProvider"""
@@ -96,19 +96,25 @@ class KeywordsAITracer:
         api_endpoint: str,
         api_key: Optional[str],
         headers: Optional[Dict[str, str]],
-        disable_batch: bool,
+        is_batching_enabled: bool,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]],
+        custom_exporter: Optional[SpanExporter] = None,
     ):
-        """Setup span processor with KeywordsAI exporter"""
+        """Setup span processor with KeywordsAI exporter or custom exporter"""
         # Create exporter
-        exporter = KeywordsAISpanExporter(
-            endpoint=api_endpoint,
-            api_key=api_key,
-            headers=headers or {},
-        )
+        if custom_exporter:
+            # Use provided custom exporter
+            exporter = custom_exporter
+        else:
+            # Default: use HTTP OTLP exporter
+            exporter = KeywordsAISpanExporter(
+                endpoint=api_endpoint,
+                api_key=api_key,
+                headers=headers or {},
+            )
         
         # Choose processor type based on environment
-        if disable_batch or is_notebook():
+        if not is_batching_enabled or is_notebook():
             processor = SimpleSpanProcessor(exporter)
         else:
             processor = BatchSpanProcessor(exporter)
@@ -125,21 +131,17 @@ class KeywordsAITracer:
         if propagator:
             set_global_textmap(propagator)
     
-    def _setup_threading(self):
-        """Setup threading instrumentation for context propagation"""
-        ThreadingInstrumentor().instrument()
-    
     def _setup_instrumentations(
         self,
         instruments: Optional[Set[Instruments]],
         block_instruments: Optional[Set[Instruments]],
     ):
-        """Initialize library instrumentations"""
+        """Initialize library instrumentations (including threading)"""
         init_instrumentations(instruments, block_instruments)
     
     def get_tracer(self, name: str = TRACER_NAME):
         """Get OpenTelemetry tracer instance"""
-        if not self.enabled:
+        if not self.is_enabled:
             return trace.NoOpTracer()
         return self.tracer_provider.get_tracer(name)
     

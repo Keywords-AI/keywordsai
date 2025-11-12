@@ -20,7 +20,7 @@ class TestKeywordsAIClient:
         self.telemetry = KeywordsAITelemetry(
             app_name="test-app",
             api_key="test-key",
-            enabled=True
+            is_enabled=True
         )
     
     def test_get_client_returns_instance(self):

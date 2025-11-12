@@ -14,6 +14,186 @@ This tutorial demonstrates how to build and trace complex LLM workflows using Ke
 pip install keywordsai-tracing openai anthropic
 ```
 
+## Initialization
+
+### KeywordsAITelemetry Configuration
+
+The `KeywordsAITelemetry` class is the main entry point for the SDK. Initialize it once at application startup:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx",  # Or set KEYWORDSAI_API_KEY env var
+)
+```
+
+### All Initialization Parameters
+
+```python
+KeywordsAITelemetry(
+    # Basic Configuration
+    app_name: str = "keywordsai",              # Application name for telemetry
+    api_key: Optional[str] = None,             # API key (or KEYWORDSAI_API_KEY env var)
+    base_url: Optional[str] = None,            # API URL (or KEYWORDSAI_BASE_URL env var)
+    
+    # Logging
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
+    
+    # Performance
+    is_batching_enabled: Optional[bool] = None,  # Enable background batch processing (default: True)
+    
+    # Instrumentation (see Instrumentation section below)
+    instruments: Optional[Set[Instruments]] = None,        # Specific instruments to enable
+    block_instruments: Optional[Set[Instruments]] = None,  # Instruments to disable
+    
+    # Advanced
+    headers: Optional[Dict[str, str]] = None,              # Additional HTTP headers
+    resource_attributes: Optional[Dict[str, str]] = None,  # Resource attributes
+    span_postprocess_callback: Optional[Callable] = None,  # Span processing callback
+    is_enabled: bool = True,                               # Enable/disable telemetry
+    custom_exporter: Optional[SpanExporter] = None,        # Custom span exporter
+)
+```
+
+### Parameter Reference
+
+#### **Basic Configuration**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `app_name` | `str` | `"keywordsai"` | Name of your application for telemetry identification |
+| `api_key` | `str \| None` | `None` | KeywordsAI API key. Can also be set via `KEYWORDSAI_API_KEY` environment variable |
+| `base_url` | `str \| None` | `None` | KeywordsAI API base URL. Can also be set via `KEYWORDSAI_BASE_URL` environment variable. Defaults to `https://api.keywordsai.co/api` |
+
+#### **Logging**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `log_level` | `str` | `"INFO"` | Logging level for KeywordsAI tracing. Options: `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`, `"CRITICAL"`. Can also be set via `KEYWORDSAI_LOG_LEVEL` environment variable |
+
+#### **Performance**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `is_batching_enabled` | `bool \| None` | `None` | Enable batch span processing. When `False`, uses synchronous export (no background threads). Defaults to `True`. Useful to disable for debugging or backends with custom exporters. Can also be set via `KEYWORDSAI_BATCHING_ENABLED` environment variable |
+
+#### **Instrumentation**
+
+See [Instrumentation section](#instrumentation) for detailed information.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `instruments` | `Set[Instruments] \| None` | `None` | Specific instruments to enable. If `None`, enables all available instruments. Use empty set `set()` to disable all auto-instrumentation |
+| `block_instruments` | `Set[Instruments] \| None` | `None` | Instruments to explicitly disable. Use this to block specific instrumentations while enabling others |
+
+**Examples:**
+
+```python
+# Enable only specific instruments
+from keywordsai_tracing import Instruments
+
+telemetry = KeywordsAITelemetry(
+    instruments={Instruments.OPENAI, Instruments.ANTHROPIC}
+)
+
+# Block specific instruments
+telemetry = KeywordsAITelemetry(
+    block_instruments={Instruments.REQUESTS, Instruments.URLLIB3}
+)
+
+# Disable all auto-instrumentation
+telemetry = KeywordsAITelemetry(
+    instruments=set()  # Empty set = no auto-instrumentation
+)
+```
+
+#### **Advanced**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `headers` | `Dict[str, str] \| None` | `None` | Additional HTTP headers to send with telemetry data |
+| `resource_attributes` | `Dict[str, str] \| None` | `None` | Additional resource attributes to attach to all spans. Useful for adding environment, version, etc. |
+| `span_postprocess_callback` | `Callable \| None` | `None` | Optional callback function to process spans before export. Signature: `callback(span: ReadableSpan) -> None` |
+| `is_enabled` | `bool` | `True` | Enable or disable telemetry. When `False`, becomes a no-op (no spans created) |
+| `custom_exporter` | `SpanExporter \| None` | `None` | Custom span exporter to use instead of the default HTTP OTLP exporter. When provided, `api_key` and `base_url` are not required. See [Custom Exporters section](#custom-exporters) |
+
+**Note:** Threading instrumentation is ALWAYS enabled by default (even when specifying custom instruments) because it's critical for context propagation. To disable it explicitly, use `block_instruments={Instruments.THREADING}`. See [Threading Instrumentation](#important-threading-instrumentation) for details.
+
+### Common Configuration Patterns
+
+#### **Development (Full Visibility)**
+
+```python
+telemetry = KeywordsAITelemetry(
+    app_name="my-app-dev",
+    api_key="kwai-xxx",
+    log_level="DEBUG",  # Verbose logging
+    # All instruments enabled by default
+)
+```
+
+#### **Production (Optimized)**
+
+```python
+telemetry = KeywordsAITelemetry(
+    app_name="my-app-prod",
+    api_key="kwai-xxx",
+    log_level="WARNING",  # Less verbose
+    block_instruments={
+        Instruments.REQUESTS,  # Reduce noise
+        Instruments.URLLIB3,
+    }
+)
+```
+
+#### **Backend with Custom Logging (Minimal)**
+
+```python
+from your_exporters import DirectLoggingExporter
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-backend",
+    custom_exporter=DirectLoggingExporter(),  # Custom exporter
+    is_batching_enabled=False,  # No background threads
+    instruments=set(),  # No auto-instrumentation
+    block_instruments={Instruments.THREADING},  # Disable threading if single-threaded
+)
+```
+
+#### **Testing/Disabled**
+
+```python
+telemetry = KeywordsAITelemetry(
+    app_name="my-app-test",
+    is_enabled=False,  # Completely disabled (no-op)
+)
+```
+
+### Environment Variables
+
+You can configure KeywordsAI tracing using environment variables:
+
+| Environment Variable | Description | Default |
+|---------------------|-------------|---------|
+| `KEYWORDSAI_API_KEY` | API key | None |
+| `KEYWORDSAI_BASE_URL` | API base URL | `https://api.keywordsai.co/api` |
+| `KEYWORDSAI_LOG_LEVEL` | Logging level | `INFO` |
+| `KEYWORDSAI_BATCHING_ENABLED` | Enable batch processing | `True` |
+
+**Example:**
+
+```bash
+export KEYWORDSAI_API_KEY="kwai-xxx"
+export KEYWORDSAI_LOG_LEVEL="DEBUG"
+export KEYWORDSAI_BATCHING_ENABLED="false"
+```
+
+```python
+# No need to pass parameters - read from env vars
+telemetry = KeywordsAITelemetry(app_name="my-app")
+```
 
 ## Tutorial
 
@@ -256,3 +436,609 @@ def joke_and_audience_reaction():
 ```
 
 Running the workflow for one last time, you can see that the new `audience_interaction` can recognize the `anthropic.completion` calls.
+
+## Instrumentation
+
+### What is Instrumentation?
+
+Instrumentation is the process of automatically adding telemetry (traces/spans) to library calls without modifying your code. When you enable instrumentation for a library (like OpenAI, Anthropic, LangChain), the SDK automatically captures:
+
+- LLM requests and responses
+- Model parameters (temperature, max_tokens, etc.)
+- Token usage and costs
+- Latency and timing
+- Errors and exceptions
+
+### Default Behavior: All Instrumentations Enabled
+
+**By default, KeywordsAI tracing attempts to enable ALL available instrumentations.**
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+
+# This enables ALL available instrumentations (if packages are installed)
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx"
+)
+```
+
+If a library is installed in your environment, its instrumentation will be automatically enabled. If not installed, it's silently skipped (no errors).
+
+### Available Instrumentations
+
+The SDK supports instrumentation for:
+
+**AI/ML Libraries:**
+- `openai` - OpenAI API
+- `anthropic` - Anthropic (Claude) API
+- `cohere` - Cohere API
+- `mistral` - Mistral AI
+- `ollama` - Ollama (local models)
+- `groq` - Groq API
+- `together` - Together AI
+- `replicate` - Replicate
+- `transformers` - Hugging Face Transformers
+
+**Cloud AI Services:**
+- `bedrock` - AWS Bedrock
+- `sagemaker` - AWS SageMaker
+- `vertexai` - Google Vertex AI
+- `google_generativeai` - Google AI (Gemini)
+- `watsonx` - IBM WatsonX
+- `alephalpha` - Aleph Alpha
+
+**Vector Databases:**
+- `pinecone` - Pinecone
+- `qdrant` - Qdrant
+- `chroma` - Chroma
+- `milvus` - Milvus
+- `weaviate` - Weaviate
+- `lancedb` - LanceDB
+- `marqo` - Marqo
+
+**Frameworks:**
+- `langchain` - LangChain
+- `llama_index` - LlamaIndex
+- `haystack` - Haystack
+- `crew` - CrewAI
+- `mcp` - Model Context Protocol
+
+**Infrastructure:**
+- `redis` - Redis
+- `requests` - HTTP requests library
+- `urllib3` - urllib3 HTTP client
+- `pymysql` - PyMySQL database client
+- `threading` - Context propagation across threads (⚠️ **Always enabled by default**)
+
+### Installing Instrumentation Packages
+
+**Important:** To trace a specific library, you need to install the corresponding OpenTelemetry instrumentation package.
+
+The SDK uses the **OpenTelemetry standard** instrumentation packages:
+
+```bash
+# Install instrumentation for the libraries you use
+pip install opentelemetry-instrumentation-openai
+pip install opentelemetry-instrumentation-anthropic
+pip install opentelemetry-instrumentation-langchain
+pip install opentelemetry-instrumentation-requests
+```
+
+**Naming convention:** `opentelemetry-instrumentation-<library-name>`
+
+#### Example: Tracing OpenAI Calls
+
+```bash
+# 1. Install OpenAI client
+pip install openai
+
+# 2. Install OpenTelemetry instrumentation for OpenAI
+pip install opentelemetry-instrumentation-openai
+
+# 3. Install KeywordsAI tracing
+pip install keywordsai-tracing
+```
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+from openai import OpenAI
+
+# Initialize telemetry (OpenAI instrumentation auto-enabled)
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx"
+)
+
+client = OpenAI()
+
+# This call is automatically traced!
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+The OpenAI call will automatically create a span with:
+- Model name
+- Prompt and completion
+- Token usage
+- Latency
+- Cost (if available)
+
+### Important: Threading Instrumentation
+
+**Threading instrumentation is automatically enabled** (even when you specify custom instruments) because it's critical for context propagation across threads.
+
+```python
+# These all include threading by default:
+telemetry = KeywordsAITelemetry()  # All instruments including threading
+
+telemetry = KeywordsAITelemetry(
+    instruments={Instruments.OPENAI}  # OpenAI + Threading (auto-added!)
+)
+
+telemetry = KeywordsAITelemetry(
+    instruments={Instruments.OPENAI, Instruments.ANTHROPIC}  # + Threading!
+)
+```
+
+**To disable threading** (if you're certain your app is single-threaded):
+
+```python
+telemetry = KeywordsAITelemetry(
+    block_instruments={Instruments.THREADING}  # Explicitly disabled
+)
+```
+
+### Controlling Instrumentation
+
+#### Option 1: Disable Specific Instruments
+
+Use `block_instruments` to disable specific instrumentations you don't want:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, Instruments
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx",
+    block_instruments={
+        Instruments.REQUESTS,  # Don't trace HTTP requests
+        Instruments.URLLIB3,   # Don't trace urllib3
+        Instruments.REDIS,     # Don't trace Redis calls
+    }
+)
+```
+
+**Use case:** Reduce noise by blocking low-level HTTP instrumentations when you only care about high-level LLM calls.
+
+#### Option 2: Enable Only Specific Instruments
+
+Use `instruments` to enable only the instrumentations you want:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, Instruments
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx",
+    instruments={
+        Instruments.OPENAI,      # Only trace OpenAI
+        Instruments.ANTHROPIC,   # Only trace Anthropic
+    }
+)
+```
+
+**Use case:** Maximum performance and minimal noise - only instrument what you need.
+
+#### Option 3: Disable All Instrumentation
+
+Pass an empty set to disable all automatic instrumentation:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx",
+    instruments=set(),  # No auto-instrumentation
+)
+```
+
+**Use case:** 
+- Backend systems that only need `@workflow`/`@task` decorators
+- Custom manual instrumentation only
+- Minimal overhead
+
+Even with `instruments=set()`, you can still:
+- ✅ Use `@workflow` and `@task` decorators
+- ✅ Create manual spans with `tracer.start_as_current_span()`
+- ✅ Use `get_client()` to update spans
+- ❌ Won't automatically trace OpenAI/Anthropic/etc calls
+
+### Instrumentation Best Practices
+
+#### 1. Install Only What You Need
+
+```bash
+# Bad: Installing all instrumentation packages (bloats dependencies)
+pip install opentelemetry-instrumentation-openai \
+            opentelemetry-instrumentation-anthropic \
+            opentelemetry-instrumentation-langchain \
+            # ... 30+ packages
+
+# Good: Install only what you use
+pip install opentelemetry-instrumentation-openai  # You use OpenAI
+pip install opentelemetry-instrumentation-langchain  # You use LangChain
+```
+
+#### 2. Reduce Noise in Production
+
+```python
+# Development: Enable everything for visibility
+dev_telemetry = KeywordsAITelemetry(
+    app_name="my-app-dev"
+)
+
+# Production: Block low-level instrumentations to reduce noise
+prod_telemetry = KeywordsAITelemetry(
+    app_name="my-app-prod",
+    block_instruments={
+        Instruments.REQUESTS,
+        Instruments.URLLIB3,
+        Instruments.REDIS,
+    }
+)
+```
+
+#### 3. Backend Services: Minimal Instrumentation
+
+```python
+# Backend API: Disable auto-instrumentation, use decorators only
+backend_telemetry = KeywordsAITelemetry(
+    app_name="backend-api",
+    instruments=set(),  # No auto-instrumentation
+    is_batching_enabled=False,  # No background threads
+)
+
+# Manual instrumentation only
+@workflow(name="api_endpoint")
+def api_endpoint(data):
+    # Your logic here
+    pass
+```
+
+### Troubleshooting Instrumentation
+
+#### Issue: "My OpenAI calls aren't being traced"
+
+**Solution:** Install the instrumentation package:
+
+```bash
+pip install opentelemetry-instrumentation-openai
+```
+
+Verify it's working:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+
+telemetry = KeywordsAITelemetry(log_level="DEBUG")
+# Check logs for: "Initialized OpenAI instrumentation"
+```
+
+#### Issue: "Too many spans are being created (noise)"
+
+**Solution:** Block unnecessary instrumentations:
+
+```python
+from keywordsai_tracing import Instruments
+
+telemetry = KeywordsAITelemetry(
+    block_instruments={
+        Instruments.REQUESTS,  # Block HTTP client spans
+        Instruments.URLLIB3,   # Block urllib3 spans
+    }
+)
+```
+
+#### Issue: "Performance overhead in my backend"
+
+**Solution:** Disable auto-instrumentation entirely:
+
+```python
+telemetry = KeywordsAITelemetry(
+    instruments=set(),  # No auto-instrumentation
+    is_batching_enabled=False,  # No background threads
+)
+```
+
+### Summary
+
+| Configuration | Auto-Instrumentation | Use Case |
+|--------------|---------------------|----------|
+| Default | All available | Development, full visibility |
+| `block_instruments={...}` | All except blocked | Production, reduce noise |
+| `instruments={...}` | Only specified | Targeted tracing |
+| `instruments=set()` | None | Backend, minimal overhead |
+
+**Key Points:**
+- ✅ Default: All instrumentations enabled (if packages installed)
+- ✅ Install: `opentelemetry-instrumentation-<library>` for each library
+- ✅ Control: Use `instruments` or `block_instruments` parameters
+- ✅ Performance: Disable unused instrumentations to reduce overhead
+- ✅ Flexibility: Can disable all auto-instrumentation and use decorators only
+
+## Advanced Features
+
+### Custom Exporters
+
+If you need custom export logic (e.g., sending to an internal system instead of KeywordsAI API), you can provide your own `SpanExporter`:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+
+class CustomExporter(SpanExporter):
+    """Custom exporter that sends spans to your internal system"""
+    
+    def export(self, spans):
+        # Your custom export logic here
+        for span in spans:
+            # Send to your internal system
+            my_internal_system.log(span)
+        return SpanExportResult.SUCCESS
+    
+    def shutdown(self):
+        pass
+    
+    def force_flush(self, timeout_millis=30000):
+        return True
+
+# Initialize with custom exporter
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    custom_exporter=CustomExporter(),
+)
+```
+
+When using a custom exporter, `api_key` and `base_url` parameters are not required since spans won't be sent to the KeywordsAI API.
+
+**Use cases for custom exporters:**
+- Internal integrations that need custom export logic
+- Sending spans to custom backends or databases
+- Writing spans to files for debugging
+- Testing and development environments
+
+See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py) for complete working examples including:
+- File exporter (writing spans to JSON lines)
+- Console exporter (printing spans to terminal)
+- Custom backend exporter (sending to your own API)
+
+### Update Span Functionality
+
+You can dynamically update spans while they're running using the `get_client()` API. This is useful for:
+- Adding KeywordsAI-specific parameters (like `customer_identifier`, `trace_group_identifier`)
+- Setting custom attributes during execution
+- Adding events to track progress
+- Recording exceptions and errors
+- Changing span names based on runtime conditions
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow
+from openai import OpenAI
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx"
+)
+
+client = OpenAI()
+
+@workflow(name="data_processing")
+def process_data(user_id: str, data: dict):
+    # Get the client to interact with the current span
+    kwai_client = get_client()
+    
+    # Get current trace information
+    trace_id = kwai_client.get_current_trace_id()
+    span_id = kwai_client.get_current_span_id()
+    print(f"Processing in trace: {trace_id}")
+    
+    # Update span with KeywordsAI-specific parameters
+    kwai_client.update_current_span(
+        keywordsai_params={
+            "customer_identifier": user_id,
+            "trace_group_identifier": "data-processing-pipeline",
+            "metadata": {
+                "data_size": len(str(data)),
+                "processing_type": "batch"
+            }
+        }
+    )
+    
+    # Add an event to track progress
+    kwai_client.add_event("validation_started", {
+        "record_count": len(data)
+    })
+    
+    # Add custom attributes
+    kwai_client.update_current_span(
+        attributes={
+            "custom.user_id": user_id,
+            "custom.data_type": type(data).__name__
+        }
+    )
+    
+    try:
+        # Call LLM
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": f"Process: {data}"}]
+        )
+        
+        # Update span name based on result
+        kwai_client.update_current_span(
+            name="data_processing.success",
+            attributes={"result_length": len(response.choices[0].message.content)}
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        # Record exception in the span
+        kwai_client.record_exception(e)
+        raise
+
+# Use the workflow
+result = process_data("user-123", {"key": "value"})
+```
+
+**Available Client Methods:**
+- `get_current_trace_id()` - Get the current trace ID
+- `get_current_span_id()` - Get the current span ID
+- `update_current_span()` - Update span with params, attributes, name, or status
+- `add_event()` - Add an event to the current span
+- `record_exception()` - Record an exception on the current span
+- `is_recording()` - Check if the current span is recording
+
+See [`examples/simple_span_updating_example.py`](examples/simple_span_updating_example.py) for a complete example.
+
+### Manual Span Creation
+
+For fine-grained control, you can manually create custom spans using the tracer directly. This is useful when:
+- You need spans that don't fit the `@workflow`/`@task` pattern
+- You want to instrument specific code blocks
+- You're integrating with existing tracing code
+- You need to create spans conditionally
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, get_client
+from opentelemetry import trace
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx"
+)
+
+# Get the tracer instance
+tracer = telemetry.tracer.get_tracer()
+
+# Create a parent span manually
+with tracer.start_as_current_span("database_operation") as parent_span:
+    parent_span.set_attribute("db.system", "postgresql")
+    parent_span.set_attribute("db.operation", "query")
+    parent_span.add_event("Connection established")
+    
+    # Create nested child spans
+    with tracer.start_as_current_span("execute_query") as query_span:
+        query_span.set_attribute("db.statement", "SELECT * FROM users")
+        query_span.set_attribute("db.rows_affected", 42)
+        
+        # You can still use get_client() within manual spans
+        client = get_client()
+        client.update_current_span(
+            keywordsai_params={
+                "customer_identifier": "admin-user"
+            }
+        )
+        
+        # Simulate query execution
+        result = execute_database_query()
+    
+    with tracer.start_as_current_span("process_results") as process_span:
+        process_span.set_attribute("result.count", len(result))
+        processed = process_results(result)
+    
+    parent_span.add_event("Operation completed", {
+        "total_time_ms": 150
+    })
+```
+
+**Combining Manual Spans with Decorators:**
+
+You can mix manual span creation with decorator-based spans:
+
+```python
+from keywordsai_tracing import workflow, task, get_client
+
+@workflow(name="hybrid_workflow")
+def hybrid_workflow(data):
+    client = get_client()
+    telemetry = KeywordsAITelemetry()
+    tracer = telemetry.tracer.get_tracer()
+    
+    # Use decorator-based task
+    validated_data = validate_data(data)
+    
+    # Create manual span for specific instrumentation
+    with tracer.start_as_current_span("custom_processing") as span:
+        span.set_attribute("processing.type", "custom")
+        span.set_attribute("data.size", len(validated_data))
+        
+        # Custom processing logic
+        for item in validated_data:
+            with tracer.start_as_current_span(f"process_item_{item['id']}") as item_span:
+                item_span.set_attribute("item.id", item['id'])
+                process_single_item(item)
+    
+    # Use another decorator-based task
+    return finalize_results(validated_data)
+
+@task(name="validate_data")
+def validate_data(data):
+    # Decorator-based span
+    return [item for item in data if item.get('valid')]
+
+@task(name="finalize_results")
+def finalize_results(data):
+    # Decorator-based span
+    return {"processed": len(data), "data": data}
+```
+
+**Thread-Safe Context Propagation:**
+
+When working with threads, you can manually propagate context:
+
+```python
+from opentelemetry import context as otel_context
+import threading
+
+@workflow(name="threaded_workflow")
+def threaded_workflow():
+    client = get_client()
+    telemetry = KeywordsAITelemetry()
+    tracer = telemetry.tracer.get_tracer()
+    
+    # Capture the current context
+    current_context = otel_context.get_current()
+    
+    def worker_function():
+        # Attach the captured context in the worker thread
+        token = otel_context.attach(current_context)
+        
+        try:
+            # Create spans in the worker thread
+            with tracer.start_as_current_span("worker_task") as span:
+                span.set_attribute("thread.name", threading.current_thread().name)
+                # Your work here
+                pass
+        finally:
+            # Detach the context
+            otel_context.detach(token)
+    
+    # Start worker thread
+    thread = threading.Thread(target=worker_function)
+    thread.start()
+    thread.join()
+```
+
+**Key Points:**
+- Use `tracer.start_as_current_span(name)` to create custom spans
+- Spans automatically nest based on context
+- You can mix manual spans with `@workflow` and `@task` decorators
+- Use `get_client()` within manual spans to access client API
+- Threading instrumentation is enabled by default for automatic context propagation across threads
+
+See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py) for examples of manual span creation.

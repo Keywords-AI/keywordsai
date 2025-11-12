@@ -6,7 +6,7 @@ DEBUG = getenv("KEYWORDSAI_DEBUG", "False") == "True" # Whether to print debug m
 # API Config
 KEYWORDSAI_API_KEY = getenv("KEYWORDSAI_API_KEY")
 KEYWORDSAI_BASE_URL: str = getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api") # slash at the end is important
-KEYWORDSAI_DISABLE_BATCH: bool = getenv("KEYWORDSAI_DISABLE_BATCH", "False") == "True"
+KEYWORDSAI_BATCHING_ENABLED: bool = getenv("KEYWORDSAI_BATCHING_ENABLED", "True") == "True"
 
 HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS = [
     # General prompt/message fields

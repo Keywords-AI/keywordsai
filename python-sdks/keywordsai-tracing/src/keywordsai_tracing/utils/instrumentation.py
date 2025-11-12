@@ -25,12 +25,22 @@ def init_instrumentations(
     
     Returns:
         bool: True if at least one instrument was successfully initialized.
+    
+    Note:
+        THREADING instrumentation is automatically enabled (unless explicitly blocked)
+        because it's critical for context propagation across threads. To disable it,
+        use: block_instruments={Instruments.THREADING}
     """
     block_instruments = block_instruments or set()
     
     # Default to all instruments if none specified
     if instruments is None:
         instruments = set(Instruments)
+    else:
+        # If user specified instruments, automatically include THREADING
+        # unless they explicitly blocked it
+        if Instruments.THREADING not in block_instruments:
+            instruments = instruments | {Instruments.THREADING}
     
     # Remove blocked instruments
     instruments = instruments - block_instruments
@@ -117,6 +127,8 @@ def _init_single_instrument(instrument: Instruments) -> bool:
         return _init_urllib3()
     elif instrument == Instruments.PYMYSQL:
         return _init_pymysql()
+    elif instrument == Instruments.THREADING:
+        return _init_threading()
     else:
         logging.warning(f"Unknown instrument: {instrument}")
         return False
@@ -616,4 +628,17 @@ def _init_pymysql() -> bool:
         return True
     except Exception as e:
         logging.error(f"Failed to initialize PyMySQL instrumentation: {e}")
+        return False
+
+
+def _init_threading() -> bool:
+    """Initialize Threading instrumentation for context propagation"""
+    try:
+        from opentelemetry.instrumentation.threading import ThreadingInstrumentor
+        instrumentor = ThreadingInstrumentor()
+        if not instrumentor.is_instrumented_by_opentelemetry:
+            instrumentor.instrument()
+        return True
+    except Exception as e:
+        logging.error(f"Failed to initialize Threading instrumentation: {e}")
         return False 

@@ -2,11 +2,11 @@ import os
 import logging
 from typing import Optional, Set, Dict, Callable, Literal, Union
 from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace.export import SpanExporter
 from .decorators import workflow, task, agent, tool
 from .core.tracer import KeywordsAITracer
 from .core.client import KeywordsAIClient
 from .instruments import Instruments
-from .constants.generic_constants import LOGGER_NAME
 from .utils.logging import get_main_logger
 
 class KeywordsAITelemetry:
@@ -22,18 +22,24 @@ class KeywordsAITelemetry:
                   Can be "DEBUG", "INFO", "WARNING", "ERROR", or "CRITICAL".
                   Set to "DEBUG" to see detailed debug messages.
                   Can also be set via KEYWORDSAI_LOG_LEVEL environment variable.
-        disable_batch: Whether to disable batch span processing (useful for debugging)
+        is_batching_enabled: Whether to enable batch span processing (default: True). 
+                            When False, uses synchronous export (no background threads).
+                            Useful for debugging or backends with custom exporters.
+                            Can also be set via KEYWORDSAI_BATCHING_ENABLED environment variable.
         instruments: Set of instruments to enable (if None, enables default set)
         block_instruments: Set of instruments to explicitly disable
         headers: Additional headers to send with telemetry data
         resource_attributes: Additional resource attributes to attach to all spans
         span_postprocess_callback: Optional callback to process spans before export
-        enabled: Whether telemetry is enabled (if False, becomes no-op)
-        enable_threading_instrumentation: Whether to enable automatic context propagation 
-            across threads (default: True). When enabled, OpenTelemetry context flows 
-            seamlessly across thread boundaries, ensuring connected traces in multi-threaded 
-            applications. This is a global setting that affects all OpenTelemetry context 
-            propagation in the process.
+        is_enabled: Whether telemetry is enabled (if False, becomes no-op)
+        custom_exporter: Optional custom SpanExporter to use instead of the default 
+            HTTP OTLP exporter. When provided, api_key and base_url are ignored.
+            Useful for internal integrations that need custom export logic.
+    
+    Note:
+        Threading instrumentation is ALWAYS enabled by default (even when specifying custom
+        instruments) because it's critical for context propagation. To disable it explicitly:
+        block_instruments={Instruments.THREADING}
     """
 
     def __init__(
@@ -42,23 +48,25 @@ class KeywordsAITelemetry:
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
-        disable_batch: Optional[bool] = None,
+        is_batching_enabled: Optional[bool] = None,
         instruments: Optional[Set[Instruments]] = None,
         block_instruments: Optional[Set[Instruments]] = None,
         headers: Optional[Dict[str, str]] = None,
         resource_attributes: Optional[Dict[str, str]] = None,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
-        enabled: bool = True,
-        enable_threading_instrumentation: bool = True,
+        is_enabled: bool = True,
+        custom_exporter: Optional[SpanExporter] = None,
     ):
         # Get configuration from environment variables
         api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
         base_url = base_url or os.getenv(
             "KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"
         )
-        disable_batch = disable_batch or (
-            os.getenv("KEYWORDSAI_DISABLE_BATCH", "False").lower() == "true"
-        )
+        # Default to True if not specified
+        if is_batching_enabled is None:
+            is_batching_enabled = (
+                os.getenv("KEYWORDSAI_BATCHING_ENABLED", "True").lower() == "true"
+            )
         
         # Get log level from environment variable if not explicitly set
         env_log_level = os.getenv("KEYWORDSAI_LOG_LEVEL")
@@ -75,18 +83,21 @@ class KeywordsAITelemetry:
             app_name=app_name,
             api_endpoint=base_url,
             api_key=api_key,
-            disable_batch=disable_batch,
+            is_batching_enabled=is_batching_enabled,
             instruments=instruments,
             block_instruments=block_instruments,
             headers=headers,
             resource_attributes=resource_attributes,
             span_postprocess_callback=span_postprocess_callback,
-            enabled=enabled,
-            enable_threading_instrumentation=enable_threading_instrumentation,
+            is_enabled=is_enabled,
+            custom_exporter=custom_exporter,
         )
         
-        if enabled:
-            logging.info(f"KeywordsAI telemetry initialized, sending to {base_url}")
+        if is_enabled:
+            if custom_exporter:
+                logging.info(f"KeywordsAI telemetry initialized with custom exporter")
+            else:
+                logging.info(f"KeywordsAI telemetry initialized, sending to {base_url}")
         else:
             logging.info("KeywordsAI telemetry is disabled")
 

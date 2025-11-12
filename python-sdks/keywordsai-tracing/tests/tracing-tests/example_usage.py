@@ -22,7 +22,7 @@ telemetry = KeywordsAITelemetry(
     app_name="example-app",
     api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
     base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
-    enabled=True
+    is_enabled=True
 )
 
 print("🚀 KeywordsAI OpenTelemetry Example")

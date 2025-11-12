@@ -76,7 +76,7 @@ def test_export_function_basic():
         # Initialize telemetry
         telemetry = KeywordsAITelemetry(
             app_name="export_test",
-            disable_batch=True  # Use immediate export for testing
+            is_batching_enabled=False  # Use immediate export for testing
         )
         
         # Define test functions
@@ -205,7 +205,7 @@ def inspect_span_structure():
         mock_exporter.export = capture_span
         mock_otlp.return_value = mock_exporter
         
-        telemetry = KeywordsAITelemetry(disable_batch=True)
+        telemetry = KeywordsAITelemetry(is_batching_enabled=False)
         
         @task(name="inspection_task")
         def inspection_task():

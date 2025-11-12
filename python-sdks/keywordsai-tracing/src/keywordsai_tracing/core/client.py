@@ -32,7 +32,7 @@ class KeywordsAIClient:
         Returns:
             The current active span, or None if no span is active.
         """
-        if not self._tracer.enabled or not KeywordsAITracer.is_initialized():
+        if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
             logger.warning("KeywordsAI Telemetry not initialized or disabled.")
             return None
             

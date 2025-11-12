@@ -36,7 +36,7 @@ telemetry = KeywordsAITelemetry(
     app_name="threading-experiment",
     api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
     base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
-    enabled=True
+    is_enabled=True
 )
 
 print("🧪 Threading and Context Propagation Experiment")

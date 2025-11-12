@@ -13,7 +13,7 @@ from openai import OpenAI
 telemetry = KeywordsAITelemetry(
     app_name="products-tests",
     log_level="DEBUG",
-    disable_batch=True,
+    is_batching_enabled=False,
 )
 
 client = OpenAI()
