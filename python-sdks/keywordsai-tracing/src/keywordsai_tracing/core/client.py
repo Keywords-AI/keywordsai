@@ -269,4 +269,31 @@ class KeywordsAIClient:
     
     def flush(self):
         """Force flush all pending spans."""
-        self._tracer.flush() 
+        self._tracer.flush()
+    
+    def get_tracer(self):
+        """
+        Get the OpenTelemetry tracer for creating custom spans.
+        
+        This provides access to the underlying tracer for advanced span creation,
+        allowing you to manually create spans when the @workflow/@task decorators
+        are not sufficient.
+        
+        Returns:
+            opentelemetry.trace.Tracer: The OpenTelemetry tracer instance.
+        
+        Example:
+            ```python
+            from keywordsai_tracing import get_client
+            
+            client = get_client()
+            tracer = client.get_tracer()
+            
+            # Create custom spans manually
+            with tracer.start_as_current_span("my_operation") as span:
+                span.set_attribute("custom.attribute", "value")
+                # Your code here
+                pass
+            ```
+        """
+        return self._tracer.get_tracer() 

@@ -811,10 +811,142 @@ When using a custom exporter, `api_key` and `base_url` parameters are not requir
 - Writing spans to files for debugging
 - Testing and development environments
 
-See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py) for complete working examples including:
+#### Custom Exporter Initialization Pattern
+
+When using custom exporters, **initialize once at application startup** and use `get_client()` for per-request operations:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, get_client
+
+# At app startup (e.g., settings.py, __init__.py)
+exporter = MyCustomExporter()
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    custom_exporter=exporter,
+    is_batching_enabled=False,  # Optional: disable batching for immediate export
+)
+
+# Per-request: use get_client() to access SDK features
+def handle_request():
+    client = get_client()
+    tracer = client.get_tracer()  # Get tracer for manual span creation
+    
+    with tracer.start_as_current_span("request_handler") as span:
+        # Update span with request-specific attributes
+        client.update_current_span(
+            attributes={"request.id": "123"}
+        )
+        # Your request logic here
+        pass
+```
+
+**Key Points:**
+- ✅ Initialize telemetry **once** at startup with your custom exporter
+- ✅ Use `get_client()` to access the SDK in your request handlers
+- ✅ Use `client.get_tracer()` for manual span creation (public API)
+- ✅ Use `client.update_current_span()` to add request-specific attributes
+
+#### Custom Exporter with Per-Request Context
+
+If your custom exporter needs per-request context (e.g., organization ID, user authentication, experiment ID), use Python's `contextvars` for thread-safe context storage:
+
+```python
+from contextvars import ContextVar
+from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+from keywordsai_tracing import KeywordsAITelemetry, get_client
+
+# Thread-safe context storage
+_request_context: ContextVar[dict] = ContextVar('request_context', default={})
+
+def set_request_context(**kwargs):
+    """Set context for current request (thread-safe)."""
+    _request_context.set(kwargs)
+
+def get_request_context():
+    """Get context for current request."""
+    return _request_context.get()
+
+def clear_request_context():
+    """Clear context after request."""
+    _request_context.set({})
+
+class BackendExporter(SpanExporter):
+    """Custom exporter that uses per-request context"""
+    
+    def export(self, spans):
+        # Read per-request context (thread-safe)
+        context = get_request_context()
+        org_id = context.get('org_id')
+        user_id = context.get('user_id')
+        experiment_id = context.get('experiment_id')
+        
+        for span in spans:
+            span_data = {
+                'name': span.name,
+                'attributes': dict(span.attributes),
+                # Add context to each span
+                'org_id': org_id,
+                'user_id': user_id,
+                'experiment_id': experiment_id,
+            }
+            # Send to your internal system
+            self._send_to_backend(span_data)
+        
+        return SpanExportResult.SUCCESS
+    
+    def _send_to_backend(self, span_data):
+        # Your backend logic (database, queue, API, etc.)
+        pass
+    
+    def shutdown(self):
+        pass
+    
+    def force_flush(self, timeout_millis=30000):
+        return True
+
+# At startup
+exporter = BackendExporter()
+telemetry = KeywordsAITelemetry(
+    app_name="backend",
+    custom_exporter=exporter,
+    is_batching_enabled=False,
+)
+
+# Per-request usage
+def handle_api_request(org_id, user_id, experiment_id):
+    # Set context at the start of request
+    set_request_context(
+        org_id=org_id,
+        user_id=user_id,
+        experiment_id=experiment_id
+    )
+    
+    try:
+        # Use get_client() for span operations
+        client = get_client()
+        tracer = client.get_tracer()
+        
+        with tracer.start_as_current_span("api_request"):
+            # Your request logic
+            # Exporter will read context when exporting spans
+            result = process_request()
+            return result
+    finally:
+        # Clean up context after request
+        clear_request_context()
+```
+
+**Why use `contextvars`?**
+- ✅ **Thread-safe**: Each request/thread has isolated context
+- ✅ **Async-safe**: Works with asyncio and concurrent execution
+- ✅ **Automatic propagation**: Context flows through function calls
+- ✅ **Clean separation**: Exporter initialization (startup) separate from request context
+
+See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py) and [`examples/backend_trace_collection_example.py`](examples/backend_trace_collection_example.py) for complete working examples including:
 - File exporter (writing spans to JSON lines)
 - Console exporter (printing spans to terminal)
-- Custom backend exporter (sending to your own API)
+- Backend exporter with per-request context
+- Direct logging exporter for immediate export
 
 ### Update Span Functionality
 
@@ -898,10 +1030,12 @@ result = process_data("user-123", {"key": "value"})
 **Available Client Methods:**
 - `get_current_trace_id()` - Get the current trace ID
 - `get_current_span_id()` - Get the current span ID
+- `get_tracer()` - Get the OpenTelemetry tracer for manual span creation
 - `update_current_span()` - Update span with params, attributes, name, or status
 - `add_event()` - Add an event to the current span
 - `record_exception()` - Record an exception on the current span
 - `is_recording()` - Check if the current span is recording
+- `flush()` - Force flush all pending spans
 
 See [`examples/simple_span_updating_example.py`](examples/simple_span_updating_example.py) for a complete example.
 
@@ -915,15 +1049,15 @@ For fine-grained control, you can manually create custom spans using the tracer 
 
 ```python
 from keywordsai_tracing import KeywordsAITelemetry, get_client
-from opentelemetry import trace
 
 telemetry = KeywordsAITelemetry(
     app_name="my-app",
-    api_key="kwai-xxx"
+    api_key="keywordsai-xxx"
 )
 
-# Get the tracer instance
-tracer = telemetry.tracer.get_tracer()
+# Get the tracer instance using the public API
+client = get_client()
+tracer = client.get_tracer()
 
 # Create a parent span manually
 with tracer.start_as_current_span("database_operation") as parent_span:
@@ -966,8 +1100,7 @@ from keywordsai_tracing import workflow, task, get_client
 @workflow(name="hybrid_workflow")
 def hybrid_workflow(data):
     client = get_client()
-    telemetry = KeywordsAITelemetry()
-    tracer = telemetry.tracer.get_tracer()
+    tracer = client.get_tracer()
     
     # Use decorator-based task
     validated_data = validate_data(data)
@@ -1008,8 +1141,7 @@ import threading
 @workflow(name="threaded_workflow")
 def threaded_workflow():
     client = get_client()
-    telemetry = KeywordsAITelemetry()
-    tracer = telemetry.tracer.get_tracer()
+    tracer = client.get_tracer()
     
     # Capture the current context
     current_context = otel_context.get_current()
