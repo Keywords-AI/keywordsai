@@ -1,6 +1,5 @@
 from .main import KeywordsAITelemetry, get_client
 from .core.client import KeywordsAIClient
-from .core.span_collector import SpanCollector
 from .decorators import workflow, task, agent, tool
 from .contexts.span import keywordsai_span_attributes
 from .instruments import Instruments
@@ -11,7 +10,6 @@ __all__ = [
     "KeywordsAITelemetry",
     "get_client",
     "KeywordsAIClient",
-    "SpanCollector",
     "workflow", 
     "task",
     "agent",

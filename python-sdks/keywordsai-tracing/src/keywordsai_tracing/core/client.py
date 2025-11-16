@@ -325,19 +325,22 @@ class KeywordsAIClient:
             client = get_client()
             
             # Buffer spans for batch export
+            collected_spans = []
+            
             with client.get_span_buffer("trace-123") as buffer:
                 # Create multiple spans - they go to local queue
                 buffer.create_span("step1", {"status": "completed", "latency": 100})
                 buffer.create_span("step2", {"status": "completed", "latency": 200})
                 buffer.create_span("step3", {"status": "completed", "latency": 150})
                 
-                # Optional: inspect before export
+                # Optional: inspect before extracting
                 print(f"Buffered {buffer.get_span_count()} spans")
                 
-                # Export all spans as a single batch
-                buffer.export_spans()
+                # Extract spans before context exits
+                collected_spans = buffer.get_all_spans()
             
-            # After context exit, buffer is cleaned up automatically
+            # Export all spans as a single batch
+            client.export_spans(collected_spans)
             ```
         
         Example (async span creation):
@@ -348,7 +351,9 @@ class KeywordsAIClient:
                 result = execute_workflow(workflow)
                 results.append(result)
             
-            # Phase 2: Create spans from results and export as batch
+            # Phase 2: Create spans from results 
+            collected_spans = []
+            
             with client.get_span_buffer("exp-123") as buffer:
                 for i, result in enumerate(results):
                     buffer.create_span(
@@ -360,8 +365,11 @@ class KeywordsAIClient:
                         }
                     )
                 
-                # Single batch export
-                buffer.export_spans()
+                # Extract spans before context exits
+                collected_spans = buffer.get_all_spans()
+            
+            # Phase 3: Export as batch
+            client.export_spans(collected_spans)
             ```
         """
         if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
@@ -377,4 +385,94 @@ class KeywordsAIClient:
             )
             raise RuntimeError("SpanBuffer requires initialized telemetry with an exporter")
         
-        return SpanBuffer(trace_id=trace_id, exporter=self._tracer.exporter) 
+        return SpanBuffer(trace_id=trace_id, exporter=self._tracer.exporter)
+    
+    def export_spans(self, spans) -> bool:
+        """
+        Export a list of spans using the client's configured exporter.
+        
+        This enables transportable span export - you can collect spans in a buffer,
+        store them in variables, and export them anywhere in your code at any time.
+        
+        Args:
+            spans: List of ReadableSpan objects to export, or SpanBuffer instance
+        
+        Returns:
+            True if export was successful, False otherwise
+        
+        Example:
+            ```python
+            from keywordsai_tracing import get_client
+            
+            client = get_client()
+            
+            # Collect spans in buffer
+            collected_spans = []
+            
+            with client.get_span_buffer("trace-123") as buffer:
+                buffer.create_span("step1", {"status": "completed"})
+                buffer.create_span("step2", {"status": "completed"})
+                
+                # Extract spans before context exits
+                collected_spans = buffer.get_all_spans()
+            
+            # Export anywhere, anytime using client's exporter
+            success = client.export_spans(collected_spans)
+            ```
+        
+        Example (conditional export):
+            ```python
+            # Collect spans
+            collected_spans = []
+            
+            with client.get_span_buffer("trace-123") as buffer:
+                buffer.create_span("task", {"success": True})
+                # Extract spans before context exits
+                collected_spans = buffer.get_all_spans()
+            
+            # Later, elsewhere in code - decide whether to export
+            if should_export_trace():
+                client.export_spans(collected_spans)  # Export when ready
+            else:
+                # Just don't export (spans will be garbage collected)
+                pass
+            ```
+        """
+        from opentelemetry.sdk.trace import ReadableSpan
+        from opentelemetry.sdk.trace.export import SpanExportResult
+        
+        # Handle SpanBuffer instance
+        if hasattr(spans, 'get_all_spans'):
+            # It's a SpanBuffer - get the spans
+            span_list = spans.get_all_spans()
+            trace_id = getattr(spans, 'trace_id', 'unknown')
+        else:
+            # It's a list of spans
+            span_list = spans
+            trace_id = 'unknown'
+        
+        if not span_list:
+            logger.debug(f"[Client] No spans to export for trace {trace_id}")
+            return True
+        
+        # Get the exporter from the tracer
+        if not hasattr(self._tracer, 'exporter'):
+            logger.error("Exporter not available. Make sure KeywordsAI telemetry is properly initialized.")
+            return False
+        
+        logger.info(f"[Client] Exporting {len(span_list)} spans for trace {trace_id}")
+        
+        try:
+            result = self._tracer.exporter.export(span_list)
+            success = result == SpanExportResult.SUCCESS
+            
+            if success:
+                logger.info(f"[Client] Successfully exported {len(span_list)} spans")
+            else:
+                logger.error(f"[Client] Failed to export spans: {result}")
+            
+            return success
+            
+        except Exception as e:
+            logger.exception(f"[Client] Exception during export: {e}")
+            return False 

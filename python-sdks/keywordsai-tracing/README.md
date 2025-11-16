@@ -1202,15 +1202,57 @@ telemetry = KeywordsAITelemetry(
 
 client = get_client()
 
-# Buffer spans in a local queue and export as batch
+# Collect spans for later export
+collected_readable_spans = []
+
 with client.get_span_buffer("trace-123") as buffer:
     # Create multiple spans - they go to local queue, not exported yet
     buffer.create_span("step1", {"status": "completed", "latency": 100})
     buffer.create_span("step2", {"status": "completed", "latency": 200})
     buffer.create_span("step3", {"status": "completed", "latency": 150})
     
-    # Export all spans as a single batch
-    buffer.export_spans()
+    # Extract spans before context exits
+    collected_readable_spans = buffer.get_all_spans()
+
+# Export the collected spans anywhere, anytime
+success = client.export_spans(collected_readable_spans)
+```
+
+#### Transportable Spans Pattern
+
+The key power of `SpanBuffer` is that **spans are transportable** - you can collect them in one context and export them anywhere else in your code:
+
+```python
+def collect_workflow_spans():
+    """Collect spans during workflow execution"""
+    collected_spans = []
+    
+    with client.get_span_buffer("workflow-123") as buffer:
+        buffer.create_span("data_loading", {"records": 1000})
+        buffer.create_span("processing", {"duration_ms": 500})
+        buffer.create_span("validation", {"errors": 0})
+        
+        # Extract spans before context exits
+        collected_spans = buffer.get_all_spans()
+    
+    return collected_spans  # Spans persist as list!
+
+def export_based_on_business_logic(spans):
+    """Export spans based on business conditions"""
+    if all_workflows_successful(spans):
+        # Export to KeywordsAI for successful workflows
+        client.export_spans(spans)
+    elif should_debug_failures(spans):
+        # Export to internal debugging system
+        export_to_debug_system(spans)
+    else:
+        # Discard spans (just don't export)
+        pass
+
+# Usage: Decouple collection from export
+spans = collect_workflow_spans()  # Collect spans
+# ... other business logic ...
+export_based_on_business_logic(spans)  # Export when ready
 ```
 
 #### Async Span Creation Pattern
@@ -1225,6 +1267,8 @@ for workflow in workflows:
     results.append(result)
 
 # Phase 2: Create spans from completed results
+collected_spans = []
+
 with client.get_span_buffer("experiment-123") as buffer:
     for i, result in enumerate(results):
         buffer.create_span(
@@ -1237,44 +1281,72 @@ with client.get_span_buffer("experiment-123") as buffer:
             }
         )
     
-    # Single batch export for all spans
-    buffer.export_spans()
+    # Extract spans before context exits
+    collected_spans = buffer.get_all_spans()
+
+# Phase 3: Export the collected spans
+client.export_spans(collected_spans)
 ```
 
 #### Inspect Before Export
 
 ```python
+collected_spans = []
+
 with client.get_span_buffer("trace-123") as buffer:
     # Create spans
     buffer.create_span("task1", {"status": "completed", "score": 0.95})
     buffer.create_span("task2", {"status": "failed", "score": 0.45})
     buffer.create_span("task3", {"status": "completed", "score": 0.88})
     
-    # Inspect spans before exporting
+    # Inspect spans before extracting
     print(f"Buffered {buffer.get_span_count()} spans")
     
     for span in buffer.get_all_spans():
         print(f"  - {span.name}: {dict(span.attributes)}")
     
-    # Conditionally export based on inspection
-    if buffer.get_span_count() > 0:
-        buffer.export_spans()
+    # Extract spans before context exits
+    collected_spans = buffer.get_all_spans()
+
+# Conditionally export based on inspection
+if len(collected_spans) > 0:
+    client.export_spans(collected_spans)
 ```
 
 #### SpanBuffer API
 
-**Methods:**
+**SpanBuffer Methods:**
 - `create_span(name, attributes=None, kind=None)` - Create a span in the local queue
-- `export_spans()` - Export all buffered spans as a batch (returns `True` on success)
 - `get_all_spans()` - Get list of all buffered spans for inspection
 - `get_span_count()` - Get the number of buffered spans
 - `clear_spans()` - Discard all buffered spans without exporting
+
+**Client Export Methods:**
+- `client.export_spans(buffer)` - Export all spans from a SpanBuffer
+- `client.export_spans(span_list)` - Export a list of ReadableSpan objects
 
 **Context Behavior:**
 - Spans created with `buffer.create_span()` go to the buffer's local queue
 - **ALL spans created within the buffer context** (including via tracer or decorators) are buffered
 - Spans created outside the buffer context are exported normally
-- Automatic cleanup when context exits
+- **Spans are extractable as list** - spans are transportable!
+
+**Key Insight: Transportable Spans**
+The real power is that spans are **transportable** - collect in one place, export anywhere:
+
+```python
+# Collect spans
+collected_spans = []
+
+with client.get_span_buffer("trace-123") as buffer:
+    buffer.create_span("task", {"result": "success"})
+    # Extract spans before context exits
+    collected_spans = buffer.get_all_spans()
+
+# Spans persist as list - export anywhere, anytime
+if should_export():
+    client.export_spans(collected_spans)  # ← Export from anywhere!
+```
 
 #### Important: Context Isolation
 
@@ -1309,13 +1381,16 @@ with tracer.start_as_current_span("after_buffer"):
 
 #### Use Cases
 
-**Backend Workflow System:**
+**Backend Workflow System (Transportable Spans):**
 ```python
-# Workflow execution system that needs batch span creation
+# Workflow execution system with transportable span control
 def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
-    with client.get_span_collector(trace_id) as collector:
+    client = get_client()
+    
+    # Phase 1: Collect spans (controlled timing)
+    with client.get_span_buffer(trace_id) as buffer:
         # Create parent span
-        collector.create_span(
+        buffer.create_span(
             "workflow_execution",
             attributes={
                 "input": workflow_result["input"],
@@ -1327,7 +1402,7 @@ def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
         
         # Create child spans for each step
         for step in workflow_result["steps"]:
-            collector.create_span(
+            buffer.create_span(
                 f"step_{step['name']}",
                 attributes={
                     "input": step["input"],
@@ -1336,20 +1411,30 @@ def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
                     "cost_usd": step["cost"],
                 }
             )
-        
-        # Single batch export for entire trace
-        success = collector.export_spans()
-        return success
+    
+    # Phase 2: Buffer persists - spans are now transportable!
+    # Export anywhere, anytime with full control
+    if should_export_to_keywordsai(experiment_id):
+        success = client.export_spans(buffer)  # KeywordsAI export
+    elif should_export_to_internal_db(org_id):
+        spans = buffer.get_all_spans()
+        success = export_to_internal_system(spans)  # Custom export
+    else:
+        buffer.clear_spans()  # Discard without export
+        success = True
+    
+    return success
 ```
 
-**Experiment Logging:**
+**Experiment Logging (Conditional Export):**
 ```python
-# Log multiple experiment runs as a single batch
+# Log multiple experiment runs with conditional export
 experiment_results = run_experiments(configs)
+collected_spans = []
 
-with client.get_span_collector(f"experiment-{experiment_id}") as collector:
+with client.get_span_buffer(f"experiment-{experiment_id}") as buffer:
     for i, result in enumerate(experiment_results):
-        collector.create_span(
+        buffer.create_span(
             f"run_{i}",
             attributes={
                 "config": result["config"],
@@ -1358,15 +1443,24 @@ with client.get_span_collector(f"experiment-{experiment_id}") as collector:
             }
         )
     
-    collector.export_spans()
+    # Extract spans before context exits
+    collected_spans = buffer.get_all_spans()
+
+# Transportable export - decide based on experiment results
+if experiment_was_successful(experiment_results):
+    client.export_spans(collected_spans)  # Export successful experiments
+else:
+    # Just don't export (spans will be garbage collected)
+    pass
 ```
 
 **Benefits:**
-- ✅ **Manual export timing**: Export only when you explicitly call `export_spans()` (vs automatic background export)
+- ✅ **Manual export timing**: Export only when you explicitly call `client.export_spans()` (vs automatic background export)
 - ✅ **Conditional export**: Decide whether to export based on span inspection or business logic
+- ✅ **Transportable spans**: Collect spans in one place, export anywhere in your code
 - ✅ **Async span creation**: Create spans after execution completes (decouple execution from tracing)
 - ✅ **Single API call per trace**: All spans in a trace exported together (vs individual span exports)
 - ✅ **Inspection capability**: Review and modify spans before sending
 - ✅ **Thread-safe isolation**: Uses context variables for proper isolation
 
-See [`examples/span_collector_example.py`](examples/span_collector_example.py) for complete working examples.
+See [`examples/span_buffer_example.py`](examples/span_buffer_example.py) for complete working examples.
