@@ -9,6 +9,7 @@ from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
 
 from .tracer import KeywordsAITracer
+from .processor import SpanBuffer
 from ..utils.logging import get_keywordsai_logger
 
 
@@ -296,4 +297,84 @@ class KeywordsAIClient:
                 pass
             ```
         """
-        return self._tracer.get_tracer() 
+        return self._tracer.get_tracer()
+    
+    def get_span_buffer(self, trace_id: str) -> SpanBuffer:
+        """
+        Get an OpenTelemetry-compliant context manager for buffering spans with manual export control.
+        
+        This enables batch buffering of multiple spans for a single trace, allowing you to:
+        - Create spans asynchronously (after execution completes)
+        - Buffer multiple spans and export with single API call
+        - Manually control when spans are exported
+        - Inspect spans before exporting
+        
+        Spans created within the SpanBuffer context are isolated and only buffered
+        in that buffer's local queue, without affecting other spans in the application.
+        
+        Args:
+            trace_id: Trace ID for the spans being buffered
+        
+        Returns:
+            SpanBuffer: Context manager for span buffering
+        
+        Example:
+            ```python
+            from keywordsai_tracing import get_client
+            
+            client = get_client()
+            
+            # Buffer spans for batch export
+            with client.get_span_buffer("trace-123") as buffer:
+                # Create multiple spans - they go to local queue
+                buffer.create_span("step1", {"status": "completed", "latency": 100})
+                buffer.create_span("step2", {"status": "completed", "latency": 200})
+                buffer.create_span("step3", {"status": "completed", "latency": 150})
+                
+                # Optional: inspect before export
+                print(f"Buffered {buffer.get_span_count()} spans")
+                
+                # Export all spans as a single batch
+                buffer.export_spans()
+            
+            # After context exit, buffer is cleaned up automatically
+            ```
+        
+        Example (async span creation):
+            ```python
+            # Phase 1: Execute workflows (no spans yet)
+            results = []
+            for workflow in workflows:
+                result = execute_workflow(workflow)
+                results.append(result)
+            
+            # Phase 2: Create spans from results and export as batch
+            with client.get_span_buffer("exp-123") as buffer:
+                for i, result in enumerate(results):
+                    buffer.create_span(
+                        f"workflow_{i}",
+                        attributes={
+                            "input": result["input"],
+                            "output": result["output"],
+                            "latency": result["latency"],
+                        }
+                    )
+                
+                # Single batch export
+                buffer.export_spans()
+            ```
+        """
+        if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
+            logger.warning("KeywordsAI Telemetry not initialized or disabled.")
+            # Return a no-op buffer that won't do anything
+            # For now, we'll still return a buffer but it won't work properly
+        
+        # Get the exporter from the tracer
+        if not hasattr(self._tracer, 'exporter'):
+            logger.error(
+                "Exporter not available. SpanBuffer requires an exporter. "
+                "Make sure KeywordsAI telemetry is properly initialized."
+            )
+            raise RuntimeError("SpanBuffer requires initialized telemetry with an exporter")
+        
+        return SpanBuffer(trace_id=trace_id, exporter=self._tracer.exporter) 

@@ -1174,3 +1174,199 @@ def threaded_workflow():
 - Threading instrumentation is enabled by default for automatic context propagation across threads
 
 See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py) for examples of manual span creation.
+
+### Manual Span Buffering with SpanBuffer
+
+For advanced use cases where you need to **manually control span buffering and export timing**, use the OpenTelemetry-compliant `SpanBuffer` context manager. Unlike the SDK's automatic background batch export, `SpanBuffer` gives you complete control over when spans are created and exported.
+
+**Key Difference:**
+- **Normal SDK behavior**: Spans are automatically exported in the background (via `BatchSpanProcessor`)
+- **SpanBuffer**: Spans are buffered in a local queue and exported only when you explicitly call `export_spans()`
+
+This is particularly useful for:
+
+- **Asynchronous span creation**: Create spans after execution completes
+- **Batch ingestion**: Collect multiple spans and export them with a single API call
+- **Manual export control**: Decide when and whether to export collected spans
+- **Trace-level batching**: Group all spans for a trace and export together
+
+#### Basic Usage
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry, get_client
+
+telemetry = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="kwai-xxx"
+)
+
+client = get_client()
+
+# Buffer spans in a local queue and export as batch
+with client.get_span_buffer("trace-123") as buffer:
+    # Create multiple spans - they go to local queue, not exported yet
+    buffer.create_span("step1", {"status": "completed", "latency": 100})
+    buffer.create_span("step2", {"status": "completed", "latency": 200})
+    buffer.create_span("step3", {"status": "completed", "latency": 150})
+    
+    # Export all spans as a single batch
+    buffer.export_spans()
+```
+
+#### Async Span Creation Pattern
+
+Create spans after your workflow executes (useful for post-processing or logging):
+
+```python
+# Phase 1: Execute workflows (no tracing context)
+results = []
+for workflow in workflows:
+    result = execute_workflow(workflow)  # No spans created during execution
+    results.append(result)
+
+# Phase 2: Create spans from completed results
+with client.get_span_buffer("experiment-123") as buffer:
+    for i, result in enumerate(results):
+        buffer.create_span(
+            f"workflow_{i}",
+            attributes={
+                "input": result["input"],
+                "output": result["output"],
+                "latency": result["latency"],
+                "cost": result["cost"],
+            }
+        )
+    
+    # Single batch export for all spans
+    buffer.export_spans()
+```
+
+#### Inspect Before Export
+
+```python
+with client.get_span_buffer("trace-123") as buffer:
+    # Create spans
+    buffer.create_span("task1", {"status": "completed", "score": 0.95})
+    buffer.create_span("task2", {"status": "failed", "score": 0.45})
+    buffer.create_span("task3", {"status": "completed", "score": 0.88})
+    
+    # Inspect spans before exporting
+    print(f"Buffered {buffer.get_span_count()} spans")
+    
+    for span in buffer.get_all_spans():
+        print(f"  - {span.name}: {dict(span.attributes)}")
+    
+    # Conditionally export based on inspection
+    if buffer.get_span_count() > 0:
+        buffer.export_spans()
+```
+
+#### SpanBuffer API
+
+**Methods:**
+- `create_span(name, attributes=None, kind=None)` - Create a span in the local queue
+- `export_spans()` - Export all buffered spans as a batch (returns `True` on success)
+- `get_all_spans()` - Get list of all buffered spans for inspection
+- `get_span_count()` - Get the number of buffered spans
+- `clear_spans()` - Discard all buffered spans without exporting
+
+**Context Behavior:**
+- Spans created with `buffer.create_span()` go to the buffer's local queue
+- **ALL spans created within the buffer context** (including via tracer or decorators) are buffered
+- Spans created outside the buffer context are exported normally
+- Automatic cleanup when context exits
+
+#### Important: Context Isolation
+
+When you use `SpanBuffer`, **all spans created within that context** are buffered, including:
+- Spans created via `buffer.create_span()`
+- Spans created via `tracer.start_as_current_span()`
+- Spans created by `@workflow` and `@task` decorators
+- Auto-instrumented spans (OpenAI, Anthropic, etc.)
+
+```python
+client = get_client()
+tracer = client.get_tracer()
+
+# Normal span (exported immediately)
+with tracer.start_as_current_span("before_buffer"):
+    pass
+
+# Buffer context - ALL spans buffered
+with client.get_span_buffer("trace-123") as buffer:
+    buffer.create_span("span1", {})  # Buffered
+    
+    with tracer.start_as_current_span("span2"):  # Also buffered!
+        pass
+    
+    print(f"Total buffered: {buffer.get_span_count()}")  # Shows 2
+    buffer.export_spans()  # Exports both spans
+
+# Normal span (exported immediately)
+with tracer.start_as_current_span("after_buffer"):
+    pass
+```
+
+#### Use Cases
+
+**Backend Workflow System:**
+```python
+# Workflow execution system that needs batch span creation
+def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
+    with client.get_span_collector(trace_id) as collector:
+        # Create parent span
+        collector.create_span(
+            "workflow_execution",
+            attributes={
+                "input": workflow_result["input"],
+                "output": workflow_result["output"],
+                "experiment_id": experiment_id,
+                "organization_id": org_id,
+            }
+        )
+        
+        # Create child spans for each step
+        for step in workflow_result["steps"]:
+            collector.create_span(
+                f"step_{step['name']}",
+                attributes={
+                    "input": step["input"],
+                    "output": step["output"],
+                    "latency_ms": step["latency"],
+                    "cost_usd": step["cost"],
+                }
+            )
+        
+        # Single batch export for entire trace
+        success = collector.export_spans()
+        return success
+```
+
+**Experiment Logging:**
+```python
+# Log multiple experiment runs as a single batch
+experiment_results = run_experiments(configs)
+
+with client.get_span_collector(f"experiment-{experiment_id}") as collector:
+    for i, result in enumerate(experiment_results):
+        collector.create_span(
+            f"run_{i}",
+            attributes={
+                "config": result["config"],
+                "metrics": result["metrics"],
+                "success": result["success"],
+            }
+        )
+    
+    collector.export_spans()
+```
+
+**Benefits:**
+- ✅ **Manual export timing**: Export only when you explicitly call `export_spans()` (vs automatic background export)
+- ✅ **Conditional export**: Decide whether to export based on span inspection or business logic
+- ✅ **Async span creation**: Create spans after execution completes (decouple execution from tracing)
+- ✅ **Single API call per trace**: All spans in a trace exported together (vs individual span exports)
+- ✅ **Inspection capability**: Review and modify spans before sending
+- ✅ **Thread-safe isolation**: Uses context variables for proper isolation
+
+See [`examples/span_collector_example.py`](examples/span_collector_example.py) for complete working examples.

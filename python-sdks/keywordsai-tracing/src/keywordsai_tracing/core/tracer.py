@@ -15,7 +15,7 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.textmap import TextMapPropagator
 
-from .processor import KeywordsAISpanProcessor
+from .processor import KeywordsAISpanProcessor, BufferingSpanProcessor
 from .exporter import KeywordsAISpanExporter
 from ..instruments import Instruments
 from ..utils.notebook import is_notebook
@@ -113,6 +113,9 @@ class KeywordsAITracer:
                 headers=headers or {},
             )
         
+        # Store exporter reference for SpanCollector access
+        self.exporter = exporter
+        
         # Choose processor type based on environment
         if not is_batching_enabled or is_notebook():
             processor = SimpleSpanProcessor(exporter)
@@ -120,9 +123,13 @@ class KeywordsAITracer:
             processor = BatchSpanProcessor(exporter)
         
         # Wrap with custom processor for metadata injection
-        self.span_processor = KeywordsAISpanProcessor(
+        keywordsai_processor = KeywordsAISpanProcessor(
             processor, span_postprocess_callback
         )
+        
+        # Wrap with BufferingSpanProcessor to enable SpanBuffer functionality
+        # This processor checks context variables to route spans to buffers when active
+        self.span_processor = BufferingSpanProcessor(keywordsai_processor)
         
         self.tracer_provider.add_span_processor(self.span_processor)
     
