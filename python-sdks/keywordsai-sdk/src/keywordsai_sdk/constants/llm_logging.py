@@ -28,6 +28,7 @@ LOG_TYPE_FUNCTION = "function"
 LOG_TYPE_CUSTOM = "custom"
 LOG_TYPE_GENERATION = "generation"
 LOG_TYPE_UNKNOWN = "unknown"
+LOG_TYPE_SCORE = "score"
 
 
 class LogTypeChoices(Enum):
@@ -48,7 +49,7 @@ class LogTypeChoices(Enum):
     CUSTOM = LOG_TYPE_CUSTOM  # OpenAI Agent
     GENERATION = LOG_TYPE_GENERATION  # OpenAI Agent
     UNKNOWN = LOG_TYPE_UNKNOWN
-
+    SCORE = LOG_TYPE_SCORE
 
 LogType = Literal[
     "text",
@@ -68,4 +69,5 @@ LogType = Literal[
     "custom",
     "generation",
     "unknown",
+    "score",
 ]

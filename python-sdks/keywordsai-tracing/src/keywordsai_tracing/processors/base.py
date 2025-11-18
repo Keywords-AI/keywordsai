@@ -175,6 +175,73 @@ class BufferingSpanProcessor(SpanProcessor):
         return self.original_processor.force_flush(timeout_millis)
 
 
+class FilteringSpanProcessor(SpanProcessor):
+    """
+    OpenTelemetry-compliant span processor that filters spans based on attributes.
+    
+    This processor checks span attributes against filter criteria and only exports
+    spans that match. This is the standard OTEL pattern for selective exporting.
+    
+    Example:
+        # Only export spans with exporter="debug" attribute
+        processor = FilteringSpanProcessor(
+            exporter=debug_exporter,
+            filter_fn=lambda span: span.attributes.get("exporter") == "debug"
+        )
+    """
+    
+    def __init__(
+        self,
+        exporter: SpanExporter,
+        filter_fn: Optional[Callable[[ReadableSpan], bool]] = None,
+        is_batching_enabled: bool = True,
+        span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
+    ):
+        """
+        Initialize the filtering processor.
+        
+        Args:
+            exporter: The SpanExporter to use for matching spans
+            filter_fn: Optional function to determine if a span should be exported.
+                      If None, all spans are exported.
+            is_batching_enabled: Whether to use batch processing
+            span_postprocess_callback: Optional callback for span postprocessing
+        """
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+        
+        self.filter_fn = filter_fn or (lambda span: True)
+        
+        # Create base processor
+        if is_batching_enabled:
+            base_processor = BatchSpanProcessor(exporter)
+        else:
+            base_processor = SimpleSpanProcessor(exporter)
+        
+        # Wrap with KeywordsAI processor for metadata injection
+        self.processor = KeywordsAISpanProcessor(base_processor, span_postprocess_callback)
+    
+    def on_start(self, span, parent_context: Optional[Context] = None):
+        """Called when a span starts."""
+        # Always call on_start for proper initialization
+        self.processor.on_start(span, parent_context)
+    
+    def on_end(self, span: ReadableSpan):
+        """Called when a span ends - only export if filter matches."""
+        if self.filter_fn(span):
+            logger.debug(f"[FilteringProcessor] Exporting span: {span.name}")
+            self.processor.on_end(span)
+        else:
+            logger.debug(f"[FilteringProcessor] Filtering out span: {span.name}")
+    
+    def shutdown(self):
+        """Shutdown the processor."""
+        return self.processor.shutdown()
+    
+    def force_flush(self, timeout_millis: int = 30000):
+        """Force flush the processor."""
+        return self.processor.force_flush(timeout_millis)
+
+
 class SpanBuffer:
     """
     OpenTelemetry-compliant context manager for buffering spans with manual export control.

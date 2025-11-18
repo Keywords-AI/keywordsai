@@ -1,7 +1,7 @@
 import atexit
 import logging
 import os
-from typing import Dict, Optional, Set, Callable
+from typing import Dict, Optional, Set, Callable, Union
 from threading import Lock
 
 from opentelemetry import trace
@@ -15,11 +15,12 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.textmap import TextMapPropagator
 
-from .processor import KeywordsAISpanProcessor, BufferingSpanProcessor
-from .exporter import KeywordsAISpanExporter
+from ..processors import KeywordsAISpanProcessor, BufferingSpanProcessor, FilteringSpanProcessor
+from ..exporters import KeywordsAISpanExporter
 from ..instruments import Instruments
 from ..utils.notebook import is_notebook
 from ..utils.instrumentation import init_instrumentations
+from ..utils.imports import import_from_string
 from ..constants.tracing import TRACER_NAME
 
 class KeywordsAITracer:
@@ -52,7 +53,6 @@ class KeywordsAITracer:
         propagator: Optional[TextMapPropagator] = None,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
         is_enabled: bool = True,
-        custom_exporter: Optional[SpanExporter] = None,
     ):
         # Prevent re-initialization
         if hasattr(self, '_initialized'):
@@ -60,6 +60,11 @@ class KeywordsAITracer:
             
         self._initialized = True
         self.is_enabled = is_enabled
+        self.api_endpoint = api_endpoint
+        self.api_key = api_key
+        self.headers = headers or {}
+        self.is_batching_enabled = is_batching_enabled
+        self.span_postprocess_callback = span_postprocess_callback
         
         if not is_enabled:
             logging.info("KeywordsAI tracing is disabled")
@@ -71,19 +76,14 @@ class KeywordsAITracer:
         
         # Initialize OpenTelemetry components
         self._setup_tracer_provider(resource_attributes)
-        self._setup_span_processor(
-            api_endpoint, api_key, headers, is_batching_enabled, span_postprocess_callback, custom_exporter
-        )
         self._setup_propagation(propagator)
         self._setup_instrumentations(instruments, block_instruments)
         
         # Register cleanup
         atexit.register(self._cleanup)
         
-        if custom_exporter:
-            logging.info(f"KeywordsAI tracing initialized with custom exporter")
-        else:
-            logging.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
+        # Log initialization
+        logging.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
     
     def _setup_tracer_provider(self, resource_attributes: Dict[str, str]):
         """Initialize the OpenTelemetry TracerProvider"""
@@ -91,47 +91,98 @@ class KeywordsAITracer:
         self.tracer_provider = TracerProvider(resource=resource)
         trace.set_tracer_provider(self.tracer_provider)
     
-    def _setup_span_processor(
+    def add_processor(
         self,
-        api_endpoint: str,
-        api_key: Optional[str],
-        headers: Optional[Dict[str, str]],
-        is_batching_enabled: bool,
-        span_postprocess_callback: Optional[Callable[[ReadableSpan], None]],
-        custom_exporter: Optional[SpanExporter] = None,
-    ):
-        """Setup span processor with KeywordsAI exporter or custom exporter"""
-        # Create exporter
-        if custom_exporter:
-            # Use provided custom exporter
-            exporter = custom_exporter
-        else:
-            # Default: use HTTP OTLP exporter
-            exporter = KeywordsAISpanExporter(
-                endpoint=api_endpoint,
-                api_key=api_key,
-                headers=headers or {},
+        exporter: Union[SpanExporter, str],
+        name: Optional[str] = None,
+        filter_fn: Optional[Callable[[ReadableSpan], bool]] = None,
+        is_batching_enabled: Optional[bool] = None,
+    ) -> None:
+        """
+        Add a span processor with optional filtering.
+        
+        This is the standard OpenTelemetry way to support multiple exporters.
+        You can call this method multiple times to add multiple processors.
+        
+        Args:
+            exporter: SpanExporter instance or import string (e.g., "module.path.ExporterClass")
+            name: Optional name for the processor. If provided without filter_fn, automatically
+                  filters spans where span.attributes.get("processor") == name.
+                  Set to None to receive all spans.
+            filter_fn: Optional custom filter function. Only spans where filter_fn(span) returns True
+                      will be exported. If None but name is provided, automatically creates filter
+                      for that processor name. If both None, all spans are exported.
+            is_batching_enabled: Whether to use batch processing (default: uses tracer default)
+        
+        Example:
+            # Processor with name - automatically filters for processor="production" in decorator
+            tracer.add_processor(
+                exporter=KeywordsAISpanExporter(...),
+                name="production"
             )
+            # Now @task(processor="production") will route here automatically!
+            
+            # Processor without name - receives ALL spans
+            tracer.add_processor(
+                exporter=FileExporter("./all.json")
+            )
+            
+            # Custom filter function (overrides name-based filtering)
+            tracer.add_processor(
+                exporter=SlowSpanExporter(),
+                name="slow_spans",
+                filter_fn=lambda span: (span.end_time - span.start_time) > 1_000_000_000
+            )
+        """
+        if not self.is_enabled:
+            logging.warning("Tracer is disabled, cannot add processor")
+            return
         
-        # Store exporter reference for SpanCollector access
-        self.exporter = exporter
+        # Use tracer default if not specified
+        if is_batching_enabled is None:
+            is_batching_enabled = self.is_batching_enabled
         
-        # Choose processor type based on environment
-        if not is_batching_enabled or is_notebook():
-            processor = SimpleSpanProcessor(exporter)
-        else:
-            processor = BatchSpanProcessor(exporter)
+        # Handle string imports
+        if isinstance(exporter, str):
+            try:
+                exporter_class = import_from_string(exporter)
+                if name == "keywordsai" or "KeywordsAI" in exporter:
+                    # KeywordsAI exporter needs special initialization
+                    exporter = exporter_class(
+                        endpoint=self.api_endpoint,
+                        api_key=self.api_key,
+                        headers=self.headers,
+                    )
+                else:
+                    # Other exporters use default initialization
+                    exporter = exporter_class()
+            except ImportError as e:
+                logging.error(f"Failed to import exporter from '{exporter}': {e}")
+                return
         
-        # Wrap with custom processor for metadata injection
-        keywordsai_processor = KeywordsAISpanProcessor(
-            processor, span_postprocess_callback
+        # Auto-create filter based on name if no custom filter provided
+        if filter_fn is None and name is not None:
+            # Automatically filter for spans with matching processor in comma-separated list
+            filter_fn = lambda span: name in (span.attributes.get("processors") or "").split(",")
+            logging.debug(f"Auto-created filter for processor '{name}'")
+        
+        # Create filtering processor
+        processor = FilteringSpanProcessor(
+            exporter=exporter,
+            filter_fn=filter_fn,
+            is_batching_enabled=is_batching_enabled,
+            span_postprocess_callback=self.span_postprocess_callback,
         )
         
-        # Wrap with BufferingSpanProcessor to enable SpanBuffer functionality
-        # This processor checks context variables to route spans to buffers when active
-        self.span_processor = BufferingSpanProcessor(keywordsai_processor)
+        # Wrap with BufferingSpanProcessor for span collection support
+        buffering_processor = BufferingSpanProcessor(processor)
         
-        self.tracer_provider.add_span_processor(self.span_processor)
+        # Add to tracer provider (standard OTEL way!)
+        self.tracer_provider.add_span_processor(buffering_processor)
+        
+        name_str = f" '{name}'" if name else ""
+        filter_str = "auto" if (filter_fn is not None and name is not None) else ("custom" if filter_fn is not None else "none")
+        logging.info(f"Added span processor{name_str} with filter: {filter_str}")
     
     def _setup_propagation(self, propagator: Optional[TextMapPropagator]):
         """Setup context propagation"""
@@ -154,16 +205,30 @@ class KeywordsAITracer:
     
     def flush(self):
         """Force flush all pending spans"""
-        if hasattr(self, 'span_processor'):
-            self.span_processor.force_flush()
+        if hasattr(self, 'tracer_provider'):
+            self.tracer_provider.force_flush()
     
     def _cleanup(self):
         """Cleanup resources on exit"""
-        self.flush()
-        if hasattr(self, 'span_processor'):
-            self.span_processor.shutdown()
+        if hasattr(self, 'tracer_provider'):
+            try:
+                self.tracer_provider.force_flush()
+                self.tracer_provider.shutdown()
+            except Exception as e:
+                logging.error(f"Error during cleanup: {e}")
     
     @classmethod
     def is_initialized(cls) -> bool:
         """Check if tracer is initialized"""
-        return cls._instance is not None and hasattr(cls._instance, '_initialized') 
+        return cls._instance is not None and hasattr(cls._instance, '_initialized')
+    
+    @classmethod
+    def reset_instance(cls):
+        """Reset the singleton instance (for testing purposes)"""
+        with cls._lock:
+            if cls._instance is not None:
+                try:
+                    cls._instance._cleanup()
+                except:
+                    pass
+            cls._instance = None 

@@ -9,7 +9,7 @@ from keywordsai_sdk.constants.llm_logging import (
     LogMethodChoices
 )
 from keywordsai_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
-from keywordsai_tracing.core.tracer import KeywordsAITracer
+from keywordsai_tracing.core import KeywordsAITracer
 from keywordsai_tracing.constants.context_constants import (
     WORKFLOW_NAME_KEY, 
     ENTITY_PATH_KEY,
@@ -37,7 +37,7 @@ def _is_async_method(fn):
     return inspect.iscoroutinefunction(fn) or inspect.isasyncgenfunction(fn)
 
 
-def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None):
+def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None, processors=None):
     """Setup OpenTelemetry span and context"""
     # Ensure span_kind is a string
     span_kind_str = span_kind.value if hasattr(span_kind, "value") else str(span_kind)
@@ -74,6 +74,17 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None)
     )
     if version:
         span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_VERSION, version)
+    
+    # Set processors attribute for routing (OTEL standard way!)
+    if processors:
+        # Normalize to list
+        if isinstance(processors, str):
+            processors_list = [processors]
+        else:
+            processors_list = processors
+        
+        # Store as comma-separated string (OTEL attribute friendly)
+        span.set_attribute("processors", ",".join(processors_list))
 
     # Set span in context
     ctx = trace.set_span_in_context(span)
@@ -137,26 +148,39 @@ async def _ahandle_generator(span, ctx_token, async_generator):
         _cleanup_span(span, ctx_token)
 
 
-def _create_entity_method(
+def create_entity_method(
     name: Optional[str] = None,
     version: Optional[int] = None,
     method_name: Optional[str] = None,
     span_kind: str = "task",
+    processors=None,
 ) -> Callable[[F], F]:
     """Create entity decorator for methods or classes"""
 
     if method_name is not None:
         # Class decorator
-        return _create_entity_class(name, version, method_name, span_kind)
+        return _create_entity_class(
+            name=name, 
+            version=version, 
+            method_name=method_name, 
+            span_kind=span_kind, 
+            processors=processors
+        )
     else:
         # Method decorator
-        return _create_entity_method_decorator(name, version, span_kind)
+        return _create_entity_method_decorator(
+            name=name, 
+            version=version, 
+            span_kind=span_kind, 
+            processors=processors
+        )
 
 
 def _create_entity_method_decorator(
     name: Optional[str] = None,
     version: Optional[int] = None,
     span_kind: str = "task",
+    processors=None,
 ) -> Callable[[F], F]:
     """Create method decorator"""
 
@@ -168,7 +192,12 @@ def _create_entity_method_decorator(
                 # Async generator
                 @wraps(fn)
                 async def async_gen_wrapper(*args: Any, **kwargs: Any) -> Any:
-                    span, ctx_token = _setup_span(entity_name, span_kind, version)
+                    span, ctx_token = _setup_span(
+                        entity_name=entity_name, 
+                        span_kind=span_kind, 
+                        version=version, 
+                        processors=processors
+                    )
                     _handle_span_input(span, args, kwargs)
 
                     try:
@@ -186,7 +215,12 @@ def _create_entity_method_decorator(
                 # Regular async function
                 @wraps(fn)
                 async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                    span, ctx_token = _setup_span(entity_name, span_kind, version)
+                    span, ctx_token = _setup_span(
+                        entity_name=entity_name, 
+                        span_kind=span_kind, 
+                        version=version, 
+                        processors=processors
+                    )
                     _handle_span_input(span, args, kwargs)
 
                     try:
@@ -205,7 +239,7 @@ def _create_entity_method_decorator(
             # Sync function
             @wraps(fn)
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-                span, ctx_token = _setup_span(entity_name, span_kind, version)
+                span, ctx_token = _setup_span(entity_name, span_kind, version, processors)
                 _handle_span_input(span, args, kwargs)
 
                 try:
@@ -235,6 +269,7 @@ def _create_entity_class(
     version: Optional[int],
     method_name: str,
     span_kind: str = "task",
+    processors=None,
 ):
     """Create class decorator"""
 
@@ -246,7 +281,10 @@ def _create_entity_class(
 
         # Create decorated method
         decorated_method = _create_entity_method_decorator(
-            entity_name, version, span_kind
+            name=entity_name, 
+            version=version, 
+            span_kind=span_kind, 
+            processors=processors
         )(original_method)
 
         # Replace the method

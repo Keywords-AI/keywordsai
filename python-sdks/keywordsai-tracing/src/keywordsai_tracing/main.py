@@ -4,15 +4,16 @@ from typing import Optional, Set, Dict, Callable, Literal, Union
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter
 from .decorators import workflow, task, agent, tool
-from .core.tracer import KeywordsAITracer
-from .core.client import KeywordsAIClient
+from .core import KeywordsAITracer, KeywordsAIClient
 from .instruments import Instruments
 from .utils.logging import get_main_logger
 
 class KeywordsAITelemetry:
     """
     KeywordsAI Telemetry - Direct OpenTelemetry implementation.
-    Replaces Traceloop dependency with native OpenTelemetry components.
+    
+    This class initializes the OpenTelemetry tracer without any default exporters.
+    Use add_processor() to add exporters after initialization.
     
     Args:
         app_name: Name of the application for telemetry identification
@@ -32,9 +33,40 @@ class KeywordsAITelemetry:
         resource_attributes: Additional resource attributes to attach to all spans
         span_postprocess_callback: Optional callback to process spans before export
         is_enabled: Whether telemetry is enabled (if False, becomes no-op)
-        custom_exporter: Optional custom SpanExporter to use instead of the default 
-            HTTP OTLP exporter. When provided, api_key and base_url are ignored.
-            Useful for internal integrations that need custom export logic.
+    
+    Example:
+        ```python
+        from keywordsai_tracing import KeywordsAITelemetry
+        from keywordsai_tracing.exporters import KeywordsAISpanExporter
+        
+        # Initialize telemetry
+        kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
+        
+        # Add production exporter (all spans)
+        kai.add_processor(
+            exporter=KeywordsAISpanExporter(
+                endpoint="https://api.keywordsai.co/api",
+                api_key="prod-key"
+            ),
+            name="production"
+        )
+        
+        # Add debug exporter (only debug spans)
+        kai.add_processor(
+            exporter=FileExporter("./debug.json"),
+            name="debug",
+            filter_fn=lambda span: span.attributes.get("exporter") == "debug"
+        )
+        
+        # Use decorators with processor parameter
+        @kai.task(name="debug_task", processor="debug")
+        def debug_task():
+            return "only goes to debug processor"
+        
+        @kai.task(name="prod_task")
+        def prod_task():
+            return "goes to all processors"
+        ```
     
     Note:
         Threading instrumentation is ALWAYS enabled by default (even when specifying custom
@@ -55,7 +87,6 @@ class KeywordsAITelemetry:
         resource_attributes: Optional[Dict[str, str]] = None,
         span_postprocess_callback: Optional[Callable[[ReadableSpan], None]] = None,
         is_enabled: bool = True,
-        custom_exporter: Optional[SpanExporter] = None,
     ):
         # Get configuration from environment variables
         api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
@@ -90,14 +121,10 @@ class KeywordsAITelemetry:
             resource_attributes=resource_attributes,
             span_postprocess_callback=span_postprocess_callback,
             is_enabled=is_enabled,
-            custom_exporter=custom_exporter,
         )
         
         if is_enabled:
-            if custom_exporter:
-                logging.info(f"KeywordsAI telemetry initialized with custom exporter")
-            else:
-                logging.info(f"KeywordsAI telemetry initialized, sending to {base_url}")
+            logging.info(f"KeywordsAI telemetry initialized")
         else:
             logging.info("KeywordsAI telemetry is disabled")
 
@@ -126,6 +153,50 @@ class KeywordsAITelemetry:
         # but allow child loggers to inherit the level
         keywordsai_logger.propagate = False
 
+    def add_processor(
+        self,
+        exporter: Union[SpanExporter, str],
+        name: Optional[str] = None,
+        filter_fn: Optional[Callable[[ReadableSpan], bool]] = None,
+        is_batching_enabled: Optional[bool] = None,
+    ) -> None:
+        """
+        Add a span processor with optional filtering (standard OpenTelemetry pattern).
+        
+        This method can be called multiple times to add multiple exporters.
+        Each processor can have its own filter function to selectively export spans.
+        
+        Args:
+            exporter: SpanExporter instance or import string (e.g., "module.path.ExporterClass")
+            name: Optional name for the exporter (used for logging and KeywordsAI identification)
+            filter_fn: Optional filter function. Only spans where filter_fn(span) returns True
+                      will be exported. If None, all spans are exported to this exporter.
+                      Common pattern: lambda span: span.attributes.get("processor") == "debug"
+            is_batching_enabled: Whether to use batch processing (default: uses telemetry default)
+        
+        Example:
+            ```python
+            # Add production exporter (all spans)
+            kai.add_processor(
+                exporter=KeywordsAISpanExporter(...),
+                name="production"
+            )
+            
+            # Add debug file exporter (only debug spans)
+            kai.add_processor(
+                exporter=FileExporter("./debug.json"),
+                name="debug",
+                filter_fn=lambda span: span.attributes.get("processor") == "debug"
+            )
+            ```
+        """
+        self.tracer.add_processor(
+            exporter=exporter,
+            name=name,
+            filter_fn=filter_fn,
+            is_batching_enabled=is_batching_enabled,
+        )
+    
     def flush(self):
         """Force flush all pending spans"""
         self.tracer.flush()

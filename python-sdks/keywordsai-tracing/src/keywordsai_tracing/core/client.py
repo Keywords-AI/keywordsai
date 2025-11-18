@@ -9,7 +9,7 @@ from keywordsai_sdk.keywordsai_types.param_types import KeywordsAIParams
 from pydantic import ValidationError
 
 from .tracer import KeywordsAITracer
-from .processor import SpanBuffer
+from ..processors import SpanBuffer
 from ..utils.logging import get_keywordsai_logger
 
 
