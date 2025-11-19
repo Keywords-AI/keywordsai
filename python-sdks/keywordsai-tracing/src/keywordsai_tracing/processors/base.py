@@ -4,7 +4,7 @@ import logging
 
 from opentelemetry import context as context_api, trace
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
-from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.context import Context
 from opentelemetry.semconv_ai import SpanAttributes
 
@@ -207,7 +207,6 @@ class FilteringSpanProcessor(SpanProcessor):
             is_batching_enabled: Whether to use batch processing
             span_postprocess_callback: Optional callback for span postprocessing
         """
-        from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
         
         self.filter_fn = filter_fn or (lambda span: True)
         

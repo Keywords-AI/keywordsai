@@ -160,11 +160,20 @@ class KeywordsAITracer:
                 logging.error(f"Failed to import exporter from '{exporter}': {e}")
                 return
         
-        # Auto-create filter based on name if no custom filter provided
-        if filter_fn is None and name is not None:
-            # Automatically filter for spans with matching processor in comma-separated list
-            filter_fn = lambda span: name in (span.attributes.get("processors") or "").split(",")
-            logging.debug(f"Auto-created filter for processor '{name}'")
+        # Create combined filter: name-based + custom filter
+        if name is not None:
+            # Name-based filter (always applied when name is provided)
+            name_filter = lambda span: name in (span.attributes.get("processors") or "").split(",")
+            
+            if filter_fn is not None:
+                # Combine: BOTH name filter AND custom filter must pass
+                original_filter = filter_fn
+                filter_fn = lambda span: name_filter(span) and original_filter(span)
+                logging.debug(f"Created combined filter for processor '{name}' (name + custom)")
+            else:
+                # Just name filter
+                filter_fn = name_filter
+                logging.debug(f"Auto-created name filter for processor '{name}'")
         
         # Create filtering processor
         processor = FilteringSpanProcessor(
