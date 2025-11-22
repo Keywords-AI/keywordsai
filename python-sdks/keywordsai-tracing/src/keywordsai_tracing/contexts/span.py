@@ -10,7 +10,9 @@ from keywordsai_tracing.core.tracer import KeywordsAITracer
 from keywordsai_tracing.utils.logging import get_keywordsai_logger
 
 
-logger = get_keywordsai_logger('contexts.span')
+from ..constants.generic_constants import LOGGER_NAME_SPAN
+
+logger = get_keywordsai_logger(LOGGER_NAME_SPAN)
 
 @contextmanager
 def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], KeywordsAIParams]):

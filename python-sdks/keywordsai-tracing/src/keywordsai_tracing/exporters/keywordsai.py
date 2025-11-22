@@ -6,7 +6,9 @@ from opentelemetry.trace import SpanContext
 from ..utils.logging import get_keywordsai_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
 
-logger = get_keywordsai_logger('core.exporter')
+from ..constants.generic_constants import LOGGER_NAME_EXPORTER
+
+logger = get_keywordsai_logger(LOGGER_NAME_EXPORTER)
 
 
 class ModifiedSpan:

@@ -119,38 +119,49 @@ telemetry = KeywordsAITelemetry(
 
 **Note:** Threading instrumentation is ALWAYS enabled by default (even when specifying custom instruments) because it's critical for context propagation. To disable it explicitly, use `block_instruments={Instruments.THREADING}`. See [Threading Instrumentation](#important-threading-instrumentation) for details.
 
-### Multiple Exporters (New Standard OTEL API)
+### Default Behavior
 
-You can now route spans to **multiple destinations** using the standard OpenTelemetry pattern. Use the `add_processor()` method to dynamically add processors with optional filtering:
+**A default KeywordsAI processor is automatically added when you provide an `api_key`:**
 
 ```python
 from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.exporters import KeywordsAISpanExporter
 
-# Initialize telemetry
-kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
-
-# Add production exporter (all spans)
-kai.add_processor(
-    exporter=KeywordsAISpanExporter(
-        endpoint="https://api.keywordsai.co/api",
-        api_key="prod-key"
-    ),
-    name="production"
+# Minimal initialization - spans automatically go to KeywordsAI!
+kai = KeywordsAITelemetry(
+    app_name="my-app",
+    api_key="your-key"  # ← Default processor added automatically
 )
 
-# Add debug file exporter (only spans with processors="debug")
+# Now all spans are automatically exported to KeywordsAI
+@kai.task()
+def my_task():
+    pass  # This span will be exported!
+```
+
+**This ensures backward compatibility** - existing code continues to work without changes.
+
+### Multiple Exporters (Advanced)
+
+For advanced use cases, you can route spans to **multiple destinations** using the `add_processor()` method:
+
+```python
+from keywordsai_tracing import KeywordsAITelemetry
+
+# Initialize telemetry (default processor added automatically)
+kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
+
+# Add additional processors for specific routing
 kai.add_processor(
     exporter=FileExporter("./debug.json"),
-    name="debug"  # Automatically filters for processors containing "debug"
+    name="debug"  # Automatically filters for processors="debug"
 )
 
 # Use decorators to route spans
-@kai.task(name="normal_task")  # Goes to all processors (no routing)
+@kai.task(name="normal_task")  # Goes to default KeywordsAI processor
 def normal_task():
     pass
 
-@kai.task(name="debug_task", processors="debug")  # Routes to "debug" processor
+@kai.task(name="debug_task", processors="debug")  # Only to debug processor
 def debug_task():
     pass
 
@@ -884,32 +895,37 @@ def important_task():
 
 #### Advanced: Custom Filter Functions
 
-For complex routing logic beyond simple name matching, provide a custom `filter_fn`:
+For complex routing logic beyond simple name matching, provide a custom `filter_fn`.
+
+**Important:** When both `name` and `filter_fn` are provided, **BOTH conditions must be True**:
+- The span must have the processor name in its `processors` attribute (from decorator)
+- The custom `filter_fn` must return `True`
+
+This ensures decorator-based routing always works, while allowing additional filtering logic.
 
 ```python
-# Filter by span duration (slow spans only)
+# Example 1: Filter slow spans within "debug" processor
 kai.add_processor(
-    exporter=SlowSpanExporter(),
-    name="slow_spans",
-    filter_fn=lambda span: (span.end_time - span.start_time) > 1_000_000_000  # > 1 second
+    exporter=SlowDebugExporter(),
+    name="debug",  # ← Must have processors="debug" in decorator
+    filter_fn=lambda span: (span.end_time - span.start_time) > 1_000_000_000  # AND must be slow
 )
+# Only receives spans with: @task(processors="debug") AND duration > 1s
 
-# Filter by environment attribute
+# Example 2: Filter by environment attribute
 kai.add_processor(
     exporter=StagingExporter(),
     name="staging",
     filter_fn=lambda span: span.attributes.get("env") == "staging"
 )
+# Only receives spans with: @task(processors="staging") AND env="staging"
 
-# Filter by multiple conditions
+# Example 3: No name = only custom filter applies (all spans checked)
 kai.add_processor(
-    exporter=CriticalExporter(),
-    name="critical",
-    filter_fn=lambda span: (
-        span.attributes.get("severity") == "critical" and
-        "error" in span.name.lower()
-    )
+    exporter=ErrorExporter(),
+    filter_fn=lambda span: "error" in span.name.lower()  # No name = checks all spans
 )
+# Receives any span where name contains "error"
 ```
 
 #### Initialization Pattern

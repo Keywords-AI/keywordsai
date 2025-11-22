@@ -1,5 +1,4 @@
 import atexit
-import logging
 import os
 from typing import Dict, Optional, Set, Callable, Union
 from threading import Lock
@@ -21,7 +20,12 @@ from ..instruments import Instruments
 from ..utils.notebook import is_notebook
 from ..utils.instrumentation import init_instrumentations
 from ..utils.imports import import_from_string
+from ..utils.logging import get_keywordsai_logger
 from ..constants.tracing import TRACER_NAME
+from ..constants.generic_constants import LOGGER_NAME_TRACER
+
+# Use KeywordsAI logger for all logging in this module
+logger = get_keywordsai_logger(LOGGER_NAME_TRACER)
 
 class KeywordsAITracer:
     """
@@ -67,7 +71,7 @@ class KeywordsAITracer:
         self.span_postprocess_callback = span_postprocess_callback
         
         if not is_enabled:
-            logging.info("KeywordsAI tracing is disabled")
+            logger.info("KeywordsAI tracing is disabled")
             return
             
         # Setup resource attributes
@@ -79,17 +83,40 @@ class KeywordsAITracer:
         self._setup_propagation(propagator)
         self._setup_instrumentations(instruments, block_instruments)
         
+        # Add default KeywordsAI processor for backward compatibility
+        # Only if api_key is provided (user wants to send to KeywordsAI)
+        if api_key:
+            self._setup_default_processor()
+        
         # Register cleanup
         atexit.register(self._cleanup)
         
         # Log initialization
-        logging.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
+        logger.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
     
     def _setup_tracer_provider(self, resource_attributes: Dict[str, str]):
         """Initialize the OpenTelemetry TracerProvider"""
         resource = Resource(attributes=resource_attributes)
         self.tracer_provider = TracerProvider(resource=resource)
         trace.set_tracer_provider(self.tracer_provider)
+    
+    def _setup_default_processor(self):
+        """Setup default KeywordsAI processor for backward compatibility"""
+        from ..exporters import KeywordsAISpanExporter
+        
+        logger.info("Adding default KeywordsAI processor (all spans)")
+        exporter = KeywordsAISpanExporter(
+            endpoint=self.api_endpoint,
+            api_key=self.api_key,
+            headers=self.headers,
+        )
+        
+        # Add without name or filter - receives ALL spans (backward compatible behavior)
+        self.add_processor(
+            exporter=exporter,
+            name=None,  # No name = no filtering
+            filter_fn=None,  # No filter = all spans
+        )
     
     def add_processor(
         self,
@@ -135,7 +162,7 @@ class KeywordsAITracer:
             )
         """
         if not self.is_enabled:
-            logging.warning("Tracer is disabled, cannot add processor")
+            logger.warning("Tracer is disabled, cannot add processor")
             return
         
         # Use tracer default if not specified
@@ -157,7 +184,7 @@ class KeywordsAITracer:
                     # Other exporters use default initialization
                     exporter = exporter_class()
             except ImportError as e:
-                logging.error(f"Failed to import exporter from '{exporter}': {e}")
+                logger.error(f"Failed to import exporter from '{exporter}': {e}")
                 return
         
         # Create combined filter: name-based + custom filter
@@ -169,11 +196,11 @@ class KeywordsAITracer:
                 # Combine: BOTH name filter AND custom filter must pass
                 original_filter = filter_fn
                 filter_fn = lambda span: name_filter(span) and original_filter(span)
-                logging.debug(f"Created combined filter for processor '{name}' (name + custom)")
+                logger.debug(f"Created combined filter for processor '{name}' (name + custom)")
             else:
                 # Just name filter
                 filter_fn = name_filter
-                logging.debug(f"Auto-created name filter for processor '{name}'")
+                logger.debug(f"Auto-created name filter for processor '{name}'")
         
         # Create filtering processor
         processor = FilteringSpanProcessor(
@@ -191,7 +218,7 @@ class KeywordsAITracer:
         
         name_str = f" '{name}'" if name else ""
         filter_str = "auto" if (filter_fn is not None and name is not None) else ("custom" if filter_fn is not None else "none")
-        logging.info(f"Added span processor{name_str} with filter: {filter_str}")
+        logger.info(f"Added span processor{name_str} with filter: {filter_str}")
     
     def _setup_propagation(self, propagator: Optional[TextMapPropagator]):
         """Setup context propagation"""
@@ -224,7 +251,7 @@ class KeywordsAITracer:
                 self.tracer_provider.force_flush()
                 self.tracer_provider.shutdown()
             except Exception as e:
-                logging.error(f"Error during cleanup: {e}")
+                logger.error(f"Error during cleanup: {e}")
     
     @classmethod
     def is_initialized(cls) -> bool:

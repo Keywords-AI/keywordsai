@@ -13,7 +13,9 @@ from ..processors import SpanBuffer
 from ..utils.logging import get_keywordsai_logger
 
 
-logger = get_keywordsai_logger('core.client')
+from ..constants.generic_constants import LOGGER_NAME_CLIENT
+
+logger = get_keywordsai_logger(LOGGER_NAME_CLIENT)
 
 
 class KeywordsAIClient:
