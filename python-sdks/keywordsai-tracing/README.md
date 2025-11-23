@@ -1262,8 +1262,8 @@ See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py)
 For advanced use cases where you need to **manually control span buffering and export timing**, use the OpenTelemetry-compliant `SpanBuffer` context manager. Unlike the SDK's automatic background batch export, `SpanBuffer` gives you complete control over when spans are created and exported.
 
 **Key Difference:**
-- **Normal SDK behavior**: Spans are automatically exported in the background (via `BatchSpanProcessor`)
-- **SpanBuffer**: Spans are buffered in a local queue and exported only when you explicitly call `export_spans()`
+- **Normal SDK behavior**: Spans are automatically processed through processors in the background
+- **SpanBuffer**: Spans are buffered in a local queue and processed only when you explicitly call `process_spans()`
 
 This is particularly useful for:
 
@@ -1296,13 +1296,13 @@ with client.get_span_buffer("trace-123") as buffer:
     # Extract spans before context exits
     collected_readable_spans = buffer.get_all_spans()
 
-# Export the collected spans anywhere, anytime
-success = client.export_spans(collected_readable_spans)
+# Process the collected spans through the processor pipeline
+success = client.process_spans(collected_readable_spans)
 ```
 
 #### Transportable Spans Pattern
 
-The key power of `SpanBuffer` is that **spans are transportable** - you can collect them in one context and export them anywhere else in your code:
+The key power of `SpanBuffer` is that **spans are transportable** - you can collect them in one context and process them anywhere else in your code:
 
 ```python
 def collect_workflow_spans():
@@ -1319,22 +1319,22 @@ def collect_workflow_spans():
     
     return collected_spans  # Spans persist as list!
 
-def export_based_on_business_logic(spans):
-    """Export spans based on business conditions"""
+def process_based_on_business_logic(spans):
+    """Process spans based on business conditions"""
     if all_workflows_successful(spans):
-        # Export to KeywordsAI for successful workflows
-        client.export_spans(spans)
+        # Process through standard OTEL pipeline (goes to all configured processors)
+        client.process_spans(spans)
     elif should_debug_failures(spans):
-        # Export to internal debugging system
-        export_to_debug_system(spans)
+        # Process through pipeline (debug processor can filter)
+        client.process_spans(spans)
     else:
-        # Discard spans (just don't export)
+        # Discard spans (just don't process)
         pass
 
-# Usage: Decouple collection from export
+# Usage: Decouple collection from processing
 spans = collect_workflow_spans()  # Collect spans
 # ... other business logic ...
-export_based_on_business_logic(spans)  # Export when ready
+process_based_on_business_logic(spans)  # Process when ready
 ```
 
 #### Async Span Creation Pattern
@@ -1366,8 +1366,8 @@ with client.get_span_buffer("experiment-123") as buffer:
     # Extract spans before context exits
     collected_spans = buffer.get_all_spans()
 
-# Phase 3: Export the collected spans
-client.export_spans(collected_spans)
+# Phase 3: Process the collected spans through processors
+client.process_spans(collected_spans)
 ```
 
 #### Inspect Before Export
@@ -1390,9 +1390,9 @@ with client.get_span_buffer("trace-123") as buffer:
     # Extract spans before context exits
     collected_spans = buffer.get_all_spans()
 
-# Conditionally export based on inspection
+# Conditionally process based on inspection
 if len(collected_spans) > 0:
-    client.export_spans(collected_spans)
+    client.process_spans(collected_spans)
 ```
 
 #### SpanBuffer API
@@ -1403,18 +1403,19 @@ if len(collected_spans) > 0:
 - `get_span_count()` - Get the number of buffered spans
 - `clear_spans()` - Discard all buffered spans without exporting
 
-**Client Export Methods:**
-- `client.export_spans(buffer)` - Export all spans from a SpanBuffer
-- `client.export_spans(span_list)` - Export a list of ReadableSpan objects
+**Client Processing Methods:**
+- `client.process_spans(buffer)` - Process all spans from a SpanBuffer through the processor pipeline
+- `client.process_spans(span_list)` - Process a list of ReadableSpan objects through the processor pipeline
 
 **Context Behavior:**
 - Spans created with `buffer.create_span()` go to the buffer's local queue
 - **ALL spans created within the buffer context** (including via tracer or decorators) are buffered
-- Spans created outside the buffer context are exported normally
+- Spans created outside the buffer context are processed normally through processors
 - **Spans are extractable as list** - spans are transportable!
+- Processing happens through standard OTEL processor pipeline (filters, transformations, export)
 
 **Key Insight: Transportable Spans**
-The real power is that spans are **transportable** - collect in one place, export anywhere:
+The real power is that spans are **transportable** - collect in one place, process anywhere:
 
 ```python
 # Collect spans
@@ -1425,9 +1426,9 @@ with client.get_span_buffer("trace-123") as buffer:
     # Extract spans before context exits
     collected_spans = buffer.get_all_spans()
 
-# Spans persist as list - export anywhere, anytime
+# Spans persist as list - process anywhere, anytime through OTEL pipeline
 if should_export():
-    client.export_spans(collected_spans)  # ← Export from anywhere!
+    client.process_spans(collected_spans)  # ← Process from anywhere!
 ```
 
 #### Important: Context Isolation
@@ -1454,7 +1455,12 @@ with client.get_span_buffer("trace-123") as buffer:
         pass
     
     print(f"Total buffered: {buffer.get_span_count()}")  # Shows 2
-    buffer.export_spans()  # Exports both spans
+    
+    # Extract spans before context exits
+    collected_spans = buffer.get_all_spans()
+
+# Process through processor pipeline
+client.process_spans(collected_spans)
 
 # Normal span (exported immediately)
 with tracer.start_as_current_span("after_buffer"):
@@ -1495,14 +1501,14 @@ def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
             )
     
     # Phase 2: Buffer persists - spans are now transportable!
-    # Export anywhere, anytime with full control
+    # Process anywhere, anytime with full control
     if should_export_to_keywordsai(experiment_id):
-        success = client.export_spans(buffer)  # KeywordsAI export
+        success = client.process_spans(buffer)  # Process through OTEL pipeline
     elif should_export_to_internal_db(org_id):
         spans = buffer.get_all_spans()
         success = export_to_internal_system(spans)  # Custom export
     else:
-        buffer.clear_spans()  # Discard without export
+        buffer.clear_spans()  # Discard without processing
         success = True
     
     return success
@@ -1528,19 +1534,20 @@ with client.get_span_buffer(f"experiment-{experiment_id}") as buffer:
     # Extract spans before context exits
     collected_spans = buffer.get_all_spans()
 
-# Transportable export - decide based on experiment results
+# Transportable processing - decide based on experiment results
 if experiment_was_successful(experiment_results):
-    client.export_spans(collected_spans)  # Export successful experiments
+    client.process_spans(collected_spans)  # Process successful experiments
 else:
-    # Just don't export (spans will be garbage collected)
+    # Just don't process (spans will be garbage collected)
     pass
 ```
 
 **Benefits:**
-- ✅ **Manual export timing**: Export only when you explicitly call `client.export_spans()` (vs automatic background export)
-- ✅ **Conditional export**: Decide whether to export based on span inspection or business logic
-- ✅ **Transportable spans**: Collect spans in one place, export anywhere in your code
+- ✅ **Manual processing timing**: Process only when you explicitly call `client.process_spans()` (vs automatic background processing)
+- ✅ **Conditional processing**: Decide whether to process based on span inspection or business logic
+- ✅ **Transportable spans**: Collect spans in one place, process anywhere in your code through OTEL pipeline
 - ✅ **Async span creation**: Create spans after execution completes (decouple execution from tracing)
+- ✅ **OTEL-compliant**: Spans flow through standard processor pipeline (filters, transformations, export)
 - ✅ **Single API call per trace**: All spans in a trace exported together (vs individual span exports)
 - ✅ **Inspection capability**: Review and modify spans before sending
 - ✅ **Thread-safe isolation**: Uses context variables for proper isolation

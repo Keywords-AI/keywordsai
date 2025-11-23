@@ -243,32 +243,32 @@ class FilteringSpanProcessor(SpanProcessor):
 
 class SpanBuffer:
     """
-    OpenTelemetry-compliant context manager for buffering spans with manual export control.
+    OpenTelemetry-compliant context manager for buffering spans.
     
-    Uses context variables to ensure only spans created within this buffer's
-    context are collected, without affecting other spans in the application.
+    SpanBuffer collects spans in a local queue without processing them.
+    After collection, you can process them through any processor using
+    the process_spans() method.
     
-    This follows OpenTelemetry patterns and avoids naming conflicts with 
-    the OpenTelemetry Collector component.
+    This follows OpenTelemetry patterns by separating span collection
+    from span processing, allowing full control over when and how spans
+    are processed.
     
     This enables:
     1. Batch buffering of multiple spans
-    2. Manual export timing control
+    2. Manual processing timing control
     3. Asynchronous span creation (create spans after execution completes)
-    4. Single ingestion call per trace instead of per-span
+    4. Route buffered spans to any processor
     5. Thread-safe isolation (each context has its own buffer)
     """
     
-    def __init__(self, trace_id: str, exporter: SpanExporter):
+    def __init__(self, trace_id: str):
         """
         Initialize the span buffer.
         
         Args:
             trace_id: Trace ID for the spans being buffered
-            exporter: SpanExporter to use for batch export
         """
         self.trace_id = trace_id
-        self.exporter = exporter
         self._local_queue: List[ReadableSpan] = []
         self._is_buffering = False
         self._context_token = None
@@ -371,40 +371,47 @@ class SpanBuffer:
         """
         return self._local_queue.copy()
     
-    def export_spans(self) -> bool:
+    def process_spans(self, tracer_provider) -> int:
         """
-        Export all spans from the local queue as a single batch.
+        Process all buffered spans through the tracer's processors.
+        
+        This sends spans through the standard OTEL processing pipeline,
+        allowing processors to filter, transform, and export as configured.
+        
+        Args:
+            tracer_provider: The TracerProvider with registered processors
         
         Returns:
-            True if export was successful, False otherwise
+            Number of spans processed
         """
         if not self._local_queue:
-            logger.debug(f"[SpanBuffer] No spans to export for trace {self.trace_id}")
-            return True
+            logger.debug(f"[SpanBuffer] No spans to process for trace {self.trace_id}")
+            return 0
         
+        span_count = len(self._local_queue)
         logger.info(
-            f"[SpanBuffer] Exporting {len(self._local_queue)} spans "
+            f"[SpanBuffer] Processing {span_count} spans "
             f"for trace {self.trace_id}"
         )
         
         try:
-            result = self.exporter.export(self._local_queue)
-            success = result == SpanExportResult.SUCCESS
-            
-            if success:
+            # Get all registered processors from tracer provider
+            if hasattr(tracer_provider, '_active_span_processor'):
+                # Send each span through the processor pipeline
+                for span in self._local_queue:
+                    tracer_provider._active_span_processor.on_end(span)
+                
                 logger.info(
-                    f"[SpanBuffer] Successfully exported {len(self._local_queue)} spans"
+                    f"[SpanBuffer] Successfully processed {span_count} spans"
                 )
+                return span_count
             else:
-                logger.error(
-                    f"[SpanBuffer] Failed to export spans: {result}"
-                )
-            
-            return success
+                logger.error("[SpanBuffer] No active span processor found")
+                return 0
             
         except Exception as e:
-            logger.exception(f"[SpanBuffer] Exception during export: {e}")
-            return False
+            logger.exception(f"[SpanBuffer] Exception during processing: {e}")
+            return 0
     
     def clear_spans(self):
         """

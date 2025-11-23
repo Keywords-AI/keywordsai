@@ -376,31 +376,22 @@ class KeywordsAIClient:
         """
         if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
             logger.warning("KeywordsAI Telemetry not initialized or disabled.")
-            # Return a no-op buffer that won't do anything
-            # For now, we'll still return a buffer but it won't work properly
+            raise RuntimeError("KeywordsAI Telemetry not initialized or disabled.")
         
-        # Get the exporter from the tracer
-        if not hasattr(self._tracer, 'exporter'):
-            logger.error(
-                "Exporter not available. SpanBuffer requires an exporter. "
-                "Make sure KeywordsAI telemetry is properly initialized."
-            )
-            raise RuntimeError("SpanBuffer requires initialized telemetry with an exporter")
-        
-        return SpanBuffer(trace_id=trace_id, exporter=self._tracer.exporter)
+        return SpanBuffer(trace_id=trace_id)
     
-    def export_spans(self, spans) -> bool:
+    def process_spans(self, spans) -> bool:
         """
-        Export a list of spans using the client's configured exporter.
+        Process spans through the configured processors.
         
-        This enables transportable span export - you can collect spans in a buffer,
-        store them in variables, and export them anywhere in your code at any time.
+        This sends spans through the standard OTEL processing pipeline,
+        allowing all registered processors to filter, transform, and export.
         
         Args:
-            spans: List of ReadableSpan objects to export, or SpanBuffer instance
+            spans: List of ReadableSpan objects, or SpanBuffer instance
         
         Returns:
-            True if export was successful, False otherwise
+            True if processing was successful, False otherwise
         
         Example:
             ```python
@@ -418,8 +409,8 @@ class KeywordsAIClient:
                 # Extract spans before context exits
                 collected_spans = buffer.get_all_spans()
             
-            # Export anywhere, anytime using client's exporter
-            success = client.export_spans(collected_spans)
+            # Process anywhere, anytime through processors
+            success = client.process_spans(collected_spans)
             ```
         
         Example (conditional export):
@@ -432,9 +423,9 @@ class KeywordsAIClient:
                 # Extract spans before context exits
                 collected_spans = buffer.get_all_spans()
             
-            # Later, elsewhere in code - decide whether to export
+            # Later, elsewhere in code - decide whether to process
             if should_export_trace():
-                client.export_spans(collected_spans)  # Export when ready
+                client.process_spans(collected_spans)  # Process when ready
             else:
                 # Just don't export (spans will be garbage collected)
                 pass
@@ -444,37 +435,33 @@ class KeywordsAIClient:
         from opentelemetry.sdk.trace.export import SpanExportResult
         
         # Handle SpanBuffer instance
-        if hasattr(spans, 'get_all_spans'):
-            # It's a SpanBuffer - get the spans
-            span_list = spans.get_all_spans()
-            trace_id = getattr(spans, 'trace_id', 'unknown')
+        if hasattr(spans, 'process_spans'):
+            # It's a SpanBuffer - use its process method
+            count = spans.process_spans(self._tracer.tracer_provider)
+            return count > 0
         else:
-            # It's a list of spans
+            # It's a list of spans - process through tracer provider
             span_list = spans
             trace_id = 'unknown'
-        
-        if not span_list:
-            logger.debug(f"[Client] No spans to export for trace {trace_id}")
-            return True
-        
-        # Get the exporter from the tracer
-        if not hasattr(self._tracer, 'exporter'):
-            logger.error("Exporter not available. Make sure KeywordsAI telemetry is properly initialized.")
-            return False
-        
-        logger.info(f"[Client] Exporting {len(span_list)} spans for trace {trace_id}")
-        
-        try:
-            result = self._tracer.exporter.export(span_list)
-            success = result == SpanExportResult.SUCCESS
             
-            if success:
-                logger.info(f"[Client] Successfully exported {len(span_list)} spans")
-            else:
-                logger.error(f"[Client] Failed to export spans: {result}")
+            if not span_list:
+                logger.debug(f"[Client] No spans to process for trace {trace_id}")
+                return True
             
-            return success
+            logger.info(f"[Client] Processing {len(span_list)} spans for trace {trace_id}")
             
-        except Exception as e:
-            logger.exception(f"[Client] Exception during export: {e}")
-            return False 
+            try:
+                # Send through processor pipeline
+                if hasattr(self._tracer.tracer_provider, '_active_span_processor'):
+                    for span in span_list:
+                        self._tracer.tracer_provider._active_span_processor.on_end(span)
+                    
+                    logger.info(f"[Client] Successfully processed {len(span_list)} spans")
+                    return True
+                else:
+                    logger.error("[Client] No active span processor found")
+                    return False
+                
+            except Exception as e:
+                logger.exception(f"[Client] Exception during processing: {e}")
+                return False 
