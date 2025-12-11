@@ -69,10 +69,13 @@ class ImageContent(KeywordsAIBaseModel):
 
 class FileContent(KeywordsAIBaseModel):
     type: Literal["file"] = "file"
-    file_id: str
-    file_name: str
-    file_type: str
-    file_size: int
+    file_data: bytes = None
+    file_id: str = None
+    filename: str = None # OpenAI format
+    file_name: str = None
+    file_type: str = None
+    file_size: int = None
+    file: Dict[str, Any] = None
 
 
 class TextContent(KeywordsAIBaseModel):
@@ -91,12 +94,6 @@ class OutputTextContent(KeywordsAIBaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
     cache_control: Optional[CacheControl] = None
-
-
-class FileContent(KeywordsAIBaseModel):
-    type: Literal["file"] = "file"
-    file: Dict[str, Any] = {}
-
 
 class InputFileContent(KeywordsAIBaseModel):
     type: Literal["input_file"] = "input_file"
