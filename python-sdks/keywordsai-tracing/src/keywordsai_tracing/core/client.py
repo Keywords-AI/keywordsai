@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, Optional, Union
 from opentelemetry import trace, context as context_api
 from opentelemetry.trace.span import Span
