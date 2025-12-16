@@ -21,6 +21,20 @@ export type DecoratorConfig = {
   traceContent?: boolean;
   inputParameters?: unknown[];
   suppressTracing?: boolean;
+  /**
+   * Route this span to specific processors by name.
+   * Can be a single processor name or an array of names.
+   * 
+   * @example
+   * ```typescript
+   * // Single processor
+   * { processors: "debug" }
+   * 
+   * // Multiple processors
+   * { processors: ["debug", "analytics"] }
+   * ```
+   */
+  processors?: string | string[];
 };
 
 /**
@@ -46,6 +60,7 @@ function withEntity<
     traceContent: overrideTraceContent,
     inputParameters,
     suppressTracing: shouldSuppressTracing,
+    processors,
   }: DecoratorConfig,
   fn: F,
   thisArg?: ThisParameterType<F>,
@@ -133,6 +148,11 @@ function withEntity<
         // Optional version information
         if (version) {
           span.setAttribute(SpanAttributes.TRACELOOP_ENTITY_VERSION, version);
+        }
+
+        // Set processor routing if specified
+        if (processors) {
+          span.setAttribute("keywordsai.processors", processors);
         }
 
         // STEP 10: Capture input parameters if tracing is enabled

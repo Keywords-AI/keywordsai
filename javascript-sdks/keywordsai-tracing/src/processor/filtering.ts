@@ -18,9 +18,14 @@ import { getEntityPath } from "../utils/context.js";
  */
 export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
   private readonly _spanProcessor: SpanProcessor;
+  private readonly _postprocessCallback?: (span: ReadableSpan) => void;
 
-  constructor(exporter: SpanExporter) {
+  constructor(
+    exporter: SpanExporter,
+    postprocessCallback?: (span: ReadableSpan) => void
+  ) {
     this._spanProcessor = new BatchSpanProcessor(exporter);
+    this._postprocessCallback = postprocessCallback;
   }
 
   onStart(span: ReadableSpan, parentContext: Context): void {
@@ -45,6 +50,15 @@ export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
   onEnd(span: ReadableSpan): void {
     const spanKind = span.attributes[SpanAttributes.TRACELOOP_SPAN_KIND];
     const entityPath = span.attributes[SpanAttributes.TRACELOOP_ENTITY_PATH];
+    
+    // Apply postprocess callback if provided
+    if (this._postprocessCallback) {
+      try {
+        this._postprocessCallback(span);
+      } catch (error) {
+        console.error("[KeywordsAI] Error in span postprocess callback:", error);
+      }
+    }
     
     if (spanKind) {
       // This is a user-decorated span (withWorkflow, withTask, etc.) - make it a root span

@@ -1,9 +1,11 @@
 import { withTask, withWorkflow, withAgent, withTool } from "./decorators/index.js";
 import { WithFunctionType } from "./types/decoratorTypes.js";
-import { KeywordsAIOptions } from "./types/clientTypes.js";
+import { KeywordsAIOptions, ProcessorConfig } from "./types/clientTypes.js";
 import { withKeywordsAISpanAttributes } from "./contexts/span.js";
-import { startTracing, forceFlush } from "./utils/tracing.js";
+import { startTracing, forceFlush, addProcessorToSDK } from "./utils/tracing.js";
 import { enableInstrumentation } from "./instrumentation/index.js";
+import { getClient as getClientAPI } from "./utils/client.js";
+import { getSpanBufferManager } from "./utils/spanBuffer.js";
 
 /**
  * KeywordsAI client for trace management and instrumentation.
@@ -151,5 +153,68 @@ export class KeywordsAITelemetry {
      */
     public async shutdown(): Promise<void> {
         await forceFlush();
+    }
+
+    /**
+     * Add a processor for routing spans to different destinations.
+     * 
+     * @param config - Processor configuration
+     * 
+     * @example
+     * ```typescript
+     * // Add debug processor
+     * keywordsAi.addProcessor({
+     *   exporter: new FileExporter("./debug.json"),
+     *   name: "debug"
+     * });
+     * 
+     * // Use in decorator
+     * await keywordsAi.withTask(
+     *   { name: "my_task", processors: "debug" },
+     *   async () => { ... }
+     * );
+     * ```
+     */
+    public addProcessor(config: ProcessorConfig): void {
+        addProcessorToSDK(config);
+    }
+
+    /**
+     * Get the client API for span management.
+     * Provides methods to update spans, add events, record exceptions, etc.
+     * 
+     * @returns The KeywordsAI client instance
+     * 
+     * @example
+     * ```typescript
+     * const client = keywordsAi.getClient();
+     * const traceId = client.getCurrentTraceId();
+     * client.updateCurrentSpan({
+     *   keywordsaiParams: {
+     *     customerIdentifier: "user-123"
+     *   }
+     * });
+     * ```
+     */
+    public getClient() {
+        return getClientAPI();
+    }
+
+    /**
+     * Get the span buffer manager for manual span control.
+     * 
+     * @returns The span buffer manager
+     * 
+     * @example
+     * ```typescript
+     * const manager = keywordsAi.getSpanBufferManager();
+     * const buffer = manager.createBuffer("trace-123");
+     * buffer.createSpan("step1", { status: "completed" });
+     * const spans = buffer.getAllSpans();
+     * await manager.processSpans(spans);
+     * ```
+     */
+    public getSpanBufferManager() {
+        return getSpanBufferManager();
     }
 }

@@ -3,8 +3,9 @@ import { diag, DiagLogLevel } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { Resource } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-import { KeywordsAIOptions } from "../types/clientTypes.js";
+import { KeywordsAIOptions, ProcessorConfig } from "../types/clientTypes.js";
 import { KeywordsAIFilteringSpanProcessor } from "../processor/index.js";
+import { MultiProcessorManager } from "../processor/manager.js";
 import { 
   getInstrumentations, 
   initInstrumentations, 
@@ -16,6 +17,7 @@ import { shouldSendTraces } from "./context.js";
 // Global SDK instance (singleton)
 let _sdk: NodeSDK;
 let _initialized: boolean = false;
+let _processorManager: MultiProcessorManager | undefined;
 
 /**
  * Helper function to resolve and clean up the base URL
@@ -71,6 +73,8 @@ export const startTracing = async (options: KeywordsAIOptions) => {
     instrumentModules,
     traceContent = true,
     disabledInstrumentations = [],
+    resourceAttributes = {},
+    spanPostprocessCallback,
   } = options;
 
   // Debug logging for configuration
@@ -180,13 +184,16 @@ export const startTracing = async (options: KeywordsAIOptions) => {
     diagLogLevel
   );
 
-  // Create resource
+  // Create resource with custom attributes
   const resource = new Resource({
     [ATTR_SERVICE_NAME]: appName,
+    ...resourceAttributes,
   });
   console.debug(
     "[KeywordsAI Debug] Created resource with service name:",
-    appName
+    appName,
+    "and attributes:",
+    resourceAttributes
   );
 
   // Prepare exporter URL and configuration
@@ -214,8 +221,11 @@ export const startTracing = async (options: KeywordsAIOptions) => {
 
   console.debug("[KeywordsAI Debug] Created OTLP trace exporter");
 
-  // Create filtering span processor to only export user-decorated spans
-  const filteringProcessor = new KeywordsAIFilteringSpanProcessor(traceExporter);
+  // Create filtering span processor for default export
+  const filteringProcessor = new KeywordsAIFilteringSpanProcessor(
+    traceExporter,
+    spanPostprocessCallback
+  );
   
   console.debug("[KeywordsAI Debug] Created filtering span processor - withEntity spans become roots, auto-instrumentation spans within entity context are preserved with entityPath, pure noise is filtered out");
 
@@ -293,4 +303,20 @@ export const forceFlush = async (): Promise<void> => {
  */
 export const getClient = (): NodeSDK | undefined => {
   return _sdk;
+};
+
+/**
+ * Add a processor to the SDK for routing spans.
+ * This allows routing spans to different destinations based on processor names.
+ * 
+ * @param config - Processor configuration
+ */
+export const addProcessorToSDK = (config: ProcessorConfig): void => {
+  if (!_processorManager) {
+    console.error("[KeywordsAI] Cannot add processor - SDK not initialized");
+    return;
+  }
+  
+  _processorManager.addProcessor(config);
+  console.log(`[KeywordsAI] Added processor: ${config.name}`);
 };
