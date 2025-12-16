@@ -105,7 +105,6 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("OpenAI instrumentation error:", e),
         });
@@ -356,7 +355,6 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(openAIInstrumentation);

@@ -22,6 +22,20 @@ export type InstrumentationName =
     | 'qdrant';
 
 /**
+ * Configuration for a span processor with routing capabilities
+ */
+export interface ProcessorConfig {
+    /** The span exporter to use */
+    exporter: SpanExporter;
+    /** Name identifier for this processor (used for routing) */
+    name: string;
+    /** Optional custom filter function for spans */
+    filter?: (span: any) => boolean;
+    /** Optional priority (higher = processed first) */
+    priority?: number;
+}
+
+/**
  * Options for initializing the KeywordsAI SDK.
  */
 export interface KeywordsAIOptions {
@@ -101,6 +115,35 @@ export interface KeywordsAIOptions {
      * Defaults to true.
      */
     tracingEnabled?: boolean;
+
+    /**
+     * Additional resource attributes to attach to all spans. Optional.
+     * Useful for adding environment, version, region, etc.
+     * 
+     * @example
+     * ```typescript
+     * resourceAttributes: {
+     *   environment: 'production',
+     *   version: '1.0.0',
+     *   region: 'us-east-1'
+     * }
+     * ```
+     */
+    resourceAttributes?: Record<string, string>;
+
+    /**
+     * Optional callback function to process spans before export.
+     * This is called for each span before it's sent to the exporter.
+     * 
+     * @example
+     * ```typescript
+     * spanPostprocessCallback: (span) => {
+     *   // Add custom processing
+     *   console.log('Processing span:', span.name);
+     * }
+     * ```
+     */
+    spanPostprocessCallback?: (span: any) => void;
 
     /**
      * Explicitly specify modules to instrument. Optional.

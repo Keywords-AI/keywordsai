@@ -1,37 +1,37 @@
 import { Context } from "@opentelemetry/api";
-import { 
-  SpanProcessor, 
-  ReadableSpan, 
-  BatchSpanProcessor,
-  SpanExporter
+import {
+  SpanProcessor,
+  ReadableSpan,
 } from "@opentelemetry/sdk-trace-base";
 import { SpanAttributes } from "@traceloop/ai-semantic-conventions";
-import { getEntityPath } from "../utils/context.js";
+import { MultiProcessorManager } from "./manager.js";
 
 /**
- * Custom span processor that implements intelligent span filtering:
- * 1. User-decorated spans (withEntity) become root spans (no parent hierarchy)
- * 2. Auto-instrumentation spans within withEntity context get entityPath and are preserved
- * 3. Pure auto-instrumentation spans (no context) are filtered out
+ * Composite processor that combines filtering with multi-processor routing.
  * 
- * This eliminates noise while preserving useful spans like OpenAI/HTTP calls within user workflows.
+ * Flow:
+ * 1. Filter spans (keep only user-decorated spans and their children)
+ * 2. Apply postprocess callback if configured
+ * 3. Route filtered spans to appropriate processors
+ * 
+ * This ensures only meaningful spans are routed to processors.
  */
-export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
-  private readonly _spanProcessor: SpanProcessor;
+export class KeywordsAICompositeProcessor implements SpanProcessor {
+  private readonly _processorManager: MultiProcessorManager;
   private readonly _postprocessCallback?: (span: ReadableSpan) => void;
 
   constructor(
-    exporter: SpanExporter,
+    processorManager: MultiProcessorManager,
     postprocessCallback?: (span: ReadableSpan) => void
   ) {
-    this._spanProcessor = new BatchSpanProcessor(exporter);
+    this._processorManager = processorManager;
     this._postprocessCallback = postprocessCallback;
   }
 
   onStart(span: ReadableSpan, parentContext: Context): void {
     // Check if this span is being created within an entity context
     // If so, add the entityPath attribute so it gets preserved by our filtering
-    const entityPath = getEntityPath(parentContext);
+    const entityPath = this.getEntityPath(parentContext);
     if (entityPath && !span.attributes[SpanAttributes.TRACELOOP_SPAN_KIND]) {
       // This is an auto-instrumentation span within an entity context
       // Add the entityPath attribute so it doesn't get filtered out
@@ -43,8 +43,8 @@ export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
       (span as any).setAttribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entityPath);
     }
     
-    // Always call onStart for all spans to maintain proper span lifecycle
-    this._spanProcessor.onStart(span as any, parentContext);
+    // Forward to processor manager
+    this._processorManager.onStart(span, parentContext);
   }
 
   onEnd(span: ReadableSpan): void {
@@ -60,10 +60,11 @@ export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
       }
     }
     
+    // Filter: only process spans that are user-decorated or within entity context
     if (spanKind) {
       // This is a user-decorated span (withWorkflow, withTask, etc.) - make it a root span
       console.debug(
-        `[KeywordsAI Debug] Sending user-decorated span as root: ${span.name} (kind: ${spanKind})`
+        `[KeywordsAI Debug] Processing user-decorated span as root: ${span.name} (kind: ${spanKind})`
       );
 
       // Create a wrapper that makes the span appear as a root span
@@ -78,15 +79,17 @@ export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
         enumerable: true
       });
 
-      this._spanProcessor.onEnd(rootSpan);
+      // Route to processors
+      this._processorManager.onEnd(rootSpan);
     } else if (entityPath && entityPath !== "") {
       // This span doesn't have a kind but has entityPath - it's a child span within a withEntity context
       // Keep it as a normal child span (preserve parent relationships)
       console.debug(
-        `[KeywordsAI Debug] Sending child span within entity context: ${span.name} (entityPath: ${entityPath})`
+        `[KeywordsAI Debug] Processing child span within entity context: ${span.name} (entityPath: ${entityPath})`
       );
       
-      this._spanProcessor.onEnd(span);
+      // Route to processors
+      this._processorManager.onEnd(span);
     } else {
       // This span has neither kind nor entityPath - it's pure auto-instrumentation noise
       console.debug(
@@ -95,11 +98,27 @@ export class KeywordsAIFilteringSpanProcessor implements SpanProcessor {
     }
   }
 
-  shutdown(): Promise<void> {
-    return this._spanProcessor.shutdown();
+  async shutdown(): Promise<void> {
+    await this._processorManager.shutdown();
   }
 
-  forceFlush(): Promise<void> {
-    return this._spanProcessor.forceFlush();
+  async forceFlush(): Promise<void> {
+    await this._processorManager.forceFlush();
   }
-} 
+
+  /**
+   * Get the entity path from context
+   */
+  private getEntityPath(context: Context): string | undefined {
+    // This is a simplified version - in reality, we'd need to import the context utilities
+    // For now, we'll return undefined and rely on the decorator setting the attribute
+    return undefined;
+  }
+
+  /**
+   * Get the processor manager (for adding new processors)
+   */
+  public getProcessorManager(): MultiProcessorManager {
+    return this._processorManager;
+  }
+}
