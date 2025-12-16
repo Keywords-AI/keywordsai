@@ -11,10 +11,10 @@
 import { KeywordsAITelemetry } from "../src/index.js";
 import {
   SpanExporter,
-  SpanExportResult,
   ReadableSpan,
 } from "@opentelemetry/sdk-trace-base";
-import dotenv from "dotenv";
+import { ExportResult as SpanExportResult } from "@opentelemetry/core";
+import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -41,7 +41,7 @@ class TestExporter implements SpanExporter {
       processorSpans[this.name].push(span.name);
       console.log(`[${this.name} Processor] Received span: ${span.name}`);
     }
-    resultCallback({ code: SpanExportResult.SUCCESS });
+    resultCallback({ code: 0 }); // SUCCESS
   }
 
   shutdown(): Promise<void> {

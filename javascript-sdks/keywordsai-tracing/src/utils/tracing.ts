@@ -4,8 +4,8 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { Resource } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { KeywordsAIOptions, ProcessorConfig } from "../types/clientTypes.js";
-import { KeywordsAIFilteringSpanProcessor } from "../processor/index.js";
 import { MultiProcessorManager } from "../processor/manager.js";
+import { KeywordsAICompositeProcessor } from "../processor/composite.js";
 import { 
   getInstrumentations, 
   initInstrumentations, 
@@ -17,7 +17,7 @@ import { shouldSendTraces } from "./context.js";
 // Global SDK instance (singleton)
 let _sdk: NodeSDK;
 let _initialized: boolean = false;
-let _processorManager: MultiProcessorManager | undefined;
+let _compositeProcessor: KeywordsAICompositeProcessor | undefined;
 
 /**
  * Helper function to resolve and clean up the base URL
@@ -221,13 +221,28 @@ export const startTracing = async (options: KeywordsAIOptions) => {
 
   console.debug("[KeywordsAI Debug] Created OTLP trace exporter");
 
-  // Create filtering span processor for default export
-  const filteringProcessor = new KeywordsAIFilteringSpanProcessor(
-    traceExporter,
+  // Initialize multi-processor manager
+  const processorManager = new MultiProcessorManager();
+  
+  // Add default KeywordsAI processor to the manager
+  // This ensures backward compatibility: spans without a `processors` attribute
+  // automatically go to the default KeywordsAI exporter
+  processorManager.addProcessor({
+    exporter: traceExporter,
+    name: "default",
+    priority: 0,
+  });
+  
+  console.debug("[KeywordsAI Debug] Added default processor to multi-processor manager (backward compatibility)");
+
+  // Create composite processor that does filtering + routing
+  // Flow: SDK -> CompositeProcessor (filters) -> ProcessorManager (routes) -> Individual Processors
+  _compositeProcessor = new KeywordsAICompositeProcessor(
+    processorManager,
     spanPostprocessCallback
   );
   
-  console.debug("[KeywordsAI Debug] Created filtering span processor - withEntity spans become roots, auto-instrumentation spans within entity context are preserved with entityPath, pure noise is filtered out");
+  console.debug("[KeywordsAI Debug] Created composite processor - filters spans and routes to multiple processors");
 
   // Get instrumentations for SDK
   const instrumentationsList = getInstrumentations();
@@ -240,7 +255,7 @@ export const startTracing = async (options: KeywordsAIOptions) => {
 
   _sdk = new NodeSDK({
     resource,
-    spanProcessors: [filteringProcessor],
+    spanProcessors: [_compositeProcessor],
     instrumentations: instrumentationsList,
     textMapPropagator: propagator,
     contextManager,
@@ -312,11 +327,12 @@ export const getClient = (): NodeSDK | undefined => {
  * @param config - Processor configuration
  */
 export const addProcessorToSDK = (config: ProcessorConfig): void => {
-  if (!_processorManager) {
+  if (!_compositeProcessor) {
     console.error("[KeywordsAI] Cannot add processor - SDK not initialized");
     return;
   }
   
-  _processorManager.addProcessor(config);
+  const processorManager = _compositeProcessor.getProcessorManager();
+  processorManager.addProcessor(config);
   console.log(`[KeywordsAI] Added processor: ${config.name}`);
 };

@@ -158,20 +158,29 @@ export class KeywordsAITelemetry {
     /**
      * Add a processor for routing spans to different destinations.
      * 
+     * Note: A default processor is automatically configured to send spans to KeywordsAI.
+     * You only need to call this method if you want to route spans to additional destinations.
+     * 
      * @param config - Processor configuration
      * 
      * @example
      * ```typescript
-     * // Add debug processor
+     * // Add debug processor (in addition to default KeywordsAI processor)
      * keywordsAi.addProcessor({
      *   exporter: new FileExporter("./debug.json"),
      *   name: "debug"
      * });
      * 
-     * // Use in decorator
+     * // Route specific spans to debug processor
      * await keywordsAi.withTask(
      *   { name: "my_task", processors: "debug" },
      *   async () => { ... }
+     * );
+     * 
+     * // Spans without processors attribute go to default KeywordsAI processor
+     * await keywordsAi.withTask(
+     *   { name: "normal_task" },
+     *   async () => { ... }  // <- Goes to default processor
      * );
      * ```
      */

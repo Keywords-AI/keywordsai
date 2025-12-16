@@ -117,9 +117,10 @@ export class MultiProcessorManager implements SpanProcessor {
       return config.filter(span);
     }
     
-    // If no processors attribute and no custom filter, send to this processor
-    // (this ensures backward compatibility - default processor gets everything)
-    return true;
+    // If no processors attribute and no custom filter:
+    // - Send to "default" processor (backward compatibility)
+    // - Don't send to other named processors (they need explicit routing)
+    return config.name === "default";
   }
 
   onStart(span: ReadableSpan, parentContext: Context): void {
