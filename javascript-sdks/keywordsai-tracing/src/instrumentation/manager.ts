@@ -105,7 +105,6 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("OpenAI instrumentation error:", e),
         });
@@ -120,7 +119,6 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-anthropic"
         );
         anthropicInstrumentation = new AnthropicInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         return anthropicInstrumentation;
@@ -134,7 +132,6 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-azure"
         );
         azureOpenAIInstrumentation = new AzureOpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         return azureOpenAIInstrumentation;
@@ -358,7 +355,6 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(openAIInstrumentation);
@@ -375,7 +371,6 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-anthropic"
         );
         anthropicInstrumentation = new AnthropicInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(anthropicInstrumentation);
@@ -392,7 +387,6 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-azure"
         );
         azureOpenAIInstrumentation = new AzureOpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(azureOpenAIInstrumentation);

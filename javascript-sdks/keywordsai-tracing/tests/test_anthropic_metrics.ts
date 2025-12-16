@@ -1,5 +1,8 @@
 import { KeywordsAITelemetry } from '../src/main';
 import Anthropic from '@anthropic-ai/sdk';
+import dotenv from 'dotenv';
+
+dotenv.config({ override: true });
 
 /**
  * Test to verify Anthropic instrumentation properly records metrics (tokens, cost, etc.)

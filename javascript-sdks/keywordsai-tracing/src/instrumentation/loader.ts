@@ -29,7 +29,6 @@ export const loadInstrumentation = async (
           `[KeywordsAI Debug] Successfully imported ${info.description}`
         );
         return new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("OpenAI instrumentation error:", e),
         });
@@ -42,7 +41,6 @@ export const loadInstrumentation = async (
           `[KeywordsAI Debug] Successfully imported ${info.description}`
         );
         return new AnthropicInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("Anthropic instrumentation error:", e),
         });
@@ -55,7 +53,6 @@ export const loadInstrumentation = async (
           `[KeywordsAI Debug] Successfully imported ${info.description}`
         );
         return new AzureOpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("Azure instrumentation error:", e),
         });
