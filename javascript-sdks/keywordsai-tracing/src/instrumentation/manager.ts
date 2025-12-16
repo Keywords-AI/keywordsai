@@ -64,6 +64,7 @@ export const configureTraceContent = (enabled: boolean): void => {
   );
 
   openAIInstrumentation?.setConfig?.({ traceContent });
+  anthropicInstrumentation?.setConfig?.({ traceContent });
   azureOpenAIInstrumentation?.setConfig?.({ traceContent });
   llamaIndexInstrumentation?.setConfig?.({ traceContent });
   vertexaiInstrumentation?.setConfig?.({ traceContent });
@@ -119,6 +120,7 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-anthropic"
         );
         anthropicInstrumentation = new AnthropicInstrumentation({
+          enrichTokens: true,
           exceptionLogger,
         });
         return anthropicInstrumentation;
@@ -132,6 +134,7 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-azure"
         );
         azureOpenAIInstrumentation = new AzureOpenAIInstrumentation({
+          enrichTokens: true,
           exceptionLogger,
         });
         return azureOpenAIInstrumentation;
@@ -372,6 +375,7 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-anthropic"
         );
         anthropicInstrumentation = new AnthropicInstrumentation({
+          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(anthropicInstrumentation);
@@ -388,6 +392,7 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-azure"
         );
         azureOpenAIInstrumentation = new AzureOpenAIInstrumentation({
+          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(azureOpenAIInstrumentation);
