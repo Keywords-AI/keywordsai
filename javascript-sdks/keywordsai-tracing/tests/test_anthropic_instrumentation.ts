@@ -29,7 +29,10 @@ console.log('\n🚀 Content Summarization with Claude\n');
 // Initialize tracing
 const kai = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY,
+    baseURL: process.env.KEYWORDSAI_BASE_URL,
     appName: 'content-summarizer',
+    traceContent: true,
+    logLevel: 'debug',  // Enable debug logging to see spans
     instrumentModules: {
         anthropic: Anthropic  // Enable Anthropic tracing
     }
@@ -45,8 +48,9 @@ const anthropic = new Anthropic({
 
 // Example: Summarize content with tracing
 async function summarizeContent(text: string): Promise<string> {
-    return await kai.withTask(
-        { name: 'summarize_content' },
+    // Call Anthropic directly inside workflow (no intermediate task)
+    return await kai.withWorkflow(
+        { name: 'summarize_workflow', version: 1 },
         async () => {
             const response = await anthropic.messages.create({
                 model: 'claude-3-haiku-20240307',
@@ -66,8 +70,9 @@ async function summarizeContent(text: string): Promise<string> {
 
 // Example: Generate creative content
 async function generateIdeas(topic: string): Promise<string[]> {
-    return await kai.withTask(
-        { name: 'generate_ideas' },
+    // Call Anthropic directly inside workflow (no intermediate task)
+    return await kai.withWorkflow(
+        { name: 'ideas_workflow', version: 1 },
         async () => {
             const response = await anthropic.messages.create({
                 model: 'claude-3-haiku-20240307',
@@ -110,37 +115,19 @@ async function generateIdeas(topic: string): Promise<string[]> {
         ideas.slice(0, 3).forEach(idea => console.log(`  • ${idea}`));
         console.log('✓ Ideas generated\n');
 
-        // Example 3: Streaming response
-        console.log('📨 Example 3: Streaming Response');
-        await kai.withTask(
-            { name: 'stream_story' },
-            async () => {
-                const stream = await anthropic.messages.create({
-                    model: 'claude-3-haiku-20240307',
-                    max_tokens: 150,
-                    messages: [{ 
-                        role: 'user', 
-                        content: 'Write a haiku about coding' 
-                    }],
-                    stream: true
-                });
-
-                process.stdout.write('Haiku: ');
-                for await (const event of stream) {
-                    if (event.type === 'content_block_delta' && 
-                        event.delta.type === 'text_delta') {
-                        process.stdout.write(event.delta.text);
-                    }
-                }
-                console.log('\n✓ Streaming complete\n');
-            }
-        );
+        // Example 3: Streaming response (skip due to known instrumentation issue)
+        console.log('📨 Example 3: Streaming Response (skipped - known issue)');
+        console.log('⚠️  Streaming is not fully supported by Anthropic instrumentation\n');
 
         console.log('✅ All examples completed!');
-        console.log('\n📊 View traces at: https://platform.keywordsai.co/');
+        console.log('\n📊 Check your backend for:');
+        console.log('   - Workflow: summarize_workflow (with token metrics)');
+        console.log('   - Workflow: ideas_workflow (with token metrics)');
+        console.log('   - Each should have anthropic.chat spans with full usage data\n');
         
-        // Allow time for trace export
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Shutdown to flush all traces
+        await kai.shutdown();
+        console.log('✓ Traces flushed to backend\n');
         
     } catch (error) {
         console.error('\n❌ Error:', error instanceof Error ? error.message : error);

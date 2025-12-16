@@ -81,14 +81,20 @@ const testAnthropicMetrics = async () => {
 
 // Run the test
 testAnthropicMetrics()
-    .then(() => {
+    .then(async () => {
         console.log('\n[Test] All tests completed successfully!');
-        // Give some time for traces to be exported
-        setTimeout(() => process.exit(0), 2000);
+        console.log('[Test] Shutting down and flushing traces...\n');
+        
+        // Properly shutdown to flush all traces and show detailed metrics
+        await keywordsAI.shutdown();
+        console.log('[Test] ✓ Traces flushed to backend\n');
+        
+        process.exit(0);
     })
-    .catch((error) => {
+    .catch(async (error) => {
         console.error('\n[Test] Test suite failed:', error);
-        setTimeout(() => process.exit(1), 2000);
+        await keywordsAI.shutdown();
+        process.exit(1);
     });
 
 export { keywordsAI, testAnthropicMetrics };

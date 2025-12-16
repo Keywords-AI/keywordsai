@@ -5,6 +5,7 @@ import {
 } from "@opentelemetry/sdk-trace-base";
 import { SpanAttributes } from "@traceloop/ai-semantic-conventions";
 import { MultiProcessorManager } from "./manager.js";
+import { getEntityPath } from "../utils/context.js";
 
 /**
  * Composite processor that combines filtering with multi-processor routing.
@@ -31,7 +32,7 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
   onStart(span: ReadableSpan, parentContext: Context): void {
     // Check if this span is being created within an entity context
     // If so, add the entityPath attribute so it gets preserved by our filtering
-    const entityPath = this.getEntityPath(parentContext);
+    const entityPath = getEntityPath(parentContext);
     if (entityPath && !span.attributes[SpanAttributes.TRACELOOP_SPAN_KIND]) {
       // This is an auto-instrumentation span within an entity context
       // Add the entityPath attribute so it doesn't get filtered out
@@ -109,11 +110,7 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
   /**
    * Get the entity path from context
    */
-  private getEntityPath(context: Context): string | undefined {
-    // This is a simplified version - in reality, we'd need to import the context utilities
-    // For now, we'll return undefined and rely on the decorator setting the attribute
-    return undefined;
-  }
+  // Removed - now using imported getEntityPath function
 
   /**
    * Get the processor manager (for adding new processors)
