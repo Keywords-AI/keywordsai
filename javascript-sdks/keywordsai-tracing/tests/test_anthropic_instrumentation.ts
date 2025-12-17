@@ -2,13 +2,27 @@
 /**
  * Anthropic (Claude) Integration Example
  * 
+ * ⚠️  VERSION REQUIREMENT: This example requires @anthropic-ai/sdk@^0.20.0
+ * 
+ * Compatibility:
+ * ✅ @anthropic-ai/sdk@^0.20.0 - Fully working with all metrics
+ * ❌ @anthropic-ai/sdk@0.71+ - Not compatible (spans won't be created)
+ * 
+ * The @traceloop/instrumentation-anthropic package officially supports SDK 0.9.1+,
+ * but SDK v0.71+ introduced breaking changes that prevent instrumentation from working.
+ * 
  * This example shows how to trace Anthropic API calls with KeywordsAI.
  * Use case: Building a content summarization tool with Claude
  * 
  * Setup:
- * 1. npm install @anthropic-ai/sdk @traceloop/instrumentation-anthropic
+ * 1. Use compatible SDK version (already in package.json):
+ *    yarn add -D @anthropic-ai/sdk@^0.20.0 @traceloop/instrumentation-anthropic
  * 2. Set ANTHROPIC_API_KEY and KEYWORDSAI_API_KEY environment variables
  * 3. Run: tsx tests/test_anthropic_instrumentation.ts
+ * 
+ * Alternative:
+ * - Use OpenAI instead (fully supported with latest SDK versions)
+ * - See examples/openai-integration-test.ts
  */
 
 import { KeywordsAITelemetry } from '../src/main.js';
@@ -26,15 +40,16 @@ if (!process.env.ANTHROPIC_API_KEY) {
 
 console.log('\n🚀 Content Summarization with Claude\n');
 
-// Initialize tracing
+// Initialize tracing with MANUAL instrumentation
 const kai = new KeywordsAITelemetry({
     apiKey: process.env.KEYWORDSAI_API_KEY,
     baseURL: process.env.KEYWORDSAI_BASE_URL,
     appName: 'content-summarizer',
     traceContent: true,
     logLevel: 'debug',  // Enable debug logging to see spans
+    disableBatch: true,  // Immediate export for testing
     instrumentModules: {
-        anthropic: Anthropic  // Enable Anthropic tracing
+        anthropic: Anthropic  // Manual instrumentation
     }
 });
 

@@ -525,6 +525,35 @@ const kai = new KeywordsAITelemetry({
 });
 ```
 
+### Anthropic spans not appearing?
+
+**Known Issue**: `@traceloop/instrumentation-anthropic@0.22.2` doesn't work with `@anthropic-ai/sdk@0.71+`
+
+**Tested Working Versions:**
+- ✅ `@anthropic-ai/sdk@^0.20.0` - Full tracing support with all metrics
+- ❌ `@anthropic-ai/sdk@0.71+` - No spans created (incompatible)
+
+**Official Support**: The instrumentation package officially supports SDK `0.9.1 and later`, but undocumented breaking changes in SDK 0.71+ prevent spans from being created.
+
+**Solutions:**
+
+1. **Use the tested working version** (recommended):
+   ```bash
+   npm install @anthropic-ai/sdk@^0.20.0
+   # or
+   yarn add @anthropic-ai/sdk@^0.20.0
+   ```
+
+2. **Use OpenAI instead** - Fully supported with latest SDK versions
+
+**What Works with 0.20.x:**
+- ✅ All token metrics (`gen_ai.usage.prompt_tokens`, `gen_ai.usage.completion_tokens`)
+- ✅ Full request/response content tracing
+- ✅ Model information and metadata
+- ✅ Proper span hierarchy within workflows
+
+**Status**: SDK v0.71+ introduced internal API changes that broke instrumentation compatibility. Waiting for `@traceloop` to update their package.
+
 ### Spans not showing up?
 
 1. Check that you're using decorators (`withTask`, `withWorkflow`, etc.)

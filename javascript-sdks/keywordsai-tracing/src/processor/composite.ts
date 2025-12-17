@@ -61,7 +61,17 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
       }
     }
     
-    // Filter: only process spans that are user-decorated or within entity context
+    // Check if this is an LLM instrumentation span (OpenAI, Anthropic, etc.)
+    // These have gen_ai.* or llm.* attributes
+    const isLLMSpan = 
+      span.attributes['gen_ai.system'] !== undefined ||
+      span.attributes['llm.system'] !== undefined ||
+      span.attributes['gen_ai.request.model'] !== undefined ||
+      span.name.includes('anthropic.messages') ||
+      span.name.includes('openai.chat') ||
+      span.name.includes('chat.completions');
+    
+    // Filter: only process spans that are user-decorated, within entity context, or LLM calls
     if (spanKind) {
       // This is a user-decorated span (withWorkflow, withTask, etc.) - make it a root span
       console.debug(
@@ -91,10 +101,18 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
       
       // Route to processors
       this._processorManager.onEnd(span);
-    } else {
-      // This span has neither kind nor entityPath - it's pure auto-instrumentation noise
+    } else if (isLLMSpan) {
+      // This is an LLM instrumentation span - keep it!
       console.debug(
-        `[KeywordsAI Debug] Filtering out auto-instrumentation span: ${span.name} (no TRACELOOP_SPAN_KIND or entityPath)`
+        `[KeywordsAI Debug] Processing LLM instrumentation span: ${span.name}`
+      );
+      
+      // Route to processors
+      this._processorManager.onEnd(span);
+    } else {
+      // This span has none of the above - it's pure auto-instrumentation noise (HTTP calls, etc.)
+      console.debug(
+        `[KeywordsAI Debug] Filtering out auto-instrumentation span: ${span.name}`
       );
     }
   }
