@@ -45,10 +45,10 @@
     "@ai-sdk/provider-utils" "2.2.3"
     zod-to-json-schema "^3.24.1"
 
-"@anthropic-ai/sdk@^0.20.9":
-  version "0.20.9"
-  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.20.9.tgz#f7c983861774e1595d5941a4d02774b7aa87c780"
-  integrity sha512-Lq74+DhiEQO6F9/gdVOLmHx57pX45ebK2Q/zH14xYe1157a7QeUVknRqIp0Jz5gQI01o7NKbuv9Dag2uQsLjDg==
+"@anthropic-ai/sdk@0.41.0":
+  version "0.41.0"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.41.0.tgz#2fc0148efcf45961cc94e7eb27e2b6cb13397af4"
+  integrity sha512-A4sfU0ss3BhhfMrm1RNl4YRt8B9CMIkheCRfow0vV3h0rYI9GBT/9lVsQPKGMwStnJSdowqUnVdSxLLrnutcHg==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
@@ -57,7 +57,6 @@
     form-data-encoder "1.7.2"
     formdata-node "^4.3.2"
     node-fetch "^2.6.7"
-    web-streams-polyfill "^3.2.1"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -1370,11 +1369,6 @@ web-streams-polyfill@4.0.0-beta.3:
   version "4.0.0-beta.3"
   resolved "https://registry.npmjs.org/web-streams-polyfill/-/web-streams-polyfill-4.0.0-beta.3.tgz"
   integrity sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==
-
-web-streams-polyfill@^3.2.1:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-3.3.3.tgz#2073b91a2fdb1fbfbd401e7de0ac9f8214cecb4b"
-  integrity sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==
 
 webidl-conversions@^3.0.0:
   version "3.0.1"

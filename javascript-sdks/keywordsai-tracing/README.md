@@ -530,19 +530,20 @@ const kai = new KeywordsAITelemetry({
 **Known Issue**: `@traceloop/instrumentation-anthropic@0.22.2` doesn't work with `@anthropic-ai/sdk@0.71+`
 
 **Tested Working Versions:**
-- ✅ `@anthropic-ai/sdk@^0.20.0` - Full tracing support with all metrics
-- ❌ `@anthropic-ai/sdk@0.71+` - No spans created (incompatible)
+- ✅ `@anthropic-ai/sdk@^0.20.0` to `@^0.41.0` - Full tracing support with all metrics
+- ❌ `@anthropic-ai/sdk@0.50.0+` - No spans created (breaking changes)
 
-**Official Support**: The instrumentation package officially supports SDK `0.9.1 and later`, but undocumented breaking changes in SDK 0.71+ prevent spans from being created.
+**Official Support**: The instrumentation package officially supports SDK `0.9.1 and later`, but breaking changes in SDK `v0.50.0` prevent spans from being created. Last confirmed working version: `0.41.0`.
 
 **Solutions:**
 
-1. **Use the tested working version** (recommended):
+1. **Use a compatible version** (recommended - use latest working version):
    ```bash
-   npm install @anthropic-ai/sdk@^0.20.0
+   npm install @anthropic-ai/sdk@^0.41.0
    # or
-   yarn add @anthropic-ai/sdk@^0.20.0
+   yarn add @anthropic-ai/sdk@^0.41.0
    ```
+   Or use any version between `0.20.0` and `0.41.0`
 
 2. **Use OpenAI instead** - Fully supported with latest SDK versions
 
@@ -552,7 +553,7 @@ const kai = new KeywordsAITelemetry({
 - ✅ Model information and metadata
 - ✅ Proper span hierarchy within workflows
 
-**Status**: SDK v0.71+ introduced internal API changes that broke instrumentation compatibility. Waiting for `@traceloop` to update their package.
+**Status**: SDK v0.50.0 introduced breaking changes that broke instrumentation compatibility. Waiting for `@traceloop` to update their package.
 
 ### Spans not showing up?
 

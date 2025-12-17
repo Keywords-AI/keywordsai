@@ -2,21 +2,22 @@
 /**
  * Anthropic (Claude) Integration Example
  * 
- * ⚠️  VERSION REQUIREMENT: This example requires @anthropic-ai/sdk@^0.20.0
+ * ⚠️  VERSION REQUIREMENT: This example requires @anthropic-ai/sdk ≤0.41.0
  * 
- * Compatibility:
- * ✅ @anthropic-ai/sdk@^0.20.0 - Fully working with all metrics
- * ❌ @anthropic-ai/sdk@0.71+ - Not compatible (spans won't be created)
+ * Compatibility (tested via binary search):
+ * ✅ @anthropic-ai/sdk@0.20.0 to @0.41.0 - Fully working with all metrics
+ * ❌ @anthropic-ai/sdk@0.50.0+ - Not compatible (spans won't be created)
  * 
  * The @traceloop/instrumentation-anthropic package officially supports SDK 0.9.1+,
- * but SDK v0.71+ introduced breaking changes that prevent instrumentation from working.
+ * but SDK v0.50.0+ introduced breaking changes that prevent instrumentation from working.
+ * Last confirmed working version: 0.41.0
  * 
  * This example shows how to trace Anthropic API calls with KeywordsAI.
  * Use case: Building a content summarization tool with Claude
  * 
  * Setup:
- * 1. Use compatible SDK version (already in package.json):
- *    yarn add -D @anthropic-ai/sdk@^0.20.0 @traceloop/instrumentation-anthropic
+ * 1. Use compatible SDK version (already in package.json at 0.41.0):
+ *    yarn add -D @anthropic-ai/sdk@0.41.0 @traceloop/instrumentation-anthropic
  * 2. Set ANTHROPIC_API_KEY and KEYWORDSAI_API_KEY environment variables
  * 3. Run: tsx tests/test_anthropic_instrumentation.ts
  * 
