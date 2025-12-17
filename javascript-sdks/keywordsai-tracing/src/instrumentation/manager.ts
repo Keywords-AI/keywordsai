@@ -64,6 +64,7 @@ export const configureTraceContent = (enabled: boolean): void => {
   );
 
   openAIInstrumentation?.setConfig?.({ traceContent });
+  anthropicInstrumentation?.setConfig?.({ traceContent });
   azureOpenAIInstrumentation?.setConfig?.({ traceContent });
   llamaIndexInstrumentation?.setConfig?.({ traceContent });
   vertexaiInstrumentation?.setConfig?.({ traceContent });
@@ -104,7 +105,6 @@ export const initInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("OpenAI instrumentation error:", e),
         });
@@ -355,7 +355,6 @@ export const manuallyInitInstrumentations = async (
           "@traceloop/instrumentation-openai"
         );
         openAIInstrumentation = new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger,
         });
         instrumentations.push(openAIInstrumentation);

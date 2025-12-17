@@ -5,6 +5,7 @@ import {
 } from "@opentelemetry/sdk-trace-base";
 import { SpanAttributes } from "@traceloop/ai-semantic-conventions";
 import { MultiProcessorManager } from "./manager.js";
+import { getEntityPath } from "../utils/context.js";
 
 /**
  * Composite processor that combines filtering with multi-processor routing.
@@ -31,7 +32,7 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
   onStart(span: ReadableSpan, parentContext: Context): void {
     // Check if this span is being created within an entity context
     // If so, add the entityPath attribute so it gets preserved by our filtering
-    const entityPath = this.getEntityPath(parentContext);
+    const entityPath = getEntityPath(parentContext);
     if (entityPath && !span.attributes[SpanAttributes.TRACELOOP_SPAN_KIND]) {
       // This is an auto-instrumentation span within an entity context
       // Add the entityPath attribute so it doesn't get filtered out
@@ -60,7 +61,17 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
       }
     }
     
-    // Filter: only process spans that are user-decorated or within entity context
+    // Check if this is an LLM instrumentation span (OpenAI, Anthropic, etc.)
+    // These have gen_ai.* or llm.* attributes
+    const isLLMSpan = 
+      span.attributes['gen_ai.system'] !== undefined ||
+      span.attributes['llm.system'] !== undefined ||
+      span.attributes['gen_ai.request.model'] !== undefined ||
+      span.name.includes('anthropic.messages') ||
+      span.name.includes('openai.chat') ||
+      span.name.includes('chat.completions');
+    
+    // Filter: only process spans that are user-decorated, within entity context, or LLM calls
     if (spanKind) {
       // This is a user-decorated span (withWorkflow, withTask, etc.) - make it a root span
       console.debug(
@@ -90,10 +101,18 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
       
       // Route to processors
       this._processorManager.onEnd(span);
-    } else {
-      // This span has neither kind nor entityPath - it's pure auto-instrumentation noise
+    } else if (isLLMSpan) {
+      // This is an LLM instrumentation span - keep it!
       console.debug(
-        `[KeywordsAI Debug] Filtering out auto-instrumentation span: ${span.name} (no TRACELOOP_SPAN_KIND or entityPath)`
+        `[KeywordsAI Debug] Processing LLM instrumentation span: ${span.name}`
+      );
+      
+      // Route to processors
+      this._processorManager.onEnd(span);
+    } else {
+      // This span has none of the above - it's pure auto-instrumentation noise (HTTP calls, etc.)
+      console.debug(
+        `[KeywordsAI Debug] Filtering out auto-instrumentation span: ${span.name}`
       );
     }
   }
@@ -109,11 +128,7 @@ export class KeywordsAICompositeProcessor implements SpanProcessor {
   /**
    * Get the entity path from context
    */
-  private getEntityPath(context: Context): string | undefined {
-    // This is a simplified version - in reality, we'd need to import the context utilities
-    // For now, we'll return undefined and rely on the decorator setting the attribute
-    return undefined;
-  }
+  // Removed - now using imported getEntityPath function
 
   /**
    * Get the processor manager (for adding new processors)

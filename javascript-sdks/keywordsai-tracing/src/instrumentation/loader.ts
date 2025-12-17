@@ -29,7 +29,6 @@ export const loadInstrumentation = async (
           `[KeywordsAI Debug] Successfully imported ${info.description}`
         );
         return new OpenAIInstrumentation({
-          enrichTokens: true,
           exceptionLogger: (e: Error) =>
             console.error("OpenAI instrumentation error:", e),
         });

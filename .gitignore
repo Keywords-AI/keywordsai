@@ -7,3 +7,5 @@ boilerplates/
 **/*/traceloop-sdk
 **/*/__pycache__/
 /.env
+
+**/*/.DS_Store

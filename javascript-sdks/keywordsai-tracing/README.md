@@ -479,12 +479,204 @@ The following instrumentations can be enabled dynamically:
 - `together` - Together AI API calls
 - `vertexai` - Google Vertex AI API calls
 
+## Troubleshooting Instrumentation
+
+### Error: "instrumentation failed to initialize"
+
+This usually means the instrumentation package is missing. Install it:
+
+```bash
+# For Anthropic
+npm install @traceloop/instrumentation-anthropic
+
+# For OpenAI
+npm install @traceloop/instrumentation-openai
+```
+
+### Error: "Cannot read properties of undefined (reading 'prototype')"
+
+This means you're using manual instrumentation but passed the wrong module. Make sure to:
+
+```typescript
+// ✅ CORRECT - Pass the class/module itself
+instrumentModules: {
+    anthropic: Anthropic  // The imported class
+}
+
+// ❌ WRONG - Don't pass an instance
+instrumentModules: {
+    anthropic: new Anthropic()  // This won't work
+}
+```
+
+### Dynamic instrumentation not working in Next.js/Webpack?
+
+Use manual instrumentation instead:
+
+```typescript
+// Instead of this:
+await kai.enableInstrumentation('anthropic');
+
+// Use this:
+const kai = new KeywordsAITelemetry({
+    instrumentModules: {
+        anthropic: Anthropic
+    }
+});
+```
+
+### Anthropic spans not appearing?
+
+**Known Issue**: `@traceloop/instrumentation-anthropic@0.22.2` doesn't work with `@anthropic-ai/sdk@0.71+`
+
+**Tested Working Versions:**
+- ✅ `@anthropic-ai/sdk@^0.20.0` - Full tracing support with all metrics
+- ❌ `@anthropic-ai/sdk@0.71+` - No spans created (incompatible)
+
+**Official Support**: The instrumentation package officially supports SDK `0.9.1 and later`, but undocumented breaking changes in SDK 0.71+ prevent spans from being created.
+
+**Solutions:**
+
+1. **Use the tested working version** (recommended):
+   ```bash
+   npm install @anthropic-ai/sdk@^0.20.0
+   # or
+   yarn add @anthropic-ai/sdk@^0.20.0
+   ```
+
+2. **Use OpenAI instead** - Fully supported with latest SDK versions
+
+**What Works with 0.20.x:**
+- ✅ All token metrics (`gen_ai.usage.prompt_tokens`, `gen_ai.usage.completion_tokens`)
+- ✅ Full request/response content tracing
+- ✅ Model information and metadata
+- ✅ Proper span hierarchy within workflows
+
+**Status**: SDK v0.71+ introduced internal API changes that broke instrumentation compatibility. Waiting for `@traceloop` to update their package.
+
+### Spans not showing up?
+
+1. Check that you're using decorators (`withTask`, `withWorkflow`, etc.)
+2. Verify API key is set: `process.env.KEYWORDSAI_API_KEY`
+3. Enable debug logging: `logLevel: 'debug'`
+4. Check network requests to KeywordsAI endpoint
+
 ## Environment Variables
 
 - `KEYWORDSAI_API_KEY`: Your KeywordsAI API key
 - `KEYWORDSAI_BASE_URL`: KeywordsAI base URL (default: https://api.keywordsai.co)
 - `KEYWORDSAI_APP_NAME`: Default app name
 - `KEYWORDSAI_TRACE_CONTENT`: Enable/disable content tracing (default: true)
+
+## Provider-Specific Examples
+
+### OpenAI
+
+**Method 1: Dynamic Instrumentation (Simple)**
+```typescript
+import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import OpenAI from 'openai';
+
+const kai = new KeywordsAITelemetry({
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    appName: 'openai-app'
+});
+
+// Enable OpenAI instrumentation dynamically
+await kai.enableInstrumentation('openai');
+
+const openai = new OpenAI();
+
+await kai.withTask({ name: 'chat' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
+    console.log(response.choices[0].message.content);
+});
+```
+
+**Method 2: Manual Instrumentation (Next.js/Webpack)**
+```typescript
+import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import OpenAI from 'openai';
+
+const kai = new KeywordsAITelemetry({
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    appName: 'openai-app',
+    instrumentModules: {
+        openAI: OpenAI  // Pass the OpenAI class
+    }
+});
+
+await kai.initialize();
+
+const openai = new OpenAI();
+
+await kai.withTask({ name: 'chat' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
+    console.log(response.choices[0].message.content);
+});
+```
+
+### Anthropic (Claude)
+
+```typescript
+import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import Anthropic from '@anthropic-ai/sdk';
+
+// Initialize with Anthropic instrumentation
+const kai = new KeywordsAITelemetry({
+    apiKey: process.env.KEYWORDSAI_API_KEY,
+    appName: 'anthropic-app',
+    instrumentModules: {
+        anthropic: Anthropic  // Pass the Anthropic class
+    }
+});
+
+await kai.initialize();
+
+// Create Anthropic client (will be auto-instrumented)
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
+
+// Use with decorators
+await kai.withTask({ name: 'generate_text' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: 'Hello, Claude!' }]
+    });
+    
+    console.log(response.content[0].text);
+});
+
+// Streaming example
+await kai.withTask({ name: 'stream_text' }, async () => {
+    const stream = await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: 'Count to 10' }],
+        stream: true
+    });
+    
+    for await (const event of stream) {
+        if (event.type === 'content_block_delta' && 
+            event.delta.type === 'text_delta') {
+            process.stdout.write(event.delta.text);
+        }
+    }
+});
+```
+
+**Note**: Make sure to install the Anthropic instrumentation:
+```bash
+npm install @anthropic-ai/sdk @traceloop/instrumentation-anthropic
+```
 
 ## Complete Examples
 
