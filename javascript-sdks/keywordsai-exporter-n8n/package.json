@@ -29,7 +29,10 @@
 		"prepublishOnly": "n8n-node prerelease"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"credentials",
+		"nodes",
+		"icons"
 	],
 	"publishConfig": {
 		"access": "public"
