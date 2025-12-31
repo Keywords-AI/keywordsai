@@ -1,6 +1,6 @@
 {
 	"name": "@keywordsai/n8n-nodes-keywordsai",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Keywords AI Exporter for n8n",
 	"license": "MIT",
 	"homepage": "https://keywordsai.co",
