@@ -151,17 +151,48 @@ export class KeywordsAIExporter implements SpanExporter {
     const toolCalls = this.parseToolCalls(span);
     const messages = this.parseCompletionMessages(span, toolCalls);
 
+    let prompt_tokens = this.parsePromptTokens(span);
+    let completion_tokens = this.parseCompletionTokens(span);
+    let cost = this.parseCost(span);
+
+    // Bubble up tokens and cost from related spans in the same trace if current span has none
+    if (prompt_tokens === 0) {
+      const traceId = span.spanContext().traceId;
+      for (const relatedSpan of relatedSpans) {
+        if (
+          relatedSpan.spanContext().traceId === traceId &&
+          relatedSpan.spanContext().spanId !== span.spanContext().spanId
+        ) {
+          prompt_tokens += this.parsePromptTokens(relatedSpan);
+          completion_tokens += this.parseCompletionTokens(relatedSpan);
+          const relatedCost = this.parseCost(relatedSpan);
+          if (relatedCost) {
+            cost = (cost || 0) + relatedCost;
+          }
+        }
+      }
+    }
+
     const payload: KeywordsAIPayload = {
       model,
+      provider_id: span.attributes["ai.model.provider"]?.toString(),
       start_time: this.formatTimestamp(span.startTime),
       timestamp: this.formatTimestamp(span.endTime),
       prompt_messages: this.parsePromptMessages(span),
       completion_message: messages[0],
       customer_identifier: metadata.userId || "default_user",
-      thread_identifier: metadata.userId,
-      prompt_tokens: this.parsePromptTokens(span),
-      completion_tokens: this.parseCompletionTokens(span),
-      cost: this.parseCost(span),
+      customer_params: {
+        customer_identifier: metadata.userId || "default_user",
+        name: metadata.customer_name || metadata.customerName,
+        email: metadata.customer_email || metadata.customerEmail,
+      },
+      thread_identifier: 
+        span.attributes["ai.telemetry.metadata.conversationId"]?.toString() ||
+        span.attributes["ai.telemetry.metadata.threadId"]?.toString() ||
+        metadata.userId,
+      prompt_tokens,
+      completion_tokens,
+      cost,
       generation_time: this.parseGenerationTime(span),
       latency: this.calculateLatency(span),
       ttft: this.parseTtft(span),
@@ -181,6 +212,8 @@ export class KeywordsAIExporter implements SpanExporter {
       span_unique_id: span.spanContext().spanId,
       span_name: span.name,
       span_parent_id:
+        (span as any).parentSpanId ||
+        span.parentSpanContext?.spanId ||
         span.attributes["span.parent_id"]?.toString() ||
         span.attributes["parentSpanId"]?.toString(),
       span_path: span.attributes["ai.path"]?.toString(),
@@ -205,9 +238,7 @@ export class KeywordsAIExporter implements SpanExporter {
       disable_log: false,
       request_breakdown: false,
       disable_fallback: false,
-      ...this.parseCustomerParams(span),
     };
-
     return payload;
   }
 
