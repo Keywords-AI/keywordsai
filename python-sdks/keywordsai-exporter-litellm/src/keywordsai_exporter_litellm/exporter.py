@@ -1,33 +1,8 @@
 """Keywords AI LiteLLM Integration.
 
-This module provides instrumentation for LiteLLM to send traces to Keywords AI.
-
-Two integration methods are provided:
-
-1. LiteLLMInstrumentor (Recommended)
-   - OpenTelemetry-compliant automatic instrumentation
-   - Uses wrapt for safe, reversible monkey-patching
-   - Automatically captures all LiteLLM calls
-
-2. KeywordsAILiteLLMCallback
-   - LiteLLM-native callback class
-   - Manual trace hierarchy via keywordsai_params
-
-Example - Instrumentor:
-    from keywordsai_exporter_litellm import LiteLLMInstrumentor
-    import litellm
-
-    LiteLLMInstrumentor().instrument(api_key="your-api-key")
-    response = litellm.completion(model="gpt-4", messages=[...])
-
-Example - Callback:
-    from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
-    import litellm
-
-    callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
-    litellm.success_callback = [callback.log_success_event]
-    litellm.failure_callback = [callback.log_failure_event]
-    response = litellm.completion(model="gpt-4", messages=[...])
+Two integration methods:
+1. LiteLLMInstrumentor - OpenTelemetry-compliant automatic instrumentation
+2. KeywordsAILiteLLMCallback - LiteLLM-native callback class
 """
 
 import json
@@ -36,7 +11,7 @@ import os
 import threading
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Collection, Dict, List, Optional, Union
+from typing import Any, Collection, Dict, List, Optional
 
 import litellm
 import requests
@@ -45,7 +20,7 @@ from opentelemetry import trace
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, SpanExporter, SpanExportResult
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
 logger = logging.getLogger(__name__)
 
@@ -62,30 +37,7 @@ DEFAULT_KEYWORDSAI_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
 # =============================================================================
 
 class KeywordsAISpanExporter(SpanExporter):
-    """Custom OTEL SpanExporter that sends spans to Keywords AI endpoint.
-    
-    This exporter transforms OTEL spans into the Keywords AI trace format
-    and sends them via HTTP POST to the Keywords AI API.
-    
-    The payload format matches the Keywords AI traces/ingest endpoint:
-    {
-        "trace_unique_id": "...",
-        "span_unique_id": "...",
-        "span_parent_id": "...",
-        "span_name": "...",
-        "span_workflow_name": "...",
-        "log_type": "generation|workflow|tool|custom",
-        "timestamp": "...",
-        "start_time": "...",
-        "latency": 1.0,
-        "input": "...",
-        "output": "...",
-        "model": "...",
-        "usage": {...},
-        "customer_identifier": "...",
-        "metadata": {...}
-    }
-    """
+    """OTEL SpanExporter that sends spans to Keywords AI."""
     
     def __init__(
         self,
@@ -94,203 +46,142 @@ class KeywordsAISpanExporter(SpanExporter):
         timeout: int = 10,
     ):
         self.api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
-        self.endpoint = endpoint or os.getenv(
-            "KEYWORDSAI_ENDPOINT",
-            DEFAULT_KEYWORDSAI_ENDPOINT
-        )
+        self.endpoint = endpoint or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_KEYWORDSAI_ENDPOINT)
         self.timeout = timeout
         
         if not self.api_key:
-            logger.warning(
-                "Keywords AI API key not provided. "
-                "Set KEYWORDSAI_API_KEY environment variable or pass api_key parameter."
-            )
+            logger.warning("Keywords AI API key not provided")
     
     def export(self, spans) -> SpanExportResult:
-        """Export spans to Keywords AI endpoint as a batch."""
+        """Export spans to Keywords AI endpoint."""
         if not self.api_key:
             return SpanExportResult.FAILURE
         
         try:
-            # Transform all spans to Keywords AI format
-            keywords_logs = []
-            for span in spans:
-                logger.debug(f"Processing span: {span.name}, trace_id={format(span.context.trace_id, '032x')}, parent={span.parent}")
-                payload = self._transform_span_to_payload(span)
-                if payload:
-                    keywords_logs.append(payload)
-                    logger.debug(f"Added payload for span: {payload.get('span_name')}, log_type={payload.get('log_type')}")
-            
-            # Send as batch if we have any logs
-            if keywords_logs:
-                for p in keywords_logs:
-                    logger.info(f"Sending span: name={p.get('span_name')}, trace_id={p.get('trace_unique_id')}, span_id={p.get('span_unique_id')}, parent_id={p.get('span_parent_id')}, log_type={p.get('log_type')}")
-                self._send_batch_to_keywordsai(keywords_logs)
-                logger.debug(f"Successfully sent {len(keywords_logs)} spans to Keywords AI")
-            
+            payloads = [p for s in spans if (p := self._transform_span(s))]
+            if payloads:
+                self._send_batch(payloads)
             return SpanExportResult.SUCCESS
         except Exception as e:
-            logger.error(f"Failed to export spans to Keywords AI: {e}", exc_info=True)
+            logger.error(f"Failed to export spans: {e}")
             return SpanExportResult.FAILURE
     
     def shutdown(self) -> None:
-        """Shutdown the exporter."""
         pass
     
     def force_flush(self, timeout_millis: int = 30000) -> bool:
-        """Force flush any pending spans."""
         return True
     
-    def _transform_span_to_payload(self, span) -> Optional[Dict[str, Any]]:
-        """Transform an OTEL span to Keywords AI trace payload format."""
-        attributes = dict(span.attributes) if span.attributes else {}
+    def _transform_span(self, span) -> Optional[Dict[str, Any]]:
+        """Transform OTEL span to Keywords AI format."""
+        attrs = dict(span.attributes) if span.attributes else {}
         
-        # Extract timestamps
-        start_time_ns = span.start_time
-        end_time_ns = span.end_time
-        start_time_iso = datetime.fromtimestamp(start_time_ns / 1e9, tz=timezone.utc).isoformat()
-        timestamp_iso = datetime.fromtimestamp(end_time_ns / 1e9, tz=timezone.utc).isoformat()
-        latency = (end_time_ns - start_time_ns) / 1e9
+        # Timestamps
+        start_ns, end_ns = span.start_time, span.end_time
+        start_iso = datetime.fromtimestamp(start_ns / 1e9, tz=timezone.utc).isoformat()
+        end_iso = datetime.fromtimestamp(end_ns / 1e9, tz=timezone.utc).isoformat()
         
-        # Determine log_type based on span name and attributes
-        is_llm_span = span.name.startswith("litellm")
-        has_parent = span.parent is not None
+        # Determine log_type
+        is_llm = span.name.startswith("litellm")
+        log_type = "generation" if is_llm else ("tool" if span.parent else "workflow")
         
-        if is_llm_span:
-            log_type = "generation"
-        elif has_parent:
-            log_type = "tool"
-        else:
-            log_type = "workflow"
-        
-        # Build the payload matching Keywords AI trace format
         payload = {
             "trace_unique_id": format(span.context.trace_id, '032x'),
             "span_unique_id": format(span.context.span_id, '016x'),
             "span_name": span.name,
-            "span_workflow_name": attributes.get("workflow.name", span.name),
+            "span_workflow_name": attrs.get("workflow.name", span.name),
             "log_type": log_type,
-            "timestamp": timestamp_iso,
-            "start_time": start_time_iso,
-            "latency": latency,
+            "timestamp": end_iso,
+            "start_time": start_iso,
+            "latency": (end_ns - start_ns) / 1e9,
         }
         
-        # Add parent span if exists
         if span.parent:
             payload["span_parent_id"] = format(span.parent.span_id, '016x')
         
-        # Add model
-        model = attributes.get("litellm.model") or attributes.get("llm.model")
-        if model:
+        # Model
+        if model := attrs.get("litellm.model") or attrs.get("llm.model"):
             payload["model"] = model
         
-        # Add input (messages as JSON string)
-        if "litellm.messages" in attributes:
-            messages = attributes["litellm.messages"]
-            payload["input"] = messages if isinstance(messages, str) else json.dumps(messages)
+        # Input/Output
+        if "litellm.messages" in attrs:
+            msg = attrs["litellm.messages"]
+            payload["input"] = msg if isinstance(msg, str) else json.dumps(msg)
         
-        # Add output (completion as JSON string)
-        if "litellm.completion" in attributes:
-            completion = attributes["litellm.completion"]
-            payload["output"] = completion if isinstance(completion, str) else json.dumps(completion)
+        if "litellm.completion" in attrs:
+            comp = attrs["litellm.completion"]
+            payload["output"] = comp if isinstance(comp, str) else json.dumps(comp)
         
-        # Add usage info as nested object
+        # Usage
         usage = {}
-        if "litellm.prompt_tokens" in attributes:
-            usage["prompt_tokens"] = attributes["litellm.prompt_tokens"]
-        if "litellm.completion_tokens" in attributes:
-            usage["completion_tokens"] = attributes["litellm.completion_tokens"]
-        if "litellm.total_tokens" in attributes:
-            usage["total_tokens"] = attributes["litellm.total_tokens"]
+        for key in ["prompt_tokens", "completion_tokens", "total_tokens"]:
+            if f"litellm.{key}" in attrs:
+                usage[key] = attrs[f"litellm.{key}"]
         if usage:
             payload["usage"] = usage
         
-        # Add error info
-        if attributes.get("error"):
-            payload["error_message"] = attributes.get("exception.message", str(attributes.get("error")))
+        # Error
+        if attrs.get("error"):
+            payload["error_message"] = attrs.get("exception.message", str(attrs.get("error")))
             payload["status"] = "error"
         
-        # Add stream flag
-        if "litellm.stream" in attributes:
-            payload["stream"] = attributes["litellm.stream"]
+        # Stream/Tools
+        if "litellm.stream" in attrs:
+            payload["stream"] = attrs["litellm.stream"]
         
-        # Add tools if present
-        if "litellm.tools" in attributes:
-            tools = attributes["litellm.tools"]
-            if isinstance(tools, str):
-                try:
-                    tools = json.loads(tools)
-                except json.JSONDecodeError:
-                    pass
-            payload["tools"] = tools
+        for key in ["tools", "tool_choice"]:
+            if f"litellm.{key}" in attrs:
+                val = attrs[f"litellm.{key}"]
+                if isinstance(val, str):
+                    try:
+                        val = json.loads(val)
+                    except json.JSONDecodeError:
+                        pass
+                payload[key] = val
         
-        if "litellm.tool_choice" in attributes:
-            tool_choice = attributes["litellm.tool_choice"]
-            if isinstance(tool_choice, str):
-                try:
-                    tool_choice = json.loads(tool_choice)
-                except json.JSONDecodeError:
-                    pass
-            payload["tool_choice"] = tool_choice
-        
-        # Extract customer_identifier and metadata from keywordsai params
+        # Keywords AI params
         metadata = {}
-        for key, value in attributes.items():
+        for key, value in attrs.items():
             if key.startswith("keywordsai."):
-                param_key = key.replace("keywordsai.", "")
+                param = key.replace("keywordsai.", "")
                 if isinstance(value, str):
                     try:
                         value = json.loads(value)
                     except json.JSONDecodeError:
                         pass
                 
-                # Special handling for known top-level fields
-                if param_key == "customer_identifier":
+                if param == "customer_identifier":
                     payload["customer_identifier"] = value
-                elif param_key == "customer_params":
-                    if isinstance(value, dict):
-                        payload["customer_identifier"] = value.get("customer_identifier")
-                        # Add other customer params to metadata
-                        for k, v in value.items():
-                            if k != "customer_identifier":
-                                metadata[f"customer_{k}"] = v
-                elif param_key == "thread_identifier":
+                elif param == "customer_params" and isinstance(value, dict):
+                    payload["customer_identifier"] = value.get("customer_identifier")
+                    for k, v in value.items():
+                        if k != "customer_identifier":
+                            metadata[f"customer_{k}"] = v
+                elif param == "thread_identifier":
                     payload["thread_identifier"] = value
-                elif param_key == "metadata":
-                    if isinstance(value, dict):
-                        metadata.update(value)
+                elif param == "metadata" and isinstance(value, dict):
+                    metadata.update(value)
                 else:
-                    metadata[param_key] = value
+                    metadata[param] = value
         
         if metadata:
             payload["metadata"] = metadata
         
         return payload
     
-    def _send_batch_to_keywordsai(self, payloads: List[Dict[str, Any]]) -> None:
-        """Send batch of payloads to Keywords AI endpoint."""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-        
-        # Send as a list (batch)
-        logger.debug(f"POST to {self.endpoint} with {len(payloads)} payloads")
+    def _send_batch(self, payloads: List[Dict[str, Any]]) -> None:
+        """Send batch to Keywords AI."""
         response = requests.post(
             self.endpoint,
             json=payloads,
-            headers=headers,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
             timeout=self.timeout,
         )
-        
-        logger.info(f"Keywords AI API response: status={response.status_code}, body={response.text[:200] if response.text else 'empty'}")
-        
         if response.status_code != 200:
-            logger.warning(
-                f"Keywords AI API returned {response.status_code}: {response.text}"
-            )
-            response.raise_for_status()
+            logger.warning(f"Keywords AI API error: {response.status_code}")
 
 
 # =============================================================================
@@ -298,29 +189,12 @@ class KeywordsAISpanExporter(SpanExporter):
 # =============================================================================
 
 class KeywordsAILiteLLMCallback:
-    """LiteLLM-compatible callback class that sends logs to Keywords AI.
-    
-    This class implements the interface expected by LiteLLM's callback system,
-    allowing it to be used with `litellm.success_callback`.
-    
-    The payload format matches the Keywords AI traces/ingest endpoint.
-    
-    Note: LiteLLM's success_callback and failure_callback expect callable functions,
-    not class instances. Pass the bound methods directly.
+    """LiteLLM callback that sends logs to Keywords AI.
     
     Usage:
-        import litellm
-        from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
-        
-        callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
-        # Pass the bound methods to success_callback and failure_callback
+        callback = KeywordsAILiteLLMCallback(api_key="...")
         litellm.success_callback = [callback.log_success_event]
         litellm.failure_callback = [callback.log_failure_event]
-        
-        response = litellm.completion(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": "Hello!"}]
-        )
     """
     
     def __init__(
@@ -330,228 +204,121 @@ class KeywordsAILiteLLMCallback:
         timeout: int = 10,
     ):
         self.api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
-        self.endpoint = endpoint or os.getenv(
-            "KEYWORDSAI_ENDPOINT",
-            DEFAULT_KEYWORDSAI_ENDPOINT
-        )
+        self.endpoint = endpoint or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_KEYWORDSAI_ENDPOINT)
         self.timeout = timeout
         
         if not self.api_key:
-            logger.warning(
-                "Keywords AI API key not provided. "
-                "Set KEYWORDSAI_API_KEY environment variable or pass api_key parameter."
-            )
+            logger.warning("Keywords AI API key not provided")
     
-    def log_success_event(
-        self,
-        kwargs: Dict[str, Any],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-    ) -> None:
-        """Log successful LLM completion to Keywords AI.
-        
-        This method is called by LiteLLM when a completion succeeds.
-        """
+    def log_success_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+        """Log successful completion."""
         self._log_event(kwargs, response_obj, start_time, end_time, error=None)
     
-    async def async_log_success_event(
-        self,
-        kwargs: Dict[str, Any],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-    ) -> None:
-        """Async version of log_success_event."""
-        # Run in thread to avoid blocking async context
-        thread = threading.Thread(
-            target=self._log_event,
-            args=(kwargs, response_obj, start_time, end_time, None),
-        )
-        thread.start()
+    async def async_log_success_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+        """Async log successful completion."""
+        threading.Thread(target=self._log_event, args=(kwargs, response_obj, start_time, end_time, None)).start()
     
-    def log_failure_event(
-        self,
-        kwargs: Dict[str, Any],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-    ) -> None:
-        """Log failed LLM completion to Keywords AI.
-        
-        This method is called by LiteLLM when a completion fails.
-        """
+    def log_failure_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+        """Log failed completion."""
         error = kwargs.get("exception") or kwargs.get("traceback_exception")
         self._log_event(kwargs, response_obj, start_time, end_time, error=error)
     
-    async def async_log_failure_event(
-        self,
-        kwargs: Dict[str, Any],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-    ) -> None:
-        """Async version of log_failure_event."""
+    async def async_log_failure_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+        """Async log failed completion."""
         error = kwargs.get("exception") or kwargs.get("traceback_exception")
-        # Run in thread to avoid blocking async context
-        thread = threading.Thread(
-            target=self._log_event,
-            args=(kwargs, response_obj, start_time, end_time, error),
-        )
-        thread.start()
+        threading.Thread(target=self._log_event, args=(kwargs, response_obj, start_time, end_time, error)).start()
     
-    def _log_event(
-        self,
-        kwargs: Dict[str, Any],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-        error: Optional[Exception],
-    ) -> None:
-        """Internal method to log event to Keywords AI."""
+    def _to_utc_iso(self, dt: datetime) -> str:
+        """Convert datetime to UTC ISO string."""
+        if dt.tzinfo is None:
+            dt = dt.astimezone(timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+        return dt.isoformat()
+    
+    def _log_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime, error: Optional[Exception]) -> None:
+        """Send event to Keywords AI."""
         if not self.api_key:
-            logger.warning("Keywords AI API key not set, skipping log")
             return
         
         try:
-            # Extract model and messages
             model = kwargs.get("model") or kwargs.get("litellm_params", {}).get("model")
             messages = kwargs.get("messages", [])
+            metadata = kwargs.get("litellm_params", {}).get("metadata", {}) or {}
+            kw_params = metadata.get("keywordsai_params", {})
             
-            # Get metadata from litellm_params
-            litellm_params = kwargs.get("litellm_params", {})
-            metadata = litellm_params.get("metadata", {}) or {}
-            keywordsai_params = metadata.get("keywordsai_params", {})
-            
-            # Calculate latency
-            latency = (end_time - start_time).total_seconds()
-            
-            # Get trace and span IDs from metadata, or generate new ones
-            # This allows users to group calls into the same trace by passing trace_id
-            trace_id = keywordsai_params.get("trace_id") or uuid.uuid4().hex
-            span_id = keywordsai_params.get("span_id") or uuid.uuid4().hex[:16]
-            parent_span_id = keywordsai_params.get("parent_span_id")
-            
-            # Format timestamps with timezone (convert to UTC)
-            if hasattr(start_time, 'isoformat'):
-                # Convert to UTC if no timezone, otherwise convert to UTC
-                if start_time.tzinfo is None:
-                    # Assume local time, convert to UTC
-                    start_time = start_time.astimezone(timezone.utc)
-                else:
-                    start_time = start_time.astimezone(timezone.utc)
-                start_time_iso = start_time.isoformat()
-            else:
-                start_time_iso = str(start_time)
-            
-            if hasattr(end_time, 'isoformat'):
-                # Convert to UTC if no timezone, otherwise convert to UTC
-                if end_time.tzinfo is None:
-                    # Assume local time, convert to UTC
-                    end_time = end_time.astimezone(timezone.utc)
-                else:
-                    end_time = end_time.astimezone(timezone.utc)
-                end_time_iso = end_time.isoformat()
-            else:
-                end_time_iso = str(end_time)
-            
-            # Build payload matching Keywords AI trace format
             payload = {
-                "trace_unique_id": trace_id,
-                "span_unique_id": span_id,
-                "span_name": keywordsai_params.get("span_name", "litellm.completion"),
-                "span_workflow_name": keywordsai_params.get("workflow_name", "litellm"),
+                "trace_unique_id": kw_params.get("trace_id") or uuid.uuid4().hex,
+                "span_unique_id": kw_params.get("span_id") or uuid.uuid4().hex[:16],
+                "span_name": kw_params.get("span_name", "litellm.completion"),
+                "span_workflow_name": kw_params.get("workflow_name", "litellm"),
                 "log_type": "generation",
-                "timestamp": end_time_iso,
-                "start_time": start_time_iso,
-                "latency": latency,
+                "timestamp": self._to_utc_iso(end_time),
+                "start_time": self._to_utc_iso(start_time),
+                "latency": (end_time - start_time).total_seconds(),
                 "model": model,
                 "input": json.dumps(messages),
                 "stream": kwargs.get("stream", False),
             }
             
-            # Add parent span ID if provided (for trace hierarchy)
-            if parent_span_id:
-                payload["span_parent_id"] = parent_span_id
+            if parent_id := kw_params.get("parent_span_id"):
+                payload["span_parent_id"] = parent_id
             
-            # Add tools if present
             if kwargs.get("tools"):
                 payload["tools"] = kwargs["tools"]
             if kwargs.get("tool_choice"):
                 payload["tool_choice"] = kwargs["tool_choice"]
             
-            # Handle success vs failure
             if error:
                 payload["status"] = "error"
                 payload["error_message"] = str(error)
             else:
                 payload["status"] = "success"
-                # Extract response data
                 if response_obj:
-                    if hasattr(response_obj, "model_dump"):
-                        response_dict = response_obj.model_dump(mode="json")
-                    elif hasattr(response_obj, "dict"):
-                        response_dict = response_obj.dict()
-                    elif isinstance(response_obj, dict):
-                        response_dict = response_obj
-                    else:
-                        response_dict = {}
-                    
-                    # Extract completion message as output
-                    choices = response_dict.get("choices", [])
-                    if choices:
-                        message = choices[0].get("message", {})
-                        payload["output"] = json.dumps(message)
-                    
-                    # Extract usage
-                    usage = response_dict.get("usage", {})
-                    if usage:
+                    resp = self._extract_response(response_obj)
+                    if choices := resp.get("choices", []):
+                        payload["output"] = json.dumps(choices[0].get("message", {}))
+                    if usage := resp.get("usage", {}):
                         payload["usage"] = {
                             "prompt_tokens": usage.get("prompt_tokens"),
                             "completion_tokens": usage.get("completion_tokens"),
                             "total_tokens": usage.get("total_tokens"),
                         }
             
-            # Extract customer_identifier and metadata from keywordsai_params
-            extra_metadata = {}
+            # Extract Keywords AI params
+            extra_meta = {}
+            if "customer_identifier" in kw_params:
+                payload["customer_identifier"] = kw_params["customer_identifier"]
+            if cp := kw_params.get("customer_params"):
+                if isinstance(cp, dict):
+                    payload["customer_identifier"] = cp.get("customer_identifier")
+                    extra_meta.update({f"customer_{k}": v for k, v in cp.items() if k != "customer_identifier"})
+            if "thread_identifier" in kw_params:
+                payload["thread_identifier"] = kw_params["thread_identifier"]
+            if m := kw_params.get("metadata"):
+                if isinstance(m, dict):
+                    extra_meta.update(m)
             
-            if "customer_identifier" in keywordsai_params:
-                payload["customer_identifier"] = keywordsai_params["customer_identifier"]
+            excluded = ("customer_identifier", "customer_params", "thread_identifier", "metadata", 
+                       "workflow_name", "trace_id", "span_id", "parent_span_id", "span_name")
+            extra_meta.update({k: v for k, v in kw_params.items() if k not in excluded})
             
-            if "customer_params" in keywordsai_params:
-                customer_params = keywordsai_params["customer_params"]
-                if isinstance(customer_params, dict):
-                    payload["customer_identifier"] = customer_params.get("customer_identifier")
-                    for k, v in customer_params.items():
-                        if k != "customer_identifier":
-                            extra_metadata[f"customer_{k}"] = v
+            if extra_meta:
+                payload["metadata"] = extra_meta
             
-            if "thread_identifier" in keywordsai_params:
-                payload["thread_identifier"] = keywordsai_params["thread_identifier"]
-            
-            if "metadata" in keywordsai_params:
-                if isinstance(keywordsai_params["metadata"], dict):
-                    extra_metadata.update(keywordsai_params["metadata"])
-            
-            # Add other keywordsai params to metadata (excluding trace/span IDs)
-            excluded_keys = ("customer_identifier", "customer_params", "thread_identifier", 
-                           "metadata", "workflow_name", "trace_id", "span_id", "parent_span_id", "span_name")
-            for key, value in keywordsai_params.items():
-                if key not in excluded_keys:
-                    extra_metadata[key] = value
-            
-            if extra_metadata:
-                payload["metadata"] = extra_metadata
-            
-            # Log the payload being sent
-            logger.info(f"Callback sending span: name={payload.get('span_name')}, trace_id={payload.get('trace_unique_id')}, span_id={payload.get('span_unique_id')}, parent_id={payload.get('span_parent_id')}, thread_id={payload.get('thread_identifier')}, has_input={bool(payload.get('input'))}, has_output={bool(payload.get('output'))}")
-            logger.debug(f"Full callback payload: {json.dumps(payload, indent=2, default=str)}")
-            
-            # Send to Keywords AI as a batch (list with single item)
-            self._send_payload([payload])
-            
+            self._send([payload])
         except Exception as e:
-            logger.error(f"Keywords AI logging error: {e}", exc_info=True)
+            logger.error(f"Keywords AI logging error: {e}")
+    
+    def _extract_response(self, response_obj: Any) -> Dict:
+        """Extract dict from response object."""
+        if hasattr(response_obj, "model_dump"):
+            return response_obj.model_dump(mode="json")
+        if hasattr(response_obj, "dict"):
+            return response_obj.dict()
+        if isinstance(response_obj, dict):
+            return response_obj
+        return {}
     
     def send_workflow_span(
         self,
@@ -567,52 +334,8 @@ class KeywordsAILiteLLMCallback:
         input_data: Optional[Any] = None,
         output_data: Optional[Any] = None,
     ) -> None:
-        """Send a workflow/parent span to Keywords AI.
-        
-        This should be called to create a parent span before making LLM calls
-        that will be grouped under this workflow. Call with start_time at the
-        beginning, then call again with end_time when the workflow completes.
-        
-        Args:
-            trace_id: Unique trace identifier (same for all spans in the trace)
-            span_id: Unique span identifier for this workflow span
-            workflow_name: Name of the workflow
-            start_time: Start time of the workflow
-            end_time: End time of the workflow (set when workflow completes)
-            parent_span_id: Parent span ID if this is a nested workflow
-            customer_identifier: Customer identifier for the trace
-            thread_identifier: Thread identifier for grouping
-            metadata: Additional metadata
-        
-        Example:
-            callback = KeywordsAILiteLLMCallback(api_key="...")
-            
-            # Create workflow span
-            trace_id = uuid.uuid4().hex
-            workflow_span_id = uuid.uuid4().hex[:16]
-            start = datetime.now(timezone.utc)
-            
-            # Make LLM calls with parent_span_id referencing workflow_span_id
-            response = litellm.completion(
-                model="gpt-4",
-                messages=[...],
-                metadata={"keywordsai_params": {
-                    "trace_id": trace_id,
-                    "parent_span_id": workflow_span_id,
-                }}
-            )
-            
-            # Send workflow span when done
-            callback.send_workflow_span(
-                trace_id=trace_id,
-                span_id=workflow_span_id,
-                workflow_name="my_workflow",
-                start_time=start,
-                end_time=datetime.now(timezone.utc),
-            )
-        """
+        """Send a workflow span to Keywords AI."""
         if not self.api_key:
-            logger.warning("Keywords AI API key not set, skipping workflow span")
             return
         
         try:
@@ -620,71 +343,49 @@ class KeywordsAILiteLLMCallback:
             start = start_time or now
             end = end_time or now
             
-            start_time_iso = start.isoformat() if hasattr(start, 'isoformat') else str(start)
-            end_time_iso = end.isoformat() if hasattr(end, 'isoformat') else str(end)
-            latency = (end - start).total_seconds() if end_time else 0.0
-            
             payload = {
                 "trace_unique_id": trace_id,
                 "span_unique_id": span_id,
                 "span_name": workflow_name,
                 "span_workflow_name": workflow_name,
                 "log_type": "workflow",
-                "timestamp": end_time_iso,
-                "start_time": start_time_iso,
-                "latency": latency,
+                "timestamp": end.isoformat() if hasattr(end, 'isoformat') else str(end),
+                "start_time": start.isoformat() if hasattr(start, 'isoformat') else str(start),
+                "latency": (end - start).total_seconds() if end_time else 0.0,
                 "status": "success",
             }
             
             if parent_span_id:
                 payload["span_parent_id"] = parent_span_id
-            
             if customer_identifier:
                 payload["customer_identifier"] = customer_identifier
-            
             if thread_identifier:
                 payload["thread_identifier"] = thread_identifier
-            
             if metadata:
                 payload["metadata"] = metadata
-            
             if input_data:
                 payload["input"] = input_data if isinstance(input_data, str) else json.dumps(input_data)
-            
             if output_data:
                 payload["output"] = output_data if isinstance(output_data, str) else json.dumps(output_data)
             
-            logger.info(f"Callback sending workflow span: name={workflow_name}, trace_id={trace_id}, span_id={span_id}, parent_id={parent_span_id}")
-            logger.debug(f"Full workflow span payload: {json.dumps(payload, indent=2, default=str)}")
-            self._send_payload([payload])
-            
+            self._send([payload])
         except Exception as e:
-            logger.error(f"Keywords AI workflow span error: {e}", exc_info=True)
+            logger.error(f"Keywords AI workflow span error: {e}")
     
-    def _send_payload(self, payloads: List[Dict[str, Any]]) -> None:
-        """Send payload to Keywords AI endpoint."""
+    def _send(self, payloads: List[Dict[str, Any]]) -> None:
+        """Send payloads to Keywords AI."""
         try:
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }
-            
             response = requests.post(
-                url=self.endpoint,
-                headers=headers,
-                json=payloads,  # Send as list (batch)
+                self.endpoint,
+                json=payloads,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
                 timeout=self.timeout,
             )
-            
-            logger.info(f"Callback API response: status={response.status_code}, body={response.text[:200] if response.text else 'empty'}")
-            
-            if response.status_code == 200:
-                logger.debug("Keywords AI Logging - Success!")
-            else:
-                logger.warning(
-                    f"Keywords AI Logging - Error: {response.status_code}, {response.text}"
-                )
+            if response.status_code != 200:
+                logger.warning(f"Keywords AI error: {response.status_code}")
         except Exception as e:
             logger.error(f"Keywords AI request error: {e}")
 
@@ -694,24 +395,11 @@ class KeywordsAILiteLLMCallback:
 # =============================================================================
 
 class LiteLLMInstrumentor(BaseInstrumentor):
-    """OpenTelemetry instrumentor for LiteLLM that exports traces to Keywords AI.
-    
-    This instrumentor uses wrapt to patch LiteLLM's completion functions
-    and captures spans with LLM-specific attributes, then exports them
-    to the Keywords AI platform.
+    """OpenTelemetry instrumentor for LiteLLM.
     
     Usage:
-        from keywordsai_exporter_litellm import LiteLLMInstrumentor
-        
-        # Instrument LiteLLM
-        LiteLLMInstrumentor().instrument(api_key="your-api-key")
-        
-        # Now use LiteLLM normally - data goes to Keywords AI!
-        import litellm
-        response = litellm.completion(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": "Hello!"}]
-        )
+        LiteLLMInstrumentor().instrument(api_key="...")
+        response = litellm.completion(model="gpt-4", messages=[...])
     """
     
     _api_key: Optional[str] = None
@@ -721,156 +409,82 @@ class LiteLLMInstrumentor(BaseInstrumentor):
     _exporter: Optional[KeywordsAISpanExporter] = None
     
     def instrumentation_dependencies(self) -> Collection[str]:
-        """Return the list of packages this instrumentation depends on."""
         return _instruments
     
     def _instrument(self, **kwargs):
-        """Enable instrumentation by patching LiteLLM functions.
-        
-        This patches litellm.completion and litellm.acompletion to create
-        OTEL spans and export them to Keywords AI.
-        
-        Args:
-            api_key: Keywords AI API key (optional, uses KEYWORDSAI_API_KEY env var)
-            endpoint: Keywords AI endpoint (optional, defaults to production endpoint)
-            tracer_provider: Custom TracerProvider (optional)
-        """
+        """Enable instrumentation."""
         self._api_key = kwargs.get("api_key") or os.getenv("KEYWORDSAI_API_KEY")
-        self._endpoint = kwargs.get("endpoint") or os.getenv(
-            "KEYWORDSAI_ENDPOINT",
-            DEFAULT_KEYWORDSAI_ENDPOINT
-        )
+        self._endpoint = kwargs.get("endpoint") or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_KEYWORDSAI_ENDPOINT)
         
         if not self._api_key:
-            logger.warning(
-                "Keywords AI API key not provided. "
-                "Set KEYWORDSAI_API_KEY environment variable or pass api_key parameter."
-            )
+            logger.warning("Keywords AI API key not provided")
             return
         
-        # Setup tracer provider if not provided
         tracer_provider = kwargs.get("tracer_provider")
         if tracer_provider is None:
-            # Create custom exporter
-            self._exporter = KeywordsAISpanExporter(
-                api_key=self._api_key,
-                endpoint=self._endpoint,
-            )
-            
-            # Create tracer provider with Keywords AI exporter
-            # Use SimpleSpanProcessor for immediate export (better for debugging)
-            # or BatchSpanProcessor for production (better performance)
-            resource = Resource.create({
-                "service.name": kwargs.get("service_name", "litellm-service"),
-            })
+            self._exporter = KeywordsAISpanExporter(api_key=self._api_key, endpoint=self._endpoint)
+            resource = Resource.create({"service.name": kwargs.get("service_name", "litellm-service")})
             self._tracer_provider = TracerProvider(resource=resource)
-            
-            # Use SimpleSpanProcessor for immediate export
             self._tracer_provider.add_span_processor(SimpleSpanProcessor(self._exporter))
             trace.set_tracer_provider(self._tracer_provider)
         else:
             self._tracer_provider = tracer_provider
-            self._exporter = None
         
         self._tracer = trace.get_tracer(__name__)
-        
-        # Patch LiteLLM functions using wrapt
-        self._patch_litellm()
-        
-        logger.info("LiteLLM instrumentation enabled for Keywords AI")
+        self._patch()
     
     def _uninstrument(self, **kwargs):
-        """Disable instrumentation by removing patches."""
-        self._unpatch_litellm()
-        
-        # Force flush and shutdown tracer provider
+        """Disable instrumentation."""
+        self._unpatch()
         if self._tracer_provider:
-            # Force flush to ensure all spans are exported
             self._tracer_provider.force_flush()
             self._tracer_provider.shutdown()
             self._tracer_provider = None
-        
         self._tracer = None
         self._exporter = None
-        logger.info("LiteLLM instrumentation disabled")
     
     def flush(self):
-        """Force flush all pending spans to Keywords AI."""
+        """Force flush pending spans."""
         if self._tracer_provider:
             self._tracer_provider.force_flush()
-            logger.debug("Forced flush of all pending spans")
     
-    def _patch_litellm(self):
-        """Patch LiteLLM's completion functions using wrapt."""
+    def _patch(self):
+        """Patch LiteLLM functions."""
         tracer = self._tracer
-        api_key = self._api_key
-        endpoint = self._endpoint
         
         def completion_wrapper(wrapped, instance, args, kwargs):
-            """Wrapper for litellm.completion that creates OTEL spans."""
             model = kwargs.get("model") or (args[0] if args else "unknown")
             messages = kwargs.get("messages", [])
             stream = kwargs.get("stream", False)
             
-            with tracer.start_as_current_span(
-                "litellm.completion",
-                kind=trace.SpanKind.CLIENT,
-            ) as span:
-                # Set span attributes
+            with tracer.start_as_current_span("litellm.completion", kind=trace.SpanKind.CLIENT) as span:
                 span.set_attribute("litellm.model", model)
                 span.set_attribute("litellm.stream", stream)
                 span.set_attribute("litellm.messages", json.dumps(messages))
                 
                 if kwargs.get("tools"):
                     span.set_attribute("litellm.tools", json.dumps(kwargs["tools"]))
-                if kwargs.get("tool_choice"):
-                    tool_choice = kwargs["tool_choice"]
-                    if isinstance(tool_choice, dict):
-                        span.set_attribute("litellm.tool_choice", json.dumps(tool_choice))
-                    else:
-                        span.set_attribute("litellm.tool_choice", str(tool_choice))
+                if tc := kwargs.get("tool_choice"):
+                    span.set_attribute("litellm.tool_choice", json.dumps(tc) if isinstance(tc, dict) else str(tc))
                 
-                # Extract and set keywordsai params from metadata
-                metadata = kwargs.get("metadata", {}) or {}
-                keywordsai_params = metadata.get("keywordsai_params", {})
-                for key, value in keywordsai_params.items():
-                    if isinstance(value, (dict, list)):
-                        span.set_attribute(f"keywordsai.{key}", json.dumps(value))
-                    else:
-                        span.set_attribute(f"keywordsai.{key}", value)
+                # Keywords AI params
+                kw_params = (kwargs.get("metadata") or {}).get("keywordsai_params", {})
+                for key, value in kw_params.items():
+                    span.set_attribute(f"keywordsai.{key}", json.dumps(value) if isinstance(value, (dict, list)) else value)
                 
                 try:
                     result = wrapped(*args, **kwargs)
-                    
-                    # Handle streaming responses
                     if stream:
-                        # For streaming, we wrap the iterator
-                        return _wrap_streaming_response(result, span, api_key, endpoint)
+                        return _wrap_streaming(result, span)
                     
-                    # Handle non-streaming response
-                    if hasattr(result, "model_dump"):
-                        result_dict = result.model_dump(mode="json")
-                    elif hasattr(result, "dict"):
-                        result_dict = result.dict()
-                    elif isinstance(result, dict):
-                        result_dict = result
-                    else:
-                        result_dict = {}
-                    
-                    # Set response attributes
-                    choices = result_dict.get("choices", [])
-                    if choices:
-                        completion = choices[0].get("message", {})
-                        span.set_attribute("litellm.completion", json.dumps(completion))
-                    
-                    usage = result_dict.get("usage", {})
-                    if usage:
+                    resp = self._extract_response(result)
+                    if choices := resp.get("choices", []):
+                        span.set_attribute("litellm.completion", json.dumps(choices[0].get("message", {})))
+                    if usage := resp.get("usage", {}):
                         span.set_attribute("litellm.prompt_tokens", usage.get("prompt_tokens", 0))
                         span.set_attribute("litellm.completion_tokens", usage.get("completion_tokens", 0))
                         span.set_attribute("litellm.total_tokens", usage.get("total_tokens", 0))
-                    
                     return result
-                    
                 except Exception as e:
                     span.set_attribute("error", True)
                     span.set_attribute("exception.type", type(e).__name__)
@@ -878,152 +492,108 @@ class LiteLLMInstrumentor(BaseInstrumentor):
                     raise
         
         async def acompletion_wrapper(wrapped, instance, args, kwargs):
-            """Wrapper for litellm.acompletion that creates OTEL spans."""
             model = kwargs.get("model") or (args[0] if args else "unknown")
             messages = kwargs.get("messages", [])
             stream = kwargs.get("stream", False)
             
-            with tracer.start_as_current_span(
-                "litellm.acompletion",
-                kind=trace.SpanKind.CLIENT,
-            ) as span:
-                # Set span attributes
+            with tracer.start_as_current_span("litellm.acompletion", kind=trace.SpanKind.CLIENT) as span:
                 span.set_attribute("litellm.model", model)
                 span.set_attribute("litellm.stream", stream)
                 span.set_attribute("litellm.messages", json.dumps(messages))
                 
                 if kwargs.get("tools"):
                     span.set_attribute("litellm.tools", json.dumps(kwargs["tools"]))
-                if kwargs.get("tool_choice"):
-                    tool_choice = kwargs["tool_choice"]
-                    if isinstance(tool_choice, dict):
-                        span.set_attribute("litellm.tool_choice", json.dumps(tool_choice))
-                    else:
-                        span.set_attribute("litellm.tool_choice", str(tool_choice))
+                if tc := kwargs.get("tool_choice"):
+                    span.set_attribute("litellm.tool_choice", json.dumps(tc) if isinstance(tc, dict) else str(tc))
                 
-                # Extract and set keywordsai params from metadata
-                metadata = kwargs.get("metadata", {}) or {}
-                keywordsai_params = metadata.get("keywordsai_params", {})
-                for key, value in keywordsai_params.items():
-                    if isinstance(value, (dict, list)):
-                        span.set_attribute(f"keywordsai.{key}", json.dumps(value))
-                    else:
-                        span.set_attribute(f"keywordsai.{key}", value)
+                kw_params = (kwargs.get("metadata") or {}).get("keywordsai_params", {})
+                for key, value in kw_params.items():
+                    span.set_attribute(f"keywordsai.{key}", json.dumps(value) if isinstance(value, (dict, list)) else value)
                 
                 try:
                     result = await wrapped(*args, **kwargs)
-                    
-                    # Handle streaming responses
                     if stream:
-                        return _wrap_async_streaming_response(result, span, api_key, endpoint)
+                        return _wrap_async_streaming(result, span)
                     
-                    # Handle non-streaming response
-                    if hasattr(result, "model_dump"):
-                        result_dict = result.model_dump(mode="json")
-                    elif hasattr(result, "dict"):
-                        result_dict = result.dict()
-                    elif isinstance(result, dict):
-                        result_dict = result
-                    else:
-                        result_dict = {}
-                    
-                    # Set response attributes
-                    choices = result_dict.get("choices", [])
-                    if choices:
-                        completion = choices[0].get("message", {})
-                        span.set_attribute("litellm.completion", json.dumps(completion))
-                    
-                    usage = result_dict.get("usage", {})
-                    if usage:
+                    resp = self._extract_response(result)
+                    if choices := resp.get("choices", []):
+                        span.set_attribute("litellm.completion", json.dumps(choices[0].get("message", {})))
+                    if usage := resp.get("usage", {}):
                         span.set_attribute("litellm.prompt_tokens", usage.get("prompt_tokens", 0))
                         span.set_attribute("litellm.completion_tokens", usage.get("completion_tokens", 0))
                         span.set_attribute("litellm.total_tokens", usage.get("total_tokens", 0))
-                    
                     return result
-                    
                 except Exception as e:
                     span.set_attribute("error", True)
                     span.set_attribute("exception.type", type(e).__name__)
                     span.set_attribute("exception.message", str(e))
                     raise
         
-        # Apply patches
         wrapt.wrap_function_wrapper("litellm", "completion", completion_wrapper)
         wrapt.wrap_function_wrapper("litellm", "acompletion", acompletion_wrapper)
-        
-        logger.debug("Patched litellm.completion and litellm.acompletion")
     
-    def _unpatch_litellm(self):
-        """Remove patches from LiteLLM functions."""
-        # Unwrap functions if they were wrapped
+    def _unpatch(self):
+        """Remove patches."""
         if hasattr(litellm.completion, '__wrapped__'):
             litellm.completion = litellm.completion.__wrapped__
         if hasattr(litellm.acompletion, '__wrapped__'):
             litellm.acompletion = litellm.acompletion.__wrapped__
-        
-        logger.debug("Unpatched litellm.completion and litellm.acompletion")
+    
+    def _extract_response(self, result: Any) -> Dict:
+        """Extract dict from response."""
+        if hasattr(result, "model_dump"):
+            return result.model_dump(mode="json")
+        if hasattr(result, "dict"):
+            return result.dict()
+        if isinstance(result, dict):
+            return result
+        return {}
 
 
-def _wrap_streaming_response(response, span, api_key, endpoint):
-    """Wrap streaming response to collect chunks and update span."""
-    collected_content = []
+# =============================================================================
+# Streaming Helpers
+# =============================================================================
+
+def _wrap_streaming(response, span):
+    """Wrap streaming response."""
+    content = []
     usage = {}
     
     for chunk in response:
-        # Collect content from chunks
         if hasattr(chunk, 'choices') and chunk.choices:
             delta = chunk.choices[0].delta
             if hasattr(delta, 'content') and delta.content:
-                collected_content.append(delta.content)
-        
-        # Capture usage if present (usually in last chunk)
+                content.append(delta.content)
         if hasattr(chunk, 'usage') and chunk.usage:
-            if hasattr(chunk.usage, 'model_dump'):
-                usage = chunk.usage.model_dump()
-            elif hasattr(chunk.usage, 'dict'):
-                usage = chunk.usage.dict()
-            elif isinstance(chunk.usage, dict):
-                usage = chunk.usage
-        
+            usage = chunk.usage.model_dump() if hasattr(chunk.usage, 'model_dump') else (
+                chunk.usage.dict() if hasattr(chunk.usage, 'dict') else chunk.usage
+            )
         yield chunk
     
-    # Update span with collected data
-    full_content = ''.join(collected_content)
-    span.set_attribute("litellm.completion", json.dumps({"content": full_content, "role": "assistant"}))
-    
+    span.set_attribute("litellm.completion", json.dumps({"content": ''.join(content), "role": "assistant"}))
     if usage:
         span.set_attribute("litellm.prompt_tokens", usage.get("prompt_tokens", 0))
         span.set_attribute("litellm.completion_tokens", usage.get("completion_tokens", 0))
         span.set_attribute("litellm.total_tokens", usage.get("total_tokens", 0))
 
 
-async def _wrap_async_streaming_response(response, span, api_key, endpoint):
-    """Wrap async streaming response to collect chunks and update span."""
-    collected_content = []
+async def _wrap_async_streaming(response, span):
+    """Wrap async streaming response."""
+    content = []
     usage = {}
     
     async for chunk in response:
-        # Collect content from chunks
         if hasattr(chunk, 'choices') and chunk.choices:
             delta = chunk.choices[0].delta
             if hasattr(delta, 'content') and delta.content:
-                collected_content.append(delta.content)
-        
-        # Capture usage if present (usually in last chunk)
+                content.append(delta.content)
         if hasattr(chunk, 'usage') and chunk.usage:
-            if hasattr(chunk.usage, 'model_dump'):
-                usage = chunk.usage.model_dump()
-            elif hasattr(chunk.usage, 'dict'):
-                usage = chunk.usage.dict()
-            elif isinstance(chunk.usage, dict):
-                usage = chunk.usage
-        
+            usage = chunk.usage.model_dump() if hasattr(chunk.usage, 'model_dump') else (
+                chunk.usage.dict() if hasattr(chunk.usage, 'dict') else chunk.usage
+            )
         yield chunk
     
-    # Update span with collected data
-    full_content = ''.join(collected_content)
-    span.set_attribute("litellm.completion", json.dumps({"content": full_content, "role": "assistant"}))
-    
+    span.set_attribute("litellm.completion", json.dumps({"content": ''.join(content), "role": "assistant"}))
     if usage:
         span.set_attribute("litellm.prompt_tokens", usage.get("prompt_tokens", 0))
         span.set_attribute("litellm.completion_tokens", usage.get("completion_tokens", 0))
@@ -1035,29 +605,12 @@ async def _wrap_async_streaming_response(response, span, api_key, endpoint):
 # =============================================================================
 
 class KeywordsAILogger(KeywordsAILiteLLMCallback):
-    """Legacy class for backwards compatibility.
+    """Legacy class for backwards compatibility."""
     
-    Use KeywordsAILiteLLMCallback or LiteLLMInstrumentor instead.
-    """
-    
-    def __init__(self):
-        super().__init__()
-    
-    def log_success(
-        self,
-        model: str,
-        messages: List[Dict],
-        response_obj: Any,
-        start_time: datetime,
-        end_time: datetime,
-        print_verbose: callable,
-        kwargs: Dict,
-    ):
-        """Legacy method signature for backwards compatibility."""
-        # Reconstruct kwargs format expected by _log_event
+    def log_success(self, model: str, messages: List[Dict], response_obj: Any, 
+                   start_time: datetime, end_time: datetime, print_verbose: callable, kwargs: Dict):
         full_kwargs = {
-            "model": model,
-            "messages": messages,
+            "model": model, "messages": messages,
             "litellm_params": kwargs.get("litellm_params", {}),
             "stream": kwargs.get("stream", False),
             "tools": kwargs.get("tools"),
