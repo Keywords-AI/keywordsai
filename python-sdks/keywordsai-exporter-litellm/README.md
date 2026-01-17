@@ -1,6 +1,6 @@
-# 🗝️ Keywords AI LiteLLM Exporter
+# Keywords AI LiteLLM Exporter
 
-OpenTelemetry-compliant instrumentation for LiteLLM that exports traces to the Keywords AI platform.
+OpenTelemetry-compliant instrumentation for LiteLLM that exports traces to Keywords AI.
 
 ## Installation
 
@@ -8,153 +8,183 @@ OpenTelemetry-compliant instrumentation for LiteLLM that exports traces to the K
 pip install keywordsai-exporter-litellm
 ```
 
-## Usage
+## Quick Start
 
-### Method 1: Using the Instrumentor (Recommended)
+### Method 1: Instrumentor (Recommended)
 
-The `LiteLLMInstrumentor` provides full OpenTelemetry-compliant instrumentation using wrapt patching:
+Automatic instrumentation using OpenTelemetry:
 
 ```python
-import os
+import litellm
 from keywordsai_exporter_litellm import LiteLLMInstrumentor
 
-# Set your API key
-os.environ["KEYWORDSAI_API_KEY"] = "your-api-key"
-
 # Instrument LiteLLM
-LiteLLMInstrumentor().instrument()
+LiteLLMInstrumentor().instrument(api_key="your-api-key")
 
-# Now use LiteLLM normally - all calls are traced and exported to Keywords AI!
-import litellm
-
+# All LiteLLM calls are now traced!
 response = litellm.completion(
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
 
-You can also pass the API key directly:
+### Method 2: Callback
+
+LiteLLM-native callback integration:
 
 ```python
-LiteLLMInstrumentor().instrument(
-    api_key="your-api-key",
-    endpoint="https://api.keywordsai.co/api/v1/traces/ingest",  # optional
-    service_name="my-llm-service"  # optional
-)
-```
-
-To disable instrumentation:
-
-```python
-LiteLLMInstrumentor().uninstrument()
-```
-
-### Method 2: Using the Callback
-
-The `KeywordsAILiteLLMCallback` integrates with LiteLLM's native callback system:
-
-```python
-import os
 import litellm
 from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
-# Set your API key
-os.environ["KEYWORDSAI_API_KEY"] = "your-api-key"
-
-# Create callback instance
-callback = KeywordsAILiteLLMCallback()
-
-# Register with LiteLLM's success and failure callbacks
-# Note: Pass the bound methods, not the class instance
+callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
 litellm.success_callback = [callback.log_success_event]
 litellm.failure_callback = [callback.log_failure_event]
 
-# Make completion calls
 response = litellm.completion(
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
 
-### Method 3: Using Keywords AI as a Proxy
+### Method 3: Proxy
 
-Alternatively, you can route requests through Keywords AI's API:
+Route requests through Keywords AI's API:
 
 ```python
-import os
 import litellm
 
-# Set Keywords AI as the API base
 litellm.api_base = "https://api.keywordsai.co/api/"
-KEYWORDSAI_API_KEY = os.getenv("KEYWORDSAI_API_KEY")
 
 response = litellm.completion(
-    api_key=KEYWORDSAI_API_KEY,  # Use Keywords AI API key
-    model="gpt-3.5-turbo",
+    api_key="your-keywordsai-api-key",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
-
-# View logs at https://platform.keywordsai.co/
 ```
 
-## Passing Custom Parameters
+## Creating Trace Hierarchies
 
-You can pass additional Keywords AI parameters via metadata:
+### With Instrumentor (Automatic)
+
+Use OpenTelemetry spans to create hierarchies:
+
+```python
+from opentelemetry import trace
+from keywordsai_exporter_litellm import LiteLLMInstrumentor
+import litellm
+
+LiteLLMInstrumentor().instrument(api_key="your-api-key")
+tracer = trace.get_tracer(__name__)
+
+# Create a workflow with nested steps
+with tracer.start_as_current_span("my_workflow") as workflow:
+    with tracer.start_as_current_span("step_1"):
+        response1 = litellm.completion(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "Step 1"}]
+        )
+    
+    with tracer.start_as_current_span("step_2"):
+        response2 = litellm.completion(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "Step 2"}]
+        )
+```
+
+### With Callback (Manual)
+
+Pass trace IDs via `keywordsai_params`:
+
+```python
+import uuid
+import time
+from datetime import datetime, timezone
+import litellm
+from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+
+callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
+litellm.success_callback = [callback.log_success_event]
+
+# Generate trace identifiers
+trace_id = uuid.uuid4().hex
+workflow_span_id = uuid.uuid4().hex[:16]
+workflow_start = datetime.now(timezone.utc)
+
+# Make LLM calls with shared trace_id
+response1 = litellm.completion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Step 1"}],
+    metadata={
+        "keywordsai_params": {
+            "trace_id": trace_id,
+            "parent_span_id": workflow_span_id,
+            "span_name": "step_1",
+        }
+    }
+)
+
+response2 = litellm.completion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Step 2"}],
+    metadata={
+        "keywordsai_params": {
+            "trace_id": trace_id,
+            "parent_span_id": workflow_span_id,
+            "span_name": "step_2",
+        }
+    }
+)
+
+# Send the workflow span last
+time.sleep(1.0)  # Wait for generation spans to be sent
+callback.send_workflow_span(
+    trace_id=trace_id,
+    span_id=workflow_span_id,
+    workflow_name="my_workflow",
+    start_time=workflow_start,
+    end_time=datetime.now(timezone.utc),
+)
+```
+
+## Custom Parameters
+
+Pass Keywords AI parameters via metadata:
 
 ```python
 response = litellm.completion(
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
     metadata={
         "keywordsai_params": {
-            "customer_params": {
-                "customer_identifier": "user-123",
-                "email": "user@example.com",
-                "name": "John Doe"
-            },
+            "customer_identifier": "user-123",
             "thread_identifier": "thread-456",
+            "workflow_name": "my_workflow",
             "metadata": {"custom_key": "custom_value"},
-            "evaluation_identifier": "eval-789",
-            "prompt_id": "prompt-abc",
         }
     }
 )
 ```
 
-## Streaming Support
-
-Both the Instrumentor and Callback support streaming responses:
+## Streaming & Async Support
 
 ```python
+# Streaming
 response = litellm.completion(
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
     stream=True
 )
-
 for chunk in response:
     print(chunk.choices[0].delta.content or "", end="")
+
+# Async
+response = await litellm.acompletion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
 ```
 
-## Async Support
-
-Async completions are fully supported:
-
-```python
-import asyncio
-import litellm
-
-async def main():
-    response = await litellm.acompletion(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Hello!"}]
-    )
-    print(response)
-
-asyncio.run(main())
-```
-
-## Tool Calls Support
+## Tool Calls
 
 Tool/function calls are automatically captured:
 
@@ -167,7 +197,7 @@ tools = [{
         "parameters": {
             "type": "object",
             "properties": {
-                "location": {"type": "string", "description": "City name"}
+                "location": {"type": "string"}
             },
             "required": ["location"]
         }
@@ -175,7 +205,7 @@ tools = [{
 }]
 
 response = litellm.completion(
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "What's the weather in NYC?"}],
     tools=tools,
     tool_choice="auto"
@@ -187,35 +217,53 @@ response = litellm.completion(
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KEYWORDSAI_API_KEY` | Your Keywords AI API key | Required |
-| `KEYWORDSAI_ENDPOINT` | Custom Keywords AI endpoint | `https://api.keywordsai.co/api/v1/traces/ingest` |
+| `KEYWORDSAI_ENDPOINT` | Custom endpoint | `https://api.keywordsai.co/api/v1/traces/ingest` |
 
 ## API Reference
 
 ### LiteLLMInstrumentor
 
 ```python
-class LiteLLMInstrumentor(BaseInstrumentor):
-    def instrument(
-        self,
-        api_key: str = None,           # Keywords AI API key
-        endpoint: str = None,          # Custom endpoint
-        service_name: str = None,      # Service name for traces
-        tracer_provider: TracerProvider = None  # Custom tracer provider
-    ) -> None: ...
-    
-    def uninstrument(self) -> None: ...
+from keywordsai_exporter_litellm import LiteLLMInstrumentor
+
+instrumentor = LiteLLMInstrumentor()
+
+# Enable instrumentation
+instrumentor.instrument(
+    api_key="...",              # Keywords AI API key
+    endpoint="...",             # Custom endpoint (optional)
+    service_name="...",         # Service name for traces (optional)
+)
+
+# Disable instrumentation
+instrumentor.uninstrument()
 ```
 
 ### KeywordsAILiteLLMCallback
 
 ```python
-class KeywordsAILiteLLMCallback:
-    def __init__(
-        self,
-        api_key: str = None,    # Keywords AI API key
-        endpoint: str = None,   # Custom endpoint
-        timeout: int = 10       # Request timeout in seconds
-    ): ...
+from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+
+callback = KeywordsAILiteLLMCallback(
+    api_key="...",    # Keywords AI API key
+    endpoint="...",   # Custom endpoint (optional)
+    timeout=10,       # Request timeout in seconds
+)
+
+# Register callbacks
+litellm.success_callback = [callback.log_success_event]
+litellm.failure_callback = [callback.log_failure_event]
+
+# Send workflow span for trace hierarchy
+callback.send_workflow_span(
+    trace_id="...",           # Unique trace ID
+    span_id="...",            # Unique span ID
+    workflow_name="...",      # Workflow name
+    start_time=datetime,      # Start time
+    end_time=datetime,        # End time
+    customer_identifier="...", # Customer ID (optional)
+    metadata={},              # Additional metadata (optional)
+)
 ```
 
 ## License
