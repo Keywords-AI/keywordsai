@@ -60,21 +60,21 @@ print("="*80 + "\n")
 @observe()
 def test_simple_function(query: str):
     """Simple function with observe decorator."""
-    print(f"\n  → Inside test_simple_function with query: {query}")
+    print(f"\n  [Inside test_simple_function] with query: {query}")
     return f"Response to: {query}"
 
 
 @observe(as_type="generation")
 def test_generation(prompt: str):
     """Function marked as generation type."""
-    print(f"\n  → Inside test_generation with prompt: {prompt}")
+    print(f"\n  [Inside test_generation] with prompt: {prompt}")
     return f"Generated response for: {prompt}"
 
 
 @observe()
 def test_nested_workflow(task: str):
     """Workflow that calls nested functions."""
-    print(f"\n  → Inside test_nested_workflow with task: {task}")
+    print(f"\n  [Inside test_nested_workflow] with task: {task}")
     
     # Call another observed function (creates parent-child relationship)
     result1 = test_simple_function(f"subtask 1 for {task}")
@@ -153,6 +153,6 @@ if __name__ == "__main__":
         print("  4. Redirect to Keywords AI endpoint")
         
     except Exception as e:
-        print(f"\n❌ TEST FAILED: {e}")
+        print(f"\nERROR: TEST FAILED: {e}")
         import traceback
         traceback.print_exc()

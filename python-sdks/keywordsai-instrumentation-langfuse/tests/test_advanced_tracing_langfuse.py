@@ -34,8 +34,8 @@ print("="*80)
 # Instrument with debug endpoint (you can change this to actual Keywords AI endpoint)
 instrumentor = LangfuseInstrumentor()
 instrumentor.instrument(
-    api_key="hVU0iNkz.4RFE0lsrCgB0NfXs8UbAeb9cPD8GinHv",
-    endpoint="https://api.keywordsai.co/api/v1/traces/ingest"  # For testing - echoes back what we send
+    api_key="os.environ["KEYWORDSAI_API_KEY"]",
+    endpoint="https://httpbin.org/post"  # For testing - echoes back what we send
 )
 
 print("Instrumentation complete!")
