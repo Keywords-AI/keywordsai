@@ -169,6 +169,7 @@ class Message(KeywordsAIBaseModel):
     tool_calls: Optional[List[Union[ToolCall, dict]]] = None
     reasoning_content: Optional[str] = None
     thinking_blocks: Optional[List[dict]] = None
+    annotations: Optional[List[Union[Dict]]] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
