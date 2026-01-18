@@ -471,13 +471,8 @@ poetry run ruff check src/ tests/
 
 ---
 
-## 🔗 Additional Files (Optional)
+## 🔗 Additional Resources
 
-These files provide additional context but are **NOT required reading**:
+For more details, refer to the main project README and the source code itself.
 
-- `discovery.md` - How we discovered Langfuse v3 uses OTLP
-- `transformation_confusion.md` - Data format confusion we resolved
-- `otel_compliance.md` - Detailed OTEL compliance notes
-- `final_solution.md` - Earlier summary (superseded by this file)
-
-**You don't need to read those files.** This README contains everything.
+**This README contains the complete implementation overview.**
