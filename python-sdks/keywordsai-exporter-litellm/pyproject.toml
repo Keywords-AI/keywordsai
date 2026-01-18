@@ -9,10 +9,6 @@ packages = [{include = "keywordsai_exporter_litellm", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 requests = "^2.32.5"
-wrapt = "^1.16.0"
-opentelemetry-api = "^1.20.0"
-opentelemetry-sdk = "^1.20.0"
-opentelemetry-instrumentation = "^0.41b0"
 
 
 [tool.poetry.group.dev.dependencies]

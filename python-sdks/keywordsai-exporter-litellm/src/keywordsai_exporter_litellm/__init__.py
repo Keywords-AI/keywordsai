@@ -1,23 +1,9 @@
 """Keywords AI Exporter for LiteLLM.
 
-This package provides OpenTelemetry-compliant instrumentation for LiteLLM
+This package provides a callback integration for LiteLLM
 that exports traces to the Keywords AI platform.
 
-Two approaches are provided:
-
-1. LiteLLMInstrumentor (recommended) - OTEL-compliant instrumentor using wrapt patching:
-
-    from keywordsai_exporter_litellm import LiteLLMInstrumentor
-    
-    LiteLLMInstrumentor().instrument(api_key="your-api-key")
-    
-    import litellm
-    response = litellm.completion(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Hello!"}]
-    )
-
-2. KeywordsAILiteLLMCallback - LiteLLM-native callback:
+Usage:
 
     import litellm
     from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
@@ -36,13 +22,9 @@ Two approaches are provided:
 from .exporter import (
     KeywordsAILiteLLMCallback,
     KeywordsAILogger,
-    KeywordsAISpanExporter,
-    LiteLLMInstrumentor,
 )
 
 __all__ = [
-    "LiteLLMInstrumentor",
     "KeywordsAILiteLLMCallback",
-    "KeywordsAISpanExporter",
     "KeywordsAILogger",  # Legacy, for backwards compatibility
 ]

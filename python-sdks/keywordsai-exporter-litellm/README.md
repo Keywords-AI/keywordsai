@@ -1,6 +1,6 @@
 # Keywords AI LiteLLM Exporter
 
-OpenTelemetry-compliant instrumentation for LiteLLM that exports traces to Keywords AI.
+LiteLLM callback integration that exports traces to Keywords AI.
 
 ## Installation
 
@@ -10,25 +10,7 @@ pip install keywordsai-exporter-litellm
 
 ## Quick Start
 
-### Method 1: Instrumentor (Recommended)
-
-Automatic instrumentation using OpenTelemetry:
-
-```python
-import litellm
-from keywordsai_exporter_litellm import LiteLLMInstrumentor
-
-# Instrument LiteLLM
-LiteLLMInstrumentor().instrument(api_key="your-api-key")
-
-# All LiteLLM calls are now traced!
-response = litellm.completion(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-```
-
-### Method 2: Callback
+### Method 1: Callback
 
 LiteLLM-native callback integration:
 
@@ -46,7 +28,7 @@ response = litellm.completion(
 )
 ```
 
-### Method 3: Proxy
+### Method 2: Proxy
 
 Route requests through Keywords AI's API:
 
@@ -63,35 +45,6 @@ response = litellm.completion(
 ```
 
 ## Creating Trace Hierarchies
-
-### With Instrumentor (Automatic)
-
-Use OpenTelemetry spans to create hierarchies:
-
-```python
-from opentelemetry import trace
-from keywordsai_exporter_litellm import LiteLLMInstrumentor
-import litellm
-
-LiteLLMInstrumentor().instrument(api_key="your-api-key")
-tracer = trace.get_tracer(__name__)
-
-# Create a workflow with nested steps
-with tracer.start_as_current_span("my_workflow") as workflow:
-    with tracer.start_as_current_span("step_1"):
-        response1 = litellm.completion(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Step 1"}]
-        )
-    
-    with tracer.start_as_current_span("step_2"):
-        response2 = litellm.completion(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Step 2"}]
-        )
-```
-
-### With Callback (Manual)
 
 Pass trace IDs via `keywordsai_params`:
 
@@ -220,24 +173,6 @@ response = litellm.completion(
 | `KEYWORDSAI_ENDPOINT` | Custom endpoint | `https://api.keywordsai.co/api/v1/traces/ingest` |
 
 ## API Reference
-
-### LiteLLMInstrumentor
-
-```python
-from keywordsai_exporter_litellm import LiteLLMInstrumentor
-
-instrumentor = LiteLLMInstrumentor()
-
-# Enable instrumentation
-instrumentor.instrument(
-    api_key="...",              # Keywords AI API key
-    endpoint="...",             # Custom endpoint (optional)
-    service_name="...",         # Service name for traces (optional)
-)
-
-# Disable instrumentation
-instrumentor.uninstrument()
-```
 
 ### KeywordsAILiteLLMCallback
 
