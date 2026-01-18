@@ -253,6 +253,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
     top_p: Optional[float] = None
     verbosity: Optional[str] = None
     extra_headers: Optional[Dict[str, str]] = None
+    web_search_options: Optional[dict] = None
 
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = exclude_none
