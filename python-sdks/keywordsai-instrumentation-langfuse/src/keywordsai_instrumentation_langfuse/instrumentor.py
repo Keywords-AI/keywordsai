@@ -3,8 +3,8 @@
 This module provides OTEL-compliant instrumentation for Langfuse using BaseInstrumentor.
 It uses wrapt for safe, reversible monkey-patching to redirect Langfuse data to Keywords AI.
 
-The approach: Langfuse SDK already collects spans and sends them via httpx.Client.
-We simply intercept the HTTP requests and redirect them to Keywords AI with format transformation.
+The approach: Langfuse SDK already collects OTEL spans and exports them via OTLPSpanExporter.
+We simply intercept the OTLP export and redirect Langfuse spans to Keywords AI with format transformation.
 """
 
 import logging
@@ -26,8 +26,8 @@ _instruments = ("langfuse >= 2.0.0",)
 class LangfuseInstrumentor(BaseInstrumentor):
     """An instrumentor for Langfuse that redirects traces to Keywords AI.
     
-    This instrumentor patches Langfuse's HTTP client to intercept requests
-    to the Langfuse backend and redirect them to Keywords AI instead.
+    This instrumentor patches the OTLP exporter to intercept Langfuse OTEL spans
+    and redirect them to Keywords AI instead.
     
     Usage:
         from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
@@ -52,10 +52,10 @@ class LangfuseInstrumentor(BaseInstrumentor):
         return _instruments
     
     def _instrument(self, **kwargs):
-        """Enable instrumentation by patching Langfuse's HTTP client.
+        """Enable instrumentation by patching OTLP exporter.
         
-        This patches httpx.Client.send (which Langfuse uses) to intercept
-        requests going to Langfuse backend and redirect them to Keywords AI.
+        This patches OTLPSpanExporter.export to intercept Langfuse OTEL spans
+        and redirect them to Keywords AI instead.
         
         Args:
             api_key: Keywords AI API key (optional, uses KEYWORDSAI_API_KEY env var if not provided)

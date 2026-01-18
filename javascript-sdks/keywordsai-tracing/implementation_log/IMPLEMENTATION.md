@@ -575,5 +575,146 @@ npm run build
 
 ---
 
-**Last Updated**: December 16, 2025  
+## Known Issues & Troubleshooting
+
+### EPIPE Error in Vercel Integration
+
+**Date**: December 22, 2025  
+**Error**: `fetch failed` with cause `Error: write EPIPE`  
+**Component**: `@keywordsai/exporter-vercel`
+
+#### What is EPIPE?
+
+**EPIPE (Error Pipe)** occurs when trying to write data to a network connection that has been closed by the remote server.
+
+**Error Example**:
+```
+[KeywordsAIExporter] Error sending to Keywords TypeError: fetch failed
+  cause: Error: write EPIPE
+    errno: -32
+    code: 'EPIPE'
+    syscall: 'write'
+```
+
+**Translation**: "I tried to send trace data, but the server closed the connection while I was writing to it."
+
+#### Root Causes
+
+1. **Server Not Running** (Most Common)
+   - The endpoint `http://localhost:8000/api/integrations/v1/traces/ingest` is not accessible
+   - Keywords AI development server is not running
+   - **Solution**: Start the server or use production URL
+
+2. **Request Too Large**
+   - Server closes connection when payload exceeds body size limits
+   - **Solution**: Reduce batch size or enable chunking
+
+3. **Server Timeout/Crash**
+   - Server crashes during request processing
+   - Server takes too long and times out
+   - **Solution**: Check server logs, increase timeout
+
+4. **Network/Proxy Issues**
+   - Firewall blocking the connection
+   - Proxy terminating connections
+   - **Solution**: Check network configuration
+
+5. **Invalid API Key**
+   - Server rejects and closes connection
+   - **Solution**: Verify `KEYWORDSAI_API_KEY_TEST` is valid
+
+#### Quick Fixes
+
+**Fix 1: Verify Server is Running**
+```bash
+# Check if port 8000 is listening
+lsof -i :8000
+
+# Test endpoint
+curl http://localhost:8000
+```
+
+**Fix 2: Use Production URL**
+```typescript
+// Instead of localhost
+new KeywordsAIExporter({
+  debug: true,
+  url: "https://api.keywordsai.co/api/integrations/v1/traces/ingest",
+  apiKey: process.env.KEYWORDSAI_API_KEY,
+})
+```
+
+**Fix 3: Reduce Batch Size**
+```typescript
+new KeywordsAIExporter({
+  debug: true,
+  url: "http://localhost:8000/api/integrations/v1/traces/ingest",
+  apiKey: process.env.KEYWORDSAI_API_KEY_TEST,
+  maxQueueSize: 100,
+  maxExportBatchSize: 30,  // Smaller batches
+})
+```
+
+**Fix 4: Add Error Handling**
+```typescript
+try {
+  const result = await generateText({
+    model: openai("gpt-4o-mini"),
+    prompt: "Hello, world!",
+    experimental_telemetry: { isEnabled: true },
+  });
+  console.log(result);
+} catch (error) {
+  console.error('Generation failed:', error);
+  // Continue execution even if tracing fails
+}
+```
+
+#### Diagnostic Steps
+
+1. **Check server status**:
+   ```bash
+   curl -v http://localhost:8000/api/integrations/v1/traces/ingest
+   ```
+
+2. **Verify environment variables**:
+   ```bash
+   echo $KEYWORDSAI_API_KEY_TEST
+   ```
+
+3. **Test with minimal payload**:
+   ```typescript
+   const response = await fetch('http://localhost:8000/api/integrations/v1/traces/ingest', {
+     method: 'POST',
+     headers: {
+       'Content-Type': 'application/json',
+       'Authorization': `Bearer ${process.env.KEYWORDSAI_API_KEY_TEST}`,
+     },
+     body: JSON.stringify({ test: 'minimal' })
+   });
+   console.log('Status:', response.status);
+   ```
+
+4. **Check server logs** for errors when receiving requests
+
+#### Common Patterns
+
+- **EPIPE + localhost** → Server not running
+- **EPIPE + large payloads** → Body size limit exceeded
+- **EPIPE intermittently** → Network/timeout issues
+- **EPIPE immediately** → Wrong URL or server crash
+
+#### Prevention Best Practices
+
+1. Always verify server is running before sending traces
+2. Implement proper error handling - don't let tracing errors break your app
+3. Use connection pooling and retry logic
+4. Monitor server logs for early issue detection
+5. Set reasonable timeouts on both client and server
+6. Limit payload sizes with batching and filtering
+7. Use health checks to verify endpoint availability
+
+---
+
+**Last Updated**: December 22, 2025  
 **Status**: ✅ **100% COMPLETE** - All features implemented, tested, and documented!
