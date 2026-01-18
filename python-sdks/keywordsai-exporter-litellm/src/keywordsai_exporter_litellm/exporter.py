@@ -1,7 +1,6 @@
 """Keywords AI LiteLLM Integration.
 
-Integration method:
-KeywordsAILiteLLMCallback - LiteLLM-native callback class
+KeywordsAILiteLLMCallback - LiteLLM-native callback class for sending logs to Keywords AI.
 """
 
 import json
@@ -16,16 +15,8 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# Constants
-# =============================================================================
+DEFAULT_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
 
-DEFAULT_KEYWORDSAI_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
-
-
-# =============================================================================
-# LiteLLM Callback
-# =============================================================================
 
 class KeywordsAILiteLLMCallback:
     """LiteLLM callback that sends logs to Keywords AI.
@@ -43,39 +34,49 @@ class KeywordsAILiteLLMCallback:
         timeout: int = 10,
     ):
         self.api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
-        self.endpoint = endpoint or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_KEYWORDSAI_ENDPOINT)
+        self.endpoint = endpoint or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_ENDPOINT)
         self.timeout = timeout
-        
         if not self.api_key:
             logger.warning("Keywords AI API key not provided")
     
-    def log_success_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+    def log_success_event(
+        self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
+    ) -> None:
         """Log successful completion."""
         self._log_event(kwargs, response_obj, start_time, end_time, error=None)
     
-    async def async_log_success_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+    async def async_log_success_event(
+        self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
+    ) -> None:
         """Async log successful completion."""
-        threading.Thread(target=self._log_event, args=(kwargs, response_obj, start_time, end_time, None)).start()
+        threading.Thread(
+            target=self._log_event, args=(kwargs, response_obj, start_time, end_time, None)
+        ).start()
     
-    def log_failure_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+    def log_failure_event(
+        self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
+    ) -> None:
         """Log failed completion."""
         error = kwargs.get("exception") or kwargs.get("traceback_exception")
         self._log_event(kwargs, response_obj, start_time, end_time, error=error)
     
-    async def async_log_failure_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime) -> None:
+    async def async_log_failure_event(
+        self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
+    ) -> None:
         """Async log failed completion."""
         error = kwargs.get("exception") or kwargs.get("traceback_exception")
-        threading.Thread(target=self._log_event, args=(kwargs, response_obj, start_time, end_time, error)).start()
+        threading.Thread(
+            target=self._log_event, args=(kwargs, response_obj, start_time, end_time, error)
+        ).start()
     
-    def _to_utc_iso(self, dt: datetime) -> str:
-        """Convert datetime to UTC ISO string."""
-        if dt.tzinfo is None:
-            dt = dt.astimezone(timezone.utc)
-        else:
-            dt = dt.astimezone(timezone.utc)
-        return dt.isoformat()
-    
-    def _log_event(self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime, error: Optional[Exception]) -> None:
+    def _log_event(
+        self,
+        kwargs: Dict,
+        response_obj: Any,
+        start_time: datetime,
+        end_time: datetime,
+        error: Optional[Exception],
+    ) -> None:
         """Send event to Keywords AI."""
         if not self.api_key:
             return
@@ -92,8 +93,8 @@ class KeywordsAILiteLLMCallback:
                 "span_name": kw_params.get("span_name", "litellm.completion"),
                 "span_workflow_name": kw_params.get("workflow_name", "litellm"),
                 "log_type": "generation",
-                "timestamp": self._to_utc_iso(end_time),
-                "start_time": self._to_utc_iso(start_time),
+                "timestamp": end_time.astimezone(timezone.utc).isoformat(),
+                "start_time": start_time.astimezone(timezone.utc).isoformat(),
                 "latency": (end_time - start_time).total_seconds(),
                 "model": model,
                 "input": json.dumps(messages),
@@ -102,7 +103,6 @@ class KeywordsAILiteLLMCallback:
             
             if parent_id := kw_params.get("parent_span_id"):
                 payload["span_parent_id"] = parent_id
-            
             if kwargs.get("tools"):
                 payload["tools"] = kwargs["tools"]
             if kwargs.get("tool_choice"):
@@ -114,40 +114,49 @@ class KeywordsAILiteLLMCallback:
             else:
                 payload["status"] = "success"
                 if response_obj:
-                    resp = self._extract_response(response_obj)
-                    if choices := resp.get("choices", []):
-                        payload["output"] = json.dumps(choices[0].get("message", {}))
-                    if usage := resp.get("usage", {}):
-                        payload["usage"] = {
-                            "prompt_tokens": usage.get("prompt_tokens"),
-                            "completion_tokens": usage.get("completion_tokens"),
-                            "total_tokens": usage.get("total_tokens"),
-                        }
+                    self._add_response_data(payload, response_obj)
             
-            # Extract Keywords AI params
-            extra_meta = {}
-            if "customer_identifier" in kw_params:
-                payload["customer_identifier"] = kw_params["customer_identifier"]
-            if cp := kw_params.get("customer_params"):
-                if isinstance(cp, dict):
-                    payload["customer_identifier"] = cp.get("customer_identifier")
-                    extra_meta.update({f"customer_{k}": v for k, v in cp.items() if k != "customer_identifier"})
-            if "thread_identifier" in kw_params:
-                payload["thread_identifier"] = kw_params["thread_identifier"]
-            if m := kw_params.get("metadata"):
-                if isinstance(m, dict):
-                    extra_meta.update(m)
-            
-            excluded = ("customer_identifier", "customer_params", "thread_identifier", "metadata", 
-                       "workflow_name", "trace_id", "span_id", "parent_span_id", "span_name")
-            extra_meta.update({k: v for k, v in kw_params.items() if k not in excluded})
-            
-            if extra_meta:
-                payload["metadata"] = extra_meta
-            
+            self._add_keywordsai_params(payload, kw_params)
             self._send([payload])
         except Exception as e:
             logger.error(f"Keywords AI logging error: {e}")
+    
+    def _add_response_data(self, payload: Dict, response_obj: Any) -> None:
+        """Add response data to payload."""
+        resp = self._extract_response(response_obj)
+        if choices := resp.get("choices", []):
+            payload["output"] = json.dumps(choices[0].get("message", {}))
+        if usage := resp.get("usage", {}):
+            payload["usage"] = {
+                "prompt_tokens": usage.get("prompt_tokens"),
+                "completion_tokens": usage.get("completion_tokens"),
+                "total_tokens": usage.get("total_tokens"),
+            }
+    
+    def _add_keywordsai_params(self, payload: Dict, kw_params: Dict) -> None:
+        """Add Keywords AI specific params to payload."""
+        extra_meta = {}
+        
+        if "customer_identifier" in kw_params:
+            payload["customer_identifier"] = kw_params["customer_identifier"]
+        if cp := kw_params.get("customer_params"):
+            if isinstance(cp, dict):
+                payload["customer_identifier"] = cp.get("customer_identifier")
+                extra_meta.update({f"customer_{k}": v for k, v in cp.items() if k != "customer_identifier"})
+        if "thread_identifier" in kw_params:
+            payload["thread_identifier"] = kw_params["thread_identifier"]
+        if m := kw_params.get("metadata"):
+            if isinstance(m, dict):
+                extra_meta.update(m)
+        
+        excluded = (
+            "customer_identifier", "customer_params", "thread_identifier", "metadata",
+            "workflow_name", "trace_id", "span_id", "parent_span_id", "span_name"
+        )
+        extra_meta.update({k: v for k, v in kw_params.items() if k not in excluded})
+        
+        if extra_meta:
+            payload["metadata"] = extra_meta
     
     def _extract_response(self, response_obj: Any) -> Dict:
         """Extract dict from response object."""
@@ -188,8 +197,8 @@ class KeywordsAILiteLLMCallback:
                 "span_name": workflow_name,
                 "span_workflow_name": workflow_name,
                 "log_type": "workflow",
-                "timestamp": end.isoformat() if hasattr(end, 'isoformat') else str(end),
-                "start_time": start.isoformat() if hasattr(start, 'isoformat') else str(start),
+                "timestamp": end.isoformat(),
+                "start_time": start.isoformat(),
                 "latency": (end - start).total_seconds() if end_time else 0.0,
                 "status": "success",
             }
@@ -227,22 +236,3 @@ class KeywordsAILiteLLMCallback:
                 logger.warning(f"Keywords AI error: {response.status_code}")
         except Exception as e:
             logger.error(f"Keywords AI request error: {e}")
-
-
-# =============================================================================
-# Legacy Alias
-# =============================================================================
-
-class KeywordsAILogger(KeywordsAILiteLLMCallback):
-    """Legacy class for backwards compatibility."""
-    
-    def log_success(self, model: str, messages: List[Dict], response_obj: Any, 
-                   start_time: datetime, end_time: datetime, print_verbose: callable, kwargs: Dict):
-        full_kwargs = {
-            "model": model, "messages": messages,
-            "litellm_params": kwargs.get("litellm_params", {}),
-            "stream": kwargs.get("stream", False),
-            "tools": kwargs.get("tools"),
-            "tool_choice": kwargs.get("tool_choice"),
-        }
-        self._log_event(full_kwargs, response_obj, start_time, end_time, error=None)
