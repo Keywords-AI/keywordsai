@@ -34,7 +34,7 @@ print("="*80)
 # Instrument with debug endpoint (you can change this to actual Keywords AI endpoint)
 instrumentor = LangfuseInstrumentor()
 instrumentor.instrument(
-    api_key="os.environ["KEYWORDSAI_API_KEY"]",
+    api_key=os.environ["KEYWORDSAI_API_KEY"],
     endpoint="https://httpbin.org/post"  # For testing - echoes back what we send
 )
 

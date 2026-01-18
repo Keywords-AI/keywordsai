@@ -58,27 +58,27 @@ print("="*80 + "\n")
 
 
 @observe()
-def test_simple_function(query: str):
+def simple_function(query: str):
     """Simple function with observe decorator."""
-    print(f"\n  [Inside test_simple_function] with query: {query}")
+    print(f"\n  [Inside simple_function] with query: {query}")
     return f"Response to: {query}"
 
 
 @observe(as_type="generation")
-def test_generation(prompt: str):
+def generation_function(prompt: str):
     """Function marked as generation type."""
-    print(f"\n  [Inside test_generation] with prompt: {prompt}")
+    print(f"\n  [Inside generation_function] with prompt: {prompt}")
     return f"Generated response for: {prompt}"
 
 
 @observe()
-def test_nested_workflow(task: str):
+def nested_workflow(task: str):
     """Workflow that calls nested functions."""
-    print(f"\n  [Inside test_nested_workflow] with task: {task}")
+    print(f"\n  [Inside nested_workflow] with task: {task}")
     
     # Call another observed function (creates parent-child relationship)
-    result1 = test_simple_function(f"subtask 1 for {task}")
-    result2 = test_generation(f"generate for {task}")
+    result1 = simple_function(f"subtask 1 for {task}")
+    result2 = generation_function(f"generate for {task}")
     
     return f"Completed: {task}"
 
@@ -89,7 +89,7 @@ def test_langfuse_observe_decorator():
     print("TEST 1: Simple @observe() decorator")
     print("="*80)
     
-    result = test_simple_function("Hello World")
+    result = simple_function("Hello World")
     print(f"  Result: {result}")
     assert result == "Response to: Hello World"
     
@@ -106,7 +106,7 @@ def test_langfuse_generation():
     print("TEST 2: @observe(as_type='generation')")
     print("="*80)
     
-    result = test_generation("Write a poem")
+    result = generation_function("Write a poem")
     print(f"  Result: {result}")
     assert "Generated response" in result
     
@@ -122,7 +122,7 @@ def test_langfuse_nested():
     print("TEST 3: Nested observations")
     print("="*80)
     
-    result = test_nested_workflow("Process user request")
+    result = nested_workflow("Process user request")
     print(f"  Result: {result}")
     assert "Completed" in result
     
