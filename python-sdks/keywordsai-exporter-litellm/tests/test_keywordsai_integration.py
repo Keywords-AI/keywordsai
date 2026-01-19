@@ -1,133 +1,101 @@
-"""Integration tests for Keywords AI LiteLLM integration.
+"""Integration tests for Keywords AI LiteLLM proxy."""
+import os
 
-All tests use Keywords AI API as proxy - no direct OpenAI connection.
-"""
 import dotenv
 dotenv.load_dotenv(".env", override=True)
-import os
 
 import litellm
 import pytest
-from litellm import completion
 
-KEYWORDSAI_API_BASE = os.getenv("KEYWORDSAI_API_BASE")
+API_BASE = "https://api.keywordsai.co/api"
 API_KEY = os.getenv("KEYWORDSAI_API_KEY")
-DEFAULT_MODEL = "gpt-4o-mini"
+MODEL = "gpt-4o-mini"
 
 TOOLS = [{
     "type": "function",
     "function": {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
+        "name": "get_weather",
+        "description": "Get weather for a location",
         "parameters": {
             "type": "object",
-            "properties": {
-                "location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"},
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-            },
+            "properties": {"location": {"type": "string"}},
             "required": ["location"],
         },
     },
 }]
 
-TOOL_CHOICE = {"type": "function", "function": {"name": "get_current_weather"}}
-
-
-@pytest.fixture
-def test_params():
-    """Setup common test parameters for proxy tests."""
-    if not API_KEY:
-        pytest.skip("KEYWORDSAI_API_KEY not set")
-    return {
-        "model": DEFAULT_MODEL,
-        "messages": [{"role": "user", "content": "Say hello in one word"}],
-        "tool_messages": [{"role": "user", "content": "Get the current weather in San Francisco, CA"}],
-        "metadata": {
-            "keywordsai_params": {
-                "customer_params": {"customer_identifier": "test_litellm", "email": "test@test.com"},
-                "thread_identifier": "test_thread",
-                "metadata": {"key": "value"},
-            }
-        },
-    }
-
 
 @pytest.fixture(autouse=True)
-def setup_litellm():
-    """Setup LiteLLM to use Keywords AI proxy."""
-    litellm.api_base = KEYWORDSAI_API_BASE
+def setup():
+    """Reset LiteLLM state before/after each test."""
+    if not API_KEY:
+        pytest.skip("KEYWORDSAI_API_KEY not set")
     litellm.success_callback = []
     litellm.failure_callback = []
     yield
-    litellm.api_base = None
     litellm.success_callback = []
     litellm.failure_callback = []
 
 
-def test_proxy_completion():
-    """Test basic completion through proxy."""
-    if not API_KEY:
-        pytest.skip("KEYWORDSAI_API_KEY not set")
-    response = completion(
+def test_completion():
+    """Test basic completion."""
+    response = litellm.completion(
         api_key=API_KEY,
-        api_base=KEYWORDSAI_API_BASE,
-        model=DEFAULT_MODEL,
+        api_base=API_BASE,
+        model=MODEL,
         messages=[{"role": "user", "content": "Say hello"}],
     )
-    assert response.choices[0].message.content is not None
+    assert response.choices[0].message.content
 
 
-def test_basic_completion(test_params):
-    """Test basic completion."""
-    response = completion(
+def test_completion_with_metadata():
+    """Test completion with Keywords AI metadata."""
+    response = litellm.completion(
         api_key=API_KEY,
-        api_base=KEYWORDSAI_API_BASE,
-        model=test_params["model"],
-        messages=test_params["messages"],
-        metadata=test_params["metadata"],
+        api_base=API_BASE,
+        model=MODEL,
+        messages=[{"role": "user", "content": "Say hello"}],
+        metadata={"keywordsai_params": {"customer_identifier": "test_user"}},
     )
-    assert response.choices[0].message.content is not None
+    assert response.choices[0].message.content
 
 
-def test_streaming_completion(test_params):
+def test_streaming():
     """Test streaming completion."""
-    response = completion(
+    response = litellm.completion(
         api_key=API_KEY,
-        api_base=KEYWORDSAI_API_BASE,
-        model=test_params["model"],
-        messages=test_params["messages"],
-        metadata=test_params["metadata"],
+        api_base=API_BASE,
+        model=MODEL,
+        messages=[{"role": "user", "content": "Say hello"}],
         stream=True,
     )
     chunks = list(response)
     assert len(chunks) > 0
 
 
-def test_completion_with_tools(test_params):
+def test_tools():
     """Test completion with tools."""
-    response = completion(
+    response = litellm.completion(
         api_key=API_KEY,
-        api_base=KEYWORDSAI_API_BASE,
-        model=test_params["model"],
-        messages=test_params["tool_messages"],
+        api_base=API_BASE,
+        model=MODEL,
+        messages=[{"role": "user", "content": "What's the weather in NYC?"}],
         tools=TOOLS,
-        tool_choice=TOOL_CHOICE,
-        metadata=test_params["metadata"],
+        tool_choice={"type": "function", "function": {"name": "get_weather"}},
     )
-    message = response.choices[0].message
-    assert message.tool_calls is not None or message.content is not None
+    msg = response.choices[0].message
+    assert msg.tool_calls or msg.content
 
 
-def test_streaming_with_tools(test_params):
-    """Test streaming completion with tools."""
-    response = completion(
+def test_streaming_with_tools():
+    """Test streaming with tools."""
+    response = litellm.completion(
         api_key=API_KEY,
-        api_base=KEYWORDSAI_API_BASE,
-        model=test_params["model"],
-        messages=test_params["tool_messages"],
+        api_base=API_BASE,
+        model=MODEL,
+        messages=[{"role": "user", "content": "What's the weather in NYC?"}],
         tools=TOOLS,
-        tool_choice=TOOL_CHOICE,
-        metadata=test_params["metadata"],
+        tool_choice={"type": "function", "function": {"name": "get_weather"}},
         stream=True,
     )
     chunks = list(response)

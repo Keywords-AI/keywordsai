@@ -33,12 +33,15 @@ response = litellm.completion(
 Route requests through Keywords AI's API:
 
 ```python
+import os
 import litellm
 
-litellm.api_base = "https://api.keywordsai.co/api/"
+# Set via environment variable or directly
+api_base = os.getenv("KEYWORDSAI_API_BASE", "https://api.keywordsai.co/api")
 
 response = litellm.completion(
     api_key="your-keywordsai-api-key",
+    api_base=api_base,
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
@@ -170,7 +173,8 @@ response = litellm.completion(
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KEYWORDSAI_API_KEY` | Your Keywords AI API key | Required |
-| `KEYWORDSAI_ENDPOINT` | Custom endpoint | `https://api.keywordsai.co/api/v1/traces/ingest` |
+| `KEYWORDSAI_API_BASE` | API base URL for proxy mode | `https://api.keywordsai.co/api` |
+| `KEYWORDSAI_ENDPOINT` | Custom endpoint for callback mode | `https://api.keywordsai.co/api/v1/traces/ingest` |
 
 ## API Reference
 
