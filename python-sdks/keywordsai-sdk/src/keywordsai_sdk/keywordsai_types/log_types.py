@@ -2,6 +2,8 @@ from typing import List, Optional, Union, Dict, Literal
 from datetime import datetime
 from pydantic import field_validator, model_validator
 
+from keywordsai_sdk.keywordsai_types.services_types.moda_types import ModaParams
+
 from ._internal_types import (
     KeywordsAIBaseModel,
     Message,
@@ -178,6 +180,7 @@ class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
     # region: technical integrations
     linkup_params: Optional[LinkupParams] = None
     mem0_params: Optional[Mem0Params] = None
+    moda_params: Optional[ModaParams] = None
     posthog_integration: Optional[PostHogIntegration] = None
     # endregion: technical integrations
 
