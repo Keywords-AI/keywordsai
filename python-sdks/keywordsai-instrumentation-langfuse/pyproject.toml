@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "keywordsai-instrumentation-langfuse"
-version = "0.1.0"
+version = "0.1.1"
 description = "OTEL-compliant instrumentation for Langfuse to send traces to Keywords AI"
 authors = ["Keywords AI <support@keywordsai.co>"]
 license = "Apache-2.0"
