@@ -52,6 +52,10 @@ langfuse.flush()
 
 ```bash
 export KEYWORDSAI_API_KEY="your-api-key"
+# Optionally set custom endpoint:
+# export KEYWORDSAI_ENDPOINT="https://custom.endpoint.com/api/v1/traces/ingest"
+
+# Langfuse credentials (Langfuse SDK's own env vars):
 export LANGFUSE_PUBLIC_KEY="your-langfuse-public-key"
 export LANGFUSE_SECRET_KEY="your-langfuse-secret-key"
 ```
@@ -71,11 +75,14 @@ If you have `opentelemetry-instrument` configured:
 
 ```bash
 export KEYWORDSAI_API_KEY="your-api-key"
+# Langfuse credentials can be set via Langfuse's own env vars:
 export LANGFUSE_PUBLIC_KEY="your-langfuse-public-key"
 export LANGFUSE_SECRET_KEY="your-langfuse-secret-key"
 
 opentelemetry-instrument python your_app.py
 ```
+
+**Note:** `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are Langfuse SDK's own environment variables, not specific to this instrumentation package.
 
 ## How It Works
 
@@ -96,8 +103,7 @@ The instrumentor patches Langfuse's HTTP client to redirect trace data from Lang
 ### Environment Variables
 
 - `KEYWORDSAI_API_KEY` - Your Keywords AI API key (required)
-- `KEYWORDSAI_ENDPOINT` - Custom endpoint URL (optional, defaults to production)
-- `KEYWORDSAI_AUTO_INSTRUMENT` - Set to "true" to auto-instrument on import (optional)
+- `KEYWORDSAI_ENDPOINT` - Custom endpoint URL (optional, defaults to `https://api.keywordsai.co/api/v1/traces/ingest`)
 
 ### Programmatic Configuration
 

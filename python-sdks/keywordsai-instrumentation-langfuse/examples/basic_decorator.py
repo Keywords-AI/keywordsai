@@ -10,7 +10,7 @@ from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
 
 # Instrument BEFORE importing Langfuse
 instrumentor = LangfuseInstrumentor()
-instrumentor.instrument(api_key=os.environ["KEYWORDSAI_API_KEY"], endpoint=os.environ["KEYOWRDSAI_BASE_URL"] + "/v1/traces/ingest")
+instrumentor.instrument(api_key=os.environ["KEYWORDSAI_API_KEY"], endpoint=os.environ["KEYWORDSAI_BASE_URL"] + "/v1/traces/ingest")
 
 # Now import and use Langfuse normally
 from langfuse import Langfuse, observe
