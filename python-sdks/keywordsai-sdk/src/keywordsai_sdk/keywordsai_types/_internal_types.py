@@ -169,6 +169,7 @@ class Message(KeywordsAIBaseModel):
     tool_calls: Optional[List[Union[ToolCall, dict]]] = None
     reasoning_content: Optional[str] = None
     thinking_blocks: Optional[List[dict]] = None
+    annotations: Optional[List[Union[Dict]]] = None
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = True
@@ -253,6 +254,7 @@ class BasicLLMParams(KeywordsAIBaseModel):
     top_p: Optional[float] = None
     verbosity: Optional[str] = None
     extra_headers: Optional[Dict[str, str]] = None
+    web_search_options: Optional[dict] = None
 
     def model_dump(self, exclude_none: bool = True, *args, **kwargs) -> Dict[str, Any]:
         kwargs["exclude_none"] = exclude_none
