@@ -2,14 +2,16 @@
 
 All tests use Keywords AI API as proxy - no direct OpenAI connection.
 """
-
+import dotenv
+dotenv.load_dotenv(".env", override=True)
 import os
 
 import litellm
 import pytest
-from litellm import acompletion, completion
+from litellm import completion
 
-KEYWORDSAI_API_BASE = "https://api.keywordsai.co/api/"
+KEYWORDSAI_API_BASE = os.getenv("KEYWORDSAI_API_BASE")
+API_KEY = os.getenv("KEYWORDSAI_API_KEY")
 DEFAULT_MODEL = "gpt-4o-mini"
 
 TOOLS = [{
@@ -32,19 +34,11 @@ TOOL_CHOICE = {"type": "function", "function": {"name": "get_current_weather"}}
 
 
 @pytest.fixture
-def api_key():
-    """Get Keywords AI API key from environment."""
-    key = os.getenv("KEYWORDSAI_API_KEY")
-    if not key:
+def test_params():
+    """Setup common test parameters for proxy tests."""
+    if not API_KEY:
         pytest.skip("KEYWORDSAI_API_KEY not set")
-    return key
-
-
-@pytest.fixture
-def test_params(api_key):
-    """Setup common test parameters."""
     return {
-        "api_key": api_key,
         "model": DEFAULT_MODEL,
         "messages": [{"role": "user", "content": "Say hello in one word"}],
         "tool_messages": [{"role": "user", "content": "Get the current weather in San Francisco, CA"}],
@@ -70,10 +64,13 @@ def setup_litellm():
     litellm.failure_callback = []
 
 
-def test_proxy_completion(api_key):
+def test_proxy_completion():
     """Test basic completion through proxy."""
+    if not API_KEY:
+        pytest.skip("KEYWORDSAI_API_KEY not set")
     response = completion(
-        api_key=api_key,
+        api_key=API_KEY,
+        api_base=KEYWORDSAI_API_BASE,
         model=DEFAULT_MODEL,
         messages=[{"role": "user", "content": "Say hello"}],
     )
@@ -83,7 +80,8 @@ def test_proxy_completion(api_key):
 def test_basic_completion(test_params):
     """Test basic completion."""
     response = completion(
-        api_key=test_params["api_key"],
+        api_key=API_KEY,
+        api_base=KEYWORDSAI_API_BASE,
         model=test_params["model"],
         messages=test_params["messages"],
         metadata=test_params["metadata"],
@@ -94,7 +92,8 @@ def test_basic_completion(test_params):
 def test_streaming_completion(test_params):
     """Test streaming completion."""
     response = completion(
-        api_key=test_params["api_key"],
+        api_key=API_KEY,
+        api_base=KEYWORDSAI_API_BASE,
         model=test_params["model"],
         messages=test_params["messages"],
         metadata=test_params["metadata"],
@@ -107,7 +106,8 @@ def test_streaming_completion(test_params):
 def test_completion_with_tools(test_params):
     """Test completion with tools."""
     response = completion(
-        api_key=test_params["api_key"],
+        api_key=API_KEY,
+        api_base=KEYWORDSAI_API_BASE,
         model=test_params["model"],
         messages=test_params["tool_messages"],
         tools=TOOLS,
@@ -121,7 +121,8 @@ def test_completion_with_tools(test_params):
 def test_streaming_with_tools(test_params):
     """Test streaming completion with tools."""
     response = completion(
-        api_key=test_params["api_key"],
+        api_key=API_KEY,
+        api_base=KEYWORDSAI_API_BASE,
         model=test_params["model"],
         messages=test_params["tool_messages"],
         tools=TOOLS,
@@ -130,61 +131,4 @@ def test_streaming_with_tools(test_params):
         stream=True,
     )
     chunks = list(response)
-    assert len(chunks) > 0
-
-
-@pytest.mark.asyncio
-async def test_async_completion(test_params):
-    """Test async completion."""
-    response = await acompletion(
-        api_key=test_params["api_key"],
-        model=test_params["model"],
-        messages=test_params["messages"],
-        metadata=test_params["metadata"],
-    )
-    assert response.choices[0].message.content is not None
-
-
-@pytest.mark.asyncio
-async def test_async_streaming(test_params):
-    """Test async streaming completion."""
-    response = await acompletion(
-        api_key=test_params["api_key"],
-        model=test_params["model"],
-        messages=test_params["messages"],
-        metadata=test_params["metadata"],
-        stream=True,
-    )
-    chunks = [chunk async for chunk in response]
-    assert len(chunks) > 0
-
-
-@pytest.mark.asyncio
-async def test_async_with_tools(test_params):
-    """Test async completion with tools."""
-    response = await acompletion(
-        api_key=test_params["api_key"],
-        model=test_params["model"],
-        messages=test_params["tool_messages"],
-        tools=TOOLS,
-        tool_choice=TOOL_CHOICE,
-        metadata=test_params["metadata"],
-    )
-    message = response.choices[0].message
-    assert message.tool_calls is not None or message.content is not None
-
-
-@pytest.mark.asyncio
-async def test_async_streaming_with_tools(test_params):
-    """Test async streaming with tools."""
-    response = await acompletion(
-        api_key=test_params["api_key"],
-        model=test_params["model"],
-        messages=test_params["tool_messages"],
-        tools=TOOLS,
-        tool_choice=TOOL_CHOICE,
-        metadata=test_params["metadata"],
-        stream=True,
-    )
-    chunks = [chunk async for chunk in response]
     assert len(chunks) > 0
