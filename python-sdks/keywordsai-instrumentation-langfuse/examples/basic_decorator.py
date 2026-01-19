@@ -3,7 +3,6 @@ Basic example: Using @observe decorator with Langfuse
 Data is automatically sent to Keywords AI
 """
 import dotenv
-
 dotenv.load_dotenv(".env", override=True)
 
 import os
