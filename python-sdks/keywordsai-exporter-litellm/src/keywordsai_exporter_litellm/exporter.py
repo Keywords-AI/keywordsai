@@ -18,11 +18,134 @@ logger = logging.getLogger(__name__)
 DEFAULT_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
 
 
-class KeywordsAILiteLLMCallback:
+try:
+    from litellm.integrations.custom_logger import CustomLogger as LiteLLMCustomLogger
+except Exception:  # pragma: no cover - litellm is optional at runtime
+    class LiteLLMCustomLogger:  # type: ignore[no-redef]
+        """Fallback base class when litellm is unavailable."""
+
+
+class NamedCallbackRegistry(list):
+    """List-like callback registry with name-based access.
+
+    Supports dictionary-style assignment:
+        litellm.success_callback["keywordsai"] = callback.log_success_event
+    while remaining compatible with list operations expected by LiteLLM.
+    """
+
+    def __init__(self, iterable: Optional[List[Any]] = None) -> None:
+        super().__init__(iterable or [])
+        self._named: Dict[str, Any] = {}
+
+    def __getitem__(self, key: Any) -> Any:
+        if isinstance(key, str):
+            return self._named[key]
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if isinstance(key, str):
+            self._named[key] = value
+            if value not in self:
+                super().append(value)
+            return
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key: Any) -> None:
+        if isinstance(key, str):
+            value = self._named.pop(key)
+            if value not in self._named.values():
+                try:
+                    super().remove(value)
+                except ValueError:
+                    pass
+            return
+        removed = self[key]
+        super().__delitem__(key)
+        self._drop_named_values(removed)
+
+    def pop(self, key: Any = -1) -> Any:
+        if isinstance(key, str):
+            value = self._named.pop(key)
+            if value not in self._named.values():
+                try:
+                    super().remove(value)
+                except ValueError:
+                    pass
+            return value
+        value = super().pop(key)
+        self._drop_named_value(value)
+        return value
+
+    def remove(self, value: Any) -> None:
+        super().remove(value)
+        self._drop_named_value(value)
+
+    def clear(self) -> None:
+        super().clear()
+        self._named.clear()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._named.get(key, default)
+
+    def register(self, name: str, callback: Any) -> Any:
+        self[name] = callback
+        return callback
+
+    def _drop_named_values(self, removed: Any) -> None:
+        if isinstance(removed, list):
+            for value in removed:
+                self._drop_named_value(value)
+        else:
+            self._drop_named_value(removed)
+
+    def _drop_named_value(self, value: Any) -> None:
+        for name, cb in list(self._named.items()):
+            if cb is value:
+                del self._named[name]
+
+
+def _ensure_named_callback_registry(callbacks: Any) -> NamedCallbackRegistry:
+    if isinstance(callbacks, NamedCallbackRegistry):
+        return callbacks
+    if callbacks is None:
+        callbacks = []
+    return NamedCallbackRegistry(list(callbacks))
+
+
+def _enable_named_callbacks() -> None:
+    """Enable name-based access on LiteLLM callback lists."""
+    try:
+        import litellm
+    except Exception:
+        return
+
+    litellm.success_callback = _ensure_named_callback_registry(
+        litellm.success_callback
+    )
+    litellm.failure_callback = _ensure_named_callback_registry(
+        litellm.failure_callback
+    )
+    if hasattr(litellm, "_async_success_callback"):
+        litellm._async_success_callback = _ensure_named_callback_registry(
+            litellm._async_success_callback
+        )
+    if hasattr(litellm, "_async_failure_callback"):
+        litellm._async_failure_callback = _ensure_named_callback_registry(
+            litellm._async_failure_callback
+        )
+
+
+class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
     """LiteLLM callback that sends logs to Keywords AI.
     
     Usage:
         callback = KeywordsAILiteLLMCallback(api_key="...")
+
+        # Named callbacks (keeps existing callbacks intact)
+        litellm.success_callback["keywordsai"] = callback.log_success_event
+        litellm.failure_callback["keywordsai"] = callback.log_failure_event
+
+        # Or list-based callbacks
         litellm.success_callback = [callback.log_success_event]
         litellm.failure_callback = [callback.log_failure_event]
     """
@@ -33,11 +156,24 @@ class KeywordsAILiteLLMCallback:
         endpoint: Optional[str] = None,
         timeout: int = 10,
     ):
+        super().__init__()
+        _enable_named_callbacks()
         self.api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
         self.endpoint = endpoint or os.getenv("KEYWORDSAI_ENDPOINT", DEFAULT_ENDPOINT)
         self.timeout = timeout
         if not self.api_key:
             logger.warning("Keywords AI API key not provided")
+
+    def register_litellm_callbacks(self, name: str = "keywordsai") -> None:
+        """Register success/failure callbacks on LiteLLM by name."""
+        try:
+            import litellm
+        except Exception as exc:
+            raise RuntimeError("litellm must be installed to register callbacks") from exc
+
+        _enable_named_callbacks()
+        litellm.success_callback[name] = self.log_success_event
+        litellm.failure_callback[name] = self.log_failure_event
     
     def log_success_event(
         self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
