@@ -30,8 +30,13 @@ def api_key():
 def callback(api_key):
     """Setup callback and clean up after test."""
     cb = KeywordsAILiteLLMCallback(api_key=api_key)
-    litellm.success_callback = [cb.log_success_event]
-    litellm.failure_callback = [cb.log_failure_event]
+    cb.register_litellm_callbacks()
+    success_handler = litellm.success_callback["keywordsai"]
+    failure_handler = litellm.failure_callback["keywordsai"]
+    assert getattr(success_handler, "__self__", None) is cb
+    assert getattr(success_handler, "__func__", None) is cb.log_success_event.__func__
+    assert getattr(failure_handler, "__self__", None) is cb
+    assert getattr(failure_handler, "__func__", None) is cb.log_failure_event.__func__
     yield cb
     litellm.success_callback = []
     litellm.failure_callback = []
