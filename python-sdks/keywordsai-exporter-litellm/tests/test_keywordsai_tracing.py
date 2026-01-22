@@ -14,6 +14,7 @@ from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
 API_BASE = os.getenv("KEYWORDSAI_BASE_URL")
 MODEL = "gpt-4o-mini"
+MOCK_RESPONSE = "Hello from mock"
 
 
 @pytest.fixture
@@ -52,9 +53,10 @@ def test_trace_with_callback(callback, api_key):
             "workflow_name": workflow_name,
             "span_name": "generation",
         }},
+        mock_response=MOCK_RESPONSE,
     )
 
-    assert response.choices[0].message.content
+    assert response.choices[0].message.content == MOCK_RESPONSE
 
 
 # def test_trace_with_proxy(callback, api_key):
