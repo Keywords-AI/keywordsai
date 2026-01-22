@@ -14,6 +14,7 @@ from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
 API_BASE = os.getenv("KEYWORDSAI_BASE_URL")
 MODEL = "gpt-4o-mini"
+MOCK_RESPONSE = "Hello from mock"
 
 
 @pytest.fixture
@@ -29,8 +30,13 @@ def api_key():
 def callback(api_key):
     """Setup callback and clean up after test."""
     cb = KeywordsAILiteLLMCallback(api_key=api_key)
-    litellm.success_callback = [cb.log_success_event]
-    litellm.failure_callback = [cb.log_failure_event]
+    cb.register_litellm_callbacks()
+    success_handler = litellm.success_callback["keywordsai"]
+    failure_handler = litellm.failure_callback["keywordsai"]
+    assert getattr(success_handler, "__self__", None) is cb
+    assert getattr(success_handler, "__func__", None) is cb.log_success_event.__func__
+    assert getattr(failure_handler, "__self__", None) is cb
+    assert getattr(failure_handler, "__func__", None) is cb.log_failure_event.__func__
     yield cb
     litellm.success_callback = []
     litellm.failure_callback = []
@@ -52,9 +58,10 @@ def test_trace_with_callback(callback, api_key):
             "workflow_name": workflow_name,
             "span_name": "generation",
         }},
+        mock_response=MOCK_RESPONSE,
     )
 
-    assert response.choices[0].message.content
+    assert response.choices[0].message.content == MOCK_RESPONSE
 
 
 # def test_trace_with_proxy(callback, api_key):
