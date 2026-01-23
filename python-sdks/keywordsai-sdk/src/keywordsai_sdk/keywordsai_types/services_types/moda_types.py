@@ -66,7 +66,7 @@ class ModaParams(KeywordsAIBaseModel):
     Users only need to provide their Moda API key - we automatically
     construct the events from the log data they're already sending.
     """
-    api_key: str = Field(description="Moda API key for authentication")
+    api_key: Optional[str] = Field(default=None, description="Moda API key for authentication")
 
 
 __all__ = [
