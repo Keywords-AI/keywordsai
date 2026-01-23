@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "keywordsai-exporter-haystack"
+version = "0.1.1"
+description = "Keywords AI integration for Haystack pipelines with tracing and logging support"
+authors = ["Keywords AI <team@keywordsai.co>"]
+readme = "README.md"
+license = "MIT"
+packages = [{include = "keywordsai_exporter_haystack", from = "src"}]
+homepage = "https://keywordsai.co"
+repository = "https://github.com/Keywords-AI/keywordai_sdks"
+documentation = "https://docs.keywordsai.co"
+keywords = ["haystack", "keywords-ai", "llm", "observability", "tracing", "monitoring"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.31.0"
+haystack-ai = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+python-dotenv = "^1.0.0"
+sentence-transformers = "^2.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
