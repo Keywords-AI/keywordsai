@@ -64,3 +64,19 @@ const result = await generateText({
   `ai.*`/`gen_ai.*` attributes).
 - Spans are converted into Keywords AI payloads and sent in a single batch
   request to the integration ingest endpoint.
+
+## Smoke test
+
+This package includes a simple smoke test that emits one AI SDK span and sends
+it to Keywords AI. Ensure the required environment variables are set:
+
+```bash
+export KEYWORDSAI_API_KEY="your_api_key"
+export KEYWORDSAI_BASE_URL="https://api.keywordsai.co/api" # optional
+```
+
+Run the test:
+
+```bash
+yarn test:smoke
+```

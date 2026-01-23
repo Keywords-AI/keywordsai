@@ -15,6 +15,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "tsc",
+    "test:smoke": "yarn build && node tests/smoke.js",
     "publish": "yarn npm publish",
     "release": "yarn build && yarn version patch && yarn publish"
   },
