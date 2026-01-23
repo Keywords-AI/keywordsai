@@ -1,6 +1,6 @@
 # Keywords AI LiteLLM Exporter
 
-LiteLLM callback integration that exports traces to Keywords AI.
+LiteLLM integration for exporting traces to Keywords AI.
 
 ## Installation
 
@@ -10,200 +10,166 @@ pip install keywordsai-exporter-litellm
 
 ## Quick Start
 
-### Method 1: Callback
+### Callback Mode
 
-LiteLLM-native callback integration:
+Use the callback to send traces to Keywords AI:
 
 ```python
 import litellm
 from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
-callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
-litellm.success_callback = [callback.log_success_event]
-litellm.failure_callback = [callback.log_failure_event]
+# Setup callback
+callback = KeywordsAILiteLLMCallback(api_key="your-keywordsai-api-key")
+callback.register_litellm_callbacks()
 
+# Make LLM calls - traces are automatically sent
 response = litellm.completion(
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": "Hello!"}],
 )
 ```
 
-### Method 2: Proxy
+### Proxy Mode
 
-Route requests through Keywords AI's API:
+Route requests through Keywords AI gateway:
 
 ```python
-import os
 import litellm
-
-# Set via environment variable or directly
-api_base = os.getenv("KEYWORDSAI_API_BASE", "https://api.keywordsai.co/api")
 
 response = litellm.completion(
     api_key="your-keywordsai-api-key",
-    api_base=api_base,
+    api_base="https://api.keywordsai.co/api",
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": "Hello!"}],
 )
 ```
 
-## Creating Trace Hierarchies
+## Creating Traces
 
-Pass trace IDs via `keywordsai_params`:
+### Callback Mode (with `keywordsai_params`)
 
 ```python
 import uuid
-import time
-from datetime import datetime, timezone
 import litellm
 from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
 callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
-litellm.success_callback = [callback.log_success_event]
+callback.register_litellm_callbacks()
 
-# Generate trace identifiers
 trace_id = uuid.uuid4().hex
-workflow_span_id = uuid.uuid4().hex[:16]
-workflow_start = datetime.now(timezone.utc)
+root_span_id = uuid.uuid4().hex[:16]
+child_span_id = uuid.uuid4().hex[:16]
 
-# Make LLM calls with shared trace_id
+# Root span
 response1 = litellm.completion(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Step 1"}],
-    metadata={
-        "keywordsai_params": {
-            "trace_id": trace_id,
-            "parent_span_id": workflow_span_id,
-            "span_name": "step_1",
-        }
-    }
-)
-
-response2 = litellm.completion(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Step 2"}],
-    metadata={
-        "keywordsai_params": {
-            "trace_id": trace_id,
-            "parent_span_id": workflow_span_id,
-            "span_name": "step_2",
-        }
-    }
-)
-
-# Send the workflow span last
-time.sleep(1.0)  # Wait for generation spans to be sent
-callback.send_workflow_span(
-    trace_id=trace_id,
-    span_id=workflow_span_id,
-    workflow_name="my_workflow",
-    start_time=workflow_start,
-    end_time=datetime.now(timezone.utc),
-)
-```
-
-## Custom Parameters
-
-Pass Keywords AI parameters via metadata:
-
-```python
-response = litellm.completion(
+    api_key="your-api-key",
+    api_base="https://api.keywordsai.co/api",
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
     metadata={
         "keywordsai_params": {
-            "customer_identifier": "user-123",
-            "thread_identifier": "thread-456",
+            "trace_id": trace_id,
+            "span_id": root_span_id,
             "workflow_name": "my_workflow",
-            "metadata": {"custom_key": "custom_value"},
+            "span_name": "root_generation",
+            "customer_identifier": "user-123",
         }
-    }
+    },
+)
+
+# Child span
+response2 = litellm.completion(
+    api_key="your-api-key",
+    api_base="https://api.keywordsai.co/api",
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Follow up!"}],
+    metadata={
+        "keywordsai_params": {
+            "trace_id": trace_id,
+            "span_id": child_span_id,
+            "parent_span_id": root_span_id,
+            "workflow_name": "my_workflow",
+            "span_name": "child_generation",
+            "customer_identifier": "user-123",
+        }
+    },
 )
 ```
 
-## Streaming & Async Support
+### Proxy Mode (with `extra_body`)
 
 ```python
-# Streaming
-response = litellm.completion(
+import uuid
+import litellm
+
+trace_id = uuid.uuid4().hex
+root_span_id = uuid.uuid4().hex[:16]
+child_span_id = uuid.uuid4().hex[:16]
+
+# Root span
+response1 = litellm.completion(
+    api_key="your-keywordsai-api-key",
+    api_base="https://api.keywordsai.co/api",
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
-    stream=True
+    extra_body={
+        "trace_unique_id": trace_id,
+        "span_unique_id": root_span_id,
+        "span_workflow_name": "my_workflow",
+        "span_name": "root_generation",
+        "customer_identifier": "user-123",
+    },
 )
-for chunk in response:
-    print(chunk.choices[0].delta.content or "", end="")
 
-# Async
-response = await litellm.acompletion(
+# Child span
+response2 = litellm.completion(
+    api_key="your-keywordsai-api-key",
+    api_base="https://api.keywordsai.co/api",
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Hello!"}]
+    messages=[{"role": "user", "content": "Follow up!"}],
+    extra_body={
+        "trace_unique_id": trace_id,
+        "span_unique_id": child_span_id,
+        "span_parent_id": root_span_id,
+        "span_workflow_name": "my_workflow",
+        "span_name": "child_generation",
+        "customer_identifier": "user-123",
+    },
 )
 ```
 
-## Tool Calls
+## Parameters
 
-Tool/function calls are automatically captured:
+### Callback Mode (`keywordsai_params`)
 
-```python
-tools = [{
-    "type": "function",
-    "function": {
-        "name": "get_weather",
-        "description": "Get the current weather",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {"type": "string"}
-            },
-            "required": ["location"]
-        }
-    }
-}]
+| Parameter | Description |
+|-----------|-------------|
+| `trace_id` | Unique trace identifier |
+| `span_id` | Unique span identifier |
+| `parent_span_id` | Parent span ID (for nested spans) |
+| `workflow_name` | Workflow/trace name |
+| `span_name` | Span name |
+| `customer_identifier` | Customer identifier |
+| `thread_identifier` | Thread identifier |
+| `metadata` | Additional metadata dict |
 
-response = litellm.completion(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "What's the weather in NYC?"}],
-    tools=tools,
-    tool_choice="auto"
-)
-```
+### Proxy Mode (`extra_body`)
+
+| Parameter | Description |
+|-----------|-------------|
+| `trace_unique_id` | Unique trace identifier |
+| `span_unique_id` | Unique span identifier |
+| `span_parent_id` | Parent span ID (for nested spans) |
+| `span_workflow_name` | Workflow/trace name |
+| `span_name` | Span name |
+| `customer_identifier` | Customer identifier |
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `KEYWORDSAI_API_KEY` | Your Keywords AI API key | Required |
-| `KEYWORDSAI_API_BASE` | API base URL for proxy mode | `https://api.keywordsai.co/api` |
-| `KEYWORDSAI_ENDPOINT` | Custom endpoint for callback mode | `https://api.keywordsai.co/api/v1/traces/ingest` |
-
-## API Reference
-
-### KeywordsAILiteLLMCallback
-
-```python
-from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
-
-callback = KeywordsAILiteLLMCallback(
-    api_key="...",    # Keywords AI API key
-    endpoint="...",   # Custom endpoint (optional)
-    timeout=10,       # Request timeout in seconds
-)
-
-# Register callbacks
-litellm.success_callback = [callback.log_success_event]
-litellm.failure_callback = [callback.log_failure_event]
-
-# Send workflow span for trace hierarchy
-callback.send_workflow_span(
-    trace_id="...",           # Unique trace ID
-    span_id="...",            # Unique span ID
-    workflow_name="...",      # Workflow name
-    start_time=datetime,      # Start time
-    end_time=datetime,        # End time
-    customer_identifier="...", # Customer ID (optional)
-    metadata={},              # Additional metadata (optional)
-)
-```
+| `KEYWORDSAI_API_KEY` | Keywords AI API key | Required |
+| `KEYWORDSAI_ENDPOINT` | Traces endpoint (callback mode) | `https://api.keywordsai.co/api/v1/traces/ingest` |
 
 ## License
 

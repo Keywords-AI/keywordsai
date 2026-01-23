@@ -1,13 +1,13 @@
 """Keywords AI LiteLLM Integration.
 
-KeywordsAILiteLLMCallback - LiteLLM-native callback class for sending logs to Keywords AI.
+KeywordsAILiteLLMCallback - LiteLLM-native callback class for sending traces to Keywords AI.
 """
 
+import hashlib
 import json
 import logging
 import os
 import threading
-import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -16,6 +16,11 @@ import requests
 logger = logging.getLogger(__name__)
 
 DEFAULT_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
+
+
+def _format_span_id(raw_id: str) -> str:
+    """Format span ID to 16-char hex for KeywordsAI compatibility."""
+    return hashlib.md5(raw_id.encode()).hexdigest()[:16]
 
 
 try:
@@ -84,13 +89,6 @@ class NamedCallbackRegistry(list):
         super().clear()
         self._named.clear()
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return self._named.get(key, default)
-
-    def register(self, name: str, callback: Any) -> Any:
-        self[name] = callback
-        return callback
-
     def _drop_named_values(self, removed: Any) -> None:
         if isinstance(removed, list):
             for value in removed:
@@ -105,6 +103,7 @@ class NamedCallbackRegistry(list):
 
 
 def _ensure_named_callback_registry(callbacks: Any) -> NamedCallbackRegistry:
+    """Convert callbacks to NamedCallbackRegistry if needed."""
     if isinstance(callbacks, NamedCallbackRegistry):
         return callbacks
     if callbacks is None:
@@ -119,12 +118,9 @@ def _enable_named_callbacks() -> None:
     except Exception:
         return
 
-    litellm.success_callback = _ensure_named_callback_registry(
-        litellm.success_callback
-    )
-    litellm.failure_callback = _ensure_named_callback_registry(
-        litellm.failure_callback
-    )
+    litellm.success_callback = _ensure_named_callback_registry(litellm.success_callback)
+    litellm.failure_callback = _ensure_named_callback_registry(litellm.failure_callback)
+    
     if hasattr(litellm, "_async_success_callback"):
         litellm._async_success_callback = _ensure_named_callback_registry(
             litellm._async_success_callback
@@ -136,18 +132,11 @@ def _enable_named_callbacks() -> None:
 
 
 class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
-    """LiteLLM callback that sends logs to Keywords AI.
+    """LiteLLM callback that sends traces to Keywords AI.
     
     Usage:
         callback = KeywordsAILiteLLMCallback(api_key="...")
-
-        # Named callbacks (keeps existing callbacks intact)
-        litellm.success_callback["keywordsai"] = callback.log_success_event
-        litellm.failure_callback["keywordsai"] = callback.log_failure_event
-
-        # Or list-based callbacks
-        litellm.success_callback = [callback.log_success_event]
-        litellm.failure_callback = [callback.log_failure_event]
+        callback.register_litellm_callbacks()
     """
     
     def __init__(
@@ -174,6 +163,10 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
         _enable_named_callbacks()
         litellm.success_callback[name] = self.log_success_event
         litellm.failure_callback[name] = self.log_failure_event
+
+    # -------------------------------------------------------------------------
+    # Callback methods (called by LiteLLM)
+    # -------------------------------------------------------------------------
     
     def log_success_event(
         self, kwargs: Dict, response_obj: Any, start_time: datetime, end_time: datetime
@@ -186,7 +179,8 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
     ) -> None:
         """Async log successful completion."""
         threading.Thread(
-            target=self._log_event, args=(kwargs, response_obj, start_time, end_time, None)
+            target=self._log_event,
+            args=(kwargs, response_obj, start_time, end_time, None),
         ).start()
     
     def log_failure_event(
@@ -202,8 +196,13 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
         """Async log failed completion."""
         error = kwargs.get("exception") or kwargs.get("traceback_exception")
         threading.Thread(
-            target=self._log_event, args=(kwargs, response_obj, start_time, end_time, error)
+            target=self._log_event,
+            args=(kwargs, response_obj, start_time, end_time, error),
         ).start()
+
+    # -------------------------------------------------------------------------
+    # Core logging logic
+    # -------------------------------------------------------------------------
     
     def _log_event(
         self,
@@ -218,16 +217,17 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
             return
         
         try:
+            # Extract basic info
             model = kwargs.get("model") or kwargs.get("litellm_params", {}).get("model")
             messages = kwargs.get("messages", [])
             metadata = kwargs.get("litellm_params", {}).get("metadata", {}) or {}
             kw_params = metadata.get("keywordsai_params", {})
+            workflow_name = kw_params.get("workflow_name", "litellm")
             
+            # Build payload
             payload = {
-                "trace_unique_id": kw_params.get("trace_id") or uuid.uuid4().hex,
-                "span_unique_id": kw_params.get("span_id") or uuid.uuid4().hex[:16],
                 "span_name": kw_params.get("span_name", "litellm.completion"),
-                "span_workflow_name": kw_params.get("workflow_name", "litellm"),
+                "span_workflow_name": workflow_name,
                 "log_type": "generation",
                 "timestamp": end_time.astimezone(timezone.utc).isoformat(),
                 "start_time": start_time.astimezone(timezone.utc).isoformat(),
@@ -237,58 +237,121 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
                 "stream": kwargs.get("stream", False),
             }
             
-            if parent_id := kw_params.get("parent_span_id"):
+            # Add trace info
+            trace_id = kw_params.get("trace_id")
+            parent_id = kw_params.get("parent_span_id")
+            
+            if trace_id:
+                payload["trace_unique_id"] = trace_id
+                payload["trace_name"] = kw_params.get("trace_name", workflow_name)
+            
+            # Add span_unique_id
+            self._add_span_id(payload, kw_params, trace_id, parent_id, response_obj, kwargs)
+            
+            if parent_id:
                 payload["span_parent_id"] = parent_id
+            
+            # Add tools if present
             if kwargs.get("tools"):
                 payload["tools"] = kwargs["tools"]
             if kwargs.get("tool_choice"):
                 payload["tool_choice"] = kwargs["tool_choice"]
             
+            # Add status and response data
             if error:
                 payload["status"] = "error"
                 payload["error_message"] = str(error)
             else:
                 payload["status"] = "success"
                 if response_obj:
-                    self._add_response_data(payload, response_obj)
+                    self._add_response_data(payload, response_obj, kwargs)
             
+            # Add custom KeywordsAI params
             self._add_keywordsai_params(payload, kw_params)
+            
             self._send([payload])
         except Exception as e:
             logger.error(f"Keywords AI logging error: {e}")
-    
-    def _add_response_data(self, payload: Dict, response_obj: Any) -> None:
+
+    def _add_span_id(
+        self,
+        payload: Dict,
+        kw_params: Dict,
+        trace_id: Optional[str],
+        parent_id: Optional[str],
+        response_obj: Any,
+        kwargs: Dict,
+    ) -> None:
+        """Add span_unique_id to payload."""
+        span_id = kw_params.get("span_id")
+        if span_id:
+            payload["span_unique_id"] = span_id
+        elif trace_id and not parent_id:
+            # Root span: use trace_id as span_unique_id (KeywordsAI convention)
+            payload["span_unique_id"] = trace_id
+        else:
+            # Child span: derive from response.id or litellm_call_id
+            raw_id = None
+            if response_obj:
+                raw_id = getattr(response_obj, "id", None)
+                if not raw_id and hasattr(response_obj, "get"):
+                    raw_id = response_obj.get("id")
+            if not raw_id:
+                raw_id = kwargs.get("litellm_call_id")
+            if raw_id:
+                payload["span_unique_id"] = _format_span_id(str(raw_id))
+
+    def _add_response_data(self, payload: Dict, response_obj: Any, kwargs: Dict) -> None:
         """Add response data to payload."""
         resp = self._extract_response(response_obj)
+        
+        # Add output
         if choices := resp.get("choices", []):
             payload["output"] = json.dumps(choices[0].get("message", {}))
+        
+        # Add token usage
         if usage := resp.get("usage", {}):
-            payload["usage"] = {
-                "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
-                "total_tokens": usage.get("total_tokens"),
-            }
+            prompt_tokens = usage.get("prompt_tokens") or 0
+            completion_tokens = usage.get("completion_tokens") or 0
+            if prompt_tokens:
+                payload["prompt_tokens"] = prompt_tokens
+            if completion_tokens:
+                payload["completion_tokens"] = completion_tokens
+            if prompt_tokens or completion_tokens:
+                payload["total_request_tokens"] = prompt_tokens + completion_tokens
+        
+        # Add cost from LiteLLM
+        if cost := kwargs.get("response_cost"):
+            payload["cost"] = cost
     
     def _add_keywordsai_params(self, payload: Dict, kw_params: Dict) -> None:
         """Add Keywords AI specific params to payload."""
         extra_meta = {}
         
+        # Customer identifier
         if "customer_identifier" in kw_params:
             payload["customer_identifier"] = kw_params["customer_identifier"]
         if cp := kw_params.get("customer_params"):
             if isinstance(cp, dict):
                 payload["customer_identifier"] = cp.get("customer_identifier")
-                extra_meta.update({f"customer_{k}": v for k, v in cp.items() if k != "customer_identifier"})
+                extra_meta.update({
+                    f"customer_{k}": v for k, v in cp.items() if k != "customer_identifier"
+                })
+        
+        # Thread identifier
         if "thread_identifier" in kw_params:
             payload["thread_identifier"] = kw_params["thread_identifier"]
+        
+        # Custom metadata
         if m := kw_params.get("metadata"):
             if isinstance(m, dict):
                 extra_meta.update(m)
         
-        excluded = (
+        # Add remaining params as metadata
+        excluded = {
             "customer_identifier", "customer_params", "thread_identifier", "metadata",
-            "workflow_name", "trace_id", "span_id", "parent_span_id", "span_name"
-        )
+            "workflow_name", "trace_id", "trace_name", "span_id", "parent_span_id", "span_name",
+        }
         extra_meta.update({k: v for k, v in kw_params.items() if k not in excluded})
         
         if extra_meta:
@@ -303,59 +366,7 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
         if isinstance(response_obj, dict):
             return response_obj
         return {}
-    
-    def send_workflow_span(
-        self,
-        trace_id: str,
-        span_id: str,
-        workflow_name: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        parent_span_id: Optional[str] = None,
-        customer_identifier: Optional[str] = None,
-        thread_identifier: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        input_data: Optional[Any] = None,
-        output_data: Optional[Any] = None,
-    ) -> None:
-        """Send a workflow span to Keywords AI."""
-        if not self.api_key:
-            return
-        
-        try:
-            now = datetime.now(timezone.utc)
-            start = start_time or now
-            end = end_time or now
-            
-            payload = {
-                "trace_unique_id": trace_id,
-                "span_unique_id": span_id,
-                "span_name": workflow_name,
-                "span_workflow_name": workflow_name,
-                "log_type": "workflow",
-                "timestamp": end.isoformat(),
-                "start_time": start.isoformat(),
-                "latency": (end - start).total_seconds() if end_time else 0.0,
-                "status": "success",
-            }
-            
-            if parent_span_id:
-                payload["span_parent_id"] = parent_span_id
-            if customer_identifier:
-                payload["customer_identifier"] = customer_identifier
-            if thread_identifier:
-                payload["thread_identifier"] = thread_identifier
-            if metadata:
-                payload["metadata"] = metadata
-            if input_data:
-                payload["input"] = input_data if isinstance(input_data, str) else json.dumps(input_data)
-            if output_data:
-                payload["output"] = output_data if isinstance(output_data, str) else json.dumps(output_data)
-            
-            self._send([payload])
-        except Exception as e:
-            logger.error(f"Keywords AI workflow span error: {e}")
-    
+
     def _send(self, payloads: List[Dict[str, Any]]) -> None:
         """Send payloads to Keywords AI."""
         try:
