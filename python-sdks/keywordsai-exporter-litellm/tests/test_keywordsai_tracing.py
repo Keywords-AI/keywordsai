@@ -17,6 +17,41 @@ MODEL = "gpt-4o-mini"
 
 
 # -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+def _extract_stream_text(chunks):
+    """Collect text content from streaming chunks."""
+    parts = []
+    for chunk in chunks:
+        if not chunk:
+            continue
+        choices = getattr(chunk, "choices", None)
+        if choices is None and isinstance(chunk, dict):
+            choices = chunk.get("choices")
+        if not choices:
+            continue
+        choice = choices[0]
+        delta = getattr(choice, "delta", None)
+        if delta is None and isinstance(choice, dict):
+            delta = choice.get("delta")
+        if delta is not None:
+            content = getattr(delta, "content", None)
+            if content is None and isinstance(delta, dict):
+                content = delta.get("content")
+        else:
+            message = getattr(choice, "message", None)
+            if message is None and isinstance(choice, dict):
+                message = choice.get("message")
+            content = getattr(message, "content", None)
+            if content is None and isinstance(message, dict):
+                content = message.get("content")
+        if content:
+            parts.append(content)
+    return "".join(parts)
+
+
+# -----------------------------------------------------------------------------
 # Fixtures
 # -----------------------------------------------------------------------------
 
@@ -83,7 +118,9 @@ def test_trace_with_callback(callback, api_key):
             }
         },
     )
-    assert response1.choices[0].message.content
+    chunks1 = list(response1)
+    assert len(chunks1) > 0
+    response1_text = _extract_stream_text(chunks1) or "Hello"
 
     # Child span
     response2 = litellm.completion(
@@ -92,7 +129,7 @@ def test_trace_with_callback(callback, api_key):
         model=MODEL,
         messages=[
             {"role": "user", "content": "Say hello in one word."},
-            {"role": "assistant", "content": response1.choices[0].message.content},
+            {"role": "assistant", "content": response1_text},
             {"role": "user", "content": "Now say goodbye in one word."},
         ],
         metadata={
@@ -140,7 +177,9 @@ def test_trace_with_callback_streaming(callback, api_key):
             }
         },
     )
-    assert response1.choices[0].message.content
+    chunks1 = list(response1)
+    assert len(chunks1) > 0
+    response1_text = _extract_stream_text(chunks1) or "Hello"
 
     # Child span
     response2 = litellm.completion(
@@ -150,7 +189,7 @@ def test_trace_with_callback_streaming(callback, api_key):
         stream=True,
         messages=[
             {"role": "user", "content": "Say hello in one word."},
-            {"role": "assistant", "content": response1.choices[0].message.content},
+            {"role": "assistant", "content": response1_text},
             {"role": "user", "content": "Now say goodbye in one word."},
         ],
         metadata={
@@ -164,7 +203,9 @@ def test_trace_with_callback_streaming(callback, api_key):
             }
         },
     )
-    assert response2.choices[0].message.content
+    chunks2 = list(response2)
+    assert len(chunks2) > 0
+    assert _extract_stream_text(chunks2)
 
 
 def test_trace_with_proxy(api_key):

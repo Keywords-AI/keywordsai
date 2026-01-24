@@ -130,7 +130,6 @@ def _enable_named_callbacks() -> None:
             litellm._async_failure_callback
         )
 
-
 class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
     """LiteLLM callback that sends traces to Keywords AI.
     
@@ -217,6 +216,12 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
             return
         
         try:
+            if kwargs.get("stream") and error is None:
+                complete_streaming_response = kwargs.get("complete_streaming_response")
+                if complete_streaming_response is None:
+                    return
+                response_obj = complete_streaming_response
+
             # Extract basic info
             model = kwargs.get("model") or kwargs.get("litellm_params", {}).get("model")
             messages = kwargs.get("messages", [])
