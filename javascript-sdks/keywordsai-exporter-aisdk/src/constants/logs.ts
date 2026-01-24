@@ -2,17 +2,17 @@ import { LogType, KeywordsLogType } from "@keywordsai/keywordsai-sdk";
 
 // Mapping from AI SDK span types to KeywordsAI log types
 export const AISDK_SPAN_TO_KEYWORDS_LOG_TYPE: Record<string, LogType> = {
-  // Text generation spans
-  "ai.generateText": KeywordsLogType.TEXT,
-  "ai.generateText.doGenerate": KeywordsLogType.TEXT,
-  "ai.streamText": KeywordsLogType.TEXT,
-  "ai.streamText.doStream": KeywordsLogType.TEXT,
+  // Generation spans
+  "ai.generateText": KeywordsLogType.GENERATION,
+  "ai.generateText.doGenerate": KeywordsLogType.GENERATION,
+  "ai.streamText": KeywordsLogType.GENERATION,
+  "ai.streamText.doStream": KeywordsLogType.GENERATION,
 
   // Object generation spans
-  "ai.generateObject": KeywordsLogType.TEXT,
-  "ai.generateObject.doGenerate": KeywordsLogType.TEXT,
-  "ai.streamObject": KeywordsLogType.TEXT,
-  "ai.streamObject.doStream": KeywordsLogType.TEXT,
+  "ai.generateObject": KeywordsLogType.GENERATION,
+  "ai.generateObject.doGenerate": KeywordsLogType.GENERATION,
+  "ai.streamObject": KeywordsLogType.GENERATION,
+  "ai.streamObject.doStream": KeywordsLogType.GENERATION,
 
   // Embedding spans
   "ai.embed": KeywordsLogType.EMBEDDING,
@@ -24,7 +24,10 @@ export const AISDK_SPAN_TO_KEYWORDS_LOG_TYPE: Record<string, LogType> = {
   "ai.toolCall": KeywordsLogType.TOOL,
 
   // Stream events
-  "ai.stream.firstChunk": KeywordsLogType.TEXT,
+  "ai.stream.firstChunk": KeywordsLogType.GENERATION,
+
+  // Chat spans
+  "ai.chat": "chat",
 
   // Agents and workflows
   "ai.agent": KeywordsLogType.AGENT,

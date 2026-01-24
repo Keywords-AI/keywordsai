@@ -4,6 +4,7 @@ import {
   KeywordsAIPayload,
   KeywordsAIPayloadSchema,
   LogType,
+  LOG_TYPE_VALUES,
 } from "@keywordsai/keywordsai-sdk";
 import { AISDK_SPAN_TO_KEYWORDS_LOG_TYPE } from "./constants/index.js";
 
@@ -144,6 +145,15 @@ export class KeywordsAIExporter implements SpanExporter {
     const toolCalls = this.parseToolCalls(span);
     const messages = this.parseCompletionMessages(span, toolCalls);
     const parentSpanId = this.getParentSpanId(span);
+    const promptTokens = this.parsePromptTokens(span);
+    const completionTokens = this.parseCompletionTokens(span);
+    const totalRequestTokens = this.parseTotalRequestTokens(
+      span,
+      promptTokens,
+      completionTokens
+    );
+    const customerEmail = metadata.customer_email;
+    const customerName = metadata.customer_name;
 
     const payload: KeywordsAIPayload = {
       model,
@@ -153,8 +163,18 @@ export class KeywordsAIExporter implements SpanExporter {
       completion_message: messages[0],
       customer_identifier: metadata.userId || "default_user",
       thread_identifier: metadata.userId,
-      prompt_tokens: this.parsePromptTokens(span),
-      completion_tokens: this.parseCompletionTokens(span),
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      ...(totalRequestTokens !== undefined && {
+        total_request_tokens: totalRequestTokens,
+        usage: {
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalRequestTokens,
+        },
+      }),
+      ...(customerEmail && { customer_email: customerEmail }),
+      ...(customerName && { customer_name: customerName }),
       cost: this.parseCost(span),
       generation_time: this.parseGenerationTime(span),
       latency: this.calculateLatency(span),
@@ -314,7 +334,7 @@ export class KeywordsAIExporter implements SpanExporter {
   }
 
   private calculateLatency(span: ReadableSpan): number {
-    return span.duration[0] / 1e9 + span.duration[1] / 1e9;
+    return span.duration[0] + span.duration[1] / 1e9;
   }
 
   private async sendToKeywords(payloads: KeywordsAIPayload[]): Promise<void> {
@@ -445,6 +465,31 @@ export class KeywordsAIExporter implements SpanExporter {
     return warnings ? String(warnings) : undefined;
   }
 
+  private parseTotalRequestTokens(
+    span: ReadableSpan,
+    promptTokens: number,
+    completionTokens: number
+  ): number | undefined {
+    const totalFromAttr =
+      span.attributes["gen_ai.usage.total_tokens"] ??
+      span.attributes["gen_ai.usage.total_request_tokens"];
+
+    if (totalFromAttr !== undefined) {
+      const parsed = parseInt(String(totalFromAttr));
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+
+    const hasTokenAttrs =
+      span.attributes["gen_ai.usage.input_tokens"] !== undefined ||
+      span.attributes["gen_ai.usage.prompt_tokens"] !== undefined ||
+      span.attributes["gen_ai.usage.output_tokens"] !== undefined ||
+      span.attributes["gen_ai.usage.completion_tokens"] !== undefined;
+
+    if (!hasTokenAttrs) return undefined;
+
+    return promptTokens + completionTokens;
+  }
+
   private parseType(
     span: ReadableSpan
   ): "text" | "json_schema" | "json_object" | undefined {
@@ -505,6 +550,7 @@ export class KeywordsAIExporter implements SpanExporter {
     const epochMs = hrTime[0] * 1000 + hrTime[1] / 1e6;
     return new Date(epochMs).toISOString();
   }
+
 
   private parseToolChoice(
     span: ReadableSpan
@@ -596,6 +642,17 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parseLogType(span: ReadableSpan): LogType {
     const spanName = span.name;
+    const explicitLogType =
+      span.attributes["keywordsai.log_type"] ??
+      span.attributes["ai.log_type"] ??
+      span.attributes["log_type"];
+
+    if (explicitLogType !== undefined) {
+      const normalized = String(explicitLogType).toLowerCase();
+      if (LOG_TYPE_VALUES.includes(normalized as LogType)) {
+        return normalized as LogType;
+      }
+    }
 
     if (spanName in AISDK_SPAN_TO_KEYWORDS_LOG_TYPE) {
       return AISDK_SPAN_TO_KEYWORDS_LOG_TYPE[spanName] as LogType;
@@ -660,7 +717,7 @@ export class KeywordsAIExporter implements SpanExporter {
     }
 
     if (this.isGenerationSpan(span)) {
-      return "text";
+      return "generation";
     }
 
     return "unknown";

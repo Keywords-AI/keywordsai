@@ -29,6 +29,7 @@
     "@opentelemetry/sdk-trace-base": "^2.5.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10"
+    "@types/node": "^25.0.10",
+    "typescript": "^5.9.3"
   }
 }
