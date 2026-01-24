@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover - runtime dependency
     merge_row_batch = None
 
 DEFAULT_BASE_URL = "https://api.keywordsai.co/api"
-DEFAULT_LOG_PATH = "request-logs/create/"
+DEFAULT_TRACE_PATH = "v1/traces/ingest"
 
 SPAN_TYPE_TO_LOG_TYPE = {
     "llm": "generation",
@@ -118,18 +118,21 @@ class KeywordsAIExporter:
                 records.extend(batch)
 
         attachments: list[Any] = []
+        payloads: list[Dict[str, Any]] = []
         for record in records:
             if _extract_attachments is not None:
                 _extract_attachments(record, attachments)
 
-            payload = self._build_payload(record)
-            self._post_payload(payload)
+            payloads.append(self._build_payload(record))
 
-    def _post_payload(self, payload: Dict[str, Any]) -> None:
+        if payloads:
+            self._post_payload(payloads)
+
+    def _post_payload(self, payloads: list[Dict[str, Any]]) -> None:
         response = self.session.post(
             self.log_endpoint,
             headers=self.headers,
-            json=payload,
+            json=payloads,
             timeout=self.timeout,
         )
         if response.ok:
@@ -235,7 +238,9 @@ class KeywordsAIExporter:
     @staticmethod
     def _build_log_endpoint(base_url: str) -> str:
         base_url = base_url.rstrip("/")
-        return f"{base_url}/{DEFAULT_LOG_PATH}"
+        if base_url.endswith("/api"):
+            return f"{base_url}/{DEFAULT_TRACE_PATH}"
+        return f"{base_url}/api/{DEFAULT_TRACE_PATH}"
 
     @staticmethod
     def _sanitize_json(value: Any) -> Any:

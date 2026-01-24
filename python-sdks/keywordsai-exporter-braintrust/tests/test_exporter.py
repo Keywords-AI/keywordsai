@@ -1,91 +1,85 @@
-import datetime
 from unittest.mock import MagicMock
+
+import braintrust
 
 from keywordsai_exporter_braintrust import KeywordsAIExporter
 
 
-class DummyLazyValue:
-    def __init__(self, value):
-        self._value = value
+def _init_test_logger():
+    return braintrust.init_logger(
+        project="Test Project",
+        project_id="test-project-id",
+        api_key=braintrust.logger.TEST_API_KEY,
+        async_flush=False,
+        set_current=False,
+    )
 
-    def get(self):
-        return self._value
 
-
-def test_flush_sends_payload_with_trace_fields():
-    session = MagicMock()
-    session.post.return_value = MagicMock(ok=True, status_code=200, text="ok")
-
-    exporter = KeywordsAIExporter(
+def _build_exporter(session):
+    return KeywordsAIExporter(
         api_key="test-key",
         base_url="https://api.keywordsai.co/api",
         session=session,
     )
 
-    event = {
-        "id": "log-1",
-        "span_id": "span-456",
-        "root_span_id": "trace-123",
-        "span_parents": [],
-        "span_attributes": {"name": "root", "type": "llm"},
-        "input": {"messages": [{"role": "user", "content": "Hi"}]},
-        "output": "Hello",
-        "metadata": {"request_id": "req-1"},
-        "tags": ["tag1"],
-        "scores": {"accuracy": 0.9},
-        "metrics": {"start": 1700000000.0, "end": 1700000001.5},
-    }
 
-    exporter.log(DummyLazyValue(event))
-    exporter.flush()
+def test_braintrust_root_span_sends_payload_with_trace_fields():
+    session = MagicMock()
+    session.post.return_value = MagicMock(ok=True, status_code=200, text="ok")
+
+    exporter = _build_exporter(session)
+    with exporter:
+        logger = _init_test_logger()
+        with logger.start_span(name="root", type="llm") as span:
+            span.log(
+                input=[{"role": "user", "content": "Hi"}],
+                output="Hello",
+                metadata={"request_id": "req-1"},
+                tags=["tag1"],
+                scores={"accuracy": 0.9},
+            )
+        logger.flush()
 
     assert session.post.call_count == 1
-    _, kwargs = session.post.call_args
-    payload = kwargs["json"]
+    args, kwargs = session.post.call_args
+    assert args[0] == "https://api.keywordsai.co/api/v1/traces/ingest"
+    payloads = kwargs["json"]
+    assert isinstance(payloads, list)
+    assert len(payloads) == 1
+    payload = payloads[0]
 
-    expected_start = datetime.datetime.fromtimestamp(1700000000.0, tz=datetime.timezone.utc).isoformat()
-    expected_end = datetime.datetime.fromtimestamp(1700000001.5, tz=datetime.timezone.utc).isoformat()
-
-    assert payload["trace_unique_id"] == "trace-123"
-    assert payload["span_unique_id"] == "span-456"
+    assert payload["trace_unique_id"] == payload["span_unique_id"]
     assert payload["span_parent_id"] is None
     assert payload["trace_name"] == "root"
     assert payload["span_name"] == "root"
     assert payload["log_type"] == "generation"
-    assert payload["latency"] == 1.5
-    assert payload["start_time"] == expected_start
-    assert payload["timestamp"] == expected_end
 
     metadata = payload["metadata"]
     assert metadata["braintrust_tags"] == ["tag1"]
     assert metadata["braintrust_scores"] == {"accuracy": 0.9}
 
 
-def test_child_span_sets_parent_id_and_no_trace_name():
+def test_braintrust_child_span_sets_parent_id_and_no_trace_name():
     session = MagicMock()
     session.post.return_value = MagicMock(ok=True, status_code=200, text="ok")
 
-    exporter = KeywordsAIExporter(
-        api_key="test-key",
-        base_url="https://api.keywordsai.co/api",
-        session=session,
-    )
+    exporter = _build_exporter(session)
+    with exporter:
+        logger = _init_test_logger()
+        with logger.start_span(name="root", type="task") as root_span:
+            with root_span.start_span(name="child", type="task") as child_span:
+                child_span.log(metadata={"child": True})
+        logger.flush()
 
-    event = {
-        "id": "log-2",
-        "span_id": "span-child",
-        "root_span_id": "trace-parent",
-        "span_parents": ["span-parent"],
-        "span_attributes": {"name": "child", "type": "task"},
-        "metrics": {"start": 1700000002.0, "end": 1700000004.0},
-    }
+    args, kwargs = session.post.call_args
+    assert args[0] == "https://api.keywordsai.co/api/v1/traces/ingest"
+    payloads = kwargs["json"]
+    assert isinstance(payloads, list)
+    assert len(payloads) >= 2
 
-    exporter.log(DummyLazyValue(event))
-    exporter.flush()
+    child_payloads = [payload for payload in payloads if payload.get("span_parent_id")]
+    assert len(child_payloads) == 1
+    child_payload = child_payloads[0]
 
-    _, kwargs = session.post.call_args
-    payload = kwargs["json"]
-
-    assert payload["span_parent_id"] == "span-parent"
-    assert payload["trace_name"] is None
-    assert payload["log_type"] == "task"
+    assert child_payload["trace_name"] is None
+    assert child_payload["log_type"] == "task"
