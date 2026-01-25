@@ -262,14 +262,12 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
             if kwargs.get("tool_choice"):
                 payload["tool_choice"] = kwargs["tool_choice"]
             
-            # Add status and response data
+            # Add status
             if error:
                 payload["status"] = "error"
                 payload["error_message"] = str(error)
             else:
                 payload["status"] = "success"
-                if response_obj:
-                    self._add_response_data(payload, response_obj, kwargs)
             
             # Add custom KeywordsAI params
             self._add_keywordsai_params(payload, kw_params)
@@ -306,29 +304,6 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
             if raw_id:
                 payload["span_unique_id"] = _format_span_id(str(raw_id))
 
-    def _add_response_data(self, payload: Dict, response_obj: Any, kwargs: Dict) -> None:
-        """Add response data to payload."""
-        resp = self._extract_response(response_obj)
-        
-        # Add output
-        if choices := resp.get("choices", []):
-            payload["output"] = json.dumps(choices[0].get("message", {}))
-        
-        # Add token usage
-        if usage := resp.get("usage", {}):
-            prompt_tokens = usage.get("prompt_tokens") or 0
-            completion_tokens = usage.get("completion_tokens") or 0
-            if prompt_tokens:
-                payload["prompt_tokens"] = prompt_tokens
-            if completion_tokens:
-                payload["completion_tokens"] = completion_tokens
-            if prompt_tokens or completion_tokens:
-                payload["total_request_tokens"] = prompt_tokens + completion_tokens
-        
-        # Add cost from LiteLLM
-        if cost := kwargs.get("response_cost"):
-            payload["cost"] = cost
-    
     def _add_keywordsai_params(self, payload: Dict, kw_params: Dict) -> None:
         """Add Keywords AI specific params to payload."""
         extra_meta = {}
@@ -362,16 +337,6 @@ class KeywordsAILiteLLMCallback(LiteLLMCustomLogger):
         if extra_meta:
             payload["metadata"] = extra_meta
     
-    def _extract_response(self, response_obj: Any) -> Dict:
-        """Extract dict from response object."""
-        if hasattr(response_obj, "model_dump"):
-            return response_obj.model_dump(mode="json")
-        if hasattr(response_obj, "dict"):
-            return response_obj.dict()
-        if isinstance(response_obj, dict):
-            return response_obj
-        return {}
-
     def _send(self, payloads: List[Dict[str, Any]]) -> None:
         """Send payloads to Keywords AI."""
         try:

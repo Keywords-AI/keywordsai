@@ -1,12 +1,10 @@
-"""Test logging functionality for Keywords AI LiteLLM integration."""
+"""Proxy logging tests for Keywords AI LiteLLM integration."""
 
 import os
 
 import dotenv
 import litellm
 import pytest
-
-from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
 dotenv.load_dotenv(".env", override=True)
 
@@ -63,67 +61,9 @@ def api_key():
     return key
 
 
-@pytest.fixture
-def callback(api_key):
-    """Setup callback and clean up after test."""
-    cb = KeywordsAILiteLLMCallback(api_key=api_key)
-    cb.register_litellm_callbacks()
-
-    # Verify callback registration
-    success_handler = litellm.success_callback["keywordsai"]
-    failure_handler = litellm.failure_callback["keywordsai"]
-    assert getattr(success_handler, "__self__", None) is cb
-    assert getattr(failure_handler, "__self__", None) is cb
-
-    yield cb
-
-    # Cleanup
-    litellm.success_callback = []
-    litellm.failure_callback = []
-
-
 # -----------------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------------
-
-def test_log_with_callback(callback, api_key):
-    """Test single log with callback mode."""
-    response = litellm.completion(
-        api_key=api_key,
-        api_base=API_BASE,
-        model=MODEL,
-        messages=[{"role": "user", "content": "Say hello in one word."}],
-        metadata={
-            "keywordsai_params": {
-                "workflow_name": "callback_logging_non_stream",
-                "span_name": "callback_log",
-                "customer_identifier": "test_callback_user_non_stream",
-            }
-        },
-    )
-    assert response.choices[0].message.content
-
-
-def test_log_with_callback_streaming(callback, api_key):
-    """Test single log with callback streaming mode."""
-    response = litellm.completion(
-        api_key=api_key,
-        api_base=API_BASE,
-        model=MODEL,
-        stream=True,
-        messages=[{"role": "user", "content": "Say hello in one word."}],
-        metadata={
-            "keywordsai_params": {
-                "workflow_name": "callback_logging_stream",
-                "span_name": "callback_stream_log",
-                "customer_identifier": "test_callback_user_stream",
-            }
-        },
-    )
-    chunks = list(response)
-    assert len(chunks) > 0
-    assert _extract_stream_text(chunks)
-
 
 def test_log_with_proxy(api_key):
     """Test single log with proxy mode."""
@@ -133,9 +73,28 @@ def test_log_with_proxy(api_key):
         model=MODEL,
         messages=[{"role": "user", "content": "Say hello in one word."}],
         extra_body={
-            "span_workflow_name": "proxy_logging",
-            "span_name": "proxy_log",
-            "customer_identifier": "test_proxy_user",
+            "span_workflow_name": "proxy_logging_non_stream",
+            "span_name": "proxy_log_non_stream",
+            "customer_identifier": "test_proxy_user_non_stream",
         },
     )
     assert response.choices[0].message.content
+
+
+def test_log_with_proxy_streaming(api_key):
+    """Test single log with proxy streaming mode."""
+    response = litellm.completion(
+        api_key=api_key,
+        api_base=API_BASE,
+        model=MODEL,
+        stream=True,
+        messages=[{"role": "user", "content": "Say hello in one word."}],
+        extra_body={
+            "span_workflow_name": "proxy_logging_stream",
+            "span_name": "proxy_log_stream",
+            "customer_identifier": "test_proxy_user_stream",
+        },
+    )
+    chunks = list(response)
+    assert len(chunks) > 0
+    assert _extract_stream_text(chunks)
