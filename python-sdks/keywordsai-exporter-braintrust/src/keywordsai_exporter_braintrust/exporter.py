@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import threading
+import uuid
 from typing import Any, Dict, Optional
 
 import requests
@@ -22,6 +23,7 @@ DEFAULT_TRACE_PATH = "v1/traces/ingest"
 
 SPAN_TYPE_TO_LOG_TYPE = {
     "llm": "generation",
+    "chat": "chat",
     "score": "score",
     "function": "function",
     "eval": "workflow",
@@ -164,6 +166,9 @@ class KeywordsAIExporter:
         input_value = record.get("input")
         output_value = record.get("output")
         metadata = self._build_metadata(record)
+        model = self._extract_model(record)
+        prompt_tokens, completion_tokens = self._extract_token_usage(record)
+        total_request_tokens = self._compute_total_request_tokens(prompt_tokens, completion_tokens)
 
         if self._masking_function:
             input_value = self._apply_masking(input_value, "input")
@@ -174,22 +179,129 @@ class KeywordsAIExporter:
         payload = {
             "log_method": "tracing_integration",
             "log_type": SPAN_TYPE_TO_LOG_TYPE.get(span_type_key, "custom"),
-            "trace_unique_id": record.get("root_span_id"),
+            "trace_unique_id": self._format_id(record.get("root_span_id")),
             "trace_name": span_attributes.get("name") if not span_parents else None,
-            "span_unique_id": record.get("span_id"),
-            "span_parent_id": span_parent_id,
+            "span_unique_id": self._format_id(record.get("span_id")),
+            "span_parent_id": self._format_id(span_parent_id),
             "span_name": span_attributes.get("name"),
             "input": input_value,
             "output": output_value,
             "error_message": record.get("error"),
             "metadata": metadata,
+            "model": model,
             "latency": latency,
             "start_time": self._format_timestamp(start_time),
             "timestamp": self._format_timestamp(end_time),
             "status_code": 500 if record.get("error") else 200,
         }
 
+        if model is None:
+            payload.pop("model", None)
+        if prompt_tokens is not None:
+            payload["prompt_tokens"] = prompt_tokens
+        if completion_tokens is not None:
+            payload["completion_tokens"] = completion_tokens
+        if total_request_tokens is not None:
+            payload["total_request_tokens"] = total_request_tokens
+
         return self._sanitize_json(payload)
+
+    @staticmethod
+    def _coerce_int(value: Any) -> Optional[int]:
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                return None
+        return None
+
+    @staticmethod
+    def _coerce_str(value: Any) -> Optional[str]:
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (int, float)):
+            return str(value)
+        return None
+
+    @staticmethod
+    def _format_id(value: Any) -> Optional[str]:
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        if isinstance(value, str):
+            try:
+                return uuid.UUID(value).hex
+            except ValueError:
+                return value
+        if isinstance(value, int):
+            return str(value)
+        return str(value)
+
+    def _extract_model(self, record: Dict[str, Any]) -> Optional[str]:
+        model = self._coerce_str(record.get("model"))
+        if model:
+            return model
+
+        metadata = record.get("metadata")
+        if isinstance(metadata, dict):
+            for key in ("model", "model_name", "llm_model"):
+                model = self._coerce_str(metadata.get(key))
+                if model:
+                    return model
+
+        span_attributes = record.get("span_attributes")
+        if isinstance(span_attributes, dict):
+            for key in ("model", "model_name", "llm_model"):
+                model = self._coerce_str(span_attributes.get(key))
+                if model:
+                    return model
+
+        return None
+
+    def _extract_token_usage(self, record: Dict[str, Any]) -> tuple[Optional[int], Optional[int]]:
+        def read_tokens(source: Any) -> tuple[Optional[int], Optional[int]]:
+            if not isinstance(source, dict):
+                return None, None
+
+            prompt = self._coerce_int(source.get("prompt_tokens"))
+            completion = self._coerce_int(source.get("completion_tokens"))
+            if prompt is None and completion is None:
+                prompt = self._coerce_int(source.get("input_tokens"))
+                completion = self._coerce_int(source.get("output_tokens"))
+
+            return prompt, completion
+
+        metrics = record.get("metrics")
+        prompt_tokens, completion_tokens = read_tokens(metrics)
+        if prompt_tokens is None and completion_tokens is None and isinstance(metrics, dict):
+            usage = metrics.get("usage") or metrics.get("tokens")
+            prompt_tokens, completion_tokens = read_tokens(usage)
+
+        if prompt_tokens is None and completion_tokens is None:
+            metadata = record.get("metadata")
+            prompt_tokens, completion_tokens = read_tokens(metadata)
+            if prompt_tokens is None and completion_tokens is None and isinstance(metadata, dict):
+                usage = metadata.get("usage") or metadata.get("token_usage")
+                prompt_tokens, completion_tokens = read_tokens(usage)
+
+        return prompt_tokens, completion_tokens
+
+    @staticmethod
+    def _compute_total_request_tokens(
+        prompt_tokens: Optional[int], completion_tokens: Optional[int]
+    ) -> Optional[int]:
+        if prompt_tokens is None and completion_tokens is None:
+            return None
+        return (prompt_tokens or 0) + (completion_tokens or 0)
 
     def _build_metadata(self, record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         metadata: Dict[str, Any] = {}
@@ -210,11 +322,11 @@ class KeywordsAIExporter:
         if record.get("context") is not None:
             metadata["braintrust_context"] = record.get("context")
         if record.get("id") is not None:
-            metadata["braintrust_log_id"] = record.get("id")
+            metadata["braintrust_log_id"] = self._format_id(record.get("id"))
 
         for field in ("project_id", "experiment_id", "dataset_id", "org_id"):
             if record.get(field) is not None:
-                metadata[f"braintrust_{field}"] = record.get(field)
+                metadata[f"braintrust_{field}"] = self._format_id(record.get(field))
 
         return metadata or None
 
