@@ -1,74 +1,96 @@
-# 🗝️ Keywords AI - LLM monitoring platform
+# Keywords AI LiteLLM Exporter
 
-:::tip
+LiteLLM integration for exporting logs and traces to Keywords AI.
 
-This is community maintained. Please make an issue if you run into a bug:
-https://github.com/BerriAI/litellm
+## Installation
 
-:::
-
-[Keywords AI](https://keywordsai.co/) makes it easy for developers to build LLM applications. With 2 lines of code, developers get a complete monitoring platform that speeds up deploying & monitoring AI apps in production.
-
-## Using Keywords AI with LiteLLM
-
-LiteLLM provides two methods to integrate with Keywords AI:
-1. Using callbacks (recommended)
-2. Using Keywords AI as a proxy
-
-### Approach 1: Using Callbacks (Recommended)
-
-This method works across all LiteLLM-supported models. Simply set Keywords AI as a success callback:
-
-```python
-import litellm
-from litellm import completion
-import os
-# Set up Keywords AI callback
-os.environ["KEYWORDSAI_API_KEY"]="YOUR_KEYWORDSAI_API_KEY"
-litellm.success_callback = ["keywordsai"]
-
-# Optional: Add additional logging parameters
-extra_params = {
-    "keywordsai_params": {
-        "customer_params": {
-            "customer_identifier": "your_customer_id",
-            "email": "user@example.com",
-            "name": "user name"
-        },
-        "thread_identifier": "thread_123",
-        "metadata": {"key": "value"},
-        "evaluation_identifier": "eval_123",
-        "prompt_id": "prompt_123",
-    }
-}
-
-# Make completion call with any LiteLLM-supported model
-response = completion(
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": "Hello!"}],
-    metadata=extra_params  # Pass additional logging parameters
-)
-
-print(response)
+```bash
+pip install keywordsai-exporter-litellm
 ```
 
-### Approach 2: Using Keywords AI as a proxy
+## Quick Start
 
-Alternatively, you can route requests through Keywords AI's API:
+### Callback Mode
+
+Use the callback to send traces to Keywords AI:
 
 ```python
-import os
 import litellm
+from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
 
-# Set Keywords AI as the API base
-litellm.api_base = "https://api.keywordsai.co/api/"
-KEYWORDSAI_API_KEY = os.getenv("KEYWORDSAI_API_KEY")
+# Setup callback
+callback = KeywordsAILiteLLMCallback(api_key="your-keywordsai-api-key")
+callback.register_litellm_callbacks()
+
+# Make LLM calls - traces are automatically sent
+response = litellm.completion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+### Proxy Mode
+
+Route requests through Keywords AI gateway:
+
+```python
+import litellm
 
 response = litellm.completion(
-    api_key=KEYWORDSAI_API_KEY,  # Use Keywords AI API key
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": "Hello!"}]
+    api_key="your-keywordsai-api-key",
+    api_base="https://api.keywordsai.co/api",
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}],
 )
-
-# View logs at https://platform.keywordsai.co/
 ```
+
+## Logging
+
+If you just want individual logs (no trace/span IDs), omit trace fields and
+send only basic metadata. This will produce one log per request.
+
+### Callback Mode (with `keywordsai_params`)
+
+```python
+import litellm
+from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+
+callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
+callback.register_litellm_callbacks()
+
+response = litellm.completion(
+    api_key="your-api-key",
+    api_base="https://api.keywordsai.co/api",
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}],
+    metadata={
+        "keywordsai_params": {
+            "workflow_name": "simple_logging",
+            "span_name": "single_log",
+            "customer_identifier": "user-123",
+        }
+    },
+)
+```
+
+### Proxy Mode (with `extra_body`)
+
+```python
+import litellm
+
+response = litellm.completion(
+    api_key="your-keywordsai-api-key",
+    api_base="https://api.keywordsai.co/api",
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_body={
+        "span_workflow_name": "simple_logging",
+        "span_name": "single_log",
+        "customer_identifier": "user-123",
+    },
+)
+```
+
+## License
+
+MIT
