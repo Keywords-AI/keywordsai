@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal
+from typing import Dict, Literal
 
 
 class LogMethodChoices(Enum):
@@ -51,6 +51,7 @@ class LogTypeChoices(Enum):
     UNKNOWN = LOG_TYPE_UNKNOWN
     SCORE = LOG_TYPE_SCORE
 
+
 LogType = Literal[
     "text",
     "chat",
@@ -71,3 +72,48 @@ LogType = Literal[
     "unknown",
     "score",
 ]
+
+
+# Maps span kind strings (from tracing frameworks) to Keywords AI log types
+# Used by tracing exporters (Agno, LangFuse, etc.) to normalize span types
+SPAN_KIND_TO_LOG_TYPE_MAP: Dict[str, LogType] = {
+    "workflow": LOG_TYPE_WORKFLOW,
+    "trace": LOG_TYPE_WORKFLOW,
+    "agent": LOG_TYPE_AGENT,
+    "task": LOG_TYPE_TASK,
+    "step": LOG_TYPE_TASK,
+    "tool": LOG_TYPE_TOOL,
+    "function": LOG_TYPE_TOOL,
+    "llm": LOG_TYPE_GENERATION,
+    "generation": LOG_TYPE_GENERATION,
+    "model": LOG_TYPE_GENERATION,
+    "chat": LOG_TYPE_CHAT,
+    "prompt": LOG_TYPE_GENERATION,
+    "embedding": LOG_TYPE_EMBEDDING,
+    "retriever": LOG_TYPE_TASK,
+    "chain": LOG_TYPE_WORKFLOW,
+    "reranker": LOG_TYPE_TASK,
+    "guardrail": LOG_TYPE_GUARDRAIL,
+    "handoff": LOG_TYPE_HANDOFF,
+}
+
+
+# Default model pricing per million tokens (fallback when provider doesn't return cost)
+# Format: {model_name: {"prompt": cost_per_million, "completion": cost_per_million}}
+MODEL_PRICING_PER_MILLION: Dict[str, Dict[str, float]] = {
+    "gpt-4o": {"prompt": 2.50, "completion": 10.00},
+    "gpt-4o-mini": {"prompt": 0.150, "completion": 0.600},
+    "gpt-4o-2024-11-20": {"prompt": 2.50, "completion": 10.00},
+    "gpt-4o-2024-08-06": {"prompt": 2.50, "completion": 10.00},
+    "gpt-4o-2024-05-13": {"prompt": 5.00, "completion": 15.00},
+    "gpt-4o-mini-2024-07-18": {"prompt": 0.150, "completion": 0.600},
+    "gpt-4-turbo": {"prompt": 10.00, "completion": 30.00},
+    "gpt-4": {"prompt": 30.00, "completion": 60.00},
+    "gpt-3.5-turbo": {"prompt": 0.50, "completion": 1.50},
+    "gpt-3.5-turbo-0125": {"prompt": 0.50, "completion": 1.50},
+    "claude-3-5-sonnet-20241022": {"prompt": 3.00, "completion": 15.00},
+    "claude-3-5-sonnet-20240620": {"prompt": 3.00, "completion": 15.00},
+    "claude-3-opus-20240229": {"prompt": 15.00, "completion": 75.00},
+    "claude-3-sonnet-20240229": {"prompt": 3.00, "completion": 15.00},
+    "claude-3-haiku-20240307": {"prompt": 0.25, "completion": 1.25},
+}
