@@ -1,13 +1,35 @@
 from __future__ import annotations
 
-import datetime
 import logging
+import math
 import os
 import threading
-import uuid
 from typing import Any, Dict, Optional
 
 import requests
+
+from keywordsai_sdk.constants.llm_logging import (
+    LOG_TYPE_CHAT,
+    LOG_TYPE_CUSTOM,
+    LOG_TYPE_FUNCTION,
+    LOG_TYPE_GENERATION,
+    LOG_TYPE_SCORE,
+    LOG_TYPE_TASK,
+    LOG_TYPE_TOOL,
+    LOG_TYPE_WORKFLOW,
+    LogMethodChoices,
+)
+from keywordsai_sdk.keywordsai_types.log_types import KeywordsAIFullLogParams
+
+from keywordsai_exporter_braintrust.utils import (
+    coerce_str,
+    compute_total_request_tokens,
+    extract_token_usage,
+    format_id,
+    format_timestamp,
+    json_dumps_safe,
+    sanitize_json,
+)
 
 try:
     import braintrust
@@ -18,23 +40,23 @@ except ImportError:  # pragma: no cover - runtime dependency
     _extract_attachments = None
     merge_row_batch = None
 
-DEFAULT_BASE_URL = "https://api.keywordsai.co/api"
-DEFAULT_TRACE_PATH = "v1/traces/ingest"
+DEFAULT_KEYWORDSAI_API_BASE_URL = "https://api.keywordsai.co/api"
+TRACES_INGEST_PATH = "v1/traces/ingest"
 
 SPAN_TYPE_TO_LOG_TYPE = {
-    "llm": "generation",
-    "chat": "chat",
-    "score": "score",
-    "function": "function",
-    "eval": "workflow",
-    "task": "task",
-    "tool": "tool",
-    "automation": "workflow",
-    "facet": "custom",
-    "preprocessor": "custom",
+    "llm": LOG_TYPE_GENERATION,
+    "chat": LOG_TYPE_CHAT,
+    "score": LOG_TYPE_SCORE,
+    "function": LOG_TYPE_FUNCTION,
+    "eval": LOG_TYPE_WORKFLOW,
+    "task": LOG_TYPE_TASK,
+    "tool": LOG_TYPE_TOOL,
+    "automation": LOG_TYPE_WORKFLOW,
+    "facet": LOG_TYPE_CUSTOM,
+    "preprocessor": LOG_TYPE_CUSTOM,
 }
 
-logger = logging.getLogger("keywordsai_exporter_braintrust")
+logger = logging.getLogger(__name__)
 
 
 class KeywordsAIExporter:
@@ -52,11 +74,17 @@ class KeywordsAIExporter:
         if not self.api_key:
             raise ValueError("KEYWORDSAI_API_KEY must be set to use KeywordsAIExporter.")
 
-        self.base_url = base_url or os.getenv("KEYWORDSAI_BASE_URL", DEFAULT_BASE_URL)
+        self.base_url = base_url or os.getenv(
+            "KEYWORDSAI_BASE_URL",
+            DEFAULT_KEYWORDSAI_API_BASE_URL,
+        )
         self.log_endpoint = log_endpoint or self._build_log_endpoint(self.base_url)
         self.timeout = timeout
         self.raise_on_error = raise_on_error
         self.session = session or requests.Session()
+        if session is None:
+            # Avoid unexpected proxy-related failures from environment variables.
+            self.session.trust_env = False
 
         export_headers = headers.copy() if headers else {}
         export_headers.setdefault("Authorization", f"Bearer {self.api_key}")
@@ -167,8 +195,11 @@ class KeywordsAIExporter:
         output_value = record.get("output")
         metadata = self._build_metadata(record)
         model = self._extract_model(record)
-        prompt_tokens, completion_tokens = self._extract_token_usage(record)
-        total_request_tokens = self._compute_total_request_tokens(prompt_tokens, completion_tokens)
+        prompt_tokens, completion_tokens = extract_token_usage(record=record)
+        total_request_tokens = compute_total_request_tokens(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+        )
 
         if self._masking_function:
             input_value = self._apply_masking(input_value, "input")
@@ -177,12 +208,12 @@ class KeywordsAIExporter:
                 metadata = self._apply_masking(metadata, "metadata")
 
         payload = {
-            "log_method": "tracing_integration",
-            "log_type": SPAN_TYPE_TO_LOG_TYPE.get(span_type_key, "custom"),
-            "trace_unique_id": self._format_id(record.get("root_span_id")),
+            "log_method": LogMethodChoices.TRACING_INTEGRATION.value,
+            "log_type": SPAN_TYPE_TO_LOG_TYPE.get(span_type_key or "", LOG_TYPE_CUSTOM),
+            "trace_unique_id": format_id(record.get("root_span_id")),
             "trace_name": span_attributes.get("name") if not span_parents else None,
-            "span_unique_id": self._format_id(record.get("span_id")),
-            "span_parent_id": self._format_id(span_parent_id),
+            "span_unique_id": format_id(record.get("span_id")),
+            "span_parent_id": format_id(span_parent_id),
             "span_name": span_attributes.get("name"),
             "input": input_value,
             "output": output_value,
@@ -190,10 +221,37 @@ class KeywordsAIExporter:
             "metadata": metadata,
             "model": model,
             "latency": latency,
-            "start_time": self._format_timestamp(start_time),
-            "timestamp": self._format_timestamp(end_time),
+            "start_time": format_timestamp(start_time),
+            "timestamp": format_timestamp(end_time),
             "status_code": 500 if record.get("error") else 200,
         }
+
+        # Populate full_request / full_response for easier debugging in UI.
+        # These should be JSON-serializable objects (dict/list) rather than strings.
+        full_request: Dict[str, Any] = {}
+        if input_value is not None:
+            full_request["input"] = input_value
+        if record.get("metadata") is not None:
+            full_request["metadata"] = record.get("metadata")
+        if record.get("span_attributes") is not None:
+            full_request["span_attributes"] = record.get("span_attributes")
+        if model is not None:
+            full_request["model"] = model
+
+        full_response: Dict[str, Any] = {}
+        if output_value is not None:
+            full_response["output"] = output_value
+        if record.get("error") is not None:
+            full_response["error"] = record.get("error")
+        if record.get("scores") is not None:
+            full_response["scores"] = record.get("scores")
+        if record.get("metrics") is not None:
+            full_response["metrics"] = record.get("metrics")
+
+        if full_request:
+            payload["full_request"] = full_request
+        if full_response:
+            payload["full_response"] = full_response
 
         if model is None:
             payload.pop("model", None)
@@ -204,104 +262,47 @@ class KeywordsAIExporter:
         if total_request_tokens is not None:
             payload["total_request_tokens"] = total_request_tokens
 
-        return self._sanitize_json(payload)
+        # Some downstream pipelines prefer usage.* fields; include them when we have token counts.
+        if prompt_tokens is not None or completion_tokens is not None:
+            payload["usage"] = {
+                "prompt_tokens": prompt_tokens or 0,
+                "completion_tokens": completion_tokens or 0,
+                "total_tokens": total_request_tokens or (prompt_tokens or 0) + (completion_tokens or 0),
+            }
 
-    @staticmethod
-    def _coerce_int(value: Any) -> Optional[int]:
-        if value is None or isinstance(value, bool):
-            return None
-        if isinstance(value, int):
-            return value
-        if isinstance(value, float):
-            return int(value)
-        if isinstance(value, str):
-            try:
-                return int(value)
-            except ValueError:
-                return None
-        return None
+        sanitized_payload = sanitize_json(payload)
+        validated_payload = KeywordsAIFullLogParams.model_validate(
+            sanitized_payload
+        ).model_dump(mode="json", exclude_none=True)
 
-    @staticmethod
-    def _coerce_str(value: Any) -> Optional[str]:
-        if value is None or isinstance(value, bool):
-            return None
-        if isinstance(value, str):
-            return value
-        if isinstance(value, (int, float)):
-            return str(value)
-        return None
+        # Keep stable explicit nulls for key trace fields (tests/UI expect presence).
+        if "span_parent_id" not in validated_payload and "span_parent_id" in sanitized_payload:
+            validated_payload["span_parent_id"] = None
+        if "trace_name" not in validated_payload and "trace_name" in sanitized_payload:
+            validated_payload["trace_name"] = None
 
-    @staticmethod
-    def _format_id(value: Any) -> Optional[str]:
-        if value is None or isinstance(value, bool):
-            return None
-        if isinstance(value, uuid.UUID):
-            return value.hex
-        if isinstance(value, str):
-            try:
-                return uuid.UUID(value).hex
-            except ValueError:
-                return value
-        if isinstance(value, int):
-            return str(value)
-        return str(value)
+        return validated_payload
 
     def _extract_model(self, record: Dict[str, Any]) -> Optional[str]:
-        model = self._coerce_str(record.get("model"))
+        model = coerce_str(record.get("model"))
         if model:
             return model
 
         metadata = record.get("metadata")
         if isinstance(metadata, dict):
             for key in ("model", "model_name", "llm_model"):
-                model = self._coerce_str(metadata.get(key))
+                model = coerce_str(metadata.get(key))
                 if model:
                     return model
 
         span_attributes = record.get("span_attributes")
         if isinstance(span_attributes, dict):
             for key in ("model", "model_name", "llm_model"):
-                model = self._coerce_str(span_attributes.get(key))
+                model = coerce_str(span_attributes.get(key))
                 if model:
                     return model
 
         return None
-
-    def _extract_token_usage(self, record: Dict[str, Any]) -> tuple[Optional[int], Optional[int]]:
-        def read_tokens(source: Any) -> tuple[Optional[int], Optional[int]]:
-            if not isinstance(source, dict):
-                return None, None
-
-            prompt = self._coerce_int(source.get("prompt_tokens"))
-            completion = self._coerce_int(source.get("completion_tokens"))
-            if prompt is None and completion is None:
-                prompt = self._coerce_int(source.get("input_tokens"))
-                completion = self._coerce_int(source.get("output_tokens"))
-
-            return prompt, completion
-
-        metrics = record.get("metrics")
-        prompt_tokens, completion_tokens = read_tokens(metrics)
-        if prompt_tokens is None and completion_tokens is None and isinstance(metrics, dict):
-            usage = metrics.get("usage") or metrics.get("tokens")
-            prompt_tokens, completion_tokens = read_tokens(usage)
-
-        if prompt_tokens is None and completion_tokens is None:
-            metadata = record.get("metadata")
-            prompt_tokens, completion_tokens = read_tokens(metadata)
-            if prompt_tokens is None and completion_tokens is None and isinstance(metadata, dict):
-                usage = metadata.get("usage") or metadata.get("token_usage")
-                prompt_tokens, completion_tokens = read_tokens(usage)
-
-        return prompt_tokens, completion_tokens
-
-    @staticmethod
-    def _compute_total_request_tokens(
-        prompt_tokens: Optional[int], completion_tokens: Optional[int]
-    ) -> Optional[int]:
-        if prompt_tokens is None and completion_tokens is None:
-            return None
-        return (prompt_tokens or 0) + (completion_tokens or 0)
 
     def _build_metadata(self, record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         metadata: Dict[str, Any] = {}
@@ -316,19 +317,37 @@ class KeywordsAIExporter:
         if record.get("scores") is not None:
             metadata["braintrust_scores"] = record.get("scores")
         if record.get("metrics") is not None:
-            metadata["braintrust_metrics"] = record.get("metrics")
+            # UI safety: keep metrics readable, but avoid sending nested objects
+            # that some pretty renderers might try to render as a React child.
+            metadata["braintrust_metrics"] = json_dumps_safe(record.get("metrics"))
         if record.get("span_attributes") is not None:
             metadata["braintrust_span_attributes"] = record.get("span_attributes")
         if record.get("context") is not None:
             metadata["braintrust_context"] = record.get("context")
         if record.get("id") is not None:
-            metadata["braintrust_log_id"] = self._format_id(record.get("id"))
+            metadata["braintrust_log_id"] = format_id(record.get("id"))
 
         for field in ("project_id", "experiment_id", "dataset_id", "org_id"):
             if record.get(field) is not None:
-                metadata[f"braintrust_{field}"] = self._format_id(record.get(field))
+                metadata[f"braintrust_{field}"] = format_id(record.get(field))
 
-        return metadata or None
+        if not metadata:
+            return None
+
+        # UI safety: ensure every metadata value is a primitive (or None).
+        # React error #31 happens when a UI tries to render an object directly.
+        safe_metadata: Dict[str, Any] = {}
+        for key, value in metadata.items():
+            if isinstance(value, (str, int, bool)) or value is None:
+                safe_metadata[key] = value
+                continue
+            if isinstance(value, float):
+                safe_metadata[key] = value if math.isfinite(value) else None
+                continue
+
+            safe_metadata[key] = json_dumps_safe(value)
+
+        return safe_metadata
 
     def _apply_masking(self, value: Any, field_name: str) -> Any:
         if not self._masking_function:
@@ -340,28 +359,8 @@ class KeywordsAIExporter:
             return f"ERROR: Failed to mask field '{field_name}' - {error_type}"
 
     @staticmethod
-    def _format_timestamp(value: Any) -> Optional[str]:
-        if isinstance(value, (int, float)):
-            return datetime.datetime.fromtimestamp(value, tz=datetime.timezone.utc).isoformat()
-        if isinstance(value, datetime.datetime):
-            return value.astimezone(datetime.timezone.utc).isoformat()
-        return None
-
-    @staticmethod
     def _build_log_endpoint(base_url: str) -> str:
         base_url = base_url.rstrip("/")
         if base_url.endswith("/api"):
-            return f"{base_url}/{DEFAULT_TRACE_PATH}"
-        return f"{base_url}/api/{DEFAULT_TRACE_PATH}"
-
-    @staticmethod
-    def _sanitize_json(value: Any) -> Any:
-        if isinstance(value, (str, int, float, bool)) or value is None:
-            return value
-        if isinstance(value, datetime.datetime):
-            return value.astimezone(datetime.timezone.utc).isoformat()
-        if isinstance(value, dict):
-            return {str(k): KeywordsAIExporter._sanitize_json(v) for k, v in value.items()}
-        if isinstance(value, (list, tuple)):
-            return [KeywordsAIExporter._sanitize_json(v) for v in value]
-        return str(value)
+            return f"{base_url}/{TRACES_INGEST_PATH}"
+        return f"{base_url}/api/{TRACES_INGEST_PATH}"

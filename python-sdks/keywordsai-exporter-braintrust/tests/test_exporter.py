@@ -67,8 +67,8 @@ def test_braintrust_root_span_sends_payload_with_trace_fields():
     assert payload["total_request_tokens"] == 46
 
     metadata = payload["metadata"]
-    assert metadata["braintrust_tags"] == ["tag1"]
-    assert metadata["braintrust_scores"] == {"accuracy": 0.9}
+    assert metadata["braintrust_tags"] == "[\"tag1\"]"
+    assert metadata["braintrust_scores"] == "{\"accuracy\": 0.9}"
     assert "-" not in metadata["braintrust_log_id"]
     assert len(metadata["braintrust_log_id"]) == 32
 
