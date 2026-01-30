@@ -51,6 +51,12 @@ const result = await generateText({
 });
 ```
 
+## Quickstart
+
+See `QUICKSTART.md` for a copy-paste setup:
+
+- `QUICKSTART.md`
+
 ## Configuration
 
 - `apiKey`: Keywords AI API key. Defaults to `process.env.KEYWORDSAI_API_KEY`.
@@ -63,7 +69,7 @@ const result = await generateText({
 - The exporter filters for AI SDK spans (instrumentation scope `ai` or
   `ai.*`/`gen_ai.*` attributes).
 - Spans are converted into Keywords AI payloads and sent in a single batch
-  request to the integration ingest endpoint.
+  request to the ingest endpoint (`/api/v1/traces/ingest`).
 
 ## Smoke test
 
@@ -78,5 +84,5 @@ export KEYWORDSAI_BASE_URL="https://api.keywordsai.co/api" # optional
 Run the test:
 
 ```bash
-yarn test:smoke
+npm run test:smoke
 ```

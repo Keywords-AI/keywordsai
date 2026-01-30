@@ -1,12 +1,36 @@
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 import { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
+import { KeywordsAIPayload, KeywordsAIPayloadSchema } from "@keywordsai/keywordsai-sdk";
 import {
-  KeywordsAIPayload,
-  KeywordsAIPayloadSchema,
-  LogType,
-  LOG_TYPE_VALUES,
-} from "@keywordsai/keywordsai-sdk";
-import { AISDK_SPAN_TO_KEYWORDS_LOG_TYPE } from "./constants/index.js";
+  compareHrTime,
+  calculateLatency,
+  deduplicateSpans,
+  formatTimestamp,
+  getParentSpanId,
+  isAiSdkSpan,
+} from "./utils/otel.js";
+import {
+  buildFullRequest,
+  buildFullResponse,
+  parseCompletionMessages,
+  parseCompletionTokens,
+  parseCost,
+  parseCustomerParams,
+  parseGenerationTime,
+  parseLogType,
+  parseMetadata,
+  parseModel,
+  parsePromptMessages,
+  parsePromptTokens,
+  parseTimeToFirstToken,
+  parseToolCalls,
+  parseToolChoice,
+  parseTools,
+  parseTotalRequestTokens,
+  parseTtft,
+  parseType,
+  parseWarnings,
+} from "./utils/span-parsers.js";
 
 /**
  * AI SDK trace exporter that sends traces to KeywordsAI.
@@ -33,12 +57,12 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private resolveURL(baseURL: string | undefined) {
     if (!baseURL) {
-      return "https://api.keywordsai.co/api/integrations/v1/traces/ingest";
+      return "https://api.keywordsai.co/api/v1/traces/ingest";
     }
     if (baseURL.endsWith("/api")) {
-      return baseURL + "/integrations/v1/traces/ingest";
+      return baseURL + "/v1/traces/ingest";
     }
-    return baseURL + "/api/integrations/v1/traces/ingest";
+    return baseURL + "/api/v1/traces/ingest";
   }
 
   constructor(
@@ -65,9 +89,9 @@ export class KeywordsAIExporter implements SpanExporter {
     try {
       const sortedSpans = spans
         .slice()
-        .sort((a, b) => this.compareHrTime(a.startTime, b.startTime));
+        .sort((a, b) => compareHrTime(a.startTime, b.startTime));
 
-      const aiSdkSpans = sortedSpans.filter((span) => this.isAiSdkSpan(span));
+      const aiSdkSpans = sortedSpans.filter((span) => isAiSdkSpan(span));
 
       if (aiSdkSpans.length === 0) {
         this.logDebug("No AI SDK spans found");
@@ -75,7 +99,7 @@ export class KeywordsAIExporter implements SpanExporter {
         return;
       }
 
-      const deduplicatedSpans = this.deduplicateSpans(aiSdkSpans);
+      const deduplicatedSpans = deduplicateSpans(aiSdkSpans);
 
       this.logDebug(
         `Filtered ${aiSdkSpans.length} spans to ${deduplicatedSpans.length} after deduplication`
@@ -106,7 +130,7 @@ export class KeywordsAIExporter implements SpanExporter {
                   { role: "system", content: "Error processing span" },
                 ],
                 prompt_tokens: 0,
-                timestamp: this.formatTimestamp(span.endTime),
+              timestamp: formatTimestamp(span.endTime),
                 customer_identifier: "default_user",
                 stream: false,
                 metadata: {
@@ -139,27 +163,34 @@ export class KeywordsAIExporter implements SpanExporter {
   }
 
   private async createPayload(span: ReadableSpan): Promise<KeywordsAIPayload> {
-    const metadata = this.parseMetadata(span);
+    const logDebug = this.logDebug.bind(this);
+
+    const metadata = parseMetadata(span);
     const isError = span.status.code !== 0;
-    const model = this.parseModel(span);
-    const toolCalls = this.parseToolCalls(span);
-    const messages = this.parseCompletionMessages(span, toolCalls);
-    const parentSpanId = this.getParentSpanId(span);
-    const promptTokens = this.parsePromptTokens(span);
-    const completionTokens = this.parseCompletionTokens(span);
-    const totalRequestTokens = this.parseTotalRequestTokens(
+    const model = parseModel(span);
+    const toolCalls = parseToolCalls(span, logDebug);
+    const messages = parseCompletionMessages(span, toolCalls, logDebug);
+    const parentSpanId = getParentSpanId(span);
+    const promptTokens = parsePromptTokens(span);
+    const completionTokens = parseCompletionTokens(span);
+    const totalRequestTokens = parseTotalRequestTokens({
       span,
       promptTokens,
-      completionTokens
-    );
+      completionTokens,
+    });
     const customerEmail = metadata.customer_email;
     const customerName = metadata.customer_name;
+    const promptMessages = parsePromptMessages(span, logDebug);
+    const tools = parseTools(span);
+    const toolChoice = parseToolChoice(span);
+    const logType = parseLogType(span);
+    const cost = parseCost({ span, model, promptTokens, completionTokens });
 
     const payload: KeywordsAIPayload = {
       model,
-      start_time: this.formatTimestamp(span.startTime),
-      timestamp: this.formatTimestamp(span.endTime),
-      prompt_messages: this.parsePromptMessages(span),
+      start_time: formatTimestamp(span.startTime),
+      timestamp: formatTimestamp(span.endTime),
+      prompt_messages: promptMessages,
       completion_message: messages[0],
       customer_identifier: metadata.userId || "default_user",
       thread_identifier: metadata.userId,
@@ -175,10 +206,10 @@ export class KeywordsAIExporter implements SpanExporter {
       }),
       ...(customerEmail && { customer_email: customerEmail }),
       ...(customerName && { customer_name: customerName }),
-      cost: this.parseCost(span),
-      generation_time: this.parseGenerationTime(span),
-      latency: this.calculateLatency(span),
-      ttft: this.parseTtft(span),
+      cost,
+      generation_time: parseGenerationTime(span),
+      latency: calculateLatency(span),
+      ttft: parseTtft(span),
       metadata: {
         ...metadata,
         span_type: span.name,
@@ -190,7 +221,7 @@ export class KeywordsAIExporter implements SpanExporter {
         completion_unit_price: parseFloat(metadata.completion_unit_price),
       }),
       environment: process.env.NODE_ENV || "prod",
-      time_to_first_token: this.parseTimeToFirstToken(span),
+      time_to_first_token: parseTimeToFirstToken(span),
       trace_unique_id: span.spanContext().traceId,
       span_unique_id: span.spanContext().spanId,
       span_name: span.name,
@@ -201,10 +232,10 @@ export class KeywordsAIExporter implements SpanExporter {
       span_path: span.attributes["ai.path"]?.toString(),
       stream: span.name.includes("doStream"),
       status_code: isError ? 500 : 200,
-      warnings: this.parseWarnings(span),
+      warnings: parseWarnings(span),
       error_message: span.status.message || "",
-      type: this.parseType(span),
-      log_type: this.parseLogType(span),
+      type: parseType(span),
+      log_type: logType,
       is_test: process.env.NODE_ENV === "development",
       posthog_integration: process.env.POSTHOG_API_KEY
         ? {
@@ -212,129 +243,29 @@ export class KeywordsAIExporter implements SpanExporter {
             posthog_base_url: "https://us.i.posthog.com",
           }
         : undefined,
-      tool_choice: this.parseToolChoice(span),
-      tools: this.parseTools(span),
+      tool_choice: toolChoice,
+      tools,
       tool_calls: toolCalls,
       field_name: "data: ",
       delimiter: "\n\n",
       disable_log: false,
       request_breakdown: false,
       disable_fallback: false,
-      ...this.parseCustomerParams(span),
+      full_request: buildFullRequest(span, {
+        model,
+        prompt_messages: promptMessages,
+        tools,
+        tool_choice: toolChoice,
+        log_type: logType,
+      }),
+      full_response: buildFullResponse(span, {
+        completion_message: messages[0],
+        tool_calls: toolCalls,
+      }),
+      ...parseCustomerParams(span),
     };
 
     return payload;
-  }
-
-  private parseToolCalls(span: ReadableSpan): any[] | undefined {
-    try {
-      const toolCallAttributes = [
-        "ai.response.toolCalls",
-        "ai.toolCall",
-        "ai.toolCalls",
-      ];
-
-      for (const attr of toolCallAttributes) {
-        if (span.attributes[attr]) {
-          const rawData = span.attributes[attr];
-          if (!rawData) continue;
-
-          let parsed;
-          try {
-            parsed =
-              typeof rawData === "string" ? JSON.parse(rawData) : rawData;
-          } catch (e) {
-            this.logDebug(`Failed to parse ${attr}:`, e);
-            continue;
-          }
-
-          const toolCalls = Array.isArray(parsed) ? parsed : [parsed];
-
-          return toolCalls.map((call) => {
-            if (!call || typeof call !== "object") {
-              return { type: "function" };
-            }
-
-            const result = { ...call };
-
-            if (!result.type) {
-              result.type = "function";
-            }
-
-            if (!result.id && (result.toolCallId || result.tool_call_id)) {
-              result.id = result.toolCallId || result.tool_call_id;
-            }
-
-            return result;
-          });
-        }
-      }
-
-      if (
-        span.attributes["ai.toolCall.id"] ||
-        span.attributes["ai.toolCall.name"] ||
-        span.attributes["ai.toolCall.args"]
-      ) {
-        const toolCall: Record<string, any> = { type: "function" };
-
-        for (const [key, value] of Object.entries(span.attributes)) {
-          if (key.startsWith("ai.toolCall.")) {
-            const propName = key.replace("ai.toolCall.", "");
-            toolCall[propName] = value;
-          }
-        }
-
-        return [toolCall];
-      }
-
-      return undefined;
-    } catch (error) {
-      this.logDebug("Error parsing tool calls:", error);
-      return undefined;
-    }
-  }
-
-  private parseCompletionMessages(
-    span: ReadableSpan,
-    toolCalls?: any[]
-  ): any[] {
-    let content = "";
-
-    if (span.attributes["ai.response.object"]) {
-      try {
-        const response = JSON.parse(
-          String(span.attributes["ai.response.object"])
-        );
-        content = String(response.response || "");
-      } catch (error) {
-        this.logDebug("Error parsing ai.response.object:", error);
-        content = String(span.attributes["ai.response.text"] || "");
-      }
-    } else {
-      content = String(span.attributes["ai.response.text"] || "");
-    }
-
-    const message = {
-      role: "assistant",
-      content,
-      ...(toolCalls && toolCalls.length > 0 && { tool_calls: toolCalls }),
-    };
-
-    const toolResults: any[] = [];
-
-    if (span.attributes["ai.toolCall.result"]) {
-      toolResults.push({
-        role: "tool",
-        tool_call_id: String(span.attributes["ai.toolCall.id"] || ""),
-        content: String(span.attributes["ai.toolCall.result"] || ""),
-      });
-    }
-
-    return toolResults.length > 0 ? [message, ...toolResults] : [message];
-  }
-
-  private calculateLatency(span: ReadableSpan): number {
-    return span.duration[0] + span.duration[1] / 1e9;
   }
 
   private async sendToKeywords(payloads: KeywordsAIPayload[]): Promise<void> {
@@ -370,165 +301,6 @@ export class KeywordsAIExporter implements SpanExporter {
     }
   }
 
-  private parseModel(span: ReadableSpan): string {
-    const model = String(
-      span.attributes["ai.model.id"] || "unknown"
-    ).toLowerCase();
-
-    if (model.includes("gemini-2.0-flash-001")) {
-      return "gemini/gemini-2.0-flash";
-    }
-
-    if (model.includes("gemini-2.0-pro")) {
-      return "gemini/gemini-2.0-pro-exp-02-05";
-    }
-
-    if (model.includes("claude-3-5-sonnet")) {
-      return "claude-3-5-sonnet-20241022";
-    }
-
-    if (model.includes("deepseek")) {
-      return "deepseek/" + model;
-    }
-
-    if (model.includes("o3-mini")) {
-      return "o3-mini";
-    }
-
-    return model;
-  }
-
-  private parsePromptMessages(
-    span: ReadableSpan
-  ): KeywordsAIPayload["prompt_messages"] {
-    try {
-      const messages = span.attributes["ai.prompt.messages"];
-      const parsedMessages = messages ? JSON.parse(String(messages)) : [];
-
-      return KeywordsAIPayloadSchema.shape.prompt_messages.parse(
-        parsedMessages
-      );
-    } catch (error) {
-      this.logDebug("Error parsing messages:", error);
-      return [
-        {
-          role: "user",
-          content: String(span.attributes["ai.prompt"] || ""),
-        },
-      ];
-    }
-  }
-
-  private parsePromptTokens(span: ReadableSpan): number {
-    return parseInt(
-      String(
-        span.attributes["gen_ai.usage.input_tokens"] ||
-          span.attributes["gen_ai.usage.prompt_tokens"] ||
-          "0"
-      )
-    );
-  }
-
-  private parseCompletionTokens(span: ReadableSpan): number {
-    return parseInt(
-      String(
-        span.attributes["gen_ai.usage.output_tokens"] ||
-          span.attributes["gen_ai.usage.completion_tokens"] ||
-          "0"
-      )
-    );
-  }
-
-  private parseTimeToFirstToken(span: ReadableSpan): number {
-    const msToFinish = span.attributes["ai.response.msToFinish"];
-    const sToFinish = msToFinish ? (msToFinish as number) / 1000 : 0;
-    return sToFinish;
-  }
-
-  private parseCost(span: ReadableSpan): number | undefined {
-    const cost = span.attributes["gen_ai.usage.cost"];
-    return cost ? parseFloat(String(cost)) : undefined;
-  }
-
-  private parseGenerationTime(span: ReadableSpan): number | undefined {
-    const generationTime = span.attributes["gen_ai.usage.generation_time"];
-    return generationTime ? parseFloat(String(generationTime)) : undefined;
-  }
-
-  private parseTtft(span: ReadableSpan): number | undefined {
-    const ttft = span.attributes["gen_ai.usage.ttft"];
-    return ttft ? parseFloat(String(ttft)) : undefined;
-  }
-
-  private parseWarnings(span: ReadableSpan): string | undefined {
-    const warnings = span.attributes["gen_ai.usage.warnings"];
-    return warnings ? String(warnings) : undefined;
-  }
-
-  private parseTotalRequestTokens(
-    span: ReadableSpan,
-    promptTokens: number,
-    completionTokens: number
-  ): number | undefined {
-    const totalFromAttr =
-      span.attributes["gen_ai.usage.total_tokens"] ??
-      span.attributes["gen_ai.usage.total_request_tokens"];
-
-    if (totalFromAttr !== undefined) {
-      const parsed = parseInt(String(totalFromAttr));
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-
-    const hasTokenAttrs =
-      span.attributes["gen_ai.usage.input_tokens"] !== undefined ||
-      span.attributes["gen_ai.usage.prompt_tokens"] !== undefined ||
-      span.attributes["gen_ai.usage.output_tokens"] !== undefined ||
-      span.attributes["gen_ai.usage.completion_tokens"] !== undefined;
-
-    if (!hasTokenAttrs) return undefined;
-
-    return promptTokens + completionTokens;
-  }
-
-  private parseType(
-    span: ReadableSpan
-  ): "text" | "json_schema" | "json_object" | undefined {
-    const type = span.attributes["gen_ai.usage.type"];
-    return type ? (type as "text" | "json_schema" | "json_object") : undefined;
-  }
-
-  private parseMetadata(
-    span: ReadableSpan
-  ): Record<string, string | undefined> {
-    return Object.entries(span.attributes)
-      .filter(([key]) => key.startsWith("ai.telemetry.metadata."))
-      .reduce((acc, [key, value]) => {
-        const cleanKey = key.replace("ai.telemetry.metadata.", "");
-        acc[cleanKey] = value?.toString();
-        return acc;
-      }, {} as Record<string, string | undefined>);
-  }
-
-  private isGenerationSpan(span: ReadableSpan): boolean {
-    return ["doGenerate", "doStream"].some((part) => span.name.includes(part));
-  }
-
-  private isAiSdkSpan(span: ReadableSpan): boolean {
-    const instrumentationScopeName =
-      span.instrumentationScope?.name ||
-      (span as ReadableSpan & { instrumentationLibrary?: { name?: string } })
-        .instrumentationLibrary?.name;
-
-    return (
-      instrumentationScopeName === "ai" ||
-      span.attributes["ai.sdk"] === true ||
-      span.name.includes("ai.") ||
-      Object.keys(span.attributes).some(
-        (key) => key.startsWith("ai.") || key.startsWith("gen_ai.")
-      )
-    );
-  }
-
   private logDebug(message: string, ...args: unknown[]): void {
     if (!this.debug) return;
     console.log(
@@ -541,243 +313,5 @@ export class KeywordsAIExporter implements SpanExporter {
     // Nothing to clean up
   }
 
-  private compareHrTime(a: [number, number], b: [number, number]): number {
-    if (a[0] !== b[0]) return a[0] - b[0];
-    return a[1] - b[1];
-  }
-
-  private formatTimestamp(hrTime: [number, number]): string {
-    const epochMs = hrTime[0] * 1000 + hrTime[1] / 1e6;
-    return new Date(epochMs).toISOString();
-  }
-
-
-  private parseToolChoice(
-    span: ReadableSpan
-  ): KeywordsAIPayload["tool_choice"] | undefined {
-    try {
-      const toolChoice = span.attributes["gen_ai.usage.tool_choice"];
-      if (!toolChoice) return undefined;
-      const parsed = JSON.parse(String(toolChoice));
-      return {
-        type: String(parsed.type),
-        function: {
-          name: String(parsed.function.name),
-        },
-      };
-    } catch {
-      return undefined;
-    }
-  }
-
-  private parseTools(
-    span: ReadableSpan
-  ): KeywordsAIPayload["tools"] | undefined {
-    try {
-      const tools = span.attributes["ai.prompt.tools"] || [];
-      const parsed = Array.isArray(tools) ? tools : [tools];
-      return parsed
-        .map((tool) => {
-          try {
-            return JSON.parse(String(tool));
-          } catch {
-            return undefined;
-          }
-        })
-        .filter(Boolean)
-        .map((tool: any) => {
-          if (tool && tool.type === "function") {
-            if (tool.function && typeof tool.function === "object") return tool;
-            const { name, description, parameters, ...rest } = tool as any;
-            return {
-              ...rest,
-              type: "function",
-              function: {
-                name,
-                ...(description ? { description } : {}),
-                ...(parameters ? { parameters } : {}),
-              },
-            };
-          }
-          return tool;
-        });
-    } catch {
-      return undefined;
-    }
-  }
-
-  private parseCustomerParams(span: ReadableSpan):
-    | {
-        customer_identifier: string;
-        customer_email: string;
-        customer_name: string;
-      }
-    | undefined {
-    const customerParams =
-      span.attributes["ai.telemetry.metadata.customer_params"];
-    if (customerParams) {
-      const parsed = JSON.parse(String(customerParams));
-      return {
-        customer_identifier: parsed.customer_identifier,
-        customer_email: parsed.customer_email,
-        customer_name: parsed.customer_name,
-      };
-    } else {
-      const customerEmail =
-        span.attributes["ai.telemetry.metadata.customer_email"];
-      const customerName =
-        span.attributes["ai.telemetry.metadata.customer_name"];
-      const customerIdentifier =
-        span.attributes["ai.telemetry.metadata.customer_identifier"];
-      if (!customerIdentifier) return undefined;
-      else {
-        return {
-          customer_email: String(customerEmail || ""),
-          customer_name: String(customerName || ""),
-          customer_identifier: String(customerIdentifier),
-        };
-      }
-    }
-  }
-
-  private parseLogType(span: ReadableSpan): LogType {
-    const spanName = span.name;
-    const explicitLogType =
-      span.attributes["keywordsai.log_type"] ??
-      span.attributes["ai.log_type"] ??
-      span.attributes["log_type"];
-
-    if (explicitLogType !== undefined) {
-      const normalized = String(explicitLogType).toLowerCase();
-      if (LOG_TYPE_VALUES.includes(normalized as LogType)) {
-        return normalized as LogType;
-      }
-    }
-
-    if (spanName in AISDK_SPAN_TO_KEYWORDS_LOG_TYPE) {
-      return AISDK_SPAN_TO_KEYWORDS_LOG_TYPE[spanName] as LogType;
-    }
-
-    const operationId = span.attributes["ai.operationId"]?.toString();
-    if (operationId && operationId in AISDK_SPAN_TO_KEYWORDS_LOG_TYPE) {
-      return AISDK_SPAN_TO_KEYWORDS_LOG_TYPE[operationId] as LogType;
-    }
-
-    if (
-      span.attributes["ai.embedding"] ||
-      span.attributes["ai.embeddings"] ||
-      spanName.includes("embed") ||
-      operationId?.includes("embed")
-    ) {
-      return "embedding";
-    }
-
-    if (
-      span.attributes["ai.toolCall.id"] ||
-      span.attributes["ai.toolCall.name"] ||
-      span.attributes["ai.toolCall.args"] ||
-      span.attributes["ai.toolCall.result"] ||
-      span.attributes["ai.response.toolCalls"] ||
-      spanName.includes("tool") ||
-      operationId?.includes("tool")
-    ) {
-      return "tool";
-    }
-
-    if (
-      span.attributes["ai.agent.id"] ||
-      spanName.includes("agent") ||
-      operationId?.includes("agent")
-    ) {
-      return "agent";
-    }
-
-    if (
-      span.attributes["ai.workflow.id"] ||
-      spanName.includes("workflow") ||
-      operationId?.includes("workflow")
-    ) {
-      return "workflow";
-    }
-
-    if (
-      span.attributes["ai.transcript"] ||
-      spanName.includes("transcript") ||
-      operationId?.includes("transcript")
-    ) {
-      return "transcription";
-    }
-
-    if (
-      span.attributes["ai.speech"] ||
-      spanName.includes("speech") ||
-      operationId?.includes("speech")
-    ) {
-      return "speech";
-    }
-
-    if (this.isGenerationSpan(span)) {
-      return "generation";
-    }
-
-    return "unknown";
-  }
-
-  private deduplicateSpans(spans: ReadableSpan[]): ReadableSpan[] {
-    const traceGroups: Record<string, ReadableSpan[]> = {};
-
-    for (const span of spans) {
-      const traceId = span.spanContext().traceId;
-      if (!traceGroups[traceId]) {
-        traceGroups[traceId] = [];
-      }
-      traceGroups[traceId].push(span);
-    }
-
-    const deduplicatedSpans: ReadableSpan[] = [];
-
-    Object.values(traceGroups).forEach((traceSpans: ReadableSpan[]) => {
-      const operationGroups: Record<string, ReadableSpan[]> = {};
-
-      for (const span of traceSpans) {
-        let opKey = span.name;
-        if (opKey.endsWith(".doStream")) {
-          opKey = opKey.replace(".doStream", "");
-        } else if (opKey.endsWith(".doGenerate")) {
-          opKey = opKey.replace(".doGenerate", "");
-        }
-
-        if (!operationGroups[opKey]) {
-          operationGroups[opKey] = [];
-        }
-        operationGroups[opKey].push(span);
-      }
-
-      Object.values(operationGroups).forEach((opSpans: ReadableSpan[]) => {
-        if (opSpans.length > 1) {
-          const detailedSpan = opSpans.find(
-            (s: ReadableSpan) =>
-              s.name.endsWith(".doStream") || s.name.endsWith(".doGenerate")
-          );
-
-          if (detailedSpan) {
-            deduplicatedSpans.push(detailedSpan);
-          } else {
-            deduplicatedSpans.push(...opSpans);
-          }
-        } else {
-          deduplicatedSpans.push(opSpans[0]);
-        }
-      });
-    });
-
-    return deduplicatedSpans;
-  }
-
-  private getParentSpanId(span: ReadableSpan): string | undefined {
-    const legacySpan = span as ReadableSpan & {
-      parentSpanId?: string;
-    };
-    return legacySpan.parentSpanId || span.parentSpanContext?.spanId;
-  }
+  // All parsing/deduping helpers live in `src/utils/*`.
 }

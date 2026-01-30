@@ -2,16 +2,16 @@ import { LogType, KeywordsLogType } from "@keywordsai/keywordsai-sdk";
 
 // Mapping from AI SDK span types to KeywordsAI log types
 export const AISDK_SPAN_TO_KEYWORDS_LOG_TYPE: Record<string, LogType> = {
-  // Generation spans
-  "ai.generateText": KeywordsLogType.GENERATION,
+  // Text generation spans
+  "ai.generateText": KeywordsLogType.TEXT,
   "ai.generateText.doGenerate": KeywordsLogType.GENERATION,
-  "ai.streamText": KeywordsLogType.GENERATION,
+  "ai.streamText": KeywordsLogType.TEXT,
   "ai.streamText.doStream": KeywordsLogType.GENERATION,
 
   // Object generation spans
-  "ai.generateObject": KeywordsLogType.GENERATION,
+  "ai.generateObject": KeywordsLogType.TEXT,
   "ai.generateObject.doGenerate": KeywordsLogType.GENERATION,
-  "ai.streamObject": KeywordsLogType.GENERATION,
+  "ai.streamObject": KeywordsLogType.TEXT,
   "ai.streamObject.doStream": KeywordsLogType.GENERATION,
 
   // Embedding spans

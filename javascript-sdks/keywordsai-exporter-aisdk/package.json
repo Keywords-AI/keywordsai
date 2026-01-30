@@ -15,7 +15,9 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "tsc",
-    "test:smoke": "yarn build && node tests/smoke.js",
+    "test:smoke": "npm run build && node tests/smoke.js",
+    "quickstart": "npm run build && node examples/quickstart.js",
+    "quickstart:gateway": "npm run build && node examples/quickstart-gateway.js",
     "publish": "yarn npm publish",
     "release": "yarn build && yarn version patch && yarn publish"
   },
@@ -29,7 +31,10 @@
     "@opentelemetry/sdk-trace-base": "^2.5.0"
   },
   "devDependencies": {
+    "@ai-sdk/openai": "^3.0.23",
+    "@opentelemetry/context-async-hooks": "^2.5.0",
     "@types/node": "^25.0.10",
+    "ai": "^6.0.62",
     "typescript": "^5.9.3"
   }
 }
