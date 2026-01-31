@@ -1,7 +1,7 @@
 """
-Dataset Type Definitions for Keywords AI SDK
+Dataset Type Definitions for Respan SDK
 
-This module provides comprehensive type definitions for dataset operations in Keywords AI.
+This module provides comprehensive type definitions for dataset operations in Respan.
 All types are Pydantic models that provide validation, serialization, and clear structure
 for API interactions.
 
@@ -33,7 +33,7 @@ LogManagementRequest: Parameters for adding/removing logs from datasets
 📖 EXAMPLES:
 
 Basic dataset creation:
-    >>> from keywordsai.types.dataset_types import DatasetCreate
+    >>> from respan.types.dataset_types import DatasetCreate
     >>> from datetime import datetime, timedelta
     >>> 
     >>> # Create a sampling dataset for recent logs
@@ -69,7 +69,7 @@ Advanced filtering example:
     ... )
 
 Log management example:
-    >>> from keywordsai.types.dataset_types import LogManagementRequest
+    >>> from respan.types.dataset_types import LogManagementRequest
     >>> 
     >>> # Add logs with specific criteria
     >>> log_request = LogManagementRequest(
@@ -119,8 +119,8 @@ Filter Operators:
 - Some fields are immutable after dataset creation
 """
 
-# Re-export all dataset types from keywordsai-sdk
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+# Re-export all dataset types from respan-sdk
+from respan_sdk.respan_types.dataset_types import (
     Dataset,
     DatasetCreate,
     DatasetUpdate,
@@ -128,7 +128,7 @@ from keywordsai_sdk.keywordsai_types.dataset_types import (
     EvalReport,
     EvalRunRequest,
 )
-from keywordsai.types.generic_types import PaginatedResponseType
+from respan.types.generic_types import PaginatedResponseType
 
 # Type alias for log list responses using the generic paginated type
 DatasetList = PaginatedResponseType[Dataset]

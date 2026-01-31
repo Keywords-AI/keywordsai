@@ -1,8 +1,8 @@
 /**
- * Keywords AI Dataset Module
+ * Respan Dataset Module
  * 
  * This module provides the Dataset API client and related utilities for managing
- * datasets in Keywords AI.
+ * datasets in Respan.
  */
 
 export { DatasetAPI, createDatasetClient, SyncDatasetAPI } from './api.js';

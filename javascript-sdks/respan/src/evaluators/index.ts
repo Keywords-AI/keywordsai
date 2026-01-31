@@ -1,8 +1,8 @@
 /**
- * Keywords AI Evaluator Module
+ * Respan Evaluator Module
  * 
  * This module provides the Evaluator API client and related utilities for working
- * with evaluators in Keywords AI.
+ * with evaluators in Respan.
  */
 
 export { EvaluatorAPI, createEvaluatorClient, SyncEvaluatorAPI } from './api.js';

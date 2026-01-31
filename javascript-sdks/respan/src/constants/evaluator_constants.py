@@ -1,4 +1,4 @@
-# Re-export all evaluator constants from keywordsai-sdk
+# Re-export all evaluator constants from respan-sdk
 # Note: Add more evaluator-specific constants as they become available in the SDK
 
 # Evaluator API paths

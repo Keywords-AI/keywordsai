@@ -1,5 +1,5 @@
-# Re-export all dataset constants from keywordsai-sdk
-from keywordsai_sdk.constants.dataset_constants import (
+# Re-export all dataset constants from respan-sdk
+from respan_sdk.constants.dataset_constants import (
     # Dataset Types
     DATASET_TYPE_LLM,
     DATASET_TYPE_SAMPLING,

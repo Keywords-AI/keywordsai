@@ -1,14 +1,14 @@
-from keywordsai_sdk.keywordsai_types.log_types import (
-    KeywordsAILogParams,
-    KeywordsAIFullLogParams,
+from respan_sdk.respan_types.log_types import (
+    RespanLogParams,
+    RespanFullLogParams,
 )
-from keywordsai.types.generic_types import PaginatedResponseType
+from respan.types.generic_types import PaginatedResponseType
 
 # Type alias for log list responses using the generic paginated type
-LogList = PaginatedResponseType[KeywordsAIFullLogParams]
+LogList = PaginatedResponseType[RespanFullLogParams]
 
 __all__ = [
-    "KeywordsAILogParams",
-    "KeywordsAIFullLogParams", 
+    "RespanLogParams",
+    "RespanFullLogParams", 
     "LogList",
 ]

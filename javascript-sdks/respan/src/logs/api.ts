@@ -1,5 +1,5 @@
 /**
- * Keywords AI Logs APIs
+ * Respan Logs APIs
  *
  * This module provides functionality for managing logs, including:
  * - Creating logs 
@@ -22,9 +22,9 @@ import {
 } from "../constants/logConstants.js";
 
 /**
- * Unified Log API client for Keywords AI with async methods.
+ * Unified Log API client for Respan with async methods.
  *
- * This class provides functionality for managing logs in Keywords AI,
+ * This class provides functionality for managing logs in Respan,
  * including creating logs, retrieving individual logs, and listing logs
  * with filtering and pagination.
  *
@@ -35,9 +35,9 @@ import {
  *     - Full log details in responses
  *
  * Args:
- *     apiKey (string): Your Keywords AI API key. Required for authentication.
- *     baseUrl (string, optional): Base URL for the Keywords AI API.
- *         Defaults to the standard Keywords AI API endpoint.
+ *     apiKey (string): Your Respan API key. Required for authentication.
+ *     baseUrl (string, optional): Base URL for the Respan API.
+ *         Defaults to the standard Respan API endpoint.
  *
  * Example:
  *     ```typescript
@@ -67,7 +67,7 @@ export class LogAPI extends BaseAPI<RespanFullLogParams, LogList, RespanLogParam
    * Initialize the Log API client.
    *
    * @param options - Configuration options
-   * @param options.apiKey - Your Keywords AI API key for authentication.
+   * @param options.apiKey - Your Respan API key for authentication.
    *     If not provided, reads from RESPAN_API_KEY environment variable.
    * @param options.baseUrl - Custom base URL for the API. If not provided,
    *     reads from RESPAN_BASE_URL environment variable or uses default.
@@ -82,7 +82,7 @@ export class LogAPI extends BaseAPI<RespanFullLogParams, LogList, RespanLogParam
   /**
    * Create a new log with specified parameters.
    *
-   * This method creates a new log entry in Keywords AI with the provided data.
+   * This method creates a new log entry in Respan with the provided data.
    * The log can include various parameters like model, input/output, status,
    * and metadata.
    *
@@ -272,7 +272,7 @@ export class LogAPI extends BaseAPI<RespanFullLogParams, LogList, RespanLogParam
 /**
  * Create a log API client
  *
- * @param apiKey - Keywords AI API key (optional, reads from RESPAN_API_KEY env var if not provided)
+ * @param apiKey - Respan API key (optional, reads from RESPAN_API_KEY env var if not provided)
  * @param baseUrl - Base URL for the API (optional, reads from RESPAN_BASE_URL env var or uses default)
  *
  * @returns LogAPI client instance

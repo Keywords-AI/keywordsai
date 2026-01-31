@@ -1,5 +1,5 @@
 """
-Keywords AI Experiment APIs
+Respan Experiment APIs
 
 This module provides functionality for managing experiments, including:
 - Creating and managing experiments with columns and rows
@@ -9,7 +9,7 @@ This module provides functionality for managing experiments, including:
 """
 
 from typing import Optional, Dict, Any, List, Union
-from keywordsai.types.experiment_types import (
+from respan.types.experiment_types import (
     Experiment,
     ExperimentList,
     ExperimentCreate,
@@ -23,8 +23,8 @@ from keywordsai.types.experiment_types import (
     RunExperimentRequest,
     RunExperimentEvalsRequest,
 )
-from keywordsai.utils.base import BaseAPI
-from keywordsai.constants.experiment_constants import (
+from respan.utils.base import BaseAPI
+from respan.constants.experiment_constants import (
     EXPERIMENT_BASE_PATH,
     EXPERIMENT_CREATION_PATH,
     EXPERIMENT_LIST_PATH,
@@ -43,9 +43,9 @@ from keywordsai.constants.experiment_constants import (
 
 class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, ExperimentUpdate]):
     """
-    Unified Experiment API client for Keywords AI with both sync and async methods.
+    Unified Experiment API client for Respan with both sync and async methods.
 
-    This class provides comprehensive functionality for managing experiments in Keywords AI,
+    This class provides comprehensive functionality for managing experiments in Respan,
     including creating experiments, managing columns and rows, running experiments,
     and running evaluations. All operations are available in both synchronous and
     asynchronous variants.
@@ -59,13 +59,13 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         - Full CRUD operations for experiment management
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
-        >>> from keywordsai.experiments.api import ExperimentAPI
-        >>> from keywordsai.types.experiment_types import ExperimentCreate, ExperimentColumnType, ExperimentRowType
+        >>> from respan.experiments.api import ExperimentAPI
+        >>> from respan.types.experiment_types import ExperimentCreate, ExperimentColumnType, ExperimentRowType
         >>>
         >>> # Initialize the client
         >>> client = ExperimentAPI(api_key="your-api-key")
@@ -100,7 +100,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
 
     Example (Asynchronous):
         >>> import asyncio
-        >>> from keywordsai.experiments.api import ExperimentAPI
+        >>> from respan.experiments.api import ExperimentAPI
         >>>
         >>> async def main():
         ...     # Initialize the client
@@ -122,9 +122,9 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         Initialize the Experiment API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -133,7 +133,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """
         Create a new experiment with specified parameters (asynchronous).
 
-        This method creates a new experiment in Keywords AI with the provided configuration.
+        This method creates a new experiment in Respan with the provided configuration.
         The experiment includes columns (model configurations) and rows (test cases).
 
         Args:
@@ -154,11 +154,11 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - created_at (str): Creation timestamp
 
         Raises:
-            KeywordsAIError: If the experiment creation fails due to invalid parameters
+            RespanError: If the experiment creation fails due to invalid parameters
                 or API errors
 
         Example:
-            >>> from keywordsai.types.experiment_types import ExperimentCreate, ExperimentColumnType
+            >>> from respan.types.experiment_types import ExperimentCreate, ExperimentColumnType
             >>>
             >>> experiment_data = ExperimentCreate(
             ...     name="Prompt Comparison Test",
@@ -264,7 +264,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - updated_at (str): Last update timestamp
 
         Raises:
-            KeywordsAIError: If the experiment is not found or access is denied
+            RespanError: If the experiment is not found or access is denied
 
         Example:
             >>> # Get experiment details
@@ -295,7 +295,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - deleted_at (str): Timestamp of deletion
 
         Raises:
-            KeywordsAIError: If the experiment is not found or deletion fails
+            RespanError: If the experiment is not found or deletion fails
 
         Example:
             >>> # Delete an experiment (be careful!)
@@ -326,11 +326,11 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             Experiment: The updated experiment object with new properties applied
 
         Raises:
-            KeywordsAIError: If the experiment is not found, update fails, or
+            RespanError: If the experiment is not found, update fails, or
                 invalid parameters are provided
 
         Example:
-            >>> from keywordsai.types.experiment_types import ExperimentUpdate
+            >>> from respan.types.experiment_types import ExperimentUpdate
             >>>
             >>> # Update experiment name and description
             >>> update_data = ExperimentUpdate(
@@ -419,10 +419,10 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - experiment_id (str): ID of the updated experiment
 
         Raises:
-            KeywordsAIError: If the experiment is not found or request is invalid
+            RespanError: If the experiment is not found or request is invalid
 
         Example:
-            >>> from keywordsai.types.experiment_types import AddExperimentRowsRequest, ExperimentRowType
+            >>> from respan.types.experiment_types import AddExperimentRowsRequest, ExperimentRowType
             >>>
             >>> rows_request = AddExperimentRowsRequest(
             ...     rows=[
@@ -477,7 +477,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - removed_rows (int): Number of rows removed
 
         Example:
-            >>> from keywordsai.types.experiment_types import RemoveExperimentRowsRequest
+            >>> from respan.types.experiment_types import RemoveExperimentRowsRequest
             >>>
             >>> remove_request = RemoveExperimentRowsRequest(
             ...     rows=["row-id-1", "row-id-2"]
@@ -523,7 +523,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - updated_rows (int): Number of rows updated
 
         Example:
-            >>> from keywordsai.types.experiment_types import UpdateExperimentRowsRequest, ExperimentRowType
+            >>> from respan.types.experiment_types import UpdateExperimentRowsRequest, ExperimentRowType
             >>>
             >>> update_request = UpdateExperimentRowsRequest(
             ...     rows=[
@@ -575,7 +575,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - added_columns (int): Number of columns added
 
         Example:
-            >>> from keywordsai.types.experiment_types import AddExperimentColumnsRequest, ExperimentColumnType
+            >>> from respan.types.experiment_types import AddExperimentColumnsRequest, ExperimentColumnType
             >>>
             >>> columns_request = AddExperimentColumnsRequest(
             ...     columns=[
@@ -634,7 +634,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - removed_columns (int): Number of columns removed
 
         Example:
-            >>> from keywordsai.types.experiment_types import RemoveExperimentColumnsRequest
+            >>> from respan.types.experiment_types import RemoveExperimentColumnsRequest
             >>>
             >>> remove_request = RemoveExperimentColumnsRequest(
             ...     columns=["column-id-1", "column-id-2"]
@@ -680,7 +680,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - updated_columns (int): Number of columns updated
 
         Example:
-            >>> from keywordsai.types.experiment_types import UpdateExperimentColumnsRequest, ExperimentColumnType
+            >>> from respan.types.experiment_types import UpdateExperimentColumnsRequest, ExperimentColumnType
             >>>
             >>> update_request = UpdateExperimentColumnsRequest(
             ...     columns=[
@@ -742,7 +742,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - run_id (str, optional): Unique identifier for this run
 
         Raises:
-            KeywordsAIError: If the experiment is not found or cannot be run
+            RespanError: If the experiment is not found or cannot be run
 
         Example:
             >>> # Run entire experiment
@@ -750,7 +750,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
             >>> print(f"Started experiment run: {result['status']}")
             >>>
             >>> # Run specific columns only
-            >>> from keywordsai.types.experiment_types import RunExperimentRequest
+            >>> from respan.types.experiment_types import RunExperimentRequest
             >>> run_request = RunExperimentRequest(
             ...     columns=[specific_column_config]
             ... )
@@ -808,11 +808,11 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
                 - status (str): Status of the evaluation
 
         Raises:
-            KeywordsAIError: If the experiment is not found, has no outputs,
+            RespanError: If the experiment is not found, has no outputs,
                 or evaluators are invalid
 
         Example:
-            >>> from keywordsai.types.experiment_types import RunExperimentEvalsRequest
+            >>> from respan.types.experiment_types import RunExperimentEvalsRequest
             >>>
             >>> evals_request = RunExperimentEvalsRequest(
             ...     evaluator_slugs=["is_english", "relevance_score"]
@@ -850,8 +850,8 @@ def create_experiment_client(api_key: str, base_url: str = None) -> ExperimentAP
     Create a unified experiment API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         ExperimentAPI client instance with both sync and async methods

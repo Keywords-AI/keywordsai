@@ -1,5 +1,5 @@
 """
-Keywords AI Evaluator APIs
+Respan Evaluator APIs
 
 This module provides functionality for managing evaluators, including:
 - Listing available evaluators
@@ -8,11 +8,11 @@ This module provides functionality for managing evaluators, including:
 - Managing evaluation reports
 """
 
-from keywordsai.evaluators.api import (
+from respan.evaluators.api import (
     EvaluatorAPI,
     create_evaluator_client,
 )
-from keywordsai.types.evaluator_types import (
+from respan.types.evaluator_types import (
     Evaluator,
     EvaluatorList,
 )

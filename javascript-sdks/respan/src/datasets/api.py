@@ -1,5 +1,5 @@
 """
-Keywords AI Dataset APIs
+Respan Dataset APIs
 
 This module provides functionality for managing datasets, including:
 - Creating and managing datasets
@@ -9,19 +9,19 @@ This module provides functionality for managing datasets, including:
 """
 
 from typing import Optional, Dict, Any, List, Union
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+from respan_sdk.respan_types.dataset_types import (
     Dataset,
     DatasetCreate,
     DatasetUpdate,
     DatasetList,
     LogManagementRequest,
 )
-from keywordsai.types.dataset_types import (
+from respan.types.dataset_types import (
     EvalReport,
     EvalReportList,
 )
-from keywordsai.utils.base import BaseAPI
-from keywordsai.constants.dataset_constants import (
+from respan.utils.base import BaseAPI
+from respan.constants.dataset_constants import (
     DATASET_BASE_PATH,
     DATASET_CREATION_PATH,
     DATASET_LIST_PATH,
@@ -32,9 +32,9 @@ from keywordsai.constants.dataset_constants import (
 
 class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
     """
-    Unified Dataset API client for Keywords AI with both sync and async methods.
+    Unified Dataset API client for Respan with both sync and async methods.
 
-    This class provides comprehensive functionality for managing datasets in Keywords AI,
+    This class provides comprehensive functionality for managing datasets in Respan,
     including creating datasets, managing logs within datasets, running evaluations,
     and retrieving results. All operations are available in both synchronous and
     asynchronous variants.
@@ -47,13 +47,13 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         - Full CRUD operations for dataset management
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
-        >>> from keywordsai.datasets.api import DatasetAPI
-        >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
+        >>> from respan.datasets.api import DatasetAPI
+        >>> from respan_sdk.respan_types.dataset_types import DatasetCreate
         >>>
         >>> # Initialize the client
         >>> client = DatasetAPI(api_key="your-api-key")
@@ -70,8 +70,8 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
 
     Example (Asynchronous):
         >>> import asyncio
-        >>> from keywordsai.datasets.api import DatasetAPI
-        >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
+        >>> from respan.datasets.api import DatasetAPI
+        >>> from respan_sdk.respan_types.dataset_types import DatasetCreate
         >>>
         >>> async def main():
         ...     # Initialize the client
@@ -99,9 +99,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         Initialize the Dataset API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -110,7 +110,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         """
         Create a new dataset with specified parameters (asynchronous).
 
-        This method creates a new dataset in Keywords AI with the provided configuration.
+        This method creates a new dataset in Respan with the provided configuration.
         The dataset can be configured for different types of log collection and filtering.
 
         Args:
@@ -133,12 +133,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - created_at (str): Creation timestamp
 
         Raises:
-            KeywordsAIError: If the dataset creation fails due to invalid parameters
+            RespanError: If the dataset creation fails due to invalid parameters
                 or API errors
 
         Example:
             >>> from datetime import datetime, timedelta
-            >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
+            >>> from respan_sdk.respan_types.dataset_types import DatasetCreate
             >>>
             >>> # Create a dataset for the last 24 hours with success logs
             >>> end_time = datetime.utcnow()
@@ -243,7 +243,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - log_count (int, optional): Number of logs in the dataset
 
         Raises:
-            KeywordsAIError: If the dataset is not found or access is denied
+            RespanError: If the dataset is not found or access is denied
 
         Example:
             >>> # Get dataset details
@@ -277,11 +277,11 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
             Dataset: The updated dataset object with new properties applied
 
         Raises:
-            KeywordsAIError: If the dataset is not found, update fails, or
+            RespanError: If the dataset is not found, update fails, or
                 invalid parameters are provided
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.dataset_types import DatasetUpdate
+            >>> from respan_sdk.respan_types.dataset_types import DatasetUpdate
             >>>
             >>> # Update dataset name and description
             >>> update_data = DatasetUpdate(
@@ -316,7 +316,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - deleted_at (str): Timestamp of deletion
 
         Raises:
-            KeywordsAIError: If the dataset is not found or deletion fails
+            RespanError: If the dataset is not found or deletion fails
 
         Example:
             >>> # Delete a dataset (be careful!)
@@ -404,11 +404,11 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - dataset_id (str): ID of the updated dataset
 
         Raises:
-            KeywordsAIError: If the dataset is not found, request is invalid,
+            RespanError: If the dataset is not found, request is invalid,
                 or no logs match the criteria
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.dataset_types import LogManagementRequest
+            >>> from respan_sdk.respan_types.dataset_types import LogManagementRequest
             >>> from datetime import datetime, timedelta
             >>>
             >>> # Add error logs from the last week
@@ -504,7 +504,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - previous (str, optional): URL for previous page
 
         Raises:
-            KeywordsAIError: If the dataset is not found or access is denied
+            RespanError: If the dataset is not found or access is denied
 
         Example:
             >>> # List first 10 logs in a dataset
@@ -569,12 +569,12 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
                 - status (str): Initial status of the evaluation
 
         Raises:
-            KeywordsAIError: If the dataset is not found, evaluators are invalid,
+            RespanError: If the dataset is not found, evaluators are invalid,
                 or the evaluation cannot be started
 
         Example:
             >>> # First, get available evaluators
-            >>> from keywordsai.evaluators.api import EvaluatorAPI
+            >>> from respan.evaluators.api import EvaluatorAPI
             >>> eval_client = EvaluatorAPI(api_key="your-key")
             >>> evaluators = await eval_client.alist()
             >>>
@@ -669,8 +669,8 @@ def create_dataset_client(api_key: str, base_url: str = None) -> DatasetAPI:
     Create a unified dataset API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         DatasetAPI client instance with both sync and async methods

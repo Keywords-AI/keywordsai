@@ -1,5 +1,5 @@
 /**
- * Keywords AI Evaluator APIs
+ * Respan Evaluator APIs
  *
  * This module provides functionality for managing evaluators, including:
  * - Listing available evaluators
@@ -19,10 +19,10 @@ import {
 } from "../constants/evaluatorConstants.js";
 
 /**
- * Unified Evaluator API client for Keywords AI with async methods.
+ * Unified Evaluator API client for Respan with async methods.
  * 
  * This class provides functionality for discovering and working with evaluators
- * in Keywords AI. Evaluators are pre-built or custom tools that analyze and
+ * in Respan. Evaluators are pre-built or custom tools that analyze and
  * score your AI model outputs based on various criteria such as accuracy,
  * relevance, toxicity, and more.
  * 
@@ -32,9 +32,9 @@ import {
  *     - Discover evaluator capabilities and configuration options
  * 
  * Args:
- *     apiKey (string): Your Keywords AI API key. Required for authentication.
- *     baseUrl (string, optional): Base URL for the Keywords AI API.
- *         Defaults to the standard Keywords AI API endpoint.
+ *     apiKey (string): Your Respan API key. Required for authentication.
+ *     baseUrl (string, optional): Base URL for the Respan API.
+ *         Defaults to the standard Respan API endpoint.
  * 
  * Example:
  *     ```typescript
@@ -61,9 +61,9 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
    * Initialize the Evaluator API client.
    * 
    * @param options - Configuration options
-   * @param options.apiKey - Your Keywords AI API key for authentication
+   * @param options.apiKey - Your Respan API key for authentication
    * @param options.baseUrl - Custom base URL for the API. If not provided,
-   *     uses the default Keywords AI API endpoint.
+   *     uses the default Respan API endpoint.
    */
   constructor(options: { apiKey: string; baseUrl?: string }) {
     super(options);
@@ -72,7 +72,7 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
   /**
    * List available evaluators with optional filtering and pagination.
    * 
-   * Retrieve a paginated list of evaluators available in your Keywords AI
+   * Retrieve a paginated list of evaluators available in your Respan
    * account. This includes both built-in evaluators and any custom evaluators
    * you've created.
    *
@@ -167,7 +167,7 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
    */
   async create(createData: never): Promise<Evaluator> {
     throw new Error(
-      "Evaluators cannot be created through the API. Use the Keywords AI web interface to create custom evaluators."
+      "Evaluators cannot be created through the API. Use the Respan web interface to create custom evaluators."
     );
   }
 
@@ -181,7 +181,7 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
    */
   async update(resourceId: string, updateData: never): Promise<Evaluator> {
     throw new Error(
-      "Evaluators cannot be updated through the API. Use the Keywords AI web interface to modify custom evaluators."
+      "Evaluators cannot be updated through the API. Use the Respan web interface to modify custom evaluators."
     );
   }
 
@@ -194,7 +194,7 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
    */
   async delete(resourceId: string): Promise<{ success: boolean; message?: string }> {
     throw new Error(
-      "Evaluators cannot be deleted through the API. Use the Keywords AI web interface to delete custom evaluators."
+      "Evaluators cannot be deleted through the API. Use the Respan web interface to delete custom evaluators."
     );
   }
 }
@@ -202,8 +202,8 @@ export class EvaluatorAPI extends BaseAPI<Evaluator, EvaluatorList, never, never
 /**
  * Create a unified evaluator API client
  * 
- * @param apiKey - Keywords AI API key
- * @param baseUrl - Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+ * @param apiKey - Respan API key
+ * @param baseUrl - Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
  * 
  * @returns EvaluatorAPI client instance
  */

@@ -1,4 +1,4 @@
-from keywordsai_sdk.keywordsai_types.generic_types import PaginatedResponseType
+from respan_sdk.respan_types.generic_types import PaginatedResponseType
 
 __all__ = [
     "PaginatedResponseType",

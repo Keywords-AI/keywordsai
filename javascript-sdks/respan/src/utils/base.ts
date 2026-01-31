@@ -1,5 +1,5 @@
 /**
- * Abstract base classes for Keywords AI API clients
+ * Abstract base classes for Respan API clients
  *
  * This module provides abstract base classes that define common CRUDL (Create, Read, Update, Delete, List)
  * operations for API clients with unified async methods, ensuring consistent interfaces across different resource types.

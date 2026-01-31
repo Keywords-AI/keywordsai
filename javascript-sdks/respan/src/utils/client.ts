@@ -1,13 +1,13 @@
 /**
- * Centralized HTTP Client for Keywords AI
+ * Centralized HTTP Client for Respan
  *
- * This module provides a centralized HTTP client for making API requests to Keywords AI services.
+ * This module provides a centralized HTTP client for making API requests to Respan services.
  * It handles authentication, common headers, and provides both async and sync interfaces.
  */
 
 // Constants - these should be available from the respan-sdk or defined here
 const BASE_URL_SUFFIX = "/api";
-const KEYWORDS_AI_DEFAULT_BASE_URL = "https://api.respan.co";
+const RESPAN_DEFAULT_BASE_URL = "https://api.respan.co";
 
 export interface ClientOptions {
   apiKey?: string;
@@ -20,17 +20,17 @@ export interface RequestOptions {
 }
 
 /**
- * Centralized async HTTP client for Keywords AI API
+ * Centralized async HTTP client for Respan API
  */
 export class RespanClient {
   private baseUrl: string;
   private headers: Record<string, string>;
 
   /**
-   * Initialize the Keywords AI client
+   * Initialize the Respan client
    *
    * @param options - Configuration options
-   * @param options.apiKey - Keywords AI API key
+   * @param options.apiKey - Respan API key
    * @param options.baseUrl - Base URL for the API
    */
   constructor(options: ClientOptions = {}) {
@@ -39,9 +39,9 @@ export class RespanClient {
     if (!baseUrl) {
       // Try to get from environment if available (Node.js environment)
       try {
-        baseUrl = (globalThis as any)?.process?.env?.KEYWORDS_AI_BASE_URL || KEYWORDS_AI_DEFAULT_BASE_URL;
+        baseUrl = (globalThis as any)?.process?.env?.RESPAN_BASE_URL || RESPAN_DEFAULT_BASE_URL;
       } catch {
-        baseUrl = KEYWORDS_AI_DEFAULT_BASE_URL;
+        baseUrl = RESPAN_DEFAULT_BASE_URL;
       }
     }
     if (!apiKey) {
@@ -174,10 +174,10 @@ export class RespanClient {
 }
 
 /**
- * Create an async Keywords AI client
+ * Create an async Respan client
  *
- * @param apiKey - Keywords AI API key
- * @param baseUrl - Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+ * @param apiKey - Respan API key
+ * @param baseUrl - Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
  * @returns RespanClient instance
  */
 export function createClient(apiKey: string, baseUrl?: string): RespanClient {

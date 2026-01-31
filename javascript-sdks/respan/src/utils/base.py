@@ -1,5 +1,5 @@
 """
-Abstract base classes for Keywords AI API clients
+Abstract base classes for Respan API clients
 
 This module provides abstract base classes that define common CRUDL (Create, Read, Update, Delete, List)
 operations for API clients with unified sync/async methods, ensuring consistent interfaces across different resource types.
@@ -7,7 +7,7 @@ operations for API clients with unified sync/async methods, ensuring consistent 
 
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, TypeVar, Generic, Union
-from keywordsai.utils.client import KeywordsAIClient, SyncKeywordsAIClient
+from respan.utils.client import RespanClient, SyncRespanClient
 from pydantic import BaseModel
 
 # Generic type variables for flexibility
@@ -26,8 +26,8 @@ class BaseAPI(ABC, Generic[T, TList, TCreate, TUpdate]):
     """
     
     def __init__(self, api_key: str, base_url: str = None):
-        self.async_client = KeywordsAIClient(api_key=api_key, base_url=base_url)
-        self.sync_client = SyncKeywordsAIClient(api_key=api_key, base_url=base_url)
+        self.async_client = RespanClient(api_key=api_key, base_url=base_url)
+        self.sync_client = SyncRespanClient(api_key=api_key, base_url=base_url)
         # For backward compatibility with async methods that use self.client
         self.client = self.async_client
     

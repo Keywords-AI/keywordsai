@@ -1,7 +1,7 @@
 """
-Prompt Type Definitions for Keywords AI SDK
+Prompt Type Definitions for Respan SDK
 
-This module provides comprehensive type definitions for prompt operations in Keywords AI.
+This module provides comprehensive type definitions for prompt operations in Respan.
 All types are Pydantic models that provide validation, serialization, and clear structure
 for API interactions.
 
@@ -34,7 +34,7 @@ PromptVersionRetrieveResponse: Response type for prompt version retrieval
 📖 EXAMPLES:
 
 Basic prompt creation:
-    >>> from keywordsai.types.prompt_types import Prompt
+    >>> from respan.types.prompt_types import Prompt
     >>> 
     >>> # Create a basic prompt
     >>> prompt = Prompt(
@@ -44,7 +44,7 @@ Basic prompt creation:
     ... )
 
 Prompt version with configuration:
-    >>> from keywordsai.types.prompt_types import PromptVersion
+    >>> from respan.types.prompt_types import PromptVersion
     >>> from datetime import datetime
     >>> 
     >>> # Create a prompt version with specific configuration
@@ -108,8 +108,8 @@ PromptVersion Fields:
 - Tools enable function calling capabilities
 """
 
-# Re-export all prompt types from keywordsai-sdk
-from keywordsai_sdk.keywordsai_types.prompt_types import (
+# Re-export all prompt types from respan-sdk
+from respan_sdk.respan_types.prompt_types import (
     Prompt,
     PromptVersion,
     PromptCreateResponse,

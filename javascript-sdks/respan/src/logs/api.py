@@ -1,5 +1,5 @@
 """
-Keywords AI Logs APIs
+Respan Logs APIs
 
 This module provides functionality for managing logs, including:
 - Creating logs 
@@ -10,24 +10,24 @@ Note: Logs do not support update or delete operations.
 """
 
 from typing import Optional, Dict, Any, Union
-from keywordsai.types.log_types import (
-    KeywordsAILogParams,
-    KeywordsAIFullLogParams,
+from respan.types.log_types import (
+    RespanLogParams,
+    RespanFullLogParams,
     LogList,
 )
-from keywordsai.utils.base import BaseAPI
-from keywordsai.constants.log_constants import (
+from respan.utils.base import BaseAPI
+from respan.constants.log_constants import (
     LOG_CREATION_PATH,
     LOG_LIST_PATH,
     LOG_GET_PATH,
 )
 
 
-class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None]):
+class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
     """
-    Unified Log API client for Keywords AI with both sync and async methods.
+    Unified Log API client for Respan with both sync and async methods.
 
-    This class provides functionality for managing logs in Keywords AI,
+    This class provides functionality for managing logs in Respan,
     including creating logs, retrieving individual logs, and listing logs
     with filtering and pagination.
 
@@ -38,19 +38,19 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         - Full log details in responses
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
-        >>> from keywordsai.logs.api import LogAPI
-        >>> from keywordsai.types.log_types import KeywordsAILogParams
+        >>> from respan.logs.api import LogAPI
+        >>> from respan.types.log_types import RespanLogParams
         >>>
         >>> # Initialize the client
         >>> client = LogAPI(api_key="your-api-key")
         >>>
         >>> # Create a new log (synchronous - no await)
-        >>> log_data = KeywordsAILogParams(
+        >>> log_data = RespanLogParams(
         ...     model="gpt-4",
         ...     input="Hello, world!",
         ...     output="Hi there! How can I help you today?",
@@ -61,15 +61,15 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
 
     Example (Asynchronous):
         >>> import asyncio
-        >>> from keywordsai.logs.api import LogAPI
-        >>> from keywordsai.types.log_types import KeywordsAILogParams
+        >>> from respan.logs.api import LogAPI
+        >>> from respan.types.log_types import RespanLogParams
         >>>
         >>> async def main():
         ...     # Initialize the client
         ...     client = LogAPI(api_key="your-api-key")
         ...
         ...     # Create a new log (asynchronous - with await)
-        ...     log_data = KeywordsAILogParams(
+        ...     log_data = RespanLogParams(
         ...         model="gpt-4",
         ...         input="Hello, world!",
         ...         output="Hi there! How can I help you today?",
@@ -93,7 +93,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         Initialize the Log API client.
 
         Args:
-            api_key (str, optional): Your Keywords AI API key for authentication.
+            api_key (str, optional): Your Respan API key for authentication.
                 If not provided, reads from KEYWORDSAI_API_KEY environment variable.
             base_url (str, optional): Custom base URL for the API. If not provided,
                 reads from KEYWORDSAI_BASE_URL environment variable or uses default.
@@ -101,16 +101,16 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         super().__init__(api_key, base_url)
 
     # Asynchronous methods (with "a" prefix)
-    async def acreate(self, create_data: Union[Dict[str, Any], KeywordsAILogParams]) -> Dict[str, Any]:
+    async def acreate(self, create_data: Union[Dict[str, Any], RespanLogParams]) -> Dict[str, Any]:
         """
         Create a new log with specified parameters (asynchronous).
 
-        This method creates a new log entry in Keywords AI with the provided data.
+        This method creates a new log entry in Respan with the provided data.
         The log can include various parameters like model, input/output, status,
         and metadata.
 
         Args:
-            create_data (Union[Dict[str, Any], KeywordsAILogParams]): Log creation parameters including:
+            create_data (Union[Dict[str, Any], RespanLogParams]): Log creation parameters including:
                 - model (str, optional): Model used for the request
                 - input (str, optional): Input text or prompt
                 - output (str, optional): Generated output
@@ -129,15 +129,15 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             methods to retrieve detailed log information.
 
         Raises:
-            KeywordsAIError: If the log creation fails due to invalid parameters
+            RespanError: If the log creation fails due to invalid parameters
                 or API errors
 
         Example:
             >>> from datetime import datetime
-            >>> from keywordsai.types.log_types import KeywordsAILogParams
+            >>> from respan.types.log_types import RespanLogParams
             >>>
             >>> # Create a log for a successful API call
-            >>> log_data = KeywordsAILogParams(
+            >>> log_data = RespanLogParams(
             ...     model="gpt-4",
             ...     input="What is the capital of France?",
             ...     output="The capital of France is Paris.",
@@ -149,7 +149,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             >>> print(f"Log creation response: {response['message']}")
         """
         # Validate and prepare the input data
-        validated_data = self._validate_input(create_data, KeywordsAILogParams)
+        validated_data = self._validate_input(create_data, RespanLogParams)
         
         response = await self.client.post(
             LOG_CREATION_PATH,
@@ -183,7 +183,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
 
         Returns:
             LogList: A paginated list containing:
-                - results (List[KeywordsAIFullLogParams]): List of log objects
+                - results (List[RespanFullLogParams]): List of log objects
                 - count (int): Total number of logs matching filters
                 - next (str, optional): URL for next page if available
                 - previous (str, optional): URL for previous page if available
@@ -213,7 +213,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = await self.client.get(LOG_LIST_PATH, params=params)
         return LogList(**response)
 
-    async def aget(self, resource_id: str) -> KeywordsAIFullLogParams:
+    async def aget(self, resource_id: str) -> RespanFullLogParams:
         """
         Retrieve a specific log by its unique identifier (asynchronous).
 
@@ -226,7 +226,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
                 This can be either the 'id' or 'unique_id' field from the log.
 
         Returns:
-            KeywordsAIFullLogParams: Complete log information including:
+            RespanFullLogParams: Complete log information including:
                 - All user-provided parameters (input, output, model, etc.)
                 - System-generated metadata (timestamps, IDs, etc.)
                 - Authentication information (user_id, organization_id, etc.)
@@ -234,7 +234,7 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
                 - Usage statistics and performance metrics
 
         Raises:
-            KeywordsAIError: If the log is not found or access is denied
+            RespanError: If the log is not found or access is denied
 
         Example:
             >>> # Get log details
@@ -245,9 +245,9 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
             >>> print(f"Status: {log.status_code}")
         """
         response = await self.client.get(f"{LOG_GET_PATH}/{resource_id}")
-        return KeywordsAIFullLogParams(**response)
+        return RespanFullLogParams(**response)
 
-    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> KeywordsAIFullLogParams:
+    async def aupdate(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> RespanFullLogParams:
         """
         Update operation is not supported for logs (asynchronous).
 
@@ -277,10 +277,10 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         )
 
     # Synchronous methods (without "a" prefix)
-    def create(self, create_data: Union[Dict[str, Any], KeywordsAILogParams]) -> Dict[str, Any]:
+    def create(self, create_data: Union[Dict[str, Any], RespanLogParams]) -> Dict[str, Any]:
         """Create a new log (synchronous)"""
         # Validate and prepare the input data
-        validated_data = self._validate_input(create_data, KeywordsAILogParams)
+        validated_data = self._validate_input(create_data, RespanLogParams)
         
         response = self.sync_client.post(
             LOG_CREATION_PATH,
@@ -302,12 +302,12 @@ class LogAPI(BaseAPI[KeywordsAIFullLogParams, LogList, KeywordsAILogParams, None
         response = self.sync_client.get(LOG_LIST_PATH, params=params)
         return LogList(**response)
 
-    def get(self, resource_id: str) -> KeywordsAIFullLogParams:
+    def get(self, resource_id: str) -> RespanFullLogParams:
         """Retrieve a specific log by ID (synchronous)"""
         response = self.sync_client.get(f"{LOG_GET_PATH}/{resource_id}")
-        return KeywordsAIFullLogParams(**response)
+        return RespanFullLogParams(**response)
 
-    def update(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> KeywordsAIFullLogParams:
+    def update(self, resource_id: str, update_data: Union[Dict[str, Any], None]) -> RespanFullLogParams:
         """
         Update operation is not supported for logs (synchronous).
 
@@ -343,7 +343,7 @@ def create_log_client(api_key: str = None, base_url: str = None) -> LogAPI:
     Create a log API client
 
     Args:
-        api_key: Keywords AI API key (optional, reads from KEYWORDSAI_API_KEY env var if not provided)
+        api_key: Respan API key (optional, reads from KEYWORDSAI_API_KEY env var if not provided)
         base_url: Base URL for the API (optional, reads from KEYWORDSAI_BASE_URL env var or uses default)
 
     Returns:

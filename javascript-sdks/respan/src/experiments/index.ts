@@ -1,8 +1,8 @@
 /**
- * Keywords AI Experiment Module
+ * Respan Experiment Module
  * 
  * This module provides the Experiment API client and related utilities for managing
- * experiments in Keywords AI.
+ * experiments in Respan.
  */
 
 export { ExperimentAPI, createExperimentClient } from './api.js';

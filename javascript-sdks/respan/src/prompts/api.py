@@ -1,5 +1,5 @@
 """
-Keywords AI Prompt APIs
+Respan Prompt APIs
 
 This module provides functionality for managing prompts and prompt versions, including:
 - Creating and managing prompts
@@ -9,11 +9,11 @@ This module provides functionality for managing prompts and prompt versions, inc
 """
 
 from typing import Optional, Dict, Any, List, Union
-from keywordsai_sdk.keywordsai_types.prompt_types import (
+from respan_sdk.respan_types.prompt_types import (
     Prompt,
     PromptVersion,
 )
-from keywordsai.types.prompt_types import (
+from respan.types.prompt_types import (
     PromptCreateResponse,
     PromptListResponse,
     PromptRetrieveResponse,
@@ -21,8 +21,8 @@ from keywordsai.types.prompt_types import (
     PromptVersionListResponse,
     PromptVersionRetrieveResponse,
 )
-from keywordsai.utils.base import BaseAPI
-from keywordsai.constants.prompt_constants import (
+from respan.utils.base import BaseAPI
+from respan.constants.prompt_constants import (
     PROMPT_CREATION_PATH,
     PROMPT_LIST_PATH,
     PROMPT_GET_PATH,
@@ -37,10 +37,10 @@ from keywordsai.constants.prompt_constants import (
 
 class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prompt]):
     """
-    Unified Prompt API client for Keywords AI with both sync and async methods.
+    Unified Prompt API client for Respan with both sync and async methods.
 
     This class provides comprehensive functionality for managing prompts and prompt versions
-    in Keywords AI, including creating prompts, managing versions with different configurations,
+    in Respan, including creating prompts, managing versions with different configurations,
     and retrieving prompt information. All operations are available in both synchronous and
     asynchronous variants.
 
@@ -52,13 +52,13 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         - Support for prompt templates and variables
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
-        >>> from keywordsai.prompts.api import PromptAPI
-        >>> from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+        >>> from respan.prompts.api import PromptAPI
+        >>> from respan_sdk.respan_types.prompt_types import Prompt
         >>>
         >>> # Initialize the client
         >>> client = PromptAPI(api_key="your-api-key")
@@ -74,8 +74,8 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
 
     Example (Asynchronous):
         >>> import asyncio
-        >>> from keywordsai.prompts.api import PromptAPI
-        >>> from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+        >>> from respan.prompts.api import PromptAPI
+        >>> from respan_sdk.respan_types.prompt_types import Prompt
         >>>
         >>> async def main():
         ...     # Initialize the client
@@ -102,9 +102,9 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         Initialize the Prompt API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -115,7 +115,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         """
         Create a new prompt with specified parameters (asynchronous).
 
-        This method creates a new prompt in Keywords AI with the provided configuration.
+        This method creates a new prompt in Respan with the provided configuration.
         The prompt serves as a container for multiple versions with different configurations.
 
         Args:
@@ -134,11 +134,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - created_at (str): Creation timestamp
 
         Raises:
-            KeywordsAIError: If the prompt creation fails due to invalid parameters
+            RespanError: If the prompt creation fails due to invalid parameters
                 or API errors
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+            >>> from respan_sdk.respan_types.prompt_types import Prompt
             >>>
             >>> # Create a basic prompt
             >>> prompt_data = Prompt(
@@ -227,7 +227,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - tags (List[Dict]): Associated tags
 
         Raises:
-            KeywordsAIError: If the prompt is not found or access is denied
+            RespanError: If the prompt is not found or access is denied
 
         Example:
             >>> # Get prompt details
@@ -260,11 +260,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
             PromptRetrieveResponse: The updated prompt object with new properties applied
 
         Raises:
-            KeywordsAIError: If the prompt is not found, update fails, or
+            RespanError: If the prompt is not found, update fails, or
                 invalid parameters are provided
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+            >>> from respan_sdk.respan_types.prompt_types import Prompt
             >>>
             >>> # Update prompt name and description
             >>> update_data = Prompt(
@@ -299,7 +299,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - deleted_at (str): Timestamp of deletion
 
         Raises:
-            KeywordsAIError: If the prompt is not found or deletion fails
+            RespanError: If the prompt is not found or deletion fails
 
         Example:
             >>> # Delete a prompt (be careful!)
@@ -390,11 +390,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - All other configuration parameters
 
         Raises:
-            KeywordsAIError: If the prompt is not found, version creation fails,
+            RespanError: If the prompt is not found, version creation fails,
                 or invalid parameters are provided
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.prompt_types import PromptVersion
+            >>> from respan_sdk.respan_types.prompt_types import PromptVersion
             >>> from datetime import datetime
             >>>
             >>> # Create a prompt version with specific configuration
@@ -469,7 +469,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - previous (str, optional): URL for previous page if available
 
         Raises:
-            KeywordsAIError: If the prompt is not found or access is denied
+            RespanError: If the prompt is not found or access is denied
 
         Example:
             >>> # List all versions for a prompt
@@ -550,7 +550,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
                 - All other configuration parameters
 
         Raises:
-            KeywordsAIError: If the prompt or version is not found
+            RespanError: If the prompt or version is not found
 
         Example:
             >>> # Get specific version details
@@ -604,11 +604,11 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
             PromptVersionRetrieveResponse: The updated version object
 
         Raises:
-            KeywordsAIError: If the prompt/version is not found, update fails,
+            RespanError: If the prompt/version is not found, update fails,
                 or invalid parameters are provided
 
         Example:
-            >>> from keywordsai_sdk.keywordsai_types.prompt_types import PromptVersion
+            >>> from respan_sdk.respan_types.prompt_types import PromptVersion
             >>>
             >>> # Update version configuration
             >>> update_data = PromptVersion(
@@ -651,8 +651,8 @@ def create_prompt_client(api_key: str, base_url: str = None) -> PromptAPI:
     Create a unified prompt API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         PromptAPI client instance with both sync and async methods

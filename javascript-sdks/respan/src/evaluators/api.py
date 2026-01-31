@@ -1,5 +1,5 @@
 """
-Keywords AI Evaluator APIs
+Respan Evaluator APIs
 
 This module provides functionality for managing evaluators, including:
 - Listing available evaluators
@@ -9,12 +9,12 @@ This module provides functionality for managing evaluators, including:
 """
 
 from typing import Optional, Dict, Any
-from keywordsai.types.evaluator_types import (
+from respan.types.evaluator_types import (
     Evaluator,
     EvaluatorList,
 )
-from keywordsai.utils.base import BaseAPI
-from keywordsai.constants.evaluator_constants import (
+from respan.utils.base import BaseAPI
+from respan.constants.evaluator_constants import (
     EVALUATOR_BASE_PATH,
     EVALUATOR_LIST_PATH,
     EVALUATOR_GET_PATH,
@@ -23,10 +23,10 @@ from keywordsai.constants.evaluator_constants import (
 
 class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
     """
-    Unified Evaluator API client for Keywords AI with both sync and async methods.
+    Unified Evaluator API client for Respan with both sync and async methods.
     
     This class provides functionality for discovering and working with evaluators
-    in Keywords AI. Evaluators are pre-built or custom tools that analyze and
+    in Respan. Evaluators are pre-built or custom tools that analyze and
     score your AI model outputs based on various criteria such as accuracy,
     relevance, toxicity, and more.
     
@@ -36,12 +36,12 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
         - Discover evaluator capabilities and configuration options
     
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
     
     Example (Synchronous):
-        >>> from keywordsai.evaluators.api import EvaluatorAPI
+        >>> from respan.evaluators.api import EvaluatorAPI
         >>> 
         >>> # Initialize the client
         >>> client = EvaluatorAPI(api_key="your-api-key")
@@ -56,7 +56,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
     
     Example (Asynchronous):
         >>> import asyncio
-        >>> from keywordsai.evaluators.api import EvaluatorAPI
+        >>> from respan.evaluators.api import EvaluatorAPI
         >>> 
         >>> async def main():
         ...     # Initialize the client
@@ -85,9 +85,9 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
         Initialize the Evaluator API client.
         
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
     
@@ -101,7 +101,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
         """
         List available evaluators with optional filtering and pagination (asynchronous).
         
-        Retrieve a paginated list of evaluators available in your Keywords AI
+        Retrieve a paginated list of evaluators available in your Respan
         account. This includes both built-in evaluators and any custom evaluators
         you've created.
 
@@ -167,7 +167,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
                 - examples (list): Usage examples and expected outputs
 
         Raises:
-            KeywordsAIError: If the evaluator is not found or access is denied
+            RespanError: If the evaluator is not found or access is denied
 
         Example:
             >>> # Get evaluator by slug (recommended)
@@ -193,7 +193,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be created via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be created through the API. Use the Keywords AI web interface to create custom evaluators."
+            "Evaluators cannot be created through the API. Use the Respan web interface to create custom evaluators."
         )
 
     async def aupdate(self, resource_id: str, update_data) -> Evaluator:
@@ -208,7 +208,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be updated via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be updated through the API. Use the Keywords AI web interface to modify custom evaluators."
+            "Evaluators cannot be updated through the API. Use the Respan web interface to modify custom evaluators."
         )
 
     async def adelete(self, resource_id: str) -> Dict[str, Any]:
@@ -222,7 +222,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be deleted via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be deleted through the API. Use the Keywords AI web interface to delete custom evaluators."
+            "Evaluators cannot be deleted through the API. Use the Respan web interface to delete custom evaluators."
         )
 
     # Synchronous methods (without "a" prefix)
@@ -276,7 +276,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be created via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be created through the API. Use the Keywords AI web interface to create custom evaluators."
+            "Evaluators cannot be created through the API. Use the Respan web interface to create custom evaluators."
         )
 
     def update(self, resource_id: str, update_data) -> Evaluator:
@@ -291,7 +291,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be updated via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be updated through the API. Use the Keywords AI web interface to modify custom evaluators."
+            "Evaluators cannot be updated through the API. Use the Respan web interface to modify custom evaluators."
         )
 
     def delete(self, resource_id: str) -> Dict[str, Any]:
@@ -305,7 +305,7 @@ class EvaluatorAPI(BaseAPI[Evaluator, EvaluatorList, None, None]):
             NotImplementedError: Always raised as evaluators cannot be deleted via API
         """
         raise NotImplementedError(
-            "Evaluators cannot be deleted through the API. Use the Keywords AI web interface to delete custom evaluators."
+            "Evaluators cannot be deleted through the API. Use the Respan web interface to delete custom evaluators."
         )
 
 
@@ -314,8 +314,8 @@ def create_evaluator_client(api_key: str, base_url: str = None) -> EvaluatorAPI:
     Create a unified evaluator API client
     
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
         
     Returns:
         EvaluatorAPI client instance with both sync and async methods

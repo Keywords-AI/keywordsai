@@ -1,5 +1,5 @@
 /**
- * Log API constants for Keywords AI SDK
+ * Log API constants for Respan SDK
  *
  * This module defines constants for log-related API endpoints and status codes.
  */

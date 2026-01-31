@@ -1,8 +1,8 @@
 /**
- * Keywords AI Log Module
+ * Respan Log Module
  * 
  * This module provides the Log API client and related utilities for managing
- * logs in Keywords AI.
+ * logs in Respan.
  */
 
 export { LogAPI, createLogClient } from './api.js';

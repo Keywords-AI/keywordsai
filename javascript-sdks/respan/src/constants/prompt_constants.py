@@ -1,5 +1,5 @@
-# Re-export all prompt constants from keywordsai-sdk
-from keywordsai_sdk.constants.prompt_constants import (
+# Re-export all prompt constants from respan-sdk
+from respan_sdk.constants.prompt_constants import (
     # Message role types
     MessageRoleType,
     # Response format types

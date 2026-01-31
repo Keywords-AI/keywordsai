@@ -1,5 +1,5 @@
 /**
- * Keywords AI Experiment APIs
+ * Respan Experiment APIs
  *
  * This module provides functionality for managing experiments, including:
  * - Creating and managing experiments with columns and rows
@@ -40,9 +40,9 @@ import {
 } from "../constants/experimentConstants.js";
 
 /**
- * Unified Experiment API client for Keywords AI with async methods.
+ * Unified Experiment API client for Respan with async methods.
  *
- * This class provides comprehensive functionality for managing experiments in Keywords AI,
+ * This class provides comprehensive functionality for managing experiments in Respan,
  * including creating experiments, managing columns and rows, running experiments,
  * and running evaluations.
  *
@@ -55,9 +55,9 @@ import {
  *     - Full CRUD operations for experiment management
  *
  * Args:
- *     apiKey (string): Your Keywords AI API key. Required for authentication.
- *     baseUrl (string, optional): Base URL for the Keywords AI API.
- *         Defaults to the standard Keywords AI API endpoint.
+ *     apiKey (string): Your Respan API key. Required for authentication.
+ *     baseUrl (string, optional): Base URL for the Respan API.
+ *         Defaults to the standard Respan API endpoint.
  *
  * Example:
  *     ```typescript
@@ -101,9 +101,9 @@ export class ExperimentAPI extends BaseAPI<Experiment, ExperimentList, Experimen
    * Initialize the Experiment API client.
    *
    * @param options - Configuration options
-   * @param options.apiKey - Your Keywords AI API key for authentication
+   * @param options.apiKey - Your Respan API key for authentication
    * @param options.baseUrl - Custom base URL for the API. If not provided,
-   *     uses the default Keywords AI API endpoint.
+   *     uses the default Respan API endpoint.
    */
   constructor(options: { apiKey: string; baseUrl?: string }) {
     super(options);
@@ -112,7 +112,7 @@ export class ExperimentAPI extends BaseAPI<Experiment, ExperimentList, Experimen
   /**
    * Create a new experiment with specified parameters.
    *
-   * This method creates a new experiment in Keywords AI with the provided configuration.
+   * This method creates a new experiment in Respan with the provided configuration.
    * The experiment includes columns (model configurations) and rows (test cases).
    *
    * @param createData - Experiment creation parameters including:
@@ -686,8 +686,8 @@ export class ExperimentAPI extends BaseAPI<Experiment, ExperimentList, Experimen
 /**
  * Create a unified experiment API client
  *
- * @param apiKey - Keywords AI API key
- * @param baseUrl - Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+ * @param apiKey - Respan API key
+ * @param baseUrl - Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
  *
  * @returns ExperimentAPI client instance
  */

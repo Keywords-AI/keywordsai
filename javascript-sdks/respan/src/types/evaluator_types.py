@@ -1,7 +1,7 @@
 """
-Evaluator Type Definitions for Keywords AI SDK
+Evaluator Type Definitions for Respan SDK
 
-This module provides comprehensive type definitions for evaluator operations in Keywords AI.
+This module provides comprehensive type definitions for evaluator operations in Respan.
 Evaluators are tools that analyze and score AI model outputs based on various criteria
 such as accuracy, relevance, toxicity, coherence, and custom metrics.
 
@@ -41,7 +41,7 @@ EvalReportList: Paginated list of evaluation reports
 📖 EXAMPLES:
 
 Discovering evaluators:
-    >>> from keywordsai.evaluators.api import EvaluatorAPI
+    >>> from respan.evaluators.api import EvaluatorAPI
     >>> 
     >>> client = EvaluatorAPI(api_key="your-key")
     >>> evaluators = await client.list(category="llm")
@@ -53,7 +53,7 @@ Discovering evaluators:
     ...     print(f"Category: {evaluator.category}")
 
 Running evaluations:
-    >>> from keywordsai.datasets.api import DatasetAPI
+    >>> from respan.datasets.api import DatasetAPI
     >>> 
     >>> dataset_client = DatasetAPI(api_key="your-key")
     >>> 
@@ -91,8 +91,8 @@ Evaluator Fields:
 - output_schema (dict): Format of evaluation results
 """
 
-# Re-export all evaluator types from keywordsai-sdk
-from keywordsai_sdk.keywordsai_types.evaluator_types import (
+# Re-export all evaluator types from respan-sdk
+from respan_sdk.respan_types.evaluator_types import (
     Evaluator,
     EvaluatorList,
 )

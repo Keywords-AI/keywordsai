@@ -1,7 +1,7 @@
 /**
- * Evaluator Type Definitions for Keywords AI SDK
+ * Evaluator Type Definitions for Respan SDK
  *
- * This module provides comprehensive type definitions for evaluator operations in Keywords AI.
+ * This module provides comprehensive type definitions for evaluator operations in Respan.
  * Evaluators are tools that analyze and score AI model outputs based on various criteria
  * such as accuracy, relevance, toxicity, coherence, and custom metrics.
  *

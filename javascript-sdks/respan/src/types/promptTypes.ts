@@ -1,7 +1,7 @@
 /**
- * Prompt Type Definitions for Keywords AI SDK
+ * Prompt Type Definitions for Respan SDK
  *
- * This module provides comprehensive type definitions for prompt operations in Keywords AI.
+ * This module provides comprehensive type definitions for prompt operations in Respan.
  * All types provide validation, serialization, and clear structure for API interactions.
  *
  * 🏗️ CORE TYPES:
