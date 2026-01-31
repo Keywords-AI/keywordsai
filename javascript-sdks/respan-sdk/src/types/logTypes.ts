@@ -567,7 +567,7 @@ const RespanParamsSchema = z.object({
   //#endregion tracing
 });
 
-// Combined KeywordsPayloadSchema that merges RespanParams, BasicLLMParams, and BasicEmbeddingParams
+// Combined RespanPayloadSchema that merges RespanParams, BasicLLMParams, and BasicEmbeddingParams
 export const RespanPayloadSchema = RespanParamsSchema.merge(
   BasicLLMParamsSchema
 )
@@ -575,9 +575,6 @@ export const RespanPayloadSchema = RespanParamsSchema.merge(
   .catchall(z.any());
 
 export type RespanPayload = z.input<typeof RespanPayloadSchema>;
-
-// Backward-compatible alias
-export type KeywordsPayload = RespanPayload;
 
 // Export individual schemas for use elsewhere
 export {

@@ -16,13 +16,13 @@ export interface TracingOptions {
 
   /**
    * The API Key for sending traces data. Optional.
-   * Defaults to the KEYWORDS_AI_API_KEY environment variable.
+   * Defaults to the RESPAN_API_KEY environment variable.
    */
   apiKey?: string;
 
   /**
    * The OTLP endpoint for sending traces data. Optional.
-   * Defaults to KEYWORDS_AI_BASE_URL environment variable or https://api.respan.co/
+   * Defaults to RESPAN_BASE_URL environment variable or https://api.respan.ai/
    */
   baseUrl?: string;
 

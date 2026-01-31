@@ -1,6 +1,6 @@
 // Mapping from Vercel AI SDK span types to Respan log types
 // Define Respan log type enum
-export enum KeywordsLogType {
+export enum RespanLogType {
   TEXT = "text",
   RESPONSE = "response",
   EMBEDDING = "embedding",
