@@ -2,13 +2,13 @@ from typing import List, Literal, Optional, Union, Dict, Any
 from typing_extensions import deprecated
 from pydantic import ConfigDict, field_validator, model_validator
 
-from respan_sdk.keywordsai_types.services_types.moda_types import ModaParams
+from respan_sdk.respan_types.services_types.moda_types import ModaParams
 from ._internal_types import (
     BasicAssistantParams,
     BasicLLMParams,
     BasicRunParams,
     BasicThreadParams,
-    KeywordsAIBaseModel,
+    RespanBaseModel,
     BasicEmbeddingParams,
     LiteLLMCompletionParams,
     Message,
@@ -28,7 +28,7 @@ from ..constants.llm_logging import (
 """
 Conventions:
 
-1. KeywordsAI as a prefix to class names
+1. Respan as a prefix to class names
 2. Params as a suffix to class names
 
 Logging params types:
@@ -39,11 +39,11 @@ Logging params types:
 """
 
 
-class OverrideConfig(KeywordsAIBaseModel):
+class OverrideConfig(RespanBaseModel):
     messages_override_mode: Optional[Literal["override", "append"]] = "override"
 
 
-class PromptParam(KeywordsAIBaseModel):
+class PromptParam(RespanBaseModel):
     prompt_id: Optional[str] = None
     is_custom_prompt: Optional[bool] = False
     version: Optional[Union[int, Literal["latest"]]] = None
@@ -60,7 +60,7 @@ class PromptParam(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class EvaluationParams(KeywordsAIBaseModel):
+class EvaluationParams(RespanBaseModel):
     evaluators: Optional[List[EvaluatorToRun]] = []
     evaluation_identifier: Union[str, int] = ""
     last_n_messages: Optional[int] = (
@@ -78,7 +78,7 @@ class EvaluationParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class LoadBalanceModel(KeywordsAIBaseModel):
+class LoadBalanceModel(RespanBaseModel):
     model: str
     credentials: dict = None
     weight: int
@@ -96,7 +96,7 @@ class LoadBalanceModel(KeywordsAIBaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
 
-class LoadBalanceGroup(KeywordsAIBaseModel):
+class LoadBalanceGroup(RespanBaseModel):
     group_id: str
     models: Optional[List[LoadBalanceModel]] = None
 
@@ -105,12 +105,12 @@ class LoadBalanceGroup(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class PostHogIntegration(KeywordsAIBaseModel):
+class PostHogIntegration(RespanBaseModel):
     posthog_api_key: str
     posthog_base_url: str
 
 
-class Customer(KeywordsAIBaseModel):
+class Customer(RespanBaseModel):
     customer_identifier: Union[str, int, None] = None
     name: Optional[Union[str, None]] = None
     email: Optional[Union[str, None]] = None
@@ -158,7 +158,7 @@ class Customer(KeywordsAIBaseModel):
         return cls._validate_timestamp(v)
 
 
-class CacheOptions(KeywordsAIBaseModel):
+class CacheOptions(RespanBaseModel):
     cache_by_customer: Optional[bool] = None  # Create cache for each customer_user
     omit_log: Optional[bool] = None  # When cache is hit, don't log the request
 
@@ -167,7 +167,7 @@ class CacheOptions(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class RetryParams(KeywordsAIBaseModel):
+class RetryParams(RespanBaseModel):
     num_retries: Optional[int] = 3
     retry_after: Optional[float] = 0.2
     retry_enabled: Optional[bool] = True
@@ -187,7 +187,7 @@ class RetryParams(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
+class RespanAPIControlParams(RespanBaseModel):
     block: Optional[bool] = None
 
     def model_dump(self, *args, **kwargs):
@@ -195,8 +195,8 @@ class KeywordsAIAPIControlParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-@deprecated("Use log_types.KeywordsAILogParams instead")
-class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
+@deprecated("Use log_types.RespanLogParams instead")
+class RespanParams(RespanBaseModel, PreprocessLogDataMixin):
     """
     Internal Keywords AI parameters class that includes all fields used by the backend.
     This includes both public-facing fields and internal/backend-only fields.
@@ -214,7 +214,7 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     # region: authentication
     api_key: Optional[str] = None
     user_id: Optional[Union[int, str]] = None
-    user_email: Optional[str] = None  # The use email of the keywordsai user
+    user_email: Optional[str] = None  # The use email of the respan user
     organization_id: Optional[Union[int, str]] = None  # Organization ID
     organization_name: Optional[str] = None  # Organization name
     unique_organization_id: Optional[str] = (
@@ -350,24 +350,24 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     customer_params: Optional[Customer] = None
     # endregion: user analytics
 
-    # region: keywordsai llm response control
+    # region: respan llm response control
     field_name: Optional[str] = "data: "
     delimiter: Optional[str] = "\n\n"
     disable_log: Optional[bool] = False
     request_breakdown: Optional[bool] = False
-    # endregion: keywordsai llm response control
+    # endregion: respan llm response control
 
-    # region: keywordsai logging control
+    # region: respan logging control
     is_log_omitted: Optional[bool] = (
         None  # If true, logging will be omitted for this request
     )
-    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
+    respan_api_controls: Optional[RespanAPIControlParams] = None
     mock_response: Optional[str] = None
     log_method: Optional[str] = None
     log_type: Optional[LogType] = None
-    # endregion: keywordsai logging control
+    # endregion: respan logging control
 
-    # region: keywordsai proxy options
+    # region: respan proxy options
     disable_fallback: Optional[bool] = False
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
@@ -375,10 +375,10 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     retry_params: Optional[RetryParams] = None
-    keywordsai_params: Optional[dict] = (
-        None  # Nested keywordsai params for special cases
+    respan_params: Optional[dict] = (
+        None  # Nested respan params for special cases
     )
-    # endregion: keywordsai proxy options
+    # endregion: respan proxy options
 
     # region: embedding
     embedding: Optional[Union[List[float], str]] = None
@@ -556,13 +556,13 @@ class KeywordsAIParams(KeywordsAIBaseModel, PreprocessLogDataMixin):
     model_config = ConfigDict(protected_namespaces=(), from_attributes=True)
 
 
-@deprecated("Use log_types.KeywordsAIFullLogParams instead")
-class KeywordsAITextLogParams(
-    KeywordsAIParams, LiteLLMCompletionParams, BasicEmbeddingParams
+@deprecated("Use log_types.RespanFullLogParams instead")
+class RespanTextLogParams(
+    RespanParams, LiteLLMCompletionParams, BasicEmbeddingParams
 ):
     """
     A type definition of the input parameters for creating a Keywords AI RequestLog object.
-    This is the INTERNAL type. Only used in keywordsai backend
+    This is the INTERNAL type. Only used in respan backend
     """
 
     @field_validator("customer_params", mode="after")
@@ -576,7 +576,7 @@ class KeywordsAITextLogParams(
     @model_validator(mode="before")
     def _preprocess_data(cls, data):
 
-        data = KeywordsAIParams._preprocess_data(data)
+        data = RespanParams._preprocess_data(data)
         # Special response format handling for backward compatibility
         if "response_format" in data:
             if type(data["response_format"]) == str:
@@ -641,7 +641,7 @@ class KeywordsAITextLogParams(
             "cache_key",
             "prompt_messages",
             "completion_message",
-            "keywordsai_params",
+            "respan_params",
             "full_request",
             "full_response",
             "completion_messages",
@@ -722,27 +722,27 @@ class KeywordsAITextLogParams(
     model_config = ConfigDict(from_attributes=True)
 
 
-class EmbeddingParams(BasicEmbeddingParams, KeywordsAIParams):
+class EmbeddingParams(BasicEmbeddingParams, RespanParams):
     pass
 
 
-class TextToSpeechParams(BasicTextToSpeechParams, KeywordsAIParams):
+class TextToSpeechParams(BasicTextToSpeechParams, RespanParams):
     pass
 
 
-class AssistantParams(BasicAssistantParams, KeywordsAIParams):
+class AssistantParams(BasicAssistantParams, RespanParams):
     pass
 
 
-class ThreadParams(BasicThreadParams, KeywordsAIParams):
+class ThreadParams(BasicThreadParams, RespanParams):
     pass
 
 
-class RunParams(BasicRunParams, KeywordsAIParams):
+class RunParams(BasicRunParams, RespanParams):
     pass
 
 
-class LLMParams(BasicLLMParams, KeywordsAIParams):
+class LLMParams(BasicLLMParams, RespanParams):
     @model_validator(mode="after")
     @classmethod
     def validate_messages(cls, values):

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Dict, Any, Union, Literal, Optional
 from pydantic import model_validator, ConfigDict
 from ._internal_types import (
-    KeywordsAIBaseModel,
+    RespanBaseModel,
     Message,
     FunctionTool,
     ToolChoice,
@@ -17,7 +17,7 @@ STATUS_TYPES = Literal[
 ]  # Ready means ready to go
 
 
-class ExperimentColumnType(KeywordsAIBaseModel, PreprocessDataMixin):
+class ExperimentColumnType(RespanBaseModel, PreprocessDataMixin):
     """
     Represents a column (test configuration) in an experiment.
     Each column defines the parameters for one variant of the experiment.
@@ -56,7 +56,7 @@ class ExperimentColumnType(KeywordsAIBaseModel, PreprocessDataMixin):
         return data
 
 
-class ExperimentLLMInferenceMetrics(KeywordsAIBaseModel):
+class ExperimentLLMInferenceMetrics(RespanBaseModel):
     """
     LLM inference metrics for a experiment cell
     """
@@ -71,7 +71,7 @@ class ExperimentLLMInferenceMetrics(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class ExperimentResultItemType(KeywordsAIBaseModel, PreprocessDataMixin):
+class ExperimentResultItemType(RespanBaseModel, PreprocessDataMixin):
     """
     Represents a single result item within an experiment row.
     Contains the output and evaluation results for one column configuration.
@@ -115,7 +115,7 @@ class ExperimentResultItemType(KeywordsAIBaseModel, PreprocessDataMixin):
         return data
 
 
-class ExperimentRowType(KeywordsAIBaseModel, PreprocessDataMixin):
+class ExperimentRowType(RespanBaseModel, PreprocessDataMixin):
     """
     Represents a row in an experiment.
     Each row contains input data and results for all columns.
@@ -136,7 +136,7 @@ class ExperimentRowType(KeywordsAIBaseModel, PreprocessDataMixin):
         return data
 
 
-class ExperimentRowV2Type(KeywordsAIBaseModel, PreprocessDataMixin):
+class ExperimentRowV2Type(RespanBaseModel, PreprocessDataMixin):
     """
     A row in the experiment (V2 format)
     items is a map that maps the column id to the result
@@ -192,7 +192,7 @@ class ExperimentRowV2Type(KeywordsAIBaseModel, PreprocessDataMixin):
         return data
 
 
-class ExperimentType(KeywordsAIBaseModel, PreprocessDataMixin):
+class ExperimentType(RespanBaseModel, PreprocessDataMixin):
     """
     Main experiment type representing the complete experiment structure.
     Based on the Django Experiment model.
@@ -235,7 +235,7 @@ class ExperimentType(KeywordsAIBaseModel, PreprocessDataMixin):
 
 
 # Request/Response types for API endpoints
-class CreateExperimentRequest(KeywordsAIBaseModel):
+class CreateExperimentRequest(RespanBaseModel):
     """Request payload for creating an experiment"""
 
     columns: List[ExperimentColumnType]
@@ -247,75 +247,75 @@ class CreateExperimentRequest(KeywordsAIBaseModel):
 ListExperimentsResponse = PaginatedResponseType[ExperimentType]
 
 
-class AddExperimentRowsRequest(KeywordsAIBaseModel):
+class AddExperimentRowsRequest(RespanBaseModel):
     """Request payload for adding rows to an experiment"""
 
     rows: List[ExperimentRowType]
 
 
-class RemoveExperimentRowsRequest(KeywordsAIBaseModel):
+class RemoveExperimentRowsRequest(RespanBaseModel):
     """Request payload for removing rows from an experiment"""
 
     rows: List[str]  # List of row IDs
 
 
-class UpdateExperimentRowsRequest(KeywordsAIBaseModel):
+class UpdateExperimentRowsRequest(RespanBaseModel):
     """Request payload for updating experiment rows"""
 
     rows: List[ExperimentRowType]
 
 
-class AddExperimentColumnsRequest(KeywordsAIBaseModel):
+class AddExperimentColumnsRequest(RespanBaseModel):
     """Request payload for adding columns to an experiment"""
 
     columns: List[ExperimentColumnType]
 
 
-class RemoveExperimentColumnsRequest(KeywordsAIBaseModel):
+class RemoveExperimentColumnsRequest(RespanBaseModel):
     """Request payload for removing columns from an experiment"""
 
     columns: List[str]  # List of column IDs
 
 
-class UpdateExperimentColumnsRequest(KeywordsAIBaseModel):
+class UpdateExperimentColumnsRequest(RespanBaseModel):
     """Request payload for updating experiment columns"""
 
     columns: List[ExperimentColumnType]
 
 
-class RunExperimentRequest(KeywordsAIBaseModel):
+class RunExperimentRequest(RespanBaseModel):
     """Request payload for running an experiment"""
 
     columns: Optional[List[ExperimentColumnType]] = None
 
 
-class RunExperimentEvalsRequest(KeywordsAIBaseModel):
+class RunExperimentEvalsRequest(RespanBaseModel):
     """Request payload for running experiment evaluations"""
 
     evaluator_slugs: List[str]
 
 
 # Legacy types for backward compatibility
-class Columns(KeywordsAIBaseModel):
+class Columns(RespanBaseModel):
     """Legacy wrapper for columns"""
 
     columns: List[ExperimentColumnType]
 
 
-class Rows(KeywordsAIBaseModel):
+class Rows(RespanBaseModel):
     """Legacy wrapper for rows"""
 
     rows: List[ExperimentRowType]
 
 
-class EditorType(KeywordsAIBaseModel):
+class EditorType(RespanBaseModel):
     """Editor information"""
 
     id: int
     name: str
 
 
-class TestCaseType(KeywordsAIBaseModel, PreprocessDataMixin):
+class TestCaseType(RespanBaseModel, PreprocessDataMixin):
     """Test case definition"""
 
     description: Optional[str] = None
@@ -335,7 +335,7 @@ class TestCaseType(KeywordsAIBaseModel, PreprocessDataMixin):
         return self
 
 
-class TestsetColumnDefinition(KeywordsAIBaseModel):
+class TestsetColumnDefinition(RespanBaseModel):
     """Column definition for testsets"""
 
     field: str
@@ -365,7 +365,7 @@ class TestsetRowData(TypedDict, total=False):
     row_data: Dict[str, Union[str, int, None, float, bool]]
 
 
-class TestsetRowOperationsPayload(KeywordsAIBaseModel):
+class TestsetRowOperationsPayload(RespanBaseModel):
     """Payload for testset row operations"""
 
     testset_rows: List[TestsetRowData]

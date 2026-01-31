@@ -1,9 +1,9 @@
 from datetime import datetime
-from respan_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
-from respan_sdk.keywordsai_types.generic_types import PaginatedResponseType
+from respan_sdk.respan_types.base_types import RespanBaseModel
+from respan_sdk.respan_types.generic_types import PaginatedResponseType
 
 
-class Evaluator(KeywordsAIBaseModel):
+class Evaluator(RespanBaseModel):
     """Evaluator model"""
 
     id: str

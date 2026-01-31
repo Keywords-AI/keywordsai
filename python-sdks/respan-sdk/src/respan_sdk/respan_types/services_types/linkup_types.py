@@ -1,9 +1,9 @@
 from typing import Optional, List, Literal, Dict, Any
 from pydantic import Field, ConfigDict
-from respan_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
+from respan_sdk.respan_types.base_types import RespanBaseModel
 
 
-class LinkupParams(KeywordsAIBaseModel):
+class LinkupParams(RespanBaseModel):
     """
     Parameters for the Linkup API search endpoint.
     
@@ -41,7 +41,7 @@ class LinkupParams(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class LinkupSource(KeywordsAIBaseModel):
+class LinkupSource(RespanBaseModel):
     """
     Represents a source in the Linkup API response.
     """
@@ -50,7 +50,7 @@ class LinkupSource(KeywordsAIBaseModel):
     snippet: str
 
 
-class LinkupResponse(KeywordsAIBaseModel):
+class LinkupResponse(RespanBaseModel):
     """
     Response from the Linkup API search endpoint.
     """

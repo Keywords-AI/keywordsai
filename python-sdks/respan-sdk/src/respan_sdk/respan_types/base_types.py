@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class KeywordsAIBaseModel(BaseModel):
+class RespanBaseModel(BaseModel):
     def __contains__(self, key):
         # Define custom behavior for the 'in' operator
         return hasattr(self, key)

@@ -5,10 +5,10 @@ Based on: https://docs.modaflows.com/ingestion/direct-api
 """
 from typing import Optional, Literal, List, Dict, Any
 from pydantic import Field
-from respan_sdk.keywordsai_types._internal_types import KeywordsAIBaseModel
+from respan_sdk.respan_types._internal_types import RespanBaseModel
 
 
-class ModaEvent(KeywordsAIBaseModel):
+class ModaEvent(RespanBaseModel):
     """
     Single event to be sent to Moda ingestion API.
     
@@ -48,7 +48,7 @@ class ModaEvent(KeywordsAIBaseModel):
     content_blocks: Optional[List[Dict[str, Any]]] = Field(default=None, description="Structured content blocks")
 
 
-class ModaIngestRequest(KeywordsAIBaseModel):
+class ModaIngestRequest(RespanBaseModel):
     """
     Request payload for Moda ingest API.
     
@@ -57,11 +57,11 @@ class ModaIngestRequest(KeywordsAIBaseModel):
     events: List[ModaEvent] = Field(description="Array of events to ingest")
 
 
-class ModaParams(KeywordsAIBaseModel):
+class ModaParams(RespanBaseModel):
     """
     Parameters for Moda integration in Keywords AI.
     
-    This is what users pass in the keywordsai_params.moda_params field.
+    This is what users pass in the respan_params.moda_params field.
     
     Users only need to provide their Moda API key - we automatically
     construct the events from the log data they're already sending.

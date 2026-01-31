@@ -4,10 +4,10 @@ from typing import Literal
 from pydantic import Field
 from typing_extensions import Annotated, TypedDict
 from datetime import datetime
-from .base_types import KeywordsAIBaseModel
+from .base_types import RespanBaseModel
 
 
-class CacheControl(KeywordsAIBaseModel):
+class CacheControl(RespanBaseModel):
     type: str  # ephemeral
 
 
@@ -36,7 +36,7 @@ class OpenAIStyledInput(TypedDict):
     tool_choice: Optional[Union[Literal["auto", "none", "required"], dict]] = None
 
 
-class FilterObject(KeywordsAIBaseModel):
+class FilterObject(RespanBaseModel):
     id: str = None
     metric: Union[str, List[str]]
     value: List[Any]
@@ -50,7 +50,7 @@ class FilterObject(KeywordsAIBaseModel):
         return super().model_dump(args, kwargs)
 
 
-class ImageURL(KeywordsAIBaseModel):
+class ImageURL(RespanBaseModel):
     url: str
     detail: Optional[str] = "auto"
 
@@ -59,7 +59,7 @@ class ImageURL(KeywordsAIBaseModel):
         return super().model_dump(args, kwargs)
 
 
-class ImageContent(KeywordsAIBaseModel):
+class ImageContent(RespanBaseModel):
     type: Literal["image_url"] = "image_url"
     # text: Optional[str] = None
     image_url: Union[ImageURL, str]
@@ -67,7 +67,7 @@ class ImageContent(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class FileContent(KeywordsAIBaseModel):
+class FileContent(RespanBaseModel):
     type: Literal["file"] = "file"
     file_data: bytes = None
     file_id: str = None
@@ -78,55 +78,55 @@ class FileContent(KeywordsAIBaseModel):
     file: Dict[str, Any] = None
 
 
-class TextContent(KeywordsAIBaseModel):
+class TextContent(RespanBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
 
 
-class InputTextContent(KeywordsAIBaseModel):
+class InputTextContent(RespanBaseModel):
     type: Literal["input_text"] = "input_text"
     text: str
     cache_control: Optional[CacheControl] = None
 
 
-class OutputTextContent(KeywordsAIBaseModel):
+class OutputTextContent(RespanBaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
     cache_control: Optional[CacheControl] = None
 
-class InputFileContent(KeywordsAIBaseModel):
+class InputFileContent(RespanBaseModel):
     type: Literal["input_file"] = "input_file"
     file: str
     providerData: Optional[dict] = None
 
 
-class InputImageContent(KeywordsAIBaseModel):
+class InputImageContent(RespanBaseModel):
     type: Literal["input_image"] = "input_image"
     image: str
     providerData: Optional[dict] = None
 
 
-class OutputTextContent(KeywordsAIBaseModel):
+class OutputTextContent(RespanBaseModel):
     type: Literal["output_text"] = "output_text"
     text: str
     annotations: Optional[List[Union[Dict, str]]] = None
     cache_control: Optional[CacheControl] = None
 
 
-class ToolUseContent(KeywordsAIBaseModel):
+class ToolUseContent(RespanBaseModel):
     type: Literal["tool_use"] = "tool_use"
     id: str = ""
     name: str = ""
     input: dict = {}
 
 
-class ToolCallFunction(KeywordsAIBaseModel):
+class ToolCallFunction(RespanBaseModel):
     name: str
     arguments: str
 
 
-class ToolCall(KeywordsAIBaseModel):
+class ToolCall(RespanBaseModel):
     id: str = None
     type: str = "function"
     function: ToolCallFunction
@@ -149,7 +149,7 @@ MessageContentType = Annotated[
 ]
 
 
-class TextModelResponseFormat(KeywordsAIBaseModel):
+class TextModelResponseFormat(RespanBaseModel):
     type: str
     response_schema: Optional[dict] = None
     json_schema: Optional[dict] = None
@@ -161,7 +161,7 @@ class TextModelResponseFormat(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class Message(KeywordsAIBaseModel):
+class Message(RespanBaseModel):
     role: Literal["user", "assistant", "system", "tool", "none", "developer"]
     content: Union[str, List[Union[MessageContentType, str]], None] = None
     name: Optional[str] = None
@@ -178,7 +178,7 @@ class Message(KeywordsAIBaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class FunctionParameters(KeywordsAIBaseModel):
+class FunctionParameters(RespanBaseModel):
     type: Union[str, list[str]] = "object"
     properties: Dict[str, dict] = None  # Only need when you type is object
     required: List[str] = None
@@ -186,7 +186,7 @@ class FunctionParameters(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class Function(KeywordsAIBaseModel):
+class Function(RespanBaseModel):
     name: Optional[str] = None
     description: Optional[str] = None  # Optional description
     parameters: Optional[dict] = {}  # Optional parameters
@@ -197,39 +197,39 @@ class Function(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class FunctionTool(KeywordsAIBaseModel):
+class FunctionTool(RespanBaseModel):
     type: str = "function"
     function: Function = None
 
     model_config = ConfigDict(extra="allow")
 
 
-class CodeInterpreterTool(KeywordsAIBaseModel):
+class CodeInterpreterTool(RespanBaseModel):
     type: Literal["code_interpreter"] = "code_interpreter"
 
 
-class FileSearchTool(KeywordsAIBaseModel):
+class FileSearchTool(RespanBaseModel):
     type: Literal["file_search"] = "file_search"
 
-    class FileSearch(KeywordsAIBaseModel):
+    class FileSearch(RespanBaseModel):
         max_num_results: Optional[int] = None
 
     file_search: FileSearch
 
 
-class ToolChoiceFunction(KeywordsAIBaseModel):
+class ToolChoiceFunction(RespanBaseModel):
     name: str
 
     model_config = ConfigDict(extra="allow")
 
 
-class ToolChoice(KeywordsAIBaseModel):
+class ToolChoice(RespanBaseModel):
     type: str
     function: Optional[ToolChoiceFunction] = None
     model_config = ConfigDict(extra="allow")
 
 
-class BasicLLMParams(KeywordsAIBaseModel):
+class BasicLLMParams(RespanBaseModel):
     echo: Optional[bool] = None
     frequency_penalty: Optional[float] = None
     logprobs: Optional[bool] = None
@@ -267,7 +267,7 @@ class LiteLLMCompletionParams(BasicLLMParams):
     thinking: Optional[dict] = None
 
 
-class Usage(KeywordsAIBaseModel):
+class Usage(RespanBaseModel):
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
@@ -289,14 +289,14 @@ class Usage(KeywordsAIBaseModel):
             data = data.__dict__
         else:
             raise ValueError(
-                "KeywordsAIParams can only be initialized with a dict or an object with a __dict__ attribute"
+                "RespanParams can only be initialized with a dict or an object with a __dict__ attribute"
             )
         if data.get("cache_creation_prompt_tokens"):
             data["cache_creation_input_tokens"] = data["cache_creation_prompt_tokens"]
         return data
 
 
-class BasicTextToSpeechParams(KeywordsAIBaseModel):
+class BasicTextToSpeechParams(RespanBaseModel):
     model: str
     input: str
     voice: Literal["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
@@ -306,12 +306,12 @@ class BasicTextToSpeechParams(KeywordsAIBaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
 
-class BasicEmbeddingParams(KeywordsAIBaseModel):
+class BasicEmbeddingParams(RespanBaseModel):
     input: Optional[Union[str, List[str]]] = None
     model: Optional[str] = None
     encoding_format: Optional[str] = "float"
     dimensions: Optional[int] = None
-    # user: Optional[str] = None # Comment out as it is conflicting with the user field in KeywordsAIParams
+    # user: Optional[str] = None # Comment out as it is conflicting with the user field in RespanParams
 
     def model_dump(self, *args, **kwargs) -> Dict[str, Any]:
         kwargs.setdefault("exclude_none", True)
@@ -319,16 +319,16 @@ class BasicEmbeddingParams(KeywordsAIBaseModel):
 
 
 # Assistant Params
-class CodeInterpreterResource(KeywordsAIBaseModel):
+class CodeInterpreterResource(RespanBaseModel):
     type: Literal["code_interpreter"] = "code_interpreter"
     code: str
 
 
-class TextResponseChoice(KeywordsAIBaseModel):
+class TextResponseChoice(RespanBaseModel):
     message: Message
 
 
-class BasicAssistantParams(KeywordsAIBaseModel):
+class BasicAssistantParams(RespanBaseModel):
     model: str
     name: Optional[str] = None
     description: Optional[str] = None
@@ -350,18 +350,18 @@ class ThreadMessage(Message):
     metadata: Optional[dict] = None
 
 
-class BasicThreadParams(KeywordsAIBaseModel):
+class BasicThreadParams(RespanBaseModel):
     messages: Optional[List[ThreadMessage]] = None
     tool_resources: Optional[dict] = None
     metadata: Optional[dict] = None
 
 
-class TruncationStrategy(KeywordsAIBaseModel):
+class TruncationStrategy(RespanBaseModel):
     type: str
     last_messages: Optional[int] = None
 
 
-class BasicRunParams(KeywordsAIBaseModel):
+class BasicRunParams(RespanBaseModel):
     assistant_id: str
     model: Optional[str] = None
     instructions: Optional[str] = None
@@ -390,7 +390,7 @@ class BasicRunParams(KeywordsAIBaseModel):
 import io
 
 
-class BasicTranscriptionParams(KeywordsAIBaseModel):
+class BasicTranscriptionParams(RespanBaseModel):
     file: io.BytesIO
     model: str
     language: Optional[str] = None
@@ -409,13 +409,13 @@ class BasicTranscriptionParams(KeywordsAIBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed="allow")
 
 
-class EnvEnabled(KeywordsAIBaseModel):
+class EnvEnabled(RespanBaseModel):
     test: Optional[bool] = False
     staging: Optional[bool] = False
     prod: Optional[bool] = False
 
 
-class AlertSettings(KeywordsAIBaseModel):
+class AlertSettings(RespanBaseModel):
     system: Optional[Dict[str, bool]] = None
     api: Optional[Dict[str, EnvEnabled]] = None
     webhook: Optional[Dict[str, EnvEnabled]] = None
@@ -428,20 +428,20 @@ class AlertSettings(KeywordsAIBaseModel):
 # ===============anthropic==================
 
 
-class AnthropicAutoToolChoice(KeywordsAIBaseModel):
+class AnthropicAutoToolChoice(RespanBaseModel):
     type: Literal["auto"] = "auto"
 
 
-class AnthropicAnyToolChoice(KeywordsAIBaseModel):
+class AnthropicAnyToolChoice(RespanBaseModel):
     type: Literal["any"] = "any"
 
 
-class AnthropicToolChoice(KeywordsAIBaseModel):
+class AnthropicToolChoice(RespanBaseModel):
     type: Literal["tool"] = "tool"
     name: str
 
 
-class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
+class AnthropicInputSchemaProperty(RespanBaseModel):
     type: str
     description: str = None
 
@@ -452,7 +452,7 @@ class AnthropicInputSchemaProperty(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class AnthropicInputSchema(KeywordsAIBaseModel):
+class AnthropicInputSchema(RespanBaseModel):
     type: Literal["object"] = "object"
     properties: Dict[str, AnthropicInputSchemaProperty] = (
         None  # Only need when you type is object
@@ -462,14 +462,14 @@ class AnthropicInputSchema(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class AnthropicToolUse(KeywordsAIBaseModel):
+class AnthropicToolUse(RespanBaseModel):
     type: Literal["tool_use"] = "tool_use"
     id: str
     name: str
     input: dict
 
 
-class AnthropicTool(KeywordsAIBaseModel):
+class AnthropicTool(RespanBaseModel):
     type: str = "computer_20241022"
     name: str
     description: Optional[Union[str, None]] = None
@@ -480,24 +480,24 @@ class AnthropicTool(KeywordsAIBaseModel):
     display_number: Optional[Union[int, None]] = None
 
 
-class AnthropicToolResultContent(KeywordsAIBaseModel):
+class AnthropicToolResultContent(RespanBaseModel):
     type: Literal["tool_result"] = "tool_result"
     tool_use_id: str
     content: str
 
 
-class AnthropicImageContentSrc(KeywordsAIBaseModel):
+class AnthropicImageContentSrc(RespanBaseModel):
     type: str
     media_type: str
     data: str
 
 
-class AnthropicImageContent(KeywordsAIBaseModel):
+class AnthropicImageContent(RespanBaseModel):
     type: Literal["image"] = "image"
     source: AnthropicImageContentSrc
 
 
-class AnthropicTextContent(KeywordsAIBaseModel):
+class AnthropicTextContent(RespanBaseModel):
     type: Literal["text"] = "text"
     text: str
     cache_control: Optional[CacheControl] = None
@@ -514,7 +514,7 @@ AnthropicContentTypes = Annotated[
 ]
 
 
-class AnthropicMessage(KeywordsAIBaseModel):
+class AnthropicMessage(RespanBaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: Union[List[AnthropicContentTypes], str, None] = None
     cache_control: Optional[CacheControl] = None
@@ -524,13 +524,13 @@ class AnthropicMessage(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class AnthropicSystemMessage(KeywordsAIBaseModel):
+class AnthropicSystemMessage(RespanBaseModel):
     cache_control: Optional[CacheControl] = None
     type: str  # text
     text: str
 
 
-class AnthropicParams(KeywordsAIBaseModel):
+class AnthropicParams(RespanBaseModel):
     model: str
     messages: List[AnthropicMessage]
     max_tokens: Optional[int] = None
@@ -547,26 +547,26 @@ class AnthropicParams(KeywordsAIBaseModel):
     top_p: Optional[float] = None
 
 
-class AnthropicTextResponseContent(KeywordsAIBaseModel):
+class AnthropicTextResponseContent(RespanBaseModel):
     type: Literal["text"] = "text"
     text: str
 
 
-class AnthropicToolResponseContent(KeywordsAIBaseModel):
+class AnthropicToolResponseContent(RespanBaseModel):
     type: Literal["tool_use"] = "tool_use"
     id: str
     name: str
     input: dict
 
 
-class AnthropicUsage(KeywordsAIBaseModel):
+class AnthropicUsage(RespanBaseModel):
     input_tokens: Optional[int] = 0
     output_tokens: Optional[int] = 1
     cache_creation_input_tokens: Optional[int] = 0
     cache_read_input_tokens: Optional[int] = 0
 
 
-class AnthropicResponse(KeywordsAIBaseModel):
+class AnthropicResponse(RespanBaseModel):
     id: str
     type: Literal["message", "tool_use", "tool_result"]
     content: List[Union[AnthropicTextResponseContent, AnthropicToolResponseContent]] = (
@@ -607,7 +607,7 @@ data: {"type": "message_stop"}
 """
 
 
-class AnthropicStreamDelta(KeywordsAIBaseModel):
+class AnthropicStreamDelta(RespanBaseModel):
     type: Literal["text_delta", "input_json_delta"] = "text_delta"
     text: Union[str, None] = None
     partial_json: Union[str, None] = None
@@ -627,12 +627,12 @@ class AnthropicStreamDelta(KeywordsAIBaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-class AnthropicStreamContentBlock(KeywordsAIBaseModel):
+class AnthropicStreamContentBlock(RespanBaseModel):
     type: Literal["text"] = "text"
     text: str = ""  # Initialize with an empty string
 
 
-class AnthropicStreamChunk(KeywordsAIBaseModel):
+class AnthropicStreamChunk(RespanBaseModel):
     """Example chunk:
     {
     "type": "content_block_delta",

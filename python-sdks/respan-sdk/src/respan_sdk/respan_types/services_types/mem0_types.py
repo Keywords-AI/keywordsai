@@ -83,7 +83,7 @@ class SearchMemoriesParams(BaseModel):
 
 class Mem0Params(Mem0ClientConfig, Mem0RunTimeIdentification):
     """
-    Mem0 integration parameters for KeywordsAI.
+    Mem0 integration parameters for Respan.
     
     This allows users to configure memory operations using endpoint-specific configurations.
     Users can reference outputs from one endpoint in another using the {{variable.var_att}} syntax.

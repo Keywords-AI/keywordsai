@@ -1,12 +1,12 @@
 # Main SDK exports
-from .keywordsai_types import (
+from .respan_types import (
     # Public logging types - recommended for users
-    KeywordsAILogParams,
+    RespanLogParams,
     
     # Internal types
-    KeywordsAIParams,
-    KeywordsAIFullLogParams,
-    KeywordsAITextLogParams,
+    RespanParams,
+    RespanFullLogParams,
+    RespanTextLogParams,
     
     # Common parameter types
     EvaluationParams,
@@ -24,12 +24,12 @@ __version__ = "1.0.0"
 
 __all__ = [
     # Public types (recommended)
-    "KeywordsAILogParams",
-    "KeywordsAIFullLogParams",
-    "KeywordsAITextLogParams",
+    "RespanLogParams",
+    "RespanFullLogParams",
+    "RespanTextLogParams",
     
     # Internal types (backward compatibility)
-    "KeywordsAIParams",
+    "RespanParams",
     
     # Parameter types
     "EvaluationParams", 

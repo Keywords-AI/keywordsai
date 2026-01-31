@@ -2,10 +2,10 @@ from typing import List, Optional, Union, Dict, Literal
 from datetime import datetime
 from pydantic import field_validator, model_validator
 
-from respan_sdk.keywordsai_types.services_types.moda_types import ModaParams
+from respan_sdk.respan_types.services_types.moda_types import ModaParams
 
 from ._internal_types import (
-    KeywordsAIBaseModel,
+    RespanBaseModel,
     Message,
     Usage,
     ToolChoice,
@@ -15,14 +15,14 @@ import json
 
 # We need to import these directly to avoid forward reference issues
 # Since log_types.py is imported by param_types.py, we need to be careful about circular imports
-# But these specific types are defined early in param_types.py before KeywordsAIParams
+# But these specific types are defined early in param_types.py before RespanParams
 from ..utils.mixins import PreprocessLogDataMixin
 from .param_types import (
     PromptParam,
     EvaluationParams,
     CacheOptions,
     Customer,
-    KeywordsAIAPIControlParams,
+    RespanAPIControlParams,
     LoadBalanceGroup,
     LoadBalanceModel,
     RetryParams,
@@ -34,7 +34,7 @@ from .services_types.mem0_types import Mem0Params
 from .chat_completion_types import ProviderCredentialType
 
 
-class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
+class RespanLogParams(PreprocessLogDataMixin, RespanBaseModel):
     """
     Public-facing logging parameters for Keywords AI.
     These are the parameters that users can control when logging requests, used in creation method in the SDK
@@ -202,7 +202,7 @@ class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
     trace_group_identifier: Optional[Union[str, int]] = None
     # endregion: tracing
 
-    # region: keywordsai proxy options
+    # region: respan proxy options
     disable_fallback: Optional[bool] = False
     exclude_models: Optional[List[str]] = None
     exclude_providers: Optional[List[str]] = None
@@ -210,20 +210,20 @@ class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
     load_balance_group: Optional[LoadBalanceGroup] = None
     load_balance_models: Optional[List[LoadBalanceModel]] = None
     retry_params: Optional[RetryParams] = None
-    keywordsai_params: Optional[dict] = None
+    respan_params: Optional[dict] = None
     # region: deprecated
     model_name_map: Optional[Dict[str, str]] = (
         None  #  Map an available model on Keywords AI to a custom name at inference time
     )
     # endregion: deprecated
-    # endregion: keywordsai proxy options
+    # endregion: respan proxy options
 
-    # region: keywordsai llm response control
+    # region: respan llm response control
     field_name: Optional[str] = "data: "
     delimiter: Optional[str] = "\n\n"
     disable_log: Optional[bool] = False
     request_breakdown: Optional[bool] = False
-    # endregion: keywordsai llm response control
+    # endregion: respan llm response control
 
     @model_validator(mode="before")
     @classmethod
@@ -262,7 +262,7 @@ class KeywordsAILogParams(PreprocessLogDataMixin, KeywordsAIBaseModel):
         return v
 
 
-class KeywordsAIFullLogParams(KeywordsAILogParams):
+class RespanFullLogParams(RespanLogParams):
     """
     Full logging parameters for Keywords AI that includes all fields to be logged to the database
     NONE of these fields can be set by the user (there will be no effect if they are set)
@@ -353,13 +353,13 @@ class KeywordsAIFullLogParams(KeywordsAILogParams):
     customer_user_unique_id: Optional[str] = None
     # endregion: user analytics
 
-    # region: keywordsai logging control
+    # region: respan logging control
     is_log_omitted: Optional[bool] = None
-    keywordsai_api_controls: Optional[KeywordsAIAPIControlParams] = None
+    respan_api_controls: Optional[RespanAPIControlParams] = None
     mock_response: Optional[str] = None
     log_method: Optional[str] = None
     log_type: Optional[LogType] = None
-    # endregion: keywordsai logging control
+    # endregion: respan logging control
 
     # region: embedding (additional)
     base64_embedding: Optional[str] = None

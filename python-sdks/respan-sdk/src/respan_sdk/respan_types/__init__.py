@@ -1,8 +1,8 @@
 # Public-facing types that users should import
-from .log_types import KeywordsAILogParams, KeywordsAIFullLogParams
+from .log_types import RespanLogParams, RespanFullLogParams
 
 # Internal types for backward compatibility
-from .param_types import KeywordsAIParams, KeywordsAITextLogParams
+from .param_types import RespanParams, RespanTextLogParams
 
 # Other commonly used types
 from .param_types import (
@@ -37,12 +37,12 @@ from .prompt_types import (
 
 __all__ = [
     # Public logging types
-    "KeywordsAILogParams", # For creation
-    "KeywordsAIFullLogParams", # For retrieval
+    "RespanLogParams", # For creation
+    "RespanFullLogParams", # For retrieval
     
     # Internal types
-    "KeywordsAIParams",
-    "KeywordsAITextLogParams",
+    "RespanParams",
+    "RespanTextLogParams",
     
     # Parameter types
     "EvaluationParams",

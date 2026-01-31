@@ -1,7 +1,7 @@
 from pydantic import Field, ConfigDict, field_validator
 from typing import Any, List, Union, Dict, Optional, Literal
 from datetime import datetime
-from .base_types import KeywordsAIBaseModel
+from .base_types import RespanBaseModel
 from ._internal_types import Message
 from .generic_types import PaginatedResponseType
 from typing_extensions import TypedDict, Annotated
@@ -38,7 +38,7 @@ VariableValueType = Annotated[
 VariableDictType = Dict[str, Union[str, VariableValueType]]
 
 
-class PromptVersion(KeywordsAIBaseModel):
+class PromptVersion(RespanBaseModel):
     """Prompt version type based on Django model and API responses"""
 
     id: Optional[Union[int, str]] = None
@@ -80,7 +80,7 @@ class PromptVersion(KeywordsAIBaseModel):
         return v
 
 
-class Prompt(KeywordsAIBaseModel):
+class Prompt(RespanBaseModel):
     """Main prompt type"""
 
     id: Optional[Union[int, str]] = None

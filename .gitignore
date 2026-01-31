@@ -9,3 +9,4 @@ boilerplates/
 /.env
 
 **/*/.DS_Store
+_verify_sdks/

@@ -1,17 +1,17 @@
-from respan_sdk.keywordsai_types._internal_types import KeywordsAIBaseModel
+from respan_sdk.respan_types._internal_types import RespanBaseModel
 from pydantic import field_validator, model_validator, ConfigDict
 from typing import List, Union, Dict, Any, Literal, Callable, Optional
 from typing_extensions import TypedDict
-from respan_sdk.keywordsai_types._internal_types import (
+from respan_sdk.respan_types._internal_types import (
     Message,
 )
 from respan_sdk.constants import DEFAULT_EVAL_LLM_ENGINE, LLM_ENGINE_FIELD_NAME
 import json
 
-from respan_sdk.keywordsai_types.mixin_types.filter_mixin import (
+from respan_sdk.respan_types.mixin_types.filter_mixin import (
     BaseFilterMixinPydantic,
 )
-from respan_sdk.keywordsai_types.monitoring_types import ConditionParams
+from respan_sdk.respan_types.monitoring_types import ConditionParams
 from respan_sdk.utils.mixins import PreprocessEvalConfigurationsMixin, PreprocessEvalFormMixin
 
 Operator = Literal[
@@ -77,16 +77,16 @@ class EvalInputs(TypedDict, total=False):
     model_config = ConfigDict(extra="allow")
 
 
-class ChoiceType(KeywordsAIBaseModel):
+class ChoiceType(RespanBaseModel):
     name: str
     value: ValueType
 
 
 EvalType = Literal["llm", "function", "human", "grounded"]
-EvalCategory = Literal["ragas", "custom", "keywordsai"]
+EvalCategory = Literal["ragas", "custom", "respan"]
 
 
-class FieldType(KeywordsAIBaseModel):
+class FieldType(RespanBaseModel):
     name: str
     display_name: str
     type: FieldInputType = "input"
@@ -117,7 +117,7 @@ class FieldType(KeywordsAIBaseModel):
         return self
 
 
-class ScoreMapping(KeywordsAIBaseModel):
+class ScoreMapping(RespanBaseModel):
     # region: Fields for different types of results
     primary_score: Union[str, None] = None
     string_value: Union[str, None] = None
@@ -144,7 +144,7 @@ class ScoreMappingDict(TypedDict):
     quaternary_score: Union[str, None] = None
 
 
-class BaseEvalFormType(PreprocessEvalFormMixin, KeywordsAIBaseModel):
+class BaseEvalFormType(PreprocessEvalFormMixin, RespanBaseModel):
     eval_class: str
     type: EvalType
     note: str = ""  # Note to the user from us developers
@@ -172,7 +172,7 @@ class BaseEvalFormType(PreprocessEvalFormMixin, KeywordsAIBaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class FilterValue(KeywordsAIBaseModel):
+class FilterValue(RespanBaseModel):
     field: FilterType
     value: ValueType
 
@@ -185,14 +185,14 @@ class EvalParamsDict(TypedDict):
     filter_values: List[FilterValue]
 
 
-class EvaluatorToRun(KeywordsAIBaseModel):
+class EvaluatorToRun(RespanBaseModel):
     evaluator_id: str
     evaluator_slug: str = None
     run_condition: Optional[ConditionParams] = None
     # TODO: other controlling parameters
 
 
-class EvalParams(KeywordsAIBaseModel):
+class EvalParams(RespanBaseModel):
     evaluation_identifier: str = ""
     completion_message: Message = Message(role="user", content="")
     eval_inputs: EvalInputs = {}
@@ -231,25 +231,25 @@ class EvalParams(KeywordsAIBaseModel):
 
 
 # EvalInputsDict = TypedDict('EvalInputsDict', **{k: v.outer_type_ for k, v in EvalInputs.model_fields.items()})
-class EvalCost(KeywordsAIBaseModel):
+class EvalCost(RespanBaseModel):
     cost: float
     input_tokens: Union[int, None] = None
     output_tokens: Union[int, None] = None
     model: Union[str, None] = None
 
 
-class EvalResultType(KeywordsAIBaseModel):
+class EvalResultType(RespanBaseModel):
     scores: Dict[str, Any]
     cost: EvalCost
     passed: bool
 
 
-class EvalErrorType(KeywordsAIBaseModel):
+class EvalErrorType(RespanBaseModel):
     error: str
     error_type: str
 
 
-class EvalConfigurations(PreprocessEvalConfigurationsMixin, KeywordsAIBaseModel):
+class EvalConfigurations(PreprocessEvalConfigurationsMixin, RespanBaseModel):
     id: str
     organization_id: int
     unique_organization_id: str = ""

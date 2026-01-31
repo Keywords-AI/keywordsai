@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Literal, Optional, Union, Generic, TypeVar, List
-from respan_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
+from respan_sdk.respan_types.base_types import RespanBaseModel
 
 
 class RangeType(BaseModel):
@@ -20,7 +20,7 @@ class ParamType(BaseModel):  # A type for defining a parameter for a function
 T = TypeVar("T")
 
 
-class PaginatedResponseType(KeywordsAIBaseModel, Generic[T]):
+class PaginatedResponseType(RespanBaseModel, Generic[T]):
     """
     Paginated response type for paginated queries
     """

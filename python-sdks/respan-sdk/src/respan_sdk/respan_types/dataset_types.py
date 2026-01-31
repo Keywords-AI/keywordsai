@@ -1,4 +1,4 @@
-from respan_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
+from respan_sdk.respan_types.base_types import RespanBaseModel
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from respan_sdk.constants.dataset_constants import (
@@ -9,11 +9,11 @@ from respan_sdk.constants.dataset_constants import (
     DATASET_STATUS_INITIALIZING,
     DATASET_LLM_RUN_STATUS_PENDING,
 )
-from respan_sdk.keywordsai_types.filter_types import FilterParamDict
-from respan_sdk.keywordsai_types.generic_types import PaginatedResponseType
+from respan_sdk.respan_types.filter_types import FilterParamDict
+from respan_sdk.respan_types.generic_types import PaginatedResponseType
 
 
-class Dataset(KeywordsAIBaseModel):
+class Dataset(RespanBaseModel):
     """Dataset model matching Django Dataset model"""
 
     id: str
@@ -41,7 +41,7 @@ class Dataset(KeywordsAIBaseModel):
     completed_annotation_count: Optional[int] = None  # Read-only field
 
 
-class DatasetCreate(KeywordsAIBaseModel):
+class DatasetCreate(RespanBaseModel):
     """Dataset creation request"""
 
     name: str
@@ -53,14 +53,14 @@ class DatasetCreate(KeywordsAIBaseModel):
     initial_log_filters: FilterParamDict = {}
 
 
-class DatasetUpdate(KeywordsAIBaseModel):
+class DatasetUpdate(RespanBaseModel):
     """Dataset update request"""
 
     name: Optional[str] = None
     description: Optional[str] = None
 
 
-class DatasetList(KeywordsAIBaseModel):
+class DatasetList(RespanBaseModel):
     """Dataset list response"""
 
     results: List[Dataset]
@@ -69,7 +69,7 @@ class DatasetList(KeywordsAIBaseModel):
     previous: Optional[str] = None
 
 
-class LogManagementRequest(KeywordsAIBaseModel):
+class LogManagementRequest(RespanBaseModel):
     """Request for adding/removing logs from dataset"""
 
     start_time: Optional[datetime] = None
@@ -77,13 +77,13 @@ class LogManagementRequest(KeywordsAIBaseModel):
     filters: FilterParamDict
 
 
-class EvalRunRequest(KeywordsAIBaseModel):
+class EvalRunRequest(RespanBaseModel):
     """Request to run evaluation on dataset"""
 
     evaluator_slugs: List[str]
 
 
-class EvalReport(KeywordsAIBaseModel):
+class EvalReport(RespanBaseModel):
     """Evaluation report response"""
 
     id: str
@@ -95,7 +95,7 @@ class EvalReport(KeywordsAIBaseModel):
     results: Optional[Dict[str, Any]] = None
 
 
-class EvalReportList(KeywordsAIBaseModel):
+class EvalReportList(RespanBaseModel):
     """Evaluation report list response"""
 
     results: List[EvalReport]

@@ -1,11 +1,11 @@
 from typing import List, Optional, Union
-from respan_sdk.keywordsai_types.base_types import KeywordsAIBaseModel
+from respan_sdk.respan_types.base_types import RespanBaseModel
 
-class CustomSpelling(KeywordsAIBaseModel):
+class CustomSpelling(RespanBaseModel):
     from_words: List[str]
     to: str
 
-class AssemblyAIParams(KeywordsAIBaseModel):
+class AssemblyAIParams(RespanBaseModel):
     api_key: str
     audio_url: str
     audio_end_at: Optional[int] = None

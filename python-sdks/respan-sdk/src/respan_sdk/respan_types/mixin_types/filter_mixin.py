@@ -1,12 +1,12 @@
 """
-Centralized filter mixin types for KeywordsAI.
+Centralized filter mixin types for Respan.
 Provides base functionality for filters, conditions, and other components that need filtering capabilities.
 """
 
 from typing import Dict, List, Union, Literal, Optional, Any
 from typing_extensions import TypedDict
 from pydantic import Field, ConfigDict
-from respan_sdk.keywordsai_types._internal_types import KeywordsAIBaseModel
+from respan_sdk.respan_types._internal_types import RespanBaseModel
 
 
 MetricFilterValueType = Union[
@@ -52,7 +52,7 @@ class BaseFilterMixinTypedDict(TypedDict, total=False):
     value: Union[List[MetricFilterValueType], MetricFilterValueType]
 
 
-class BaseFilterMixinPydantic(KeywordsAIBaseModel):
+class BaseFilterMixinPydantic(RespanBaseModel):
     """
     Base mixin for common filter/condition functionality (Pydantic version).
     This provides the core fields that both filters and conditions share.
@@ -113,7 +113,7 @@ class MetricFilterParamPydantic(BaseFilterMixinPydantic):
     )
 
 
-class FilterBundlePydantic(KeywordsAIBaseModel):
+class FilterBundlePydantic(RespanBaseModel):
     """
     Pydantic model for FilterBundle.
     Represents a bundle of filter parameters that can be applied together.
@@ -130,7 +130,7 @@ class FilterBundlePydantic(KeywordsAIBaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
-class FilterParamDictPydantic(KeywordsAIBaseModel):
+class FilterParamDictPydantic(RespanBaseModel):
     """
     Pydantic model for FilterParamDict.
     A dictionary that maps metric names to their filter parameters.
