@@ -16,7 +16,6 @@
   "scripts": {
     "build": "tsc",
     "test:smoke": "npm run build && node tests/smoke.js",
-    "quickstart": "npm run build && node examples/quickstart.js",
     "quickstart:gateway": "npm run build && node examples/quickstart-gateway.js",
     "publish": "yarn npm publish",
     "release": "yarn build && yarn version patch && yarn publish"
