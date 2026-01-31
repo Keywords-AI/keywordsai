@@ -1,0 +1,21 @@
+{
+	"node": "respan",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": [
+		"AI"
+	],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://docs.respan.co/get-started/api-keys"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.respan.co/documentation/products/prompt_management/use_prompt_in_code/use_prompt_in_llms"
+			}
+		]
+	}
+}
+

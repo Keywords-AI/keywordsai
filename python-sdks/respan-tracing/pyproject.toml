@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "respan-tracing"
+version = "1.0.0"
+description = "Respan SDK allows you to interact with the Respan API smoothly"
+authors = ["Respan <team@respan.ai>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "respan_tracing", from = "./src" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+typing-extensions = "^4.12.2"
+opentelemetry-api = "^1.29.0"
+opentelemetry-sdk = "^1.29.0"
+respan-sdk = "^1.0.0"
+opentelemetry-instrumentation-openai = "^0.48.0"
+opentelemetry-instrumentation-threading = "^0.55b1"
+opentelemetry-exporter-otlp = "^1.33.1"
+pytest = "^8.4.1"
+instructor = "^1.13.0"
+
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+python-dotenv = "^1.0.1"
+rich = "^13.9.4"
+playwright = "^1.50.0"
+pytest-asyncio = "^0.25.3"
+unimport = "^1.2.1"
+anthropic = "^0.52.2"
+opentelemetry-instrumentation-requests = "^0.55b1"
+langchain-openai = "^0.3.33"
+
+[tool.poetry.group.dev]
+optional = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

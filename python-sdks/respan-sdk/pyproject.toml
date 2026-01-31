@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "respan-sdk"
+version = "1.0.0"
+description = "Respan SDK allows you to interact with the Respan API smoothly"
+authors = ["Respan <team@respan.ai>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "respan_sdk", from = "./src" },
+]
+
+[tool.poetry.dependencies]
+python = ">3.9,<4.0"
+requests = "^2.31.0"
+typing-extensions = "^4.12.2"
+dateparser = "^1.2.0"
+pydantic = "^2.10.3"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev]
+optional = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.extras]
+dev = ["pytest", "python-dotenv"]
+
+[project.urls]
+Homepage = "https://respan.ai"
+Repository = "https://github.com/respan-ai/respan-sdks.git"
+Documentation = "https://docs.respan.ai"

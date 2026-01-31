@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "respan-exporter-openai-agents"
+version = "1.0.1"
+description = "Exporter for Respan OpenAI Agents SDK"
+authors = ["Respan <team@respan.ai>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [
+    { include = "respan_exporter_openai_agents", from = "./src" },
+]
+
+
+[tool.poetry.dependencies]
+python = ">3.10,<3.13"
+openai-agents = "^0.3.1"
+respan-sdk = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
