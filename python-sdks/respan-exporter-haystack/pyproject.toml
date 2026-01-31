@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "respan-exporter-haystack"
-version = "0.1.1"
+version = "1.0.0"
 description = "Respan integration for Haystack pipelines with tracing and logging support"
 authors = ["Respan <team@respan.ai>"]
 readme = "README.md"

@@ -14,7 +14,7 @@ class RespanLogger:
     This class handles the HTTP communication with Keywords AI's logging endpoints.
     """
 
-    def __init__(self, api_key: str, base_url: str = "https://api.respan.co"):
+    def __init__(self, api_key: str, base_url: str = "https://api.respan.ai"):
         """
         Initialize the logger.
         

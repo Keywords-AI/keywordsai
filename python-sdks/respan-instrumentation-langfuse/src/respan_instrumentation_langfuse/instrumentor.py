@@ -64,7 +64,7 @@ class LangfuseInstrumentor(BaseInstrumentor):
         self._api_key = kwargs.get("api_key") or os.getenv("RESPAN_API_KEY")
         self._endpoint = kwargs.get("endpoint") or os.getenv(
             "RESPAN_ENDPOINT",
-            "https://api.respan.co/api/v1/traces/ingest"
+            "https://api.respan.ai/api/v1/traces/ingest"
         )
         
         if not self._api_key:

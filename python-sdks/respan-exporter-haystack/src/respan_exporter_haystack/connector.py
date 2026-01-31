@@ -55,7 +55,7 @@ class RespanConnector:
         self.mode = mode
         self.api_key = api_key or os.getenv("RESPAN_API_KEY")
         self.base_url = base_url or os.getenv(
-            "RESPAN_BASE_URL", "https://api.respan.co/api"
+            "RESPAN_BASE_URL", "https://api.respan.ai/api"
         )
         self.metadata = metadata or {}
         

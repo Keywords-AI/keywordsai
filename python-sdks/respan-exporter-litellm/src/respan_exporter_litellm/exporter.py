@@ -15,7 +15,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = "https://api.respan.co/api/v1/traces/ingest"
+DEFAULT_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
 
 def _format_span_id(raw_id: str) -> str:

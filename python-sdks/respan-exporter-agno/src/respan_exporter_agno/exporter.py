@@ -10,7 +10,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = "https://api.respan.co/api/v1/traces/ingest"
+DEFAULT_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
 LOG_TYPE_MAP = {
     "workflow": "workflow",
@@ -483,23 +483,23 @@ class RespanAgnoExporter:
         customer_identifier: Optional[Union[str, int]] = None,
         timeout: int = 10,
     ) -> None:
-        self.api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
+        self.api_key = api_key or os.getenv("RESPAN_API_KEY")
         if base_url is None:
             base_url = (
-                os.getenv("KEYWORDSAI_BASE_URL")
+                os.getenv("RESPAN_BASE_URL")
                 or os.getenv("KEYWORDS_AI_BASE_URL")
-                or "https://api.respan.co/api"
+                or "https://api.respan.ai/api"
             )
         self.endpoint = endpoint or self._build_endpoint(base_url)
         self.environment = (
             environment
-            or os.getenv("KEYWORDSAI_ENVIRONMENT")
+            or os.getenv("RESPAN_ENVIRONMENT")
             or os.getenv("KEYWORDS_AI_ENVIRONMENT")
             or "production"
         )
         self.customer_identifier = (
             customer_identifier
-            or os.getenv("KEYWORDSAI_CUSTOMER_IDENTIFIER")
+            or os.getenv("RESPAN_CUSTOMER_IDENTIFIER")
             or os.getenv("KEYWORDS_AI_CUSTOMER_IDENTIFIER")
         )
         self.timeout = timeout

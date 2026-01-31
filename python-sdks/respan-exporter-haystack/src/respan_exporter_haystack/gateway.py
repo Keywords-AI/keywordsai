@@ -46,7 +46,7 @@ class RespanGenerator:
     Args:
         model: Model name (e.g., "gpt-4o-mini", "gpt-4"). Optional if using prompt_id.
         api_key: Keywords AI API key (defaults to RESPAN_API_KEY env var)
-        base_url: Keywords AI API base URL (defaults to https://api.respan.co)
+        base_url: Keywords AI API base URL (defaults to https://api.respan.ai)
         prompt_id: Optional prompt ID from Keywords AI platform for prompt management
         generation_kwargs: Additional parameters (temperature, max_tokens, etc.)
         streaming_callback: Optional callback for streaming responses
@@ -65,7 +65,7 @@ class RespanGenerator:
         self.model = model
         self.api_key = api_key or os.getenv("RESPAN_API_KEY")
         self.base_url = base_url or os.getenv(
-            "RESPAN_BASE_URL", "https://api.respan.co"
+            "RESPAN_BASE_URL", "https://api.respan.ai"
         )
         self.prompt_id = prompt_id
         self.generation_kwargs = generation_kwargs or {}
@@ -262,7 +262,7 @@ class RespanChatGenerator:
         self.model = model
         self.api_key = api_key or os.getenv("RESPAN_API_KEY")
         self.base_url = base_url or os.getenv(
-            "RESPAN_BASE_URL", "https://api.respan.co"
+            "RESPAN_BASE_URL", "https://api.respan.ai"
         )
         self.generation_kwargs = generation_kwargs or {}
         
