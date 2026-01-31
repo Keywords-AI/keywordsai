@@ -5,7 +5,7 @@ import {
   RespanPayloadSchema,
   LogType,
 } from "@respan/respan-sdk";
-import { VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE } from "./constants/index.js";
+import { VERCEL_SPAN_TO_RESPAN_LOG_TYPE } from "./constants/index.js";
 
 /**
  * This is a Vercel AI SDK trace exporter that sends traces to Respan.
@@ -128,7 +128,7 @@ export class RespanExporter implements SpanExporter {
       }
       // Send all payloads in one request
       if (allPayloads.length > 0) {
-        await this.sendToKeywords(allPayloads);
+        await this.sendToRespan(allPayloads);
       }
 
       resultCallback({ code: ExportResultCode.SUCCESS });
@@ -336,7 +336,7 @@ export class RespanExporter implements SpanExporter {
     return span.duration[0] / 1e9 + span.duration[1] / 1e9;
   }
 
-  private async sendToKeywords(payloads: RespanPayload[]): Promise<void> {
+  private async sendToRespan(payloads: RespanPayload[]): Promise<void> {
     if (payloads.length === 0) {
       this.logDebug("No payloads to send");
       return;
@@ -344,7 +344,7 @@ export class RespanExporter implements SpanExporter {
 
     try {
       this.logDebug(
-        `Sending ${payloads.length} payloads to Keywords at ${this.url}`
+        `Sending ${payloads.length} payloads to Respan at ${this.url}`
       );
 
       const response = await fetch(this.url, {
@@ -358,13 +358,13 @@ export class RespanExporter implements SpanExporter {
 
       if (!response.ok) {
         const text = await response.text();
-        this.logDebug("Failed to send to Keywords", text);
-        throw new Error(`Failed to send to Keywords: ${response.statusText}`);
+        this.logDebug("Failed to send to Respan", text);
+        throw new Error(`Failed to send to Respan: ${response.statusText}`);
       } else {
-        this.logDebug("Successfully sent payloads to Keywords");
+        this.logDebug("Successfully sent payloads to Respan");
       }
     } catch (error) {
-      this.logDebug("Error sending to Keywords", error);
+      this.logDebug("Error sending to Respan", error);
       throw error;
     }
   }
@@ -627,14 +627,14 @@ export class RespanExporter implements SpanExporter {
     const spanName = span.name;
 
     // Check if span name is in our mapping
-    if (spanName in VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE) {
-      return VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE[spanName] as LogType;
+    if (spanName in VERCEL_SPAN_TO_RESPAN_LOG_TYPE) {
+      return VERCEL_SPAN_TO_RESPAN_LOG_TYPE[spanName] as LogType;
     }
 
     // For spans with operationId attribute, check for more specific mapping
     const operationId = span.attributes["ai.operationId"]?.toString();
-    if (operationId && operationId in VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE) {
-      return VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE[operationId] as LogType;
+    if (operationId && operationId in VERCEL_SPAN_TO_RESPAN_LOG_TYPE) {
+      return VERCEL_SPAN_TO_RESPAN_LOG_TYPE[operationId] as LogType;
     }
 
     // Check for specific attributes that indicate the span type

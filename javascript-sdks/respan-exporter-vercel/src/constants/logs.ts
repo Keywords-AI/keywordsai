@@ -1,46 +1,46 @@
 // Mapping from Vercel AI SDK span types to Respan log types
-import { LogType, KeywordsLogType } from "@respan/respan-sdk";
+import { LogType, RespanLogType } from "@respan/respan-sdk";
 
-export const VERCEL_SPAN_TO_KEYWORDS_LOG_TYPE: Record<string, LogType> = {
+export const VERCEL_SPAN_TO_RESPAN_LOG_TYPE: Record<string, LogType> = {
   // Text generation spans
-  "ai.generateText": KeywordsLogType.TEXT,
-  "ai.generateText.doGenerate": KeywordsLogType.TEXT,
-  "ai.streamText": KeywordsLogType.TEXT,
-  "ai.streamText.doStream": KeywordsLogType.TEXT,
+  "ai.generateText": RespanLogType.TEXT,
+  "ai.generateText.doGenerate": RespanLogType.TEXT,
+  "ai.streamText": RespanLogType.TEXT,
+  "ai.streamText.doStream": RespanLogType.TEXT,
 
   // Object generation spans
-  "ai.generateObject": KeywordsLogType.TEXT,
-  "ai.generateObject.doGenerate": KeywordsLogType.TEXT,
-  "ai.streamObject": KeywordsLogType.TEXT,
-  "ai.streamObject.doStream": KeywordsLogType.TEXT,
+  "ai.generateObject": RespanLogType.TEXT,
+  "ai.generateObject.doGenerate": RespanLogType.TEXT,
+  "ai.streamObject": RespanLogType.TEXT,
+  "ai.streamObject.doStream": RespanLogType.TEXT,
 
   // Embedding spans
-  "ai.embed": KeywordsLogType.EMBEDDING,
-  "ai.embed.doEmbed": KeywordsLogType.EMBEDDING,
-  "ai.embedMany": KeywordsLogType.EMBEDDING,
-  "ai.embedMany.doEmbed": KeywordsLogType.EMBEDDING,
+  "ai.embed": RespanLogType.EMBEDDING,
+  "ai.embed.doEmbed": RespanLogType.EMBEDDING,
+  "ai.embedMany": RespanLogType.EMBEDDING,
+  "ai.embedMany.doEmbed": RespanLogType.EMBEDDING,
 
   // Tool call spans
-  "ai.toolCall": KeywordsLogType.TOOL,
+  "ai.toolCall": RespanLogType.TOOL,
 
   // Stream events
-  "ai.stream.firstChunk": KeywordsLogType.TEXT,
+  "ai.stream.firstChunk": RespanLogType.TEXT,
 
   // Agents and workflows
-  "ai.agent": KeywordsLogType.AGENT,
-  "ai.workflow": KeywordsLogType.WORKFLOW,
-  "ai.agent.run": KeywordsLogType.AGENT,
-  "ai.agent.step": KeywordsLogType.TASK,
+  "ai.agent": RespanLogType.AGENT,
+  "ai.workflow": RespanLogType.WORKFLOW,
+  "ai.agent.run": RespanLogType.AGENT,
+  "ai.agent.step": RespanLogType.TASK,
 
   // Functions and handoffs
-  "ai.function": KeywordsLogType.FUNCTION,
-  "ai.handoff": KeywordsLogType.HANDOFF,
+  "ai.function": RespanLogType.FUNCTION,
+  "ai.handoff": RespanLogType.HANDOFF,
 
   // Other spans that might appear
-  "ai.transcript": KeywordsLogType.TRANSCRIPTION,
-  "ai.speech": KeywordsLogType.SPEECH,
-  "ai.response": KeywordsLogType.RESPONSE,
+  "ai.transcript": RespanLogType.TRANSCRIPTION,
+  "ai.speech": RespanLogType.SPEECH,
+  "ai.response": RespanLogType.RESPONSE,
 
   // Default to UNKNOWN for unrecognized spans
-  default: KeywordsLogType.UNKNOWN,
+  default: RespanLogType.UNKNOWN,
 };
