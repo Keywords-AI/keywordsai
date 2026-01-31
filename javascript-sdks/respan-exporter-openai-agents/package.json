@@ -1,6 +1,6 @@
 {
   "name": "@respan/exporter-openai-agents",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "description": "Exporter for OpenAI agents traces to Respan",
   "author": "Respan <team@respan.ai>",
   "type": "module",
@@ -22,7 +22,7 @@
     "release": "yarn build && yarn version patch && yarn publish"
   },
   "dependencies": {
-    "@respan/respan-sdk": "^0.0.12",
+    "@respan/respan-sdk": "^1.0.0",
     "@openai/agents": "^0.0.8"
   },
   "devDependencies": {

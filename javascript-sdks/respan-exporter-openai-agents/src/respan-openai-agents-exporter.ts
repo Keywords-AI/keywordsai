@@ -8,8 +8,8 @@ import {
   BatchTraceProcessor,
 } from "@openai/agents";
 import {
-  KeywordsPayload,
-  KeywordsPayloadSchema,
+  RespanPayload,
+  RespanPayloadSchema,
 } from "@respan/respan-sdk";
 
 // Define span data types based on OpenAI Agents SDK
@@ -76,7 +76,7 @@ interface GuardrailSpanData {
 // Reference for respan logging format: https://docs.respan.co/api-endpoints/integration/request-logging-endpoint#logging-api
 // Helper functions for converting span data to Respan log format
 function responseDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: ResponseSpanData
 ): void {
   data.span_name = spanData.type; // response
@@ -252,7 +252,7 @@ function responseDataToRespanLog(
 }
 
 function functionDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: FunctionSpanData
 ): void {
   try {
@@ -267,7 +267,7 @@ function functionDataToRespanLog(
 }
 
 function generationDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: GenerationSpanData
 ): void {
   data.span_name = spanData.type; // generation
@@ -314,7 +314,7 @@ function generationDataToRespanLog(
 }
 
 function handoffDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: HandoffSpanData
 ): void {
   data.span_name = spanData.type; // handoff
@@ -327,7 +327,7 @@ function handoffDataToRespanLog(
 }
 
 function customDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: CustomSpanData
 ): void {
   data.span_name = spanData.name;
@@ -350,7 +350,7 @@ function customDataToRespanLog(
 }
 
 function agentDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: AgentSpanData
 ): void {
   data.span_name = spanData.name;
@@ -375,7 +375,7 @@ function agentDataToRespanLog(
 }
 
 function guardrailDataToRespanLog(
-  data: Partial<KeywordsPayload>,
+  data: Partial<RespanPayload>,
   spanData: GuardrailSpanData
 ): void {
   data.span_name = `guardrail:${spanData.name}`;
@@ -436,13 +436,13 @@ export class RespanSpanExporter implements TracingExporter {
 
   setEndpoint(endpoint: string): void {
     this.endpoint = endpoint;
-    console.log(`Keywords AI exporter endpoint changed to: ${endpoint}`);
+    console.log(`Respan exporter endpoint changed to: ${endpoint}`);
   }
 
-  private keywordsAIExport(
+  private respanExport(
     item: Trace | Span<any>,
     allItems?: (Trace | Span<any>)[]
-  ): Partial<KeywordsPayload> | null {
+  ): Partial<RespanPayload> | null {
     // First try the native export method
     if (this.isTrace(item)) {
       // Trace objects don't have timing data - they represent the workflow container
@@ -479,7 +479,7 @@ export class RespanSpanExporter implements TracingExporter {
         }
       }
 
-      const traceData: Partial<KeywordsPayload> = {
+      const traceData: Partial<RespanPayload> = {
         trace_unique_id: item.traceId,
         span_unique_id: item.traceId,
         span_name: item.name,
@@ -512,7 +512,7 @@ export class RespanSpanExporter implements TracingExporter {
       // Create the base data dictionary with common fields
       // Note: Span timing properties are accessed via the JSON structure
       const spanJson = JSON.parse(JSON.stringify(item));
-      const data: Partial<KeywordsPayload> = {
+      const data: Partial<RespanPayload> = {
         trace_unique_id: item.traceId,
         span_unique_id: item.spanId,
         span_parent_id: parentId || undefined,
@@ -653,8 +653,8 @@ export class RespanSpanExporter implements TracingExporter {
 
     // Process each item with our custom exporter
     const processedData = items
-      .map((item) => this.keywordsAIExport(item, items))
-      .filter((item): item is Partial<KeywordsPayload> => item !== null);
+      .map((item) => this.respanExport(item, items))
+      .filter((item): item is Partial<RespanPayload> => item !== null);
 
     // If we have spans but no trace, create a synthetic root trace with calculated timing
     const spans = items.filter((item) => this.isSpan(item)) as Span<any>[];
@@ -676,7 +676,7 @@ export class RespanSpanExporter implements TracingExporter {
       }, null as Date | null);
 
       if (earliestStart && latestEnd) {
-        const syntheticTrace: Partial<KeywordsPayload> = {
+        const syntheticTrace: Partial<RespanPayload> = {
           trace_unique_id: traceId,
           span_unique_id: traceId,
           span_name: "My Trace",
@@ -748,7 +748,7 @@ export class RespanSpanExporter implements TracingExporter {
 
         // If the response is successful, break out of the loop
         if (response.status < 300) {
-          console.log(`Exported ${processedData.length} items to Keywords AI`);
+          console.log(`Exported ${processedData.length} items to Respan`);
           return;
         }
 
@@ -756,7 +756,7 @@ export class RespanSpanExporter implements TracingExporter {
         if (response.status >= 400 && response.status < 500) {
           const errorText = await response.text();
           console.error(
-            `Keywords AI client error ${response.status}: ${errorText}`
+            `Respan client error ${response.status}: ${errorText}`
           );
           return;
         }
@@ -801,7 +801,7 @@ export class RespanOpenAIAgentsTracingExporter extends RespanSpanExporter {
 }
 
 export class RespanTraceProcessor extends BatchTraceProcessor {
-  private keywordsExporter: RespanSpanExporter;
+  private respanExporter: RespanSpanExporter;
 
   constructor({
     apiKey = process.env.RESPAN_API_KEY ||
@@ -852,10 +852,10 @@ export class RespanTraceProcessor extends BatchTraceProcessor {
     });
 
     // Store the exporter for easy access
-    this.keywordsExporter = exporter;
+    this.respanExporter = exporter;
   }
 
   setEndpoint(endpoint: string): void {
-    this.keywordsExporter.setEndpoint(endpoint);
+    this.respanExporter.setEndpoint(endpoint);
   }
 }
