@@ -17,7 +17,7 @@ import { getSpanBufferManager } from "./utils/spanBuffer.js";
  * ### Automatic Discovery (Default)
  * By default, Respan will attempt to load all available instrumentations automatically:
  * ```typescript
- * const keywordsAI = new RespanTelemetry({
+ * const respan = new RespanTelemetry({
  *   apiKey: 'your-api-key',
  *   logLevel: 'info' // Shows what gets loaded successfully
  * });
@@ -29,7 +29,7 @@ import { getSpanBufferManager } from "./utils/spanBuffer.js";
  * import OpenAI from 'openai';
  * import Anthropic from '@anthropic-ai/sdk';
  * 
- * const keywordsAI = new RespanTelemetry({
+ * const respan = new RespanTelemetry({
  *   apiKey: 'your-api-key',
  *   instrumentModules: {
  *     openAI: OpenAI,
@@ -41,7 +41,7 @@ import { getSpanBufferManager } from "./utils/spanBuffer.js";
  * ### Disable Specific Instrumentations
  * Block instrumentations you don't want to use:
  * ```typescript
- * const keywordsAI = new RespanTelemetry({
+ * const respan = new RespanTelemetry({
  *   apiKey: 'your-api-key',
  *   disabledInstrumentations: ['bedrock', 'chromaDB', 'qdrant']
  * });
@@ -166,19 +166,19 @@ export class RespanTelemetry {
      * @example
      * ```typescript
      * // Add debug processor (in addition to default Respan processor)
-     * keywordsAi.addProcessor({
+     * respan.addProcessor({
      *   exporter: new FileExporter("./debug.json"),
      *   name: "debug"
      * });
      * 
      * // Route specific spans to debug processor
-     * await keywordsAi.withTask(
+     * await respan.withTask(
      *   { name: "my_task", processors: "debug" },
      *   async () => { ... }
      * );
      * 
      * // Spans without processors attribute go to default Respan processor
-     * await keywordsAi.withTask(
+     * await respan.withTask(
      *   { name: "normal_task" },
      *   async () => { ... }  // <- Goes to default processor
      * );
@@ -196,7 +196,7 @@ export class RespanTelemetry {
      * 
      * @example
      * ```typescript
-     * const client = keywordsAi.getClient();
+     * const client = respan.getClient();
      * const traceId = client.getCurrentTraceId();
      * client.updateCurrentSpan({
      *   respanParams: {
@@ -216,7 +216,7 @@ export class RespanTelemetry {
      * 
      * @example
      * ```typescript
-     * const manager = keywordsAi.getSpanBufferManager();
+     * const manager = respan.getSpanBufferManager();
      * const buffer = manager.createBuffer("trace-123");
      * buffer.createSpan("step1", { status: "completed" });
      * const spans = buffer.getAllSpans();

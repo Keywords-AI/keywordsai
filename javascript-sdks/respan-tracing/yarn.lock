@@ -226,17 +226,6 @@
   resolved "https://registry.npmjs.org/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz"
   integrity sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==
 
-"@keywordsai/keywordsai-sdk@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.npmjs.org/@keywordsai/keywordsai-sdk/-/keywordsai-sdk-0.0.12.tgz"
-  integrity sha512-tlw4oe/arwaxoR2xUES7ciYrA673yI84ga1x8ew4hdY49Rtj+cYLs4kX3oyG7nPcl6j6IY920RCTTWJgCK7qiw==
-  dependencies:
-    "@opentelemetry/api" "^1.9.0"
-    "@opentelemetry/core" "^2.0.1"
-    "@opentelemetry/sdk-trace-base" "^2.0.1"
-    typescript "^5.8.3"
-    zod "^3.25.58"
-
 "@opentelemetry/api-logs@0.203.0":
   version "0.203.0"
   resolved "https://registry.npmjs.org/@opentelemetry/api-logs/-/api-logs-0.203.0.tgz"
@@ -622,6 +611,17 @@
   version "1.1.0"
   resolved "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz"
   integrity sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==
+
+"@respan/respan-sdk@^1.0.0":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@respan/respan-sdk/-/respan-sdk-1.0.1.tgz#86d712d62182acfe9ff18a83ab47ffaf02b9ae46"
+  integrity sha512-nRzvDk4fdkRwkdEfznXGz08CyaKiFZwZZ+/8USpspNVW9wPXtURZIxPXLgwOkcmdidJB8jhv+Ni17ZTdrf7GBA==
+  dependencies:
+    "@opentelemetry/api" "^1.9.0"
+    "@opentelemetry/core" "^2.0.1"
+    "@opentelemetry/sdk-trace-base" "^2.0.1"
+    typescript "^5.8.3"
+    zod "^4.1.12"
 
 "@traceloop/ai-semantic-conventions@0.14.0":
   version "0.14.0"
@@ -1425,7 +1425,12 @@ zod-to-json-schema@^3.24.1:
   resolved "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.24.5.tgz"
   integrity sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==
 
-zod@^3.24.2, zod@^3.25.58:
+zod@^3.24.2:
   version "3.25.63"
   resolved "https://registry.npmjs.org/zod/-/zod-3.25.63.tgz"
   integrity sha512-3ttCkqhtpncYXfP0f6dsyabbYV/nEUW+Xlu89jiXbTBifUfjaSqXOG6JnQPLtqt87n7KAmnMqcjay6c0Wq0Vbw==
+
+zod@^4.1.12:
+  version "4.3.6"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.3.6.tgz#89c56e0aa7d2b05107d894412227087885ab112a"
+  integrity sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==

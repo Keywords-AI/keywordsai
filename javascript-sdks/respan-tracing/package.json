@@ -1,7 +1,7 @@
 {
   "name": "@respan/tracing",
   "type": "module",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "description": "TypeScript support for Respan SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,7 +26,7 @@
   "author": "Respan <team@respan.ai>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@respan/respan-sdk": "^0.0.12",
+    "@respan/respan-sdk": "^1.0.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^1.26.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.56.0",

@@ -62,7 +62,7 @@ export const updateCurrentSpan = (
       options;
 
     console.debug("[Respan Debug] Updating current span with:", {
-      hasKeywordsaiParams: !!respanParams,
+      hasRespanParams: !!respanParams,
       respanParamsKeys: respanParams
         ? Object.keys(respanParams)
         : [],

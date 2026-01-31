@@ -155,7 +155,7 @@ export interface RespanOptions {
      * import OpenAI from 'openai';
      * import Anthropic from '@anthropic-ai/sdk';
      * 
-     * const keywordsAI = new RespanTelemetry({
+     * const respan = new RespanTelemetry({
      *   instrumentModules: {
      *     openAI: OpenAI,
      *     anthropic: Anthropic,
@@ -192,7 +192,7 @@ export interface RespanOptions {
      * 
      * Usage example:
      * ```typescript
-     * const keywordsAI = new RespanTelemetry({
+     * const respan = new RespanTelemetry({
      *   disabledInstrumentations: ['bedrock', 'chromaDB', 'qdrant']
      * });
      * ```
