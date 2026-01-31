@@ -10,20 +10,20 @@ import {
 
 export class Respan implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Keywords AI',
-		name: 'keywordsAi',
+		displayName: 'Respan',
+		name: 'respan',
 		icon: { light: 'file:../../icons/respan.svg', dark: 'file:../../icons/respan.dark.svg' },
 		group: ['transform'],
 		version: 1,
-		description: 'Keywords AI API integration',
+		description: 'Respan API integration',
 		defaults: {
-			name: 'Keywords AI',
+			name: 'Respan',
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
-				name: 'keywordsAIApi',
+				name: 'respanApi',
 				required: true,
 			},
 		],
@@ -42,7 +42,7 @@ export class Respan implements INodeType {
 					{
 						name: 'Gateway with Prompt',
 						value: 'gatewayPrompt',
-						description: 'Use a managed prompt from Keywords AI',
+						description: 'Use a managed prompt from Respan',
 					},
 				],
 				default: 'gatewayPrompt',
@@ -274,7 +274,7 @@ export class Respan implements INodeType {
 	methods = {
 		loadOptions: {
 			async getPrompts(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'keywordsAIApi', {
+				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'respanApi', {
 					method: 'GET',
 					baseURL: 'https://api.respan.co/api',
 					url: '/prompts/',
@@ -306,7 +306,7 @@ export class Respan implements INodeType {
 				const promptId = this.getCurrentNodeParameter('promptId') as string;
 				if (!promptId) return [];
 				
-				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'keywordsAIApi', {
+				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'respanApi', {
 					method: 'GET',
 					baseURL: 'https://api.respan.co/api',
 					url: `/prompts/${promptId}/versions/`,
@@ -345,7 +345,7 @@ export class Respan implements INodeType {
 				// For "latest", we need to get the current version from the versions list
 				let versionNumber = version;
 				if (version === 'latest') {
-					const versionsData = await this.helpers.httpRequestWithAuthentication.call(this, 'keywordsAIApi', {
+					const versionsData = await this.helpers.httpRequestWithAuthentication.call(this, 'respanApi', {
 						method: 'GET',
 						baseURL: 'https://api.respan.co/api',
 						url: `/prompts/${promptId}/versions/`,
@@ -364,7 +364,7 @@ export class Respan implements INodeType {
 					}
 				}
 				
-				const versionData = await this.helpers.httpRequestWithAuthentication.call(this, 'keywordsAIApi', {
+				const versionData = await this.helpers.httpRequestWithAuthentication.call(this, 'respanApi', {
 					method: 'GET',
 					baseURL: 'https://api.respan.co/api',
 					url: `/prompts/${promptId}/versions/${versionNumber}/`,
@@ -475,7 +475,7 @@ export class Respan implements INodeType {
 					body.request_breakdown = additionalFields.requestBreakdown;
 				}
 
-				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'keywordsAIApi', {
+				const responseData = await this.helpers.httpRequestWithAuthentication.call(this, 'respanApi', {
 					method: 'POST',
 					baseURL: 'https://api.respan.co/api',
 					url: '/chat/completions',

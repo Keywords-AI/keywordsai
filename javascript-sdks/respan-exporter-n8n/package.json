@@ -1,6 +1,6 @@
 {
 	"name": "@respan/n8n-nodes-respan",
-	"version": "0.1.6",
+	"version": "1.0.0",
 	"description": "Respan Exporter for n8n",
 	"license": "MIT",
 	"homepage": "https://respan.ai",

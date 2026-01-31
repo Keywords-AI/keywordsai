@@ -7,9 +7,9 @@ import type {
 } from 'n8n-workflow';
 
 export class RespanApi implements ICredentialType {
-	name = 'keywordsAIApi';
+	name = 'respanApi';
 
-	displayName = 'Keywords AI API';
+	displayName = 'Respan API';
 
 	icon: Icon = { light: 'file:../icons/respan.svg', dark: 'file:../icons/respan.dark.svg' };
 
