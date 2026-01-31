@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def should_process_span(span: ReadableSpan) -> bool:
     """
-    Determine if a span should be processed based on KeywordsAI/Traceloop attributes.
+    Determine if a span should be processed based on Respan/Traceloop attributes.
     
     Logic:
     - If span has TRACELOOP_SPAN_KIND: it's a user-decorated span → process
@@ -27,21 +27,21 @@ def should_process_span(span: ReadableSpan) -> bool:
     # User-decorated span (has TRACELOOP_SPAN_KIND)
     if span_kind:
         logger.debug(
-            f"[KeywordsAI Debug] Processing user-decorated span: {span.name} (kind: {span_kind})"
+            f"[Respan Debug] Processing user-decorated span: {span.name} (kind: {span_kind})"
         )
         return True
     
     # Child span within entity context (has TRACELOOP_ENTITY_PATH)
     elif entity_path and entity_path != "":
         logger.debug(
-            f"[KeywordsAI Debug] Processing child span within entity context: {span.name} (entityPath: {entity_path})"
+            f"[Respan Debug] Processing child span within entity context: {span.name} (entityPath: {entity_path})"
         )
         return True
     
     # Auto-instrumentation noise - filter out
     else:
         logger.debug(
-            f"[KeywordsAI Debug] Filtering out auto-instrumentation span: {span.name} (no TRACELOOP_SPAN_KIND or entityPath)"
+            f"[Respan Debug] Filtering out auto-instrumentation span: {span.name} (no TRACELOOP_SPAN_KIND or entityPath)"
         )
         return False
 
@@ -66,6 +66,6 @@ def should_make_root_span(span: ReadableSpan) -> bool:
     is_root_candidate = span_kind is not None and (not entity_path or entity_path == "")
     
     if is_root_candidate:
-        logger.debug(f"[KeywordsAI Debug] Span should be made root: {span.name}")
+        logger.debug(f"[Respan Debug] Span should be made root: {span.name}")
     
     return is_root_candidate

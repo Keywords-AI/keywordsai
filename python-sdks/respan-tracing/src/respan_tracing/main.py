@@ -4,29 +4,29 @@ from typing import Optional, Set, Dict, Callable, Literal, Union
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter
 from .decorators import workflow, task, agent, tool
-from .core import KeywordsAITracer, KeywordsAIClient
+from .core import RespanTracer, RespanClient
 from .instruments import Instruments
 from .utils.logging import get_main_logger
 
-class KeywordsAITelemetry:
+class RespanTelemetry:
     """
-    KeywordsAI Telemetry - Direct OpenTelemetry implementation.
+    Respan Telemetry - Direct OpenTelemetry implementation.
     
     This class initializes the OpenTelemetry tracer without any default exporters.
     Use add_processor() to add exporters after initialization.
     
     Args:
         app_name: Name of the application for telemetry identification
-        api_key: KeywordsAI API key (can also be set via KEYWORDSAI_API_KEY env var)
-        base_url: KeywordsAI API base URL (can also be set via KEYWORDSAI_BASE_URL env var)
-        log_level: Logging level for KeywordsAI tracing (default: "INFO"). 
+        api_key: Respan API key (can also be set via RESPAN_API_KEY env var)
+        base_url: Respan API base URL (can also be set via RESPAN_BASE_URL env var)
+        log_level: Logging level for Respan tracing (default: "INFO"). 
                   Can be "DEBUG", "INFO", "WARNING", "ERROR", or "CRITICAL".
                   Set to "DEBUG" to see detailed debug messages.
-                  Can also be set via KEYWORDSAI_LOG_LEVEL environment variable.
+                  Can also be set via RESPAN_LOG_LEVEL environment variable.
         is_batching_enabled: Whether to enable batch span processing (default: True). 
                             When False, uses synchronous export (no background threads).
                             Useful for debugging or backends with custom exporters.
-                            Can also be set via KEYWORDSAI_BATCHING_ENABLED environment variable.
+                            Can also be set via RESPAN_BATCHING_ENABLED environment variable.
         instruments: Set of instruments to enable (if None, enables default set)
         block_instruments: Set of instruments to explicitly disable
         headers: Additional headers to send with telemetry data
@@ -36,16 +36,16 @@ class KeywordsAITelemetry:
     
     Example:
         ```python
-        from respan_tracing import KeywordsAITelemetry
-        from respan_tracing.exporters import KeywordsAISpanExporter
+        from respan_tracing import RespanTelemetry
+        from respan_tracing.exporters import RespanSpanExporter
         
         # Initialize telemetry
-        kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
+        kai = RespanTelemetry(app_name="my-app", api_key="your-key")
         
         # Add production exporter (all spans)
         kai.add_processor(
-            exporter=KeywordsAISpanExporter(
-                endpoint="https://api.keywordsai.co/api",
+            exporter=RespanSpanExporter(
+                endpoint="https://api.respan.ai/api",
                 api_key="prod-key"
             ),
             name="production"
@@ -76,7 +76,7 @@ class KeywordsAITelemetry:
 
     def __init__(
         self,
-        app_name: str = "keywordsai",
+        app_name: str = "respan",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
@@ -89,28 +89,28 @@ class KeywordsAITelemetry:
         is_enabled: bool = True,
     ):
         # Get configuration from environment variables
-        api_key = api_key or os.getenv("KEYWORDSAI_API_KEY")
+        api_key = api_key or os.getenv("RESPAN_API_KEY")
         base_url = base_url or os.getenv(
-            "KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"
+            "RESPAN_BASE_URL", "https://api.respan.ai/api"
         )
         # Default to True if not specified
         if is_batching_enabled is None:
             is_batching_enabled = (
-                os.getenv("KEYWORDSAI_BATCHING_ENABLED", "True").lower() == "true"
+                os.getenv("RESPAN_BATCHING_ENABLED", "True").lower() == "true"
             )
         
         # Get log level from environment variable if not explicitly set
-        env_log_level = os.getenv("KEYWORDSAI_LOG_LEVEL")
+        env_log_level = os.getenv("RESPAN_LOG_LEVEL")
         if env_log_level and log_level == "INFO":  # Only use env var if user didn't specify
             valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
             if env_log_level.upper() in valid_levels:
                 log_level = env_log_level.upper()  # type: ignore
         
-        # Configure logging level for KeywordsAI tracing
+        # Configure logging level for Respan tracing
         self._configure_logging(log_level)
         
         # Initialize the tracer
-        self.tracer = KeywordsAITracer(
+        self.tracer = RespanTracer(
             app_name=app_name,
             api_endpoint=base_url,
             api_key=api_key,
@@ -124,34 +124,34 @@ class KeywordsAITelemetry:
         )
         
         if is_enabled:
-            logging.info(f"KeywordsAI telemetry initialized")
+            logging.info(f"Respan telemetry initialized")
         else:
-            logging.info("KeywordsAI telemetry is disabled")
+            logging.info("Respan telemetry is disabled")
 
     def _configure_logging(self, log_level: Union[str, int]):
-        """Configure logging level for KeywordsAI tracing"""
-        # Get the KeywordsAI logger using the utility function
-        keywordsai_logger = get_main_logger()
+        """Configure logging level for Respan tracing"""
+        # Get the Respan logger using the utility function
+        respan_logger = get_main_logger()
         
         # Convert string log level to logging constant if needed
         if isinstance(log_level, str):
             log_level = getattr(logging, log_level.upper(), logging.INFO)
         
         # Set the log level
-        keywordsai_logger.setLevel(log_level)
+        respan_logger.setLevel(log_level)
         
         # Ensure there's a handler if none exists
-        if not keywordsai_logger.handlers:
+        if not respan_logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
             handler.setFormatter(formatter)
-            keywordsai_logger.addHandler(handler)
+            respan_logger.addHandler(handler)
         
         # Prevent duplicate messages from propagating to root logger
         # but allow child loggers to inherit the level
-        keywordsai_logger.propagate = False
+        respan_logger.propagate = False
 
     def add_processor(
         self,
@@ -168,7 +168,7 @@ class KeywordsAITelemetry:
         
         Args:
             exporter: SpanExporter instance or import string (e.g., "module.path.ExporterClass")
-            name: Optional name for the exporter (used for logging and KeywordsAI identification)
+            name: Optional name for the exporter (used for logging and Respan identification)
             filter_fn: Optional filter function. Only spans where filter_fn(span) returns True
                       will be exported. If None, all spans are exported to this exporter.
                       Common pattern: lambda span: span.attributes.get("processor") == "debug"
@@ -178,7 +178,7 @@ class KeywordsAITelemetry:
             ```python
             # Add production exporter (all spans)
             kai.add_processor(
-                exporter=KeywordsAISpanExporter(...),
+                exporter=RespanSpanExporter(...),
                 name="production"
             )
             
@@ -203,16 +203,16 @@ class KeywordsAITelemetry:
     
     def is_initialized(self) -> bool:
         """Check if telemetry is initialized"""
-        return KeywordsAITracer.is_initialized()
+        return RespanTracer.is_initialized()
 
-    def get_client(self) -> KeywordsAIClient:
+    def get_client(self) -> RespanClient:
         """
         Get a client for interacting with the current trace/span context.
         
         Returns:
-            KeywordsAIClient instance for trace operations.
+            RespanClient instance for trace operations.
         """
-        return KeywordsAIClient()
+        return RespanClient()
 
     # Expose decorators as instance methods for backward compatibility
     workflow = staticmethod(workflow)
@@ -222,19 +222,19 @@ class KeywordsAITelemetry:
 
 
 # Module-level client instance for global access
-_global_client: Optional[KeywordsAIClient] = None
+_global_client: Optional[RespanClient] = None
 
 
-def get_client() -> KeywordsAIClient:
+def get_client() -> RespanClient:
     """
-    Get a global KeywordsAI client instance.
+    Get a global Respan client instance.
     
     This function provides access to trace operations without needing to maintain
-    a reference to the KeywordsAITelemetry instance. The client uses the singleton
+    a reference to the RespanTelemetry instance. The client uses the singleton
     tracer instance internally.
     
     Returns:
-        KeywordsAIClient instance for trace operations.
+        RespanClient instance for trace operations.
         
     Example:
         ```python
@@ -248,7 +248,7 @@ def get_client() -> KeywordsAIClient:
         
         # Update current span
         client.update_current_span(
-            keywordsai_params={"trace_group_identifier": "my-group"},
+            respan_params={"trace_group_identifier": "my-group"},
             attributes={"custom.attribute": "value"}
         )
         
@@ -263,7 +263,7 @@ def get_client() -> KeywordsAIClient:
     """
     global _global_client
     if _global_client is None:
-        _global_client = KeywordsAIClient()
+        _global_client = RespanClient()
     return _global_client
 
 

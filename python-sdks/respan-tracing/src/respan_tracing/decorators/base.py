@@ -8,8 +8,8 @@ from opentelemetry.semconv_ai import TraceloopSpanKindValues, SpanAttributes
 from respan_sdk.constants.llm_logging import (
     LogMethodChoices
 )
-from respan_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
-from respan_tracing.core import KeywordsAITracer
+from respan_sdk.respan_types.span_types import RespanSpanAttributes
+from respan_tracing.core import RespanTracer
 from respan_tracing.constants.context_constants import (
     WORKFLOW_NAME_KEY, 
     ENTITY_PATH_KEY,
@@ -61,7 +61,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None,
         context_api.attach(context_api.set_value(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path))
 
     # Get tracer and start span
-    tracer = KeywordsAITracer().get_tracer()
+    tracer = RespanTracer().get_tracer()
     span_name = f"{entity_name}.{span_kind_str}"
     span = tracer.start_span(span_name)
 
@@ -70,7 +70,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None,
     span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
     span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
     span.set_attribute(
-        KeywordsAISpanAttributes.LOG_METHOD.value, LogMethodChoices.PYTHON_TRACING.value
+        RespanSpanAttributes.LOG_METHOD.value, LogMethodChoices.PYTHON_TRACING.value
     )
     if version:
         span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_VERSION, version)

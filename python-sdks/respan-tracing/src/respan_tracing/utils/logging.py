@@ -1,8 +1,8 @@
 """
-Logging utilities for KeywordsAI tracing.
+Logging utilities for Respan tracing.
 
 This module provides a consistent way to create child loggers that properly
-inherit from the main KeywordsAI logger, avoiding the confusing dependency
+inherit from the main Respan logger, avoiding the confusing dependency
 on __name__ matching the logger prefix.
 """
 
@@ -12,14 +12,14 @@ from respan_tracing.constants.generic_constants import LOGGER_NAME
 from typing import Any, Dict, List
 from opentelemetry.trace import SpanContext
 
-from respan_tracing.constants.keywordsai_config import (
+from respan_tracing.constants.respan_config import (
     HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS,
 )
 
 
-def get_keywordsai_logger(name: str) -> logging.Logger:
+def get_respan_logger(name: str) -> logging.Logger:
     """
-    Create a child logger under the KeywordsAI logger hierarchy.
+    Create a child logger under the Respan logger hierarchy.
 
     This ensures proper inheritance regardless of the LOGGER_NAME value
     and makes the hierarchy explicit and intentional.
@@ -28,25 +28,25 @@ def get_keywordsai_logger(name: str) -> logging.Logger:
         name: The child logger name (e.g., 'core.exporter', 'core.client')
 
     Returns:
-        A logger that inherits from the main KeywordsAI logger
+        A logger that inherits from the main Respan logger
 
     Example:
         # In exporter.py
-        from respan_tracing.utils.logging import get_keywordsai_logger
-        logger = get_keywordsai_logger('core.exporter')
+        from respan_tracing.utils.logging import get_respan_logger
+        logger = get_respan_logger('core.exporter')
 
         # In client.py
-        logger = get_keywordsai_logger('core.client')
+        logger = get_respan_logger('core.client')
     """
     return logging.getLogger(f"{LOGGER_NAME}.{name}")
 
 
 def get_main_logger() -> logging.Logger:
     """
-    Get the main KeywordsAI logger.
+    Get the main Respan logger.
 
     Returns:
-        The main KeywordsAI logger instance
+        The main Respan logger instance
     """
     return logging.getLogger(LOGGER_NAME)
 

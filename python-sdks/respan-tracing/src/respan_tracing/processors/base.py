@@ -8,7 +8,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcess
 from opentelemetry.context import Context
 from opentelemetry.semconv_ai import SpanAttributes
 
-from respan_sdk.keywordsai_types.span_types import KeywordsAISpanAttributes
+from respan_sdk.respan_types.span_types import RespanSpanAttributes
 from respan_tracing.constants.generic_constants import SDK_PREFIX
 from respan_tracing.constants.context_constants import (
     TRACE_GROUP_ID_KEY, 
@@ -20,10 +20,10 @@ from respan_tracing.utils.context import get_entity_path
 logger = logging.getLogger(__name__)
 
 
-class KeywordsAISpanProcessor:
+class RespanSpanProcessor:
     """
     Custom span processor that wraps the underlying processor and adds
-    KeywordsAI-specific metadata to spans.
+    Respan-specific metadata to spans.
     """
 
     def __init__(
@@ -40,7 +40,7 @@ class KeywordsAISpanProcessor:
             processor.on_end = self._wrapped_on_end
 
     def on_start(self, span, parent_context: Optional[Context] = None):
-        """Called when a span is started - add KeywordsAI metadata"""
+        """Called when a span is started - add Respan metadata"""
         # Check if this span is being created within an entity context
         # If so, add the entityPath attribute so it gets preserved by our filtering
         entity_path = get_entity_path(parent_context)  # Use active context like JS version
@@ -48,7 +48,7 @@ class KeywordsAISpanProcessor:
             # This is an auto-instrumentation span within an entity context
             # Add the entityPath attribute so it doesn't get filtered out
             logger.debug(
-                f"[KeywordsAI Debug] Adding entityPath to auto-instrumentation span: {span.name} (entityPath: {entity_path})"
+                f"[Respan Debug] Adding entityPath to auto-instrumentation span: {span.name} (entityPath: {entity_path})"
             )
             span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_PATH, entity_path)
 
@@ -66,25 +66,25 @@ class KeywordsAISpanProcessor:
         trace_group_id = context_api.get_value(TRACE_GROUP_ID_KEY)
         if trace_group_id:
             span.set_attribute(
-                KeywordsAISpanAttributes.KEYWORDSAI_TRACE_GROUP_ID.value, trace_group_id
+                RespanSpanAttributes.RESPAN_TRACE_GROUP_ID.value, trace_group_id
             )
 
         # Add custom parameters if present
-        keywordsai_params = context_api.get_value(PARAMS_KEY)
-        if keywordsai_params and isinstance(keywordsai_params, dict):
-            for key, value in keywordsai_params.items():
+        respan_params = context_api.get_value(PARAMS_KEY)
+        if respan_params and isinstance(respan_params, dict):
+            for key, value in respan_params.items():
                 span.set_attribute(f"{SDK_PREFIX}.{key}", value)
 
         # Call original processor's on_start
         self.processor.on_start(span, parent_context)
 
     def on_end(self, span: ReadableSpan):
-        """Called when a span ends - filter spans based on KeywordsAI attributes"""
+        """Called when a span ends - filter spans based on Respan attributes"""
         # Apply filtering logic using shared function
         if should_process_span(span):
             self.processor.on_end(span)
         else:
-            logger.debug(f"[KeywordsAI Debug] Skipping filtered span: {span.name}")
+            logger.debug(f"[Respan Debug] Skipping filtered span: {span.name}")
 
     def _wrapped_on_end(self, span: ReadableSpan):
         """Wrapped on_end method that calls custom callback first"""
@@ -216,8 +216,8 @@ class FilteringSpanProcessor(SpanProcessor):
         else:
             base_processor = SimpleSpanProcessor(exporter)
         
-        # Wrap with KeywordsAI processor for metadata injection
-        self.processor = KeywordsAISpanProcessor(base_processor, span_postprocess_callback)
+        # Wrap with Respan processor for metadata injection
+        self.processor = RespanSpanProcessor(base_processor, span_postprocess_callback)
     
     def on_start(self, span, parent_context: Optional[Context] = None):
         """Called when a span starts."""
@@ -336,7 +336,7 @@ class SpanBuffer:
         Returns:
             The span ID as a hex string
         """
-        tracer = trace.get_tracer("keywordsai.span_buffer")
+        tracer = trace.get_tracer("respan.span_buffer")
         
         # Set span kind
         span_kind = kind or trace.SpanKind.INTERNAL

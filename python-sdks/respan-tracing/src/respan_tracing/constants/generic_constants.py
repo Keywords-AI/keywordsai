@@ -1,5 +1,5 @@
-SDK_PREFIX = "keywordsai"
-LOGGER_NAME = "keywordsai_tracing"
+SDK_PREFIX = "respan"
+LOGGER_NAME = "respan_tracing"
 
 # Logger names for different modules (child loggers under LOGGER_NAME)
 LOGGER_NAME_TRACER = "core.tracer"

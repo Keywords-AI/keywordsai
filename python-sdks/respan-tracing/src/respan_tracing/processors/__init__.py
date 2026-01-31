@@ -1,14 +1,14 @@
 """
-Span processors for KeywordsAI tracing.
+Span processors for Respan tracing.
 
 This module contains various span processors that handle span processing,
 filtering, and buffering functionality.
 """
 
-from .base import KeywordsAISpanProcessor, BufferingSpanProcessor, SpanBuffer, FilteringSpanProcessor
+from .base import RespanSpanProcessor, BufferingSpanProcessor, SpanBuffer, FilteringSpanProcessor
 
 __all__ = [
-    "KeywordsAISpanProcessor",
+    "RespanSpanProcessor",
     "BufferingSpanProcessor", 
     "SpanBuffer",
     "FilteringSpanProcessor",

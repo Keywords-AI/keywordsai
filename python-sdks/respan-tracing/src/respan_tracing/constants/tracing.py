@@ -1,1 +1,1 @@
-TRACER_NAME = "keywordsai.tracer"
+TRACER_NAME = "respan.tracer"

@@ -3,12 +3,12 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import SpanContext
-from ..utils.logging import get_keywordsai_logger, build_spans_export_preview
+from ..utils.logging import get_respan_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
 
 from ..constants.generic_constants import LOGGER_NAME_EXPORTER
 
-logger = get_keywordsai_logger(LOGGER_NAME_EXPORTER)
+logger = get_respan_logger(LOGGER_NAME_EXPORTER)
 
 
 class ModifiedSpan:
@@ -24,9 +24,9 @@ class ModifiedSpan:
         return getattr(self._original_span, name)
 
 
-class KeywordsAISpanExporter:
+class RespanSpanExporter:
     """ 
-    Custom span exporter for KeywordsAI that wraps the OTLP HTTP exporter
+    Custom span exporter for Respan that wraps the OTLP HTTP exporter
     with proper authentication and endpoint handling.
     """
     
@@ -66,12 +66,12 @@ class KeywordsAISpanExporter:
         return base_endpoint
     
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
-        """Export spans to KeywordsAI, modifying spans to make user-decorated spans root spans where appropriate"""
+        """Export spans to Respan, modifying spans to make user-decorated spans root spans where appropriate"""
         modified_spans: List[ReadableSpan] = []
         
         for span in spans:
             if should_make_root_span(span):
-                logger.debug(f"[KeywordsAI Debug] Making span a root span: {span.name}")
+                logger.debug(f"[Respan Debug] Making span a root span: {span.name}")
                 # Create a modified span with no parent
                 modified_span = ModifiedSpan(span)
                 modified_spans.append(modified_span)
@@ -82,7 +82,7 @@ class KeywordsAISpanExporter:
         try:
             if logger.isEnabledFor(10):  # logging.DEBUG
                 preview = build_spans_export_preview(modified_spans)
-                logger.debug("[KeywordsAI Debug] Export preview (sanitized): %s", preview)
+                logger.debug("[Respan Debug] Export preview (sanitized): %s", preview)
         except Exception:
             # Never fail export due to debug logging issues
             pass

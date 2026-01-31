@@ -3,32 +3,32 @@ import logging
 from typing import Any, Dict, Union
 from opentelemetry import trace
 from opentelemetry.trace.span import Span
-from respan_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
-from respan_sdk.keywordsai_types.param_types import KeywordsAIParams
+from respan_sdk.respan_types.span_types import RESPAN_SPAN_ATTRIBUTES_MAP, RespanSpanAttributes
+from respan_sdk.respan_types.param_types import RespanParams
 from pydantic import ValidationError
-from respan_tracing.core.tracer import KeywordsAITracer
-from respan_tracing.utils.logging import get_keywordsai_logger
+from respan_tracing.core.tracer import RespanTracer
+from respan_tracing.utils.logging import get_respan_logger
 
 
 from ..constants.generic_constants import LOGGER_NAME_SPAN
 
-logger = get_keywordsai_logger(LOGGER_NAME_SPAN)
+logger = get_respan_logger(LOGGER_NAME_SPAN)
 
 @contextmanager
-def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], KeywordsAIParams]):
-    """Adds KeywordsAI-specific attributes to the current active span.
+def respan_span_attributes(respan_params: Union[Dict[str, Any], RespanParams]):
+    """Adds Respan-specific attributes to the current active span.
     
     Args:
-        keywordsai_params: Dictionary of parameters to set as span attributes.
-                          Must conform to KeywordsAIParams model structure.
+        respan_params: Dictionary of parameters to set as span attributes.
+                          Must conform to RespanParams model structure.
     
     Notes:
         - If no active span is found, a warning will be logged and the context will continue
         - If params validation fails, a warning will be logged and the context will continue
         - If an attribute cannot be set, a warning will be logged and the context will continue
     """
-    if not KeywordsAITracer.is_initialized():
-        logger.warning("KeywordsAI Telemetry not initialized. Attributes will not be set.")
+    if not RespanTracer.is_initialized():
+        logger.warning("Respan Telemetry not initialized. Attributes will not be set.")
         yield
         return
         
@@ -43,23 +43,23 @@ def keywordsai_span_attributes(keywordsai_params: Union[Dict[str, Any], Keywords
     try:
         # Keep your original validation
         validated_params = (
-            keywordsai_params 
-            if isinstance(keywordsai_params, KeywordsAIParams) 
-            else KeywordsAIParams.model_validate(keywordsai_params)
+            respan_params 
+            if isinstance(respan_params, RespanParams) 
+            else RespanParams.model_validate(respan_params)
         )
         
         for key, value in validated_params.model_dump(mode="json").items():
-            if key in KEYWORDSAI_SPAN_ATTRIBUTES_MAP and key != "metadata":
+            if key in RESPAN_SPAN_ATTRIBUTES_MAP and key != "metadata":
                 try:
-                    current_span.set_attribute(KEYWORDSAI_SPAN_ATTRIBUTES_MAP[key], value)
+                    current_span.set_attribute(RESPAN_SPAN_ATTRIBUTES_MAP[key], value)
                 except (ValueError, TypeError) as e:
                     logger.warning(
-                        f"Failed to set span attribute {KEYWORDSAI_SPAN_ATTRIBUTES_MAP[key]}={value}: {str(e)}"
+                        f"Failed to set span attribute {RESPAN_SPAN_ATTRIBUTES_MAP[key]}={value}: {str(e)}"
                     )
             # Treat metadata as a special case
             if key == "metadata":
                 for metadata_key, metadata_value in value.items():
-                    current_span.set_attribute(f"{KeywordsAISpanAttributes.KEYWORDSAI_METADATA.value}.{metadata_key}", metadata_value)
+                    current_span.set_attribute(f"{RespanSpanAttributes.RESPAN_METADATA.value}.{metadata_key}", metadata_value)
         yield
     except ValidationError as e:
         logger.warning(f"Failed to validate params: {str(e.errors(include_url=False))}")

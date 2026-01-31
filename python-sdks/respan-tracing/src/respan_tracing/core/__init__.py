@@ -1,8 +1,8 @@
-# Core OpenTelemetry implementation for KeywordsAI
-from .tracer import KeywordsAITracer
-from .client import KeywordsAIClient
+# Core OpenTelemetry implementation for Respan
+from .tracer import RespanTracer
+from .client import RespanClient
 
 __all__ = [
-    "KeywordsAITracer",
-    "KeywordsAIClient",
+    "RespanTracer",
+    "RespanClient",
 ] 

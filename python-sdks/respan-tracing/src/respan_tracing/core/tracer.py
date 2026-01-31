@@ -14,22 +14,22 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.propagate import set_global_textmap
 from opentelemetry.propagators.textmap import TextMapPropagator
 
-from ..processors import KeywordsAISpanProcessor, BufferingSpanProcessor, FilteringSpanProcessor
-from ..exporters import KeywordsAISpanExporter
+from ..processors import RespanSpanProcessor, BufferingSpanProcessor, FilteringSpanProcessor
+from ..exporters import RespanSpanExporter
 from ..instruments import Instruments
 from ..utils.notebook import is_notebook
 from ..utils.instrumentation import init_instrumentations
 from ..utils.imports import import_from_string
-from ..utils.logging import get_keywordsai_logger
+from ..utils.logging import get_respan_logger
 from ..constants.tracing import TRACER_NAME
 from ..constants.generic_constants import LOGGER_NAME_TRACER
 
-# Use KeywordsAI logger for all logging in this module
-logger = get_keywordsai_logger(LOGGER_NAME_TRACER)
+# Use Respan logger for all logging in this module
+logger = get_respan_logger(LOGGER_NAME_TRACER)
 
-class KeywordsAITracer:
+class RespanTracer:
     """
-    Direct OpenTelemetry implementation for KeywordsAI tracing.
+    Direct OpenTelemetry implementation for Respan tracing.
     Replaces Traceloop dependency with native OpenTelemetry components.
     """
     
@@ -46,8 +46,8 @@ class KeywordsAITracer:
     
     def __init__(
         self,
-        app_name: str = "keywordsai",
-        api_endpoint: str = "https://api.keywordsai.co/api",
+        app_name: str = "respan",
+        api_endpoint: str = "https://api.respan.ai/api",
         api_key: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         is_batching_enabled: bool = True,
@@ -71,7 +71,7 @@ class KeywordsAITracer:
         self.span_postprocess_callback = span_postprocess_callback
         
         if not is_enabled:
-            logger.info("KeywordsAI tracing is disabled")
+            logger.info("Respan tracing is disabled")
             return
             
         # Setup resource attributes
@@ -83,8 +83,8 @@ class KeywordsAITracer:
         self._setup_propagation(propagator)
         self._setup_instrumentations(instruments, block_instruments)
         
-        # Add default KeywordsAI processor for backward compatibility
-        # Only if api_key is provided (user wants to send to KeywordsAI)
+        # Add default Respan processor for backward compatibility
+        # Only if api_key is provided (user wants to send to Respan)
         if api_key:
             self._setup_default_processor()
         
@@ -92,7 +92,7 @@ class KeywordsAITracer:
         atexit.register(self._cleanup)
         
         # Log initialization
-        logger.info(f"KeywordsAI tracing initialized, sending to {api_endpoint}")
+        logger.info(f"Respan tracing initialized, sending to {api_endpoint}")
     
     def _setup_tracer_provider(self, resource_attributes: Dict[str, str]):
         """Initialize the OpenTelemetry TracerProvider"""
@@ -101,11 +101,11 @@ class KeywordsAITracer:
         trace.set_tracer_provider(self.tracer_provider)
     
     def _setup_default_processor(self):
-        """Setup default KeywordsAI processor for backward compatibility"""
-        from ..exporters import KeywordsAISpanExporter
+        """Setup default Respan processor for backward compatibility"""
+        from ..exporters import RespanSpanExporter
         
-        logger.info("Adding default KeywordsAI processor (all spans)")
-        exporter = KeywordsAISpanExporter(
+        logger.info("Adding default Respan processor (all spans)")
+        exporter = RespanSpanExporter(
             endpoint=self.api_endpoint,
             api_key=self.api_key,
             headers=self.headers,
@@ -144,7 +144,7 @@ class KeywordsAITracer:
         Example:
             # Processor with name - automatically filters for processor="production" in decorator
             tracer.add_processor(
-                exporter=KeywordsAISpanExporter(...),
+                exporter=RespanSpanExporter(...),
                 name="production"
             )
             # Now @task(processor="production") will route here automatically!
@@ -173,8 +173,8 @@ class KeywordsAITracer:
         if isinstance(exporter, str):
             try:
                 exporter_class = import_from_string(exporter)
-                if name == "keywordsai" or "KeywordsAI" in exporter:
-                    # KeywordsAI exporter needs special initialization
+                if name == "respan" or "Respan" in exporter:
+                    # Respan exporter needs special initialization
                     exporter = exporter_class(
                         endpoint=self.api_endpoint,
                         api_key=self.api_key,

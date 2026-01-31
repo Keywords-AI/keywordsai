@@ -1,22 +1,22 @@
-from .main import KeywordsAITelemetry, get_client
-from .core.client import KeywordsAIClient
+from .main import RespanTelemetry, get_client
+from .core.client import RespanClient
 from .decorators import workflow, task, agent, tool
-from .contexts.span import keywordsai_span_attributes
+from .contexts.span import respan_span_attributes
 from .instruments import Instruments
-from .utils.logging import get_keywordsai_logger, get_main_logger
-from respan_sdk.keywordsai_types.param_types import KeywordsAIParams
+from .utils.logging import get_respan_logger, get_main_logger
+from respan_sdk.respan_types.param_types import RespanParams
 
 __all__ = [
-    "KeywordsAITelemetry",
+    "RespanTelemetry",
     "get_client",
-    "KeywordsAIClient",
+    "RespanClient",
     "workflow", 
     "task",
     "agent",
     "tool",
-    "keywordsai_span_attributes",
+    "respan_span_attributes",
     "Instruments",
-    "KeywordsAIParams",
-    "get_keywordsai_logger",
+    "RespanParams",
+    "get_respan_logger",
     "get_main_logger",
 ]

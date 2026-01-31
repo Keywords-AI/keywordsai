@@ -1,12 +1,12 @@
 from os import getenv
 
 # Package Config
-DEBUG = getenv("KEYWORDSAI_DEBUG", "False") == "True" # Whether to print debug messages or not
+DEBUG = getenv("RESPAN_DEBUG", "False") == "True" # Whether to print debug messages or not
 
 # API Config
-KEYWORDSAI_API_KEY = getenv("KEYWORDSAI_API_KEY")
-KEYWORDSAI_BASE_URL: str = getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api") # slash at the end is important
-KEYWORDSAI_BATCHING_ENABLED: bool = getenv("KEYWORDSAI_BATCHING_ENABLED", "True") == "True"
+RESPAN_API_KEY = getenv("RESPAN_API_KEY")
+RESPAN_BASE_URL: str = getenv("RESPAN_BASE_URL", "https://api.respan.ai/api") # slash at the end is important
+RESPAN_BATCHING_ENABLED: bool = getenv("RESPAN_BATCHING_ENABLED", "True") == "True"
 
 HIGHLIGHTED_ATTRIBUTE_KEY_SUBSTRINGS = [
     # General prompt/message fields

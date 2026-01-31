@@ -3,21 +3,21 @@ from opentelemetry import trace, context as context_api
 from opentelemetry.trace.span import Span
 from opentelemetry.trace import Status, StatusCode
 
-from respan_sdk.keywordsai_types.span_types import KEYWORDSAI_SPAN_ATTRIBUTES_MAP, KeywordsAISpanAttributes
-from respan_sdk.keywordsai_types.param_types import KeywordsAIParams
+from respan_sdk.respan_types.span_types import RESPAN_SPAN_ATTRIBUTES_MAP, RespanSpanAttributes
+from respan_sdk.respan_types.param_types import RespanParams
 from pydantic import ValidationError
 
-from .tracer import KeywordsAITracer
+from .tracer import RespanTracer
 from ..processors import SpanBuffer
-from ..utils.logging import get_keywordsai_logger
+from ..utils.logging import get_respan_logger
 
 
 from ..constants.generic_constants import LOGGER_NAME_CLIENT
 
-logger = get_keywordsai_logger(LOGGER_NAME_CLIENT)
+logger = get_respan_logger(LOGGER_NAME_CLIENT)
 
 
-class KeywordsAIClient:
+class RespanClient:
     """
     Client for interacting with the current trace/span context.
     Provides a clean API for getting and updating trace information.
@@ -25,7 +25,7 @@ class KeywordsAIClient:
     
     def __init__(self):
         """Initialize the client. Uses the singleton tracer instance."""
-        self._tracer = KeywordsAITracer()
+        self._tracer = RespanTracer()
     
     def get_current_span(self) -> Optional[Span]:
         """
@@ -34,8 +34,8 @@ class KeywordsAIClient:
         Returns:
             The current active span, or None if no span is active.
         """
-        if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
-            logger.warning("KeywordsAI Telemetry not initialized or disabled.")
+        if not self._tracer.is_enabled or not RespanTracer.is_initialized():
+            logger.warning("Respan Telemetry not initialized or disabled.")
             return None
             
         current_span = trace.get_current_span()
@@ -71,7 +71,7 @@ class KeywordsAIClient:
     
     def update_current_span(
         self, 
-        keywordsai_params: Optional[Union[Dict[str, Any], KeywordsAIParams]] = None,
+        respan_params: Optional[Union[Dict[str, Any], RespanParams]] = None,
         attributes: Optional[Dict[str, Any]] = None,
         status: Optional[Union[Status, StatusCode]] = None,
         status_description: Optional[str] = None,
@@ -81,7 +81,7 @@ class KeywordsAIClient:
         Update the current active span with new information.
         
         Args:
-            keywordsai_params: KeywordsAI-specific parameters to set as span attributes
+            respan_params: Respan-specific parameters to set as span attributes
             attributes: Generic attributes to set on the span
             status: Status to set on the span (Status object or StatusCode)
             status_description: Description for the status
@@ -100,9 +100,9 @@ class KeywordsAIClient:
             if name:
                 span.update_name(name)
             
-            # Set KeywordsAI-specific attributes
-            if keywordsai_params:
-                self._set_keywordsai_attributes(span, keywordsai_params)
+            # Set Respan-specific attributes
+            if respan_params:
+                self._set_respan_attributes(span, respan_params)
             
             # Set generic attributes
             if attributes:
@@ -125,28 +125,28 @@ class KeywordsAIClient:
             logger.exception(f"Failed to update span: {str(e)}")
             return False
     
-    def _set_keywordsai_attributes(
+    def _set_respan_attributes(
         self, 
         span: Span, 
-        keywordsai_params: Union[Dict[str, Any], KeywordsAIParams]
+        respan_params: Union[Dict[str, Any], RespanParams]
     ):
-        """Set KeywordsAI-specific attributes on a span."""
+        """Set Respan-specific attributes on a span."""
         try:
             # Validate parameters
             validated_params = (
-                keywordsai_params 
-                if isinstance(keywordsai_params, KeywordsAIParams) 
-                else KeywordsAIParams.model_validate(keywordsai_params)
+                respan_params 
+                if isinstance(respan_params, RespanParams) 
+                else RespanParams.model_validate(respan_params)
             )
             
             # Set attributes based on the mapping
             for key, value in validated_params.model_dump(mode="json").items():
-                if key in KEYWORDSAI_SPAN_ATTRIBUTES_MAP and key != "metadata":
+                if key in RESPAN_SPAN_ATTRIBUTES_MAP and key != "metadata":
                     try:
-                        span.set_attribute(KEYWORDSAI_SPAN_ATTRIBUTES_MAP[key], value)
+                        span.set_attribute(RESPAN_SPAN_ATTRIBUTES_MAP[key], value)
                     except (ValueError, TypeError) as e:
                         logger.warning(
-                            f"Failed to set span attribute {KEYWORDSAI_SPAN_ATTRIBUTES_MAP[key]}={value}: {str(e)}"
+                            f"Failed to set span attribute {RESPAN_SPAN_ATTRIBUTES_MAP[key]}={value}: {str(e)}"
                         )
                 
                 # Handle metadata specially
@@ -154,7 +154,7 @@ class KeywordsAIClient:
                     for metadata_key, metadata_value in value.items():
                         try:
                             span.set_attribute(
-                                f"{KeywordsAISpanAttributes.KEYWORDSAI_METADATA.value}.{metadata_key}", 
+                                f"{RespanSpanAttributes.RESPAN_METADATA.value}.{metadata_key}", 
                                 metadata_value
                             )
                         except (ValueError, TypeError) as e:
@@ -163,9 +163,9 @@ class KeywordsAIClient:
                             )
                             
         except ValidationError as e:
-            logger.warning(f"Failed to validate KeywordsAI params: {str(e.errors(include_url=False))}")
+            logger.warning(f"Failed to validate Respan params: {str(e.errors(include_url=False))}")
         except Exception as e:
-            logger.exception(f"Unexpected error setting KeywordsAI attributes: {str(e)}")
+            logger.exception(f"Unexpected error setting Respan attributes: {str(e)}")
     
     def add_event(
         self, 
@@ -373,9 +373,9 @@ class KeywordsAIClient:
             client.export_spans(collected_spans)
             ```
         """
-        if not self._tracer.is_enabled or not KeywordsAITracer.is_initialized():
-            logger.warning("KeywordsAI Telemetry not initialized or disabled.")
-            raise RuntimeError("KeywordsAI Telemetry not initialized or disabled.")
+        if not self._tracer.is_enabled or not RespanTracer.is_initialized():
+            logger.warning("Respan Telemetry not initialized or disabled.")
+            raise RuntimeError("Respan Telemetry not initialized or disabled.")
         
         return SpanBuffer(trace_id=trace_id)
     

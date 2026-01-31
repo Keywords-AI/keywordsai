@@ -1,12 +1,12 @@
 """
-Span exporters for KeywordsAI tracing.
+Span exporters for Respan tracing.
 
 This module contains various span exporters that handle exporting spans
-to different destinations like the KeywordsAI API, files, or other systems.
+to different destinations like the Respan API, files, or other systems.
 """
 
-from .keywordsai import KeywordsAISpanExporter
+from .respan import RespanSpanExporter
 
 __all__ = [
-    "KeywordsAISpanExporter",
+    "RespanSpanExporter",
 ]
