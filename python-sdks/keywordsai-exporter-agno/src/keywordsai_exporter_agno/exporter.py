@@ -14,6 +14,7 @@ from keywordsai_sdk.constants.llm_logging import (
     SPAN_KIND_TO_LOG_TYPE_MAP,
     LogType,
 )
+from keywordsai_sdk.keywordsai_types.log_types import KeywordsAIFullLogParams
 from keywordsai_exporter_agno.models import TraceContext
 from keywordsai_exporter_agno.utils import (
     as_dict,
@@ -45,6 +46,63 @@ from keywordsai_exporter_agno.utils import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_ENDPOINT = "https://api.keywordsai.co/api/v1/traces/ingest"
+
+_ALLOWED_MESSAGE_ROLES = {"user", "assistant", "system", "tool", "none", "developer"}
+
+_ROLE_MAP = {
+    "human": "user",
+    "ai": "assistant",
+    "bot": "assistant",
+    "assistant": "assistant",
+    "user": "user",
+    "system": "system",
+    "tool": "tool",
+    "function": "tool",
+    "developer": "developer",
+    "none": "none",
+}
+
+
+def _normalize_role(role: str) -> str:
+    """Normalize a message role string to a valid KeywordsAI role."""
+    lowered = role.lower().strip()
+    mapped = _ROLE_MAP.get(lowered)
+    if mapped and mapped in _ALLOWED_MESSAGE_ROLES:
+        return mapped
+    if lowered in _ALLOWED_MESSAGE_ROLES:
+        return lowered
+    return "none"
+
+
+def _normalize_message_roles(messages: Any) -> Any:
+    """
+    Best-effort normalization for message.role so we can serialize through
+    KeywordsAI's typed `Message` model (Pydantic Literal).
+    """
+    if not isinstance(messages, list):
+        return messages
+
+    normalized: List[Any] = []
+    for message in messages:
+        if not isinstance(message, dict):
+            normalized.append(message)
+            continue
+        role = message.get("role")
+        if isinstance(role, str):
+            normalized.append({**message, "role": _normalize_role(role=role)})
+        else:
+            normalized.append(message)
+    return normalized
+
+
+def _normalize_single_message_role(message: Any) -> Any:
+    """Normalize a single message's role to a valid KeywordsAI role."""
+    if not isinstance(message, dict):
+        return message
+    role = message.get("role")
+    if not isinstance(role, str):
+        return message
+    return {**message, "role": _normalize_role(role=role)}
 
 
 class KeywordsAIAgnoExporter:
@@ -509,9 +567,9 @@ class KeywordsAIAgnoExporter:
             "trace_group_identifier": trace_context.trace_group_identifier,
         }
         if prompt_messages is not None:
-            payload["prompt_messages"] = prompt_messages
+            payload["prompt_messages"] = _normalize_message_roles(prompt_messages)
         if completion_message is not None:
-            payload["completion_message"] = completion_message
+            payload["completion_message"] = _normalize_single_message_role(completion_message)
         payload["keywordsai_params"] = {
             "environment": self.environment,
             "has_webhook": False,
@@ -578,6 +636,18 @@ class KeywordsAIAgnoExporter:
             payload["span_unique_id"] = payload["trace_unique_id"]
 
         cleaned_payload = clean_payload(payload=payload)
+
+        # Validate payload through the canonical SDK log schema for type-checking.
+        # We keep the original payload structure to preserve ingest-specific fields
+        # (trace_id, span_id, parent_id, etc.) that the tracing endpoint requires.
+        try:
+            KeywordsAIFullLogParams(**cleaned_payload)
+        except Exception as exc:
+            logger.warning(
+                "Agno span payload failed KeywordsAIFullLogParams validation: %s",
+                exc,
+            )
+
         return cleaned_payload
 
     def _map_log_type(
