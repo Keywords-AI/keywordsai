@@ -1,0 +1,35 @@
+{
+  "name": "@respan/respan-sdk",
+  "type": "module",
+  "version": "0.0.18",
+  "description": "Respan typing SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Respan <team@respan.ai>",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "version": "npm version",
+    "publish": "yarn npm publish",
+    "release": "yarn build &&yarn version patch && yarn publish"
+  },
+  "packageManager": "yarn@4.6.0",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^2.0.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "typescript": "^5.8.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29"
+  }
+}
