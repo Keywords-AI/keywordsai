@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "keywordsai-sdk"
+name = "respan-sdk"
 version = "0.5.2"
-description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
-authors = ["Keywords AI <team@keywordsai.co>"]
+description = "Respan SDK allows you to interact with the Respan API smoothly"
+authors = ["Respan <team@respan.ai>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "keywordsai_sdk", from = "./src" },
+    { include = "respan_sdk", from = "./src" },
 ]
 
 [tool.poetry.dependencies]
@@ -32,6 +32,6 @@ build-backend = "poetry.core.masonry.api"
 dev = ["pytest", "python-dotenv"]
 
 [project.urls]
-Homepage = "https://keywordsai.co"
-Repository = "https://github.com/Keywords-AI/keywordai_sdks.git"
-Documentation = "https://docs.keywordsai.co"
+Homepage = "https://respan.ai"
+Repository = "https://github.com/respan-ai/respan-sdks.git"
+Documentation = "https://docs.respan.ai"
