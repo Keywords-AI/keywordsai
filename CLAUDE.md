@@ -1,0 +1,135 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Repository Overview
+
+This is a monorepo containing Keywords AI SDKs for Python and JavaScript/TypeScript. The SDKs provide OpenTelemetry-based tracing for LLM applications, sending telemetry data in OpenLLMetry format to Keywords AI.
+
+## Project Structure
+
+```
+keywordsai_public/
+├── python-sdks/           # Python packages (Poetry)
+│   ├── keywordsai-sdk/        # Core types, preprocessing, API payload helpers
+│   ├── keywordsai-tracing/    # Main tracing library with OpenTelemetry
+│   ├── keywordsai-exporter-*/  # Integration exporters (litellm, agno, haystack, openai-agents, langfuse)
+│   └── keywordsai/            # Legacy/standalone package
+├── javascript-sdks/       # JavaScript/TypeScript packages (Yarn)
+│   ├── keywordsai-sdk/        # Core types and SDK (@keywordsai/keywordsai-sdk)
+│   ├── keywordsai-tracing/    # Main tracing library (@keywordsai/tracing)
+│   └── keywordsai-exporter-*/  # Integration exporters (n8n, vercel, openai-agents)
+└── boilerplates/          # Implementation logs and guides
+```
+
+## Build Commands
+
+### Python Packages (Poetry)
+
+Each Python package is managed independently with Poetry:
+
+```bash
+# Navigate to package directory first
+cd python-sdks/keywordsai-tracing
+
+# Install dependencies
+poetry install
+
+# Install with dev dependencies
+poetry install --with dev
+
+# Run tests
+poetry run pytest
+
+# Run a single test file
+poetry run pytest tests/test_client_api.py
+
+# Run specific test
+poetry run pytest tests/test_client_api.py::test_function_name
+
+# Build package
+poetry build
+```
+
+### JavaScript/TypeScript Packages (Yarn)
+
+```bash
+# Navigate to package directory
+cd javascript-sdks/keywordsai-tracing
+
+# Install dependencies
+yarn install
+
+# Build
+yarn build
+
+# Run examples
+yarn examples:basic
+yarn examples:advanced
+
+# Test build
+yarn test:build
+```
+
+## Architecture
+
+### Tracing Architecture (Python)
+
+- **KeywordsAITelemetry** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/main.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/main.py)) - Main entry point, initializes OpenTelemetry tracer
+- **KeywordsAITracer** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/tracer.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/tracer.py)) - Core tracer implementation with processor management
+- **KeywordsAIClient** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/client.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/client.py)) - Client for trace operations (get trace ID, update spans, etc.)
+- **Decorators** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/decorators/](python-sdks/keywordsai-tracing/src/keywordsai_tracing/decorators/)) - `@workflow`, `@task`, `@agent`, `@tool` for tracing functions
+
+### Tracing Architecture (TypeScript)
+
+- **KeywordsAITelemetry** ([javascript-sdks/keywordsai-tracing/src/main.ts](javascript-sdks/keywordsai-tracing/src/main.ts)) - Main client class with `withTask`, `withWorkflow`, `withAgent`, `withTool` wrappers
+- Auto-discovery instrumentation for OpenAI, Anthropic, Azure, Cohere, Bedrock, Vertex AI, etc.
+- Manual instrumentation support for Next.js/Webpack environments via `instrumentModules`
+
+### Span Hierarchy
+
+Traces follow OpenLLMetry conventions:
+- **Workflow** - Top-level agent run/process
+- **Task** - Sub-operations within a workflow (tool calls, LLM calls)
+- **Agent** - Agent-specific spans
+- **Tool** - Tool execution spans
+
+### Processor Pattern
+
+Both Python and TypeScript SDKs support multiple processors for routing spans to different destinations:
+
+```python
+# Python - add custom processor
+kai.add_processor(
+    exporter=KeywordsAISpanExporter(...),
+    name="production",
+    filter_fn=lambda span: span.attributes.get("processor") == "prod"
+)
+```
+
+```typescript
+// TypeScript - add custom processor
+keywordsAi.addProcessor({
+    exporter: new FileExporter("./debug.json"),
+    name: "debug"
+});
+```
+
+## Environment Variables
+
+- `KEYWORDSAI_API_KEY` - API key for Keywords AI platform
+- `KEYWORDSAI_BASE_URL` - API endpoint (default: `https://api.keywordsai.co/api`)
+- `KEYWORDSAI_BATCHING_ENABLED` - Enable batch processing (default: true)
+- `KEYWORDSAI_LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+## Python Version Requirements
+
+- `keywordsai-sdk`: Python >3.9, <4.0
+- `keywordsai-tracing`: Python >=3.11, <3.14
+- Exporters vary (check individual pyproject.toml files)
+
+## Package Dependencies
+
+- `keywordsai-tracing` depends on `keywordsai-sdk`
+- TypeScript `@keywordsai/tracing` depends on `@keywordsai/keywordsai-sdk`
+- Both use OpenTelemetry SDK for tracing infrastructure
