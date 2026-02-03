@@ -1,3 +1,8 @@
+[project]
+name = "respan-sdk"
+version = "1.0.0"
+description = "Respan SDK allows you to interact with the Respan API smoothly"
+
 [tool.poetry]
 name = "respan-sdk"
 version = "1.0.0"
