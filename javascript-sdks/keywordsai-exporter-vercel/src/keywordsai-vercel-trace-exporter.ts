@@ -31,12 +31,12 @@ export class KeywordsAIExporter implements SpanExporter {
   private readonly url: string;
   private resolveURL(baseURL: string | undefined) {
     if (!baseURL) {
-      return "https://api.keywordsai.co/api/v1/traces/ingest";
+      return "https://api.keywordsai.co/api/integrations/v1/traces/ingest";
     }
     if (baseURL.endsWith("/api")) {
-      return baseURL + "/v1/traces/ingest";
+      return baseURL + "/integrations/v1/traces/ingest";
     }
-    return baseURL + "/api/v1/traces/ingest";
+    return baseURL + "/api/integrations/v1/traces/ingest";
   }
   constructor(
     params: { debug?: boolean; apiKey?: string; baseUrl?: string } = {}
@@ -370,8 +370,9 @@ export class KeywordsAIExporter implements SpanExporter {
   }
 
   private parseModel(span: ReadableSpan): string {
-    const rawModel = String(span.attributes["ai.model.id"] || "unknown");
-    const model = rawModel.toLowerCase();
+    const model = String(
+      span.attributes["ai.model.id"] || "unknown"
+    ).toLowerCase();
 
     if (model.includes("gemini-2.0-flash-001")) {
       return "gemini/gemini-2.0-flash";
@@ -391,25 +392,6 @@ export class KeywordsAIExporter implements SpanExporter {
 
     if (model.includes("o3-mini")) {
       return "o3-mini";
-    }
-
-    // If we already have a provider prefix (e.g. "openai/gpt-4o-mini"), keep it.
-    if (model.includes("/")) return model;
-
-    // Try to infer provider from AI SDK / gen_ai attributes.
-    const providerRaw =
-      span.attributes["ai.model.provider"] ??
-      span.attributes["gen_ai.system"];
-    const provider = providerRaw ? String(providerRaw).toLowerCase() : undefined;
-
-    if (provider) {
-      if (provider.includes("openai")) return `openai/${model}`;
-      if (provider.includes("anthropic")) return `anthropic/${model}`;
-      if (provider.includes("cohere")) return `cohere/${model}`;
-      if (provider.includes("mistral")) return `mistral/${model}`;
-      if (provider.includes("groq")) return `groq/${model}`;
-      if (provider.includes("xai") || provider.includes("grok"))
-        return `xai/${model}`;
     }
 
     return model;
@@ -441,7 +423,6 @@ export class KeywordsAIExporter implements SpanExporter {
       String(
         span.attributes["gen_ai.usage.input_tokens"] ||
           span.attributes["gen_ai.usage.prompt_tokens"] ||
-          span.attributes["ai.usage.promptTokens"] ||
           "0"
       )
     );
@@ -452,7 +433,6 @@ export class KeywordsAIExporter implements SpanExporter {
       String(
         span.attributes["gen_ai.usage.output_tokens"] ||
           span.attributes["gen_ai.usage.completion_tokens"] ||
-          span.attributes["ai.usage.completionTokens"] ||
           "0"
       )
     );
@@ -466,28 +446,7 @@ export class KeywordsAIExporter implements SpanExporter {
 
   private parseCost(span: ReadableSpan): number | undefined {
     const cost = span.attributes["gen_ai.usage.cost"];
-    if (cost !== undefined && cost !== null && cost !== "") {
-      const parsed = parseFloat(String(cost));
-      return Number.isFinite(parsed) ? parsed : undefined;
-    }
-
-    const model = this.parseModel(span);
-    const promptTokens = this.parsePromptTokens(span);
-    const completionTokens = this.parseCompletionTokens(span);
-
-    if (!promptTokens && !completionTokens) return undefined;
-
-    const PRICES_PER_1M: Record<string, { input: number; output: number }> = {
-      "openai/gpt-4o-mini": { input: 0.15, output: 0.6 },
-      "openai/gpt-4o": { input: 5.0, output: 15.0 },
-    };
-
-    const price = PRICES_PER_1M[model];
-    if (!price) return undefined;
-
-    const estimated =
-      (promptTokens * price.input + completionTokens * price.output) / 1_000_000;
-    return Number.isFinite(estimated) && estimated >= 0 ? estimated : undefined;
+    return cost ? parseFloat(String(cost)) : undefined;
   }
 
   private parseGenerationTime(span: ReadableSpan): number | undefined {
