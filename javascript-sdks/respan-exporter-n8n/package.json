@@ -1,0 +1,60 @@
+{
+	"name": "@respan/n8n-nodes-respan",
+	"version": "1.0.0",
+	"description": "Respan Exporter for n8n",
+	"license": "MIT",
+	"homepage": "https://respan.ai",
+	"keywords": [
+		"n8n-community-node-package",
+		"respan",
+		"llm",
+		"ai"
+	],
+	"author": {
+		"name": "Respan",
+		"email": "team@respan.ai"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/respan-ai/respan-sdks",
+		"directory": "javascript-sdks/respan-exporter-n8n"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": [
+		"dist",
+		"credentials",
+		"nodes",
+		"icons"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/RespanApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Respan/Respan.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"eslint": "9.32.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}

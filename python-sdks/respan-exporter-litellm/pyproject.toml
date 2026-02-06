@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "respan-exporter-litellm"
+version = "1.0.0"
+description = "Respan exporter for LiteLLM"
+authors = ["Respan <team@respan.ai>"]
+readme = "README.md"
+packages = [{include = "respan_exporter_litellm", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.5"
+
+
+[tool.poetry.group.dev.dependencies]
+litellm = "^1.80.10"
+pytest = "^9.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
