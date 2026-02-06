@@ -1,10 +1,10 @@
 # Observability Parameters Guide
 
-Complete guide to using Keywords AI's observability parameters in the n8n node for tracking, monitoring, and analyzing your LLM calls.
+Complete guide to using Respan's observability parameters in the n8n node for tracking, monitoring, and analyzing your LLM calls.
 
 ## 📊 Overview
 
-The Keywords AI node includes **5 observability parameters** that help you:
+The Respan node includes **5 observability parameters** that help you:
 - Track user sessions and requests
 - Monitor costs and performance
 - Filter and search logs efficiently
@@ -43,7 +43,7 @@ All observability parameters are **optional** and found in **Additional Fields**
 - Environment tagging
 - Custom business logic
 
-**View in Keywords AI**: Visible in log details, searchable via filters
+**View in Respan**: Visible in log details, searchable via filters
 
 ---
 
@@ -96,7 +96,7 @@ user_john_doe_123
 - Usage patterns by user
 - User-specific logs filtering
 
-**View in Keywords AI**: 
+**View in Respan**: 
 - Users page shows aggregated data per customer
 - Can filter logs by customer_identifier
 
@@ -106,7 +106,7 @@ HTTP Request (get user from database)
   ↓
 Set Variable (userId = "user_123")
   ↓
-Keywords AI (customer_identifier: "user_123")
+Respan (customer_identifier: "user_123")
 ```
 
 ---
@@ -157,7 +157,7 @@ Keywords AI (customer_identifier: "user_123")
 - Tiered pricing
 - Enterprise account management
 
-**View in Keywords AI**: Users page with full analytics and budget tracking
+**View in Respan**: Users page with full analytics and budget tracking
 
 ---
 
@@ -221,7 +221,7 @@ Keywords AI (customer_identifier: "user_123")
 ### Example 1: E-commerce Customer Support
 
 ```json
-// In n8n Keywords AI node:
+// In n8n Respan node:
 
 Additional Fields:
   ├─ Metadata (JSON):
@@ -347,7 +347,7 @@ Set up customer params for users who need budget limits:
 
 ### 4. **Workflow Integration**
 ```
-Trigger → Get User Data → Set Variables → Keywords AI
+Trigger → Get User Data → Set Variables → Respan
                                             ↓
                             (Pass user data in customer params)
 ```
@@ -364,7 +364,7 @@ Trigger → Get User Data → Set Variables → Keywords AI
 
 ---
 
-## 🔎 Filtering in Keywords AI Dashboard
+## 🔎 Filtering in Respan Dashboard
 
 ### By Custom Identifier
 ```
@@ -424,10 +424,10 @@ Don't pass already-stringified JSON:
 
 ## 📚 Related Documentation
 
-- [Keywords AI Metadata Docs](https://docs.keywordsai.co/features/generation/metadata)
-- [Customer Identifier Guide](https://docs.keywordsai.co/features/generation/customer-identifier)
-- [User Analytics](https://docs.keywordsai.co/features/user/user-creation)
-- [API Reference](https://docs.keywordsai.co/api-endpoints/develop/gateway/chat-completions#observability-parameters)
+- [Respan Metadata Docs](https://docs.respan.co/features/generation/metadata)
+- [Customer Identifier Guide](https://docs.respan.co/features/generation/customer-identifier)
+- [User Analytics](https://docs.respan.co/features/user/user-creation)
+- [API Reference](https://docs.respan.co/api-endpoints/develop/gateway/chat-completions#observability-parameters)
 
 ---
 
