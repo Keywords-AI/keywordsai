@@ -1,6 +1,6 @@
 import { Agent, BatchTraceProcessor, run, setTraceProcessors, tool, withTrace } from '@openai/agents';
 import { z } from 'zod';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 import * as dotenv from 'dotenv';
 dotenv.config(
   {
@@ -11,7 +11,7 @@ dotenv.config(
 
 setTraceProcessors([
 new BatchTraceProcessor(
-  new KeywordsAIOpenAIAgentsTracingExporter(),
+  new RespanOpenAIAgentsTracingExporter(),
 ),
 ]);  
 // Tool that returns a random integer between 1 and 10
