@@ -1,11 +1,11 @@
 """Type definitions for Respan Agno exporter."""
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
+from respan_sdk.respan_types.base_types import RespanBaseModel
 
-@dataclass
-class TraceContext:
+
+class TraceContext(RespanBaseModel):
     """Context information for a trace, extracted from trace object and root span."""
 
     trace_id: str

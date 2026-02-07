@@ -7,13 +7,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
 
-from respan_exporter_agno.constants import DEFAULT_ENDPOINT, LOG_TYPE_MAP
+from respan_exporter_agno.constants import DEFAULT_ENDPOINT
 from respan_exporter_agno.types import TraceContext
 from respan_exporter_agno.utils import (
     as_dict,
-    calculate_cost,
     clean_payload,
-    coerce_cost_value,
     coerce_datetime,
     coerce_token_count,
     extract_metadata_payload,
@@ -34,6 +32,7 @@ from respan_exporter_agno.utils import (
     to_completion_message,
     to_prompt_messages,
 )
+from respan_sdk.constants.llm_logging import LOG_TYPE_MAP
 from respan_sdk.respan_types.log_types import RespanFullLogParams
 
 logger = logging.getLogger(__name__)
@@ -540,27 +539,6 @@ class RespanAgnoExporter:
             else:
                 prompt_tokens_value = coerce_token_count(value=prompt_tokens)
                 completion_tokens_value = coerce_token_count(value=completion_tokens)
-
-        cost = coerce_cost_value(value=get_attr(span, "cost"))
-        if cost is None and isinstance(span_metadata, dict):
-            cost = coerce_cost_value(
-                value=span_metadata.get("cost") or span_metadata.get("llm.cost.total")
-            )
-            if cost is None:
-                prompt_cost = coerce_cost_value(value=span_metadata.get("llm.cost.prompt"))
-                completion_cost = coerce_cost_value(
-                    value=span_metadata.get("llm.cost.completion")
-                )
-                if prompt_cost is not None or completion_cost is not None:
-                    cost = (prompt_cost or 0.0) + (completion_cost or 0.0)
-        if cost is None:
-            cost = calculate_cost(
-                model=model,
-                prompt_tokens=prompt_tokens_value,
-                completion_tokens=completion_tokens_value,
-            )
-        if cost is not None:
-            payload["cost"] = cost
 
         if error:
             payload["error_message"] = str(error)

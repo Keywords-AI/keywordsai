@@ -4,9 +4,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from respan_exporter_agno.constants import MODEL_PRICING_PER_MILLION
-
-
 def ns_to_datetime(value: Optional[int]) -> Optional[datetime]:
     """Convert nanoseconds timestamp to datetime."""
     if not value:
@@ -196,68 +193,6 @@ def coerce_token_count(value: Any) -> Optional[int]:
         except ValueError:
             return None
     return None
-
-
-def coerce_cost_value(value: Any) -> Optional[float]:
-    """Coerce value to cost float."""
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        stripped = value.strip()
-        if not stripped:
-            return None
-        try:
-            return float(stripped)
-        except ValueError:
-            return None
-    return None
-
-
-def normalize_model_name(model: Optional[str]) -> Optional[str]:
-    """Normalize model name by extracting base name from provider prefixes."""
-    if not model:
-        return None
-    model_name = str(model).strip()
-    if not model_name:
-        return None
-    if "/" in model_name:
-        model_name = model_name.split("/")[-1]
-    if ":" in model_name:
-        model_name = model_name.split(":")[-1]
-    return model_name
-
-
-def get_model_pricing(model_name: Optional[str]) -> Optional[Dict[str, float]]:
-    """Get pricing for model from pricing table."""
-    if not model_name:
-        return None
-    if model_name in MODEL_PRICING_PER_MILLION:
-        return MODEL_PRICING_PER_MILLION[model_name]
-    for key, pricing in MODEL_PRICING_PER_MILLION.items():
-        if model_name.startswith(f"{key}-"):
-            return pricing
-    return None
-
-
-def calculate_cost(
-    model: Optional[str],
-    prompt_tokens: Optional[int],
-    completion_tokens: Optional[int],
-) -> Optional[float]:
-    """Calculate cost based on model and token counts."""
-    if not model or prompt_tokens is None or completion_tokens is None:
-        return None
-    model_name = normalize_model_name(model=model)
-    pricing = get_model_pricing(model_name=model_name)
-    if not pricing:
-        return None
-    prompt_cost = (prompt_tokens / 1_000_000) * pricing["prompt"]
-    completion_cost = (completion_tokens / 1_000_000) * pricing["completion"]
-    return prompt_cost + completion_cost
 
 
 def infer_trace_start_time(spans: Sequence[Any]) -> Optional[datetime]:
