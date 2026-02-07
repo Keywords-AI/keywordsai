@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
 
-from respan_exporter_agno.constants import DEFAULT_ENDPOINT
 from respan_exporter_agno.types import TraceContext
 from respan_exporter_agno.utils import (
     as_dict,
@@ -36,6 +35,8 @@ from respan_sdk.constants.llm_logging import LOG_TYPE_MAP
 from respan_sdk.respan_types.log_types import RespanFullLogParams
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
 
 class RespanAgnoExporter:
