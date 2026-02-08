@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal
+from typing import Dict, Literal
 
 
 class LogMethodChoices(Enum):
@@ -71,3 +71,18 @@ LogType = Literal[
     "unknown",
     "score",
 ]
+
+LOG_TYPE_MAP: Dict[str, str] = {
+    "workflow": LOG_TYPE_WORKFLOW,
+    "trace": LOG_TYPE_WORKFLOW,
+    "agent": LOG_TYPE_AGENT,
+    "task": LOG_TYPE_TASK,
+    "step": LOG_TYPE_TASK,
+    "tool": LOG_TYPE_TOOL,
+    "function": LOG_TYPE_TOOL,
+    "llm": LOG_TYPE_GENERATION,
+    "generation": LOG_TYPE_GENERATION,
+    "model": LOG_TYPE_GENERATION,
+    "chat": LOG_TYPE_CHAT,
+    "prompt": "prompt",
+}
