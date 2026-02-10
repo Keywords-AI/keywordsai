@@ -1,4 +1,4 @@
-"""Integration tests for Keywords AI LiteLLM proxy."""
+"""Integration tests for Respan LiteLLM proxy."""
 import os
 
 import dotenv
@@ -7,8 +7,8 @@ dotenv.load_dotenv(".env", override=True)
 import litellm
 import pytest
 
-API_BASE = "https://api.keywordsai.co/api"
-API_KEY = os.getenv("KEYWORDSAI_API_KEY")
+API_BASE = os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api")
+API_KEY = os.getenv("RESPAN_API_KEY")
 MODEL = "gpt-4o-mini"
 
 TOOLS = [{
@@ -29,7 +29,7 @@ TOOLS = [{
 def setup():
     """Reset LiteLLM state before/after each test."""
     if not API_KEY:
-        pytest.skip("KEYWORDSAI_API_KEY not set")
+        pytest.skip("RESPAN_API_KEY not set")
     litellm.success_callback = []
     litellm.failure_callback = []
     yield
@@ -49,13 +49,13 @@ def test_completion():
 
 
 def test_completion_with_metadata():
-    """Test completion with Keywords AI metadata."""
+    """Test completion with Respan metadata."""
     response = litellm.completion(
         api_key=API_KEY,
         api_base=API_BASE,
         model=MODEL,
         messages=[{"role": "user", "content": "Say hello"}],
-        metadata={"keywordsai_params": {"customer_identifier": "test_user"}},
+        metadata={"respan_params": {"customer_identifier": "test_user"}},
     )
     assert response.choices[0].message.content
 

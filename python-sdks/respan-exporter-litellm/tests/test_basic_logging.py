@@ -1,4 +1,4 @@
-"""Basic logging tests for Keywords AI LiteLLM integration."""
+"""Basic logging tests for Respan LiteLLM integration."""
 
 import os
 
@@ -6,12 +6,12 @@ import dotenv
 import litellm
 import pytest
 
-from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+from respan_exporter_litellm import RespanLiteLLMCallback
 
 dotenv.load_dotenv(".env", override=True)
 
 # Constants
-API_BASE = os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api")
+API_BASE = os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api")
 MODEL = "gpt-4o-mini"
 
 
@@ -22,21 +22,21 @@ MODEL = "gpt-4o-mini"
 @pytest.fixture
 def api_key():
     """Get API key from environment."""
-    key = os.getenv("KEYWORDSAI_API_KEY")
+    key = os.getenv("RESPAN_API_KEY")
     if not key:
-        pytest.skip("KEYWORDSAI_API_KEY not set")
+        pytest.skip("RESPAN_API_KEY not set")
     return key
 
 
 @pytest.fixture
 def callback(api_key):
     """Setup callback and clean up after test."""
-    cb = KeywordsAILiteLLMCallback(api_key=api_key)
+    cb = RespanLiteLLMCallback(api_key=api_key)
     cb.register_litellm_callbacks()
 
     # Verify callback registration
-    success_handler = litellm.success_callback["keywordsai"]
-    failure_handler = litellm.failure_callback["keywordsai"]
+    success_handler = litellm.success_callback["respan"]
+    failure_handler = litellm.failure_callback["respan"]
     assert getattr(success_handler, "__self__", None) is cb
     assert getattr(failure_handler, "__self__", None) is cb
 
@@ -59,7 +59,7 @@ def test_log_with_callback_non_stream_basic_logging(callback, api_key):
         model=MODEL,
         messages=[{"role": "user", "content": "Say hello in one word."}],
         metadata={
-            "keywordsai_params": {
+            "respan_params": {
                 "workflow_name": "callback_logging_basic_logging",
                 "span_name": "callback_log_basic_logging",
                 "customer_identifier": "test_callback_user_basic_logging",

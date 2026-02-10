@@ -1,25 +1,25 @@
-# Keywords AI LiteLLM Exporter
+# Respan LiteLLM Exporter
 
-LiteLLM integration for exporting logs and traces to Keywords AI.
+LiteLLM integration for exporting logs and traces to Respan.
 
 ## Installation
 
 ```bash
-pip install keywordsai-exporter-litellm
+pip install respan-exporter-litellm
 ```
 
 ## Quick Start
 
 ### Callback Mode
 
-Use the callback to send traces to Keywords AI:
+Use the callback to send traces to Respan:
 
 ```python
 import litellm
-from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+from respan_exporter_litellm import RespanLiteLLMCallback
 
 # Setup callback
-callback = KeywordsAILiteLLMCallback(api_key="your-keywordsai-api-key")
+callback = RespanLiteLLMCallback(api_key="your-respan-api-key")
 callback.register_litellm_callbacks()
 
 # Make LLM calls - traces are automatically sent
@@ -31,14 +31,14 @@ response = litellm.completion(
 
 ### Proxy Mode
 
-Route requests through Keywords AI gateway:
+Route requests through Respan gateway:
 
 ```python
 import litellm
 
 response = litellm.completion(
-    api_key="your-keywordsai-api-key",
-    api_base="https://api.keywordsai.co/api",
+    api_key="your-respan-api-key",
+    api_base="https://api.respan.ai/api",
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
 )
@@ -49,22 +49,22 @@ response = litellm.completion(
 If you just want individual logs (no trace/span IDs), omit trace fields and
 send only basic metadata. This will produce one log per request.
 
-### Callback Mode (with `keywordsai_params`)
+### Callback Mode (with `respan_params`)
 
 ```python
 import litellm
-from keywordsai_exporter_litellm import KeywordsAILiteLLMCallback
+from respan_exporter_litellm import RespanLiteLLMCallback
 
-callback = KeywordsAILiteLLMCallback(api_key="your-api-key")
+callback = RespanLiteLLMCallback(api_key="your-api-key")
 callback.register_litellm_callbacks()
 
 response = litellm.completion(
     api_key="your-api-key",
-    api_base="https://api.keywordsai.co/api",
+    api_base="https://api.respan.ai/api",
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
     metadata={
-        "keywordsai_params": {
+        "respan_params": {
             "workflow_name": "simple_logging",
             "span_name": "single_log",
             "customer_identifier": "user-123",
@@ -79,8 +79,8 @@ response = litellm.completion(
 import litellm
 
 response = litellm.completion(
-    api_key="your-keywordsai-api-key",
-    api_base="https://api.keywordsai.co/api",
+    api_key="your-respan-api-key",
+    api_base="https://api.respan.ai/api",
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}],
     extra_body={

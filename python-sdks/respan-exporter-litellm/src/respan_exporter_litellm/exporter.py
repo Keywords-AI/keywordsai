@@ -1,6 +1,6 @@
-"""Keywords AI LiteLLM Integration.
+"""Respan LiteLLM Integration.
 
-RespanLiteLLMCallback - LiteLLM-native callback class for sending traces to Keywords AI.
+RespanLiteLLMCallback - LiteLLM-native callback class for sending traces to Respan.
 """
 
 import hashlib
@@ -131,7 +131,7 @@ def _enable_named_callbacks() -> None:
         )
 
 class RespanLiteLLMCallback(LiteLLMCustomLogger):
-    """LiteLLM callback that sends traces to Keywords AI.
+    """LiteLLM callback that sends traces to Respan.
     
     Usage:
         callback = RespanLiteLLMCallback(api_key="...")
@@ -150,7 +150,7 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
         self.endpoint = endpoint or os.getenv("RESPAN_ENDPOINT", DEFAULT_ENDPOINT)
         self.timeout = timeout
         if not self.api_key:
-            logger.warning("Keywords AI API key not provided")
+            logger.warning("Respan API key not provided")
 
     def register_litellm_callbacks(self, name: str = "respan") -> None:
         """Register success/failure callbacks on LiteLLM by name."""
@@ -211,7 +211,7 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
         end_time: datetime,
         error: Optional[Exception],
     ) -> None:
-        """Send event to Keywords AI."""
+        """Send event to Respan."""
         if not self.api_key:
             return
         
@@ -274,7 +274,7 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
             
             self._send([payload])
         except Exception as e:
-            logger.error(f"Keywords AI logging error: {e}")
+            logger.error(f"Respan logging error: {e}")
 
     def _add_span_id(
         self,
@@ -305,7 +305,7 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
                 payload["span_unique_id"] = _format_span_id(str(raw_id))
 
     def _add_respan_params(self, payload: Dict, kw_params: Dict) -> None:
-        """Add Keywords AI specific params to payload."""
+        """Add Respan-specific params to payload."""
         extra_meta = {}
         
         # Customer identifier
@@ -338,7 +338,7 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
             payload["metadata"] = extra_meta
     
     def _send(self, payloads: List[Dict[str, Any]]) -> None:
-        """Send payloads to Keywords AI."""
+        """Send payloads to Respan."""
         try:
             response = requests.post(
                 self.endpoint,
@@ -350,6 +350,6 @@ class RespanLiteLLMCallback(LiteLLMCustomLogger):
                 timeout=self.timeout,
             )
             if response.status_code != 200:
-                logger.warning(f"Keywords AI error: {response.status_code}")
+                logger.warning(f"Respan error: {response.status_code}")
         except Exception as e:
-            logger.error(f"Keywords AI request error: {e}")
+            logger.error(f"Respan request error: {e}")
