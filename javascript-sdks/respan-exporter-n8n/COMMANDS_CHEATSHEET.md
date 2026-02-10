@@ -1,13 +1,13 @@
 # Commands Cheat Sheet
 
-Quick reference for common operations with the Keywords AI node.
+Quick reference for common operations with the Respan node.
 
 ## 📦 Installation
 
 ```bash
 # Clone repository
 git clone <repo-url>
-cd n8n-keywordsai
+cd respan-exporter-n8n
 
 # Install dependencies
 npm install
@@ -17,7 +17,7 @@ npm run build
 
 # Link to n8n
 npm link
-cd ~/.n8n/custom && npm link n8n-nodes-keywordsai
+cd ~/.n8n/custom && npm link @respan/n8n-nodes-respan
 
 # Start n8n
 npx n8n start
@@ -66,26 +66,26 @@ rm -rf dist node_modules package-lock.json
 npm install
 npm run build
 npm link
-cd ~/.n8n/custom && npm link n8n-nodes-keywordsai
+cd ~/.n8n/custom && npm link @respan/n8n-nodes-respan
 ```
 
 ## 🔗 Linking
 
 ```bash
 # Link from project directory
-cd /path/to/n8n-keywordsai
+cd /path/to/respan-exporter-n8n
 npm link
 
 # Link to n8n
 cd ~/.n8n/custom
-npm link n8n-nodes-keywordsai
+npm link @respan/n8n-nodes-respan
 
 # Verify link
-npm list n8n-nodes-keywordsai
+npm list @respan/n8n-nodes-respan
 
 # Unlink
 cd ~/.n8n/custom
-npm unlink n8n-nodes-keywordsai
+npm unlink @respan/n8n-nodes-respan
 ```
 
 ## 🚀 n8n Operations
@@ -121,9 +121,9 @@ npm cache clean --force
 rm -rf ~/.npm/_npx
 
 # Link issues?
-npm unlink n8n-nodes-keywordsai
-cd /path/to/n8n-keywordsai && npm link
-cd ~/.n8n/custom && npm link n8n-nodes-keywordsai
+npm unlink @respan/n8n-nodes-respan
+cd /path/to/respan-exporter-n8n && npm link
+cd ~/.n8n/custom && npm link @respan/n8n-nodes-respan
 ```
 
 ## 📊 Project Info
@@ -150,11 +150,11 @@ npm audit
 ```bash
 # Test API connection (replace with your key)
 curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.keywordsai.co/api/prompts/
+  https://api.respan.co/api/prompts/
 
 # Check if node is linked
 cd ~/.n8n/custom
-npm list n8n-nodes-keywordsai
+npm list @respan/n8n-nodes-respan
 ```
 
 ## 📝 Git Operations
@@ -183,7 +183,7 @@ git checkout -b feature-name
 
 | Path | Purpose |
 |------|---------|
-| `/path/to/n8n-keywordsai` | Your node source code |
+| `/path/to/respan-exporter-n8n` | Your node source code |
 | `~/.n8n/custom` | n8n custom nodes directory |
 | `~/.n8n/cache` | n8n cache (safe to delete) |
 | `~/.npm` | npm global cache |
@@ -212,21 +212,21 @@ npm run build
 ### Fresh Install on New Machine
 ```bash
 git clone <repo>
-cd n8n-keywordsai
+cd respan-exporter-n8n
 npm install && npm run build && npm link
-cd ~/.n8n/custom && npm link n8n-nodes-keywordsai
+cd ~/.n8n/custom && npm link @respan/n8n-nodes-respan
 npx n8n start
 ```
 
 ### Complete Reset
 ```bash
 # Stop n8n first (Ctrl+C)
-cd ~/.n8n/custom && npm unlink n8n-nodes-keywordsai
-cd /path/to/n8n-keywordsai
+cd ~/.n8n/custom && npm unlink @respan/n8n-nodes-respan
+cd /path/to/respan-exporter-n8n
 rm -rf dist node_modules
 npm cache clean --force
 npm install && npm run build && npm link
-cd ~/.n8n/custom && npm link n8n-nodes-keywordsai
+cd ~/.n8n/custom && npm link @respan/n8n-nodes-respan
 npx n8n start
 ```
 
@@ -235,8 +235,8 @@ npx n8n start
 | Service | URL |
 |---------|-----|
 | Local n8n | http://localhost:5678 |
-| Keywords AI Platform | https://platform.keywordsai.co |
-| Keywords AI Docs | https://docs.keywordsai.co |
+| Respan Platform | https://platform.respan.ai |
+| Respan Docs | https://docs.respan.co |
 | n8n Docs | https://docs.n8n.io |
 
 ## 💡 Tips
@@ -245,7 +245,7 @@ npx n8n start
 - Restart n8n to see node updates
 - Clear `~/.n8n/cache` if node doesn't appear
 - Use `npx n8n start --tunnel` for public access
-- Check `npm list n8n-nodes-keywordsai` to verify link
+- Check `npm list @respan/n8n-nodes-respan` to verify link
 
 ---
 
