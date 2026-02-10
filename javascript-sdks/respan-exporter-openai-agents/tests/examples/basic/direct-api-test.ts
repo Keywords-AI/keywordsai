@@ -6,11 +6,14 @@ dotenv.config({
 });
 
 async function testDirectAPI() {
-  const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const endpoint = 'https://api.keywordsai.co/api/v1/traces/ingest';
+  const apiKey = process.env.RESPAN_API_KEY;
+  const baseUrl = process.env.RESPAN_BASE_URL || 'https://api.respan.ai/api';
+  const endpoint = baseUrl.endsWith('/api')
+    ? `${baseUrl}/v1/traces/ingest`
+    : `${baseUrl}/api/v1/traces/ingest`;
   
   if (!apiKey) {
-    console.error('KEYWORDSAI_API_KEY not found');
+    console.error('RESPAN_API_KEY not found');
     return;
   }
 

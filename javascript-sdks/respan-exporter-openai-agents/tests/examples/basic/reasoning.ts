@@ -1,6 +1,6 @@
 import { styleText } from 'node:util';
 import { Agent, BatchTraceProcessor, run, setTraceProcessors, withTrace } from '@openai/agents';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 import * as dotenv from 'dotenv';
 
 dotenv.config(
@@ -11,7 +11,7 @@ dotenv.config(
 );
 setTraceProcessors([
   new BatchTraceProcessor(
-    new KeywordsAIOpenAIAgentsTracingExporter(),
+    new RespanOpenAIAgentsTracingExporter(),
   ),
 ]);       
 const ASSISTANT_PREFIX = 'Assistant';

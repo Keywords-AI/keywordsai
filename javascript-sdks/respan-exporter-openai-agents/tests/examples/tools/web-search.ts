@@ -1,5 +1,5 @@
 import { Agent, BatchTraceProcessor, run, setTraceProcessors, webSearchTool, withTrace } from '@openai/agents';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 import * as dotenv from 'dotenv';
 dotenv.config(
   {
@@ -10,7 +10,7 @@ dotenv.config(
 
 setTraceProcessors([
 new BatchTraceProcessor(
-  new KeywordsAIOpenAIAgentsTracingExporter(),
+  new RespanOpenAIAgentsTracingExporter(),
 ),
 ]);       
 async function main() {
