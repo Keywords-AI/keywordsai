@@ -15,6 +15,11 @@ from .param_types import (
     PromptParam,
     PostHogIntegration,
 )
+from .services_types.hyperspell_types import (
+    HyperspellAddMemoryParams,
+    HyperspellSearchMemoriesParams,
+    HyperspellParams,
+)
 
 from ._internal_types import (
     Message,
@@ -53,6 +58,9 @@ __all__ = [
     "Customer",
     "PromptParam",
     "PostHogIntegration",
+    "HyperspellAddMemoryParams",
+    "HyperspellSearchMemoriesParams",
+    "HyperspellParams",
     
     # Basic types
     "Message",

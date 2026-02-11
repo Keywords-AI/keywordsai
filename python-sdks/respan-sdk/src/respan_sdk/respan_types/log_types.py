@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import field_validator, model_validator
 
 from respan_sdk.respan_types.services_types.moda_types import ModaParams
+from respan_sdk.respan_types.services_types.hyperspell_types import HyperspellParams
 
 from ._internal_types import (
     RespanBaseModel,
@@ -178,6 +179,7 @@ class RespanLogParams(PreprocessLogDataMixin, RespanBaseModel):
     # endregion: llm response timing metrics
 
     # region: technical integrations
+    hyperspell_params: Optional[HyperspellParams] = None
     linkup_params: Optional[LinkupParams] = None
     mem0_params: Optional[Mem0Params] = None
     moda_params: Optional[ModaParams] = None

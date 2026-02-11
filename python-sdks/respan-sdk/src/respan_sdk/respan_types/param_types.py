@@ -3,6 +3,7 @@ from typing_extensions import deprecated
 from pydantic import ConfigDict, field_validator, model_validator
 
 from respan_sdk.respan_types.services_types.moda_types import ModaParams
+from respan_sdk.respan_types.services_types.hyperspell_types import HyperspellParams
 from ._internal_types import (
     BasicAssistantParams,
     BasicLLMParams,
@@ -407,6 +408,7 @@ class RespanParams(RespanBaseModel, PreprocessLogDataMixin):
     # endregion: request metadata
 
     # region: technical integrations
+    hyperspell_params: Optional[HyperspellParams] = None
     linkup_params: Optional[LinkupParams] = None
     mem0_params: Optional[Mem0Params] = None
     moda_params: Optional[ModaParams] = None
