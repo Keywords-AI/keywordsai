@@ -12,7 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
 requests = "^2.32.5"
-keywordsai-sdk = ">=0.4.63"
+respan-sdk = ">=1.0.0"
 safety-agent = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]

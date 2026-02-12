@@ -2,18 +2,12 @@ import json
 import logging
 from datetime import datetime
 from datetime import timezone
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 import requests
-from keywordsai_sdk.keywordsai_types.log_types import KeywordsAIFullLogParams
-
-from respan_exporter_superagent.types import ErrorMessage
-from respan_exporter_superagent.types import InputValue
-from respan_exporter_superagent.types import OutputValue
-from respan_exporter_superagent.types import Payload
-from respan_exporter_superagent.types import RespanExportParams
-from respan_exporter_superagent.types import ValidatedPayload
+from typing import Dict
+from respan_sdk.respan_types import RespanFullLogParams
+from respan_sdk.respan_types import RespanParams
 
 
 logger = logging.getLogger(__name__)
@@ -36,17 +30,17 @@ def build_payload(
     start_time: datetime,
     end_time: datetime,
     status: str,
-    input_value: InputValue,
-    output_value: OutputValue,
-    error_message: ErrorMessage,
-    export_params: Optional[RespanExportParams],
-) -> Payload:
-    params = export_params or {}
+    input_value: Any,
+    output_value: Any,
+    error_message: Optional[str],
+    export_params: Optional[RespanParams],
+) -> Dict[str, Any]:
+    params = export_params or RespanParams()
 
-    payload: Payload = {
-        "span_workflow_name": params.get("workflow_name", "superagent"),
-        "span_name": params.get("span_name", f"superagent.{method_name}"),
-        "log_type": params.get("log_type", "tool"),
+    payload: Dict[str, Any] = {
+        "span_workflow_name": params.span_workflow_name or "superagent",
+        "span_name": params.span_name or f"superagent.{method_name}",
+        "log_type": params.log_type or "tool",
         "start_time": start_time.isoformat(),
         "timestamp": end_time.isoformat(),
         "latency": (end_time - start_time).total_seconds(),
@@ -60,29 +54,24 @@ def build_payload(
     if error_message:
         payload["error_message"] = error_message
 
-    trace_unique_id = params.get("trace_unique_id") or params.get("trace_id")
-    if trace_unique_id:
-        payload["trace_unique_id"] = trace_unique_id
-        payload["trace_name"] = params.get("trace_name", payload["span_workflow_name"])
+    if params.trace_unique_id:
+        payload["trace_unique_id"] = params.trace_unique_id
+        payload["trace_name"] = params.trace_name or payload["span_workflow_name"]
 
-    span_unique_id = params.get("span_unique_id") or params.get("span_id")
-    if span_unique_id:
-        payload["span_unique_id"] = span_unique_id
-    span_parent_id = params.get("span_parent_id") or params.get("parent_span_id")
-    if span_parent_id:
-        payload["span_parent_id"] = span_parent_id
+    if params.span_unique_id:
+        payload["span_unique_id"] = params.span_unique_id
+    if params.span_parent_id:
+        payload["span_parent_id"] = params.span_parent_id
 
-    session_identifier = params.get("session_identifier")
-    if session_identifier:
-        payload["session_identifier"] = session_identifier
+    if params.session_identifier:
+        payload["session_identifier"] = params.session_identifier
 
-    customer_identifier = params.get("customer_identifier")
-    if customer_identifier:
-        payload["customer_identifier"] = customer_identifier
+    if params.customer_identifier:
+        payload["customer_identifier"] = params.customer_identifier
 
-    metadata: Payload = {}
-    if isinstance(params.get("metadata"), dict):
-        metadata.update(params["metadata"])
+    metadata: Dict[str, Any] = {}
+    if params.metadata:
+        metadata.update(params.metadata)
     metadata["integration"] = "superagent"
     metadata["method"] = method_name
 
@@ -92,8 +81,8 @@ def build_payload(
     return payload
 
 
-def validate_payload(payload: Payload) -> ValidatedPayload:
-    validated = KeywordsAIFullLogParams(**payload)
+def validate_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    validated = RespanFullLogParams(**payload)
     return validated.model_dump(mode="json", exclude_none=True)
 
 
@@ -102,7 +91,7 @@ def send_payloads(
     api_key: str,
     endpoint: str,
     timeout: int,
-    payloads: list[ValidatedPayload],
+    payloads: list[Dict[str, Any]],
 ) -> None:
     try:
         response = requests.post(

@@ -754,23 +754,6 @@ files = [
 ]
 
 [[package]]
-name = "keywordsai-sdk"
-version = "0.5.2"
-description = "Keywords AI SDK allows you to interact with the Keywords AI API smoothly"
-optional = false
-python-versions = "<4.0,>3.9"
-files = [
-    {file = "keywordsai_sdk-0.5.2-py3-none-any.whl", hash = "sha256:6ae482a8da2e662303b77f827db4ddbea2f922b64cd5d54e744b92548d490f2f"},
-    {file = "keywordsai_sdk-0.5.2.tar.gz", hash = "sha256:63b6410c0d1f3a512bc23bd6fe2b29effd1396981f9f5aae97c535ce1a115c5a"},
-]
-
-[package.dependencies]
-dateparser = ">=1.2.0,<2.0.0"
-pydantic = ">=2.10.3,<3.0.0"
-requests = ">=2.31.0,<3.0.0"
-typing-extensions = ">=4.12.2,<5.0.0"
-
-[[package]]
 name = "marshmallow"
 version = "4.2.1"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
@@ -1642,6 +1625,23 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "respan-sdk"
+version = "1.1.0"
+description = "Respan SDK allows you to interact with the Respan API smoothly"
+optional = false
+python-versions = "<4.0,>3.9"
+files = [
+    {file = "respan_sdk-1.1.0-py3-none-any.whl", hash = "sha256:57b944ddb151c8dc9aed195eed657d6fbe38852794a537471a933167e6366658"},
+    {file = "respan_sdk-1.1.0.tar.gz", hash = "sha256:354ade1de3c052f08f0404118901dc898471f7a4c7c0e2d88c7ce542bb5c7d4c"},
+]
+
+[package.dependencies]
+dateparser = ">=1.2.0,<2.0.0"
+pydantic = ">=2.10.3,<3.0.0"
+requests = ">=2.31.0,<3.0.0"
+typing-extensions = ">=4.12.2,<5.0.0"
+
+[[package]]
 name = "safety-agent"
 version = "0.1.2"
 description = "A lightweight Python guardrail SDK for content safety"
@@ -2060,4 +2060,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.14"
-content-hash = "ef4c72ae3b78495b853ccb23910ca7d7d8e866b6f506dd529d163f49ca70ce80"
+content-hash = "df74870d196791c565d9d3375e17e498403b5ca184cd9a5bb69a61afbcf478e5"

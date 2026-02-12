@@ -4,7 +4,8 @@ import threading
 from typing import Any
 from typing import Optional
 
-from respan_exporter_superagent.types import RespanExportParams
+from respan_sdk.constants import RESPAN_TRACING_INGEST_ENDPOINT
+from respan_sdk.respan_types import RespanParams
 from respan_exporter_superagent.utils import build_payload
 from respan_exporter_superagent.utils import now_utc
 from respan_exporter_superagent.utils import send_payloads
@@ -17,8 +18,6 @@ except Exception:  # pragma: no cover
 
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
 
 class RespanSuperagentClient:
@@ -46,7 +45,7 @@ class RespanSuperagentClient:
             endpoint
             or os.getenv("RESPAN_ENDPOINT")
             or os.getenv("KEYWORDSAI_ENDPOINT")
-            or DEFAULT_ENDPOINT
+            or RESPAN_TRACING_INGEST_ENDPOINT
         )
         self.timeout = timeout
 
@@ -57,27 +56,31 @@ class RespanSuperagentClient:
                 raise RuntimeError("safety-agent must be installed to create a Superagent client")
             self._client = superagent_create_client()
 
-    async def guard(self, *, keywordsai_params: Optional[RespanExportParams] = None, **kwargs: Any) -> Any:
+    async def guard(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
         return await self._call_and_export(method_name="guard", keywordsai_params=keywordsai_params, **kwargs)
 
-    async def redact(self, *, keywordsai_params: Optional[RespanExportParams] = None, **kwargs: Any) -> Any:
+    async def redact(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
         return await self._call_and_export(method_name="redact", keywordsai_params=keywordsai_params, **kwargs)
 
-    async def scan(self, *, keywordsai_params: Optional[RespanExportParams] = None, **kwargs: Any) -> Any:
+    async def scan(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
         return await self._call_and_export(method_name="scan", keywordsai_params=keywordsai_params, **kwargs)
 
-    async def test(self, *, keywordsai_params: Optional[RespanExportParams] = None, **kwargs: Any) -> Any:
+    async def test(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
         return await self._call_and_export(method_name="test", keywordsai_params=keywordsai_params, **kwargs)
 
     async def _call_and_export(
         self,
         *,
         method_name: str,
-        keywordsai_params: Optional[RespanExportParams],
+        keywordsai_params: Optional[RespanParams],
         **kwargs: Any,
     ) -> Any:
-        params: RespanExportParams = keywordsai_params or {}
-        if params.get("disable_log") is True:
+        params = (
+            RespanParams.model_validate(keywordsai_params)
+            if keywordsai_params
+            else RespanParams()
+        )
+        if params.disable_log is True:
             method = getattr(self._client, method_name)
             return await method(**kwargs)
 
