@@ -10,6 +10,38 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import StatusCode
 
 from respan_sdk.constants import RESPAN_DOGFOOD_HEADER
+from respan_sdk.constants.otlp_constants import (
+    OTLP_BOOL_VALUE,
+    OTLP_INT_VALUE,
+    OTLP_DOUBLE_VALUE,
+    OTLP_STRING_VALUE,
+    OTLP_BYTES_VALUE,
+    OTLP_ARRAY_VALUE,
+    OTLP_ARRAY_VALUES_KEY,
+    OTLP_ATTR_KEY,
+    OTLP_ATTR_VALUE,
+    OTLP_TRACE_ID_KEY,
+    OTLP_SPAN_ID_KEY,
+    OTLP_PARENT_SPAN_ID_KEY,
+    OTLP_NAME_KEY,
+    OTLP_KIND_KEY,
+    OTLP_START_TIME_KEY,
+    OTLP_END_TIME_KEY,
+    OTLP_ATTRIBUTES_KEY,
+    OTLP_STATUS_KEY,
+    OTLP_EVENTS_KEY,
+    OTLP_RESOURCE_SPANS_KEY,
+    OTLP_SCOPE_SPANS_KEY,
+    OTLP_RESOURCE_KEY,
+    OTLP_SCOPE_KEY,
+    OTLP_SPANS_KEY,
+    OTLP_VERSION_KEY,
+    OTEL_STATUS_CODE_UNSET,
+    OTEL_STATUS_CODE_OK,
+    OTEL_STATUS_CODE_ERROR,
+    OTEL_STATUS_CODE_KEY,
+    OTEL_STATUS_MESSAGE_KEY,
+)
 
 from ..utils.logging import get_respan_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
@@ -36,24 +68,24 @@ def _convert_attribute_value(value: Any) -> Optional[Dict[str, Any]]:
     if value is None:
         return None
     if isinstance(value, bool):
-        return {"boolValue": value}
+        return {OTLP_BOOL_VALUE: value}
     if isinstance(value, int):
-        return {"intValue": str(value)}
+        return {OTLP_INT_VALUE: str(value)}
     if isinstance(value, float):
-        return {"doubleValue": value}
+        return {OTLP_DOUBLE_VALUE: value}
     if isinstance(value, str):
-        return {"stringValue": value}
+        return {OTLP_STRING_VALUE: value}
     if isinstance(value, bytes):
-        return {"bytesValue": base64.b64encode(value).decode("ascii")}
+        return {OTLP_BYTES_VALUE: base64.b64encode(value).decode("ascii")}
     if isinstance(value, (list, tuple)):
         converted = []
         for item in value:
             v = _convert_attribute_value(item)
             if v is not None:
                 converted.append(v)
-        return {"arrayValue": {"values": converted}}
+        return {OTLP_ARRAY_VALUE: {OTLP_ARRAY_VALUES_KEY: converted}}
     # Fallback: stringify
-    return {"stringValue": str(value)}
+    return {OTLP_STRING_VALUE: str(value)}
 
 
 def _convert_attributes(attributes: Any) -> List[Dict[str, Any]]:
@@ -64,7 +96,7 @@ def _convert_attributes(attributes: Any) -> List[Dict[str, Any]]:
     for key, value in attributes.items():
         converted = _convert_attribute_value(value)
         if converted is not None:
-            result.append({"key": str(key), "value": converted})
+            result.append({OTLP_ATTR_KEY: str(key), OTLP_ATTR_VALUE: converted})
     return result
 
 
@@ -97,43 +129,43 @@ def _span_to_otlp_json(span: ReadableSpan) -> Dict[str, Any]:
     # Status
     status_dict = {}
     if span.status is not None:
-        code = 0
+        code = OTEL_STATUS_CODE_UNSET
         if span.status.status_code == StatusCode.OK:
-            code = 1
+            code = OTEL_STATUS_CODE_OK
         elif span.status.status_code == StatusCode.ERROR:
-            code = 2
-        status_dict["code"] = code
+            code = OTEL_STATUS_CODE_ERROR
+        status_dict[OTEL_STATUS_CODE_KEY] = code
         if span.status.description:
-            status_dict["message"] = span.status.description
+            status_dict[OTEL_STATUS_MESSAGE_KEY] = span.status.description
 
     # Events
     events = []
     for event in span.events or []:
         event_dict = {
-            "name": event.name,
+            OTLP_NAME_KEY: event.name,
             "timeUnixNano": str(event.timestamp) if event.timestamp else "0",
         }
         event_attrs = _convert_attributes(event.attributes)
         if event_attrs:
-            event_dict["attributes"] = event_attrs
+            event_dict[OTLP_ATTRIBUTES_KEY] = event_attrs
         events.append(event_dict)
 
     result = {
-        "traceId": trace_id,
-        "spanId": span_id,
-        "name": span.name,
-        "kind": kind_value,
-        "startTimeUnixNano": start_time_ns,
-        "endTimeUnixNano": end_time_ns,
-        "attributes": _convert_attributes(span.attributes),
+        OTLP_TRACE_ID_KEY: trace_id,
+        OTLP_SPAN_ID_KEY: span_id,
+        OTLP_NAME_KEY: span.name,
+        OTLP_KIND_KEY: kind_value,
+        OTLP_START_TIME_KEY: start_time_ns,
+        OTLP_END_TIME_KEY: end_time_ns,
+        OTLP_ATTRIBUTES_KEY: _convert_attributes(span.attributes),
     }
 
     if parent_span_id:
-        result["parentSpanId"] = parent_span_id
+        result[OTLP_PARENT_SPAN_ID_KEY] = parent_span_id
     if status_dict:
-        result["status"] = status_dict
+        result[OTLP_STATUS_KEY] = status_dict
     if events:
-        result["events"] = events
+        result[OTLP_EVENTS_KEY] = events
 
     return result
 
@@ -187,24 +219,24 @@ def _build_otlp_payload(spans: Sequence[ReadableSpan]) -> Dict[str, Any]:
     for r_key, scope_groups in resource_groups.items():
         scope_spans = []
         for s_key, span_dicts in scope_groups.items():
-            scope_entry = {"spans": span_dicts}
+            scope_entry = {OTLP_SPANS_KEY: span_dicts}
             scope = scope_info_map.get(s_key)
             if scope:
                 scope_dict = {}
                 if scope.name:
-                    scope_dict["name"] = scope.name
+                    scope_dict[OTLP_NAME_KEY] = scope.name
                 if scope.version:
-                    scope_dict["version"] = scope.version
-                scope_entry["scope"] = scope_dict
+                    scope_dict[OTLP_VERSION_KEY] = scope.version
+                scope_entry[OTLP_SCOPE_KEY] = scope_dict
             scope_spans.append(scope_entry)
 
-        rs_entry = {"scopeSpans": scope_spans}
+        rs_entry = {OTLP_SCOPE_SPANS_KEY: scope_spans}
         r_attrs = resource_attrs_map.get(r_key, {})
         if r_attrs:
-            rs_entry["resource"] = {"attributes": _convert_attributes(r_attrs)}
+            rs_entry[OTLP_RESOURCE_KEY] = {OTLP_ATTRIBUTES_KEY: _convert_attributes(r_attrs)}
         resource_spans.append(rs_entry)
 
-    return {"resourceSpans": resource_spans}
+    return {OTLP_RESOURCE_SPANS_KEY: resource_spans}
 
 
 class RespanSpanExporter:
