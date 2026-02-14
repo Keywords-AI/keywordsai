@@ -231,7 +231,14 @@ class RespanSpanExporter:
         # Persistent session for TCP connection reuse across export() calls.
         # At 1% prod sampling with 3-5 traces per request, connection overhead matters.
         self._session = requests.Session()
-        self._session.headers.update({"Content-Type": "application/json"})
+        self._session.headers.update({
+            "Content-Type": "application/json",
+            # Anti-recursion marker: signals to the server that this request
+            # comes from the SDK exporter itself. Server-side tracing decorators
+            # MUST check for this header and skip tracing to prevent infinite
+            # loops when the ingest endpoint is itself observed.
+            "X-Respan-Dogfood": "1",
+        })
         if headers:
             self._session.headers.update(headers)
         if api_key:
