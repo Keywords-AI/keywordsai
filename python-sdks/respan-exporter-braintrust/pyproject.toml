@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "respan-exporter-braintrust"
+version = "0.1.0"
+description = "Respan exporter for Braintrust logs"
+authors = ["Respan <team@respan.ai>"]
+readme = "README.md"
+packages = [{include = "respan_exporter_braintrust", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+braintrust = "^0.5.0"
+requests = "^2.32.5"
+respan-sdk = {path = "../respan-sdk", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
