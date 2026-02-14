@@ -1,6 +1,8 @@
-# Keywords AI Haystack Integration
+# Respan Haystack Integration
 
-Monitor and optimize your Haystack pipelines with Keywords AI's LLM observability platform.
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)** | **[PyPI](https://pypi.org/project/respan-exporter-haystack/)**
+
+Respan integration for Haystack pipelines with tracing and logging support.
 
 ## Features
 

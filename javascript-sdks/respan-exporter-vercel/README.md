@@ -1,6 +1,8 @@
-# keywordsai-exporter-vercel
+# Respan Exporter for Vercel AI SDK
 
-Keywords AI's integration with [Vercel AI SDK](https://github.com/vercel/ai)
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
+
+Respan's integration with [Vercel AI SDK](https://github.com/vercel/ai)
 ```
 opentelemetry-exporter-myexporter
    ├── src
