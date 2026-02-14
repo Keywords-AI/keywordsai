@@ -226,22 +226,23 @@ class RespanSpanExporter:
         self.endpoint = endpoint.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
-        self._shutdown = False
+        self._is_shutdown = False
 
-        self._headers = {
-            "Content-Type": "application/json",
-        }
+        # Persistent session for TCP connection reuse across export() calls.
+        # At 1% prod sampling with 3-5 traces per request, connection overhead matters.
+        self._session = requests.Session()
+        self._session.headers.update({"Content-Type": "application/json"})
         if headers:
-            self._headers.update(headers)
+            self._session.headers.update(headers)
         if api_key:
-            self._headers["Authorization"] = f"Bearer {api_key}"
+            self._session.headers["Authorization"] = f"Bearer {api_key}"
 
         self._traces_url = f"{self.endpoint}/v2/traces"
         logger.debug("OTLP JSON traces endpoint: %s", self._traces_url)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export spans as OTLP JSON to /v2/traces."""
-        if self._shutdown:
+        if self._is_shutdown:
             return SpanExportResult.FAILURE
 
         # Apply root-span promotion logic
@@ -269,10 +270,9 @@ class RespanSpanExporter:
         # the export POST, which would be exported, creating more spans, etc.
         token = attach(set_value(_SUPPRESS_INSTRUMENTATION_KEY, True))
         try:
-            response = requests.post(
+            response = self._session.post(
                 url=self._traces_url,
                 data=json.dumps(payload, default=str),
-                headers=self._headers,
                 timeout=self.timeout,
             )
             if response.status_code < 400:
@@ -296,8 +296,9 @@ class RespanSpanExporter:
             detach(token)
 
     def shutdown(self):
-        """Shutdown the exporter."""
-        self._shutdown = True
+        """Shutdown the exporter and close the HTTP session."""
+        self._is_shutdown = True
+        self._session.close()
 
     def force_flush(self, timeout_millis: int = 30000):
         """Force flush — no-op for HTTP JSON exporter (each export is synchronous)."""
