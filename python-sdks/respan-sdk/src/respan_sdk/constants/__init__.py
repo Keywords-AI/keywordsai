@@ -1,4 +1,5 @@
 from respan_sdk.constants.tracing_constants import (
+    RESPAN_DOGFOOD_HEADER,
     RESPAN_TRACING_INGEST_ENDPOINT,
     resolve_tracing_ingest_endpoint,
 )
@@ -15,6 +16,7 @@ __all__ = [
     "EVAL_COST_FALLBACK",
     "LLM_ENGINE_FIELD_NAME",
     "UTC_EPOCH",
+    "RESPAN_DOGFOOD_HEADER",
     "RESPAN_TRACING_INGEST_ENDPOINT",
     "resolve_tracing_ingest_endpoint",
 ]

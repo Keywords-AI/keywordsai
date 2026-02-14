@@ -9,6 +9,8 @@ from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import StatusCode
 
+from respan_sdk.constants import RESPAN_DOGFOOD_HEADER
+
 from ..utils.logging import get_respan_logger, build_spans_export_preview
 from ..utils.preprocessing.span_processing import should_make_root_span
 from ..constants.generic_constants import LOGGER_NAME_EXPORTER
@@ -237,7 +239,7 @@ class RespanSpanExporter:
             # comes from the SDK exporter itself. Server-side tracing decorators
             # MUST check for this header and skip tracing to prevent infinite
             # loops when the ingest endpoint is itself observed.
-            "X-Respan-Dogfood": "1",
+            RESPAN_DOGFOOD_HEADER: "1",
         })
         if headers:
             self._session.headers.update(headers)

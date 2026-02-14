@@ -5,6 +5,11 @@ from typing import Optional
 
 RESPAN_TRACING_INGEST_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
+# Anti-recursion header: SDK exporter sends this on every export request.
+# Server-side tracing decorators MUST check for this header and skip tracing
+# to prevent infinite loops when the ingest endpoint is itself observed.
+RESPAN_DOGFOOD_HEADER = "X-Respan-Dogfood"
+
 
 def resolve_tracing_ingest_endpoint(base_url: Optional[str] = None) -> str:
     """Build tracing ingest endpoint from an optional base URL."""
