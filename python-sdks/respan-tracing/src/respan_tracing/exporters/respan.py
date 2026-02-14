@@ -235,10 +235,9 @@ class RespanSpanExporter:
         self._session = requests.Session()
         self._session.headers.update({
             "Content-Type": "application/json",
-            # Anti-recursion marker: signals to the server that this request
-            # comes from the SDK exporter itself. Server-side tracing decorators
-            # MUST check for this header and skip tracing to prevent infinite
-            # loops when the ingest endpoint is itself observed.
+            # Anti-recursion marker: tells the server "don't emit new traces
+            # while processing this request" — but still ingest the payload.
+            # Prevents infinite loops when the ingest endpoint is itself observed.
             RESPAN_DOGFOOD_HEADER: "1",
         })
         if headers:

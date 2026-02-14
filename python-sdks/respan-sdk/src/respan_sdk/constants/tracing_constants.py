@@ -6,8 +6,10 @@ from typing import Optional
 RESPAN_TRACING_INGEST_ENDPOINT = "https://api.respan.ai/api/v1/traces/ingest"
 
 # Anti-recursion header: SDK exporter sends this on every export request.
-# Server-side tracing decorators MUST check for this header and skip tracing
-# to prevent infinite loops when the ingest endpoint is itself observed.
+# Server-side tracing decorators MUST check for this header and skip
+# EMITTING NEW TRACES for the ingest request — but still PROCESS the
+# payload (store the trace in CH). The goal is to prevent infinite loops
+# when the ingest endpoint is itself observed, not to drop trace data.
 RESPAN_DOGFOOD_HEADER = "X-Respan-Dogfood"
 
 
