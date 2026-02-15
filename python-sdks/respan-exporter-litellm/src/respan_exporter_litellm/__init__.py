@@ -1,7 +1,7 @@
-"""Keywords AI Exporter for LiteLLM.
+"""Respan Exporter for LiteLLM.
 
 This package provides a callback integration for LiteLLM
-that exports traces to the Keywords AI platform.
+that exports traces to the Respan platform.
 
 Usage:
     import litellm

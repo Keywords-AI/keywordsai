@@ -390,3 +390,201 @@ class Migration(migrations.Migration):
 - Internal variable names, import paths, and file names are NOT being changed (per user request)
 - Old SDK packages will continue to work but stop receiving updates
 - Customers will naturally migrate when they see "respan-*" packages with active development
+
+---
+
+## Part 6: Execution Plan - SDK Rebranding (CLI Commands)
+
+**Run all commands from repo root:** `cd /Users/huangyunrui/platform/keywordsai_public`
+
+---
+
+### Phase A: Python SDK - `keywordsai-sdk` → `respan-sdk`
+
+```bash
+# A1: Rename source directory
+mv python-sdks/keywordsai-sdk/src/keywordsai_sdk python-sdks/keywordsai-sdk/src/respan_sdk
+
+# A2: Find/Replace in all files
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/name = "keywordsai-sdk"/name = "respan-sdk"/g' {} +
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_sdk/respan_sdk/g' {} +
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI <team@keywordsai.co>/Respan <team@respan.ai>/g' {} +
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find python-sdks/keywordsai-sdk -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordai_sdks|respan-ai/respan-sdks|g' {} +
+
+# A3: Clean and verify build
+rm -rf python-sdks/keywordsai-sdk/src/keywordsai.egg-info python-sdks/keywordsai-sdk/dist
+cd python-sdks/keywordsai-sdk && poetry install && poetry build
+```
+
+---
+
+### Phase B: Python SDK - `keywordsai-tracing` → `respan-tracing`
+
+```bash
+# B1: Rename source directory
+mv python-sdks/keywordsai-tracing/src/keywordsai_tracing python-sdks/keywordsai-tracing/src/respan_tracing
+
+# B2: Find/Replace in all files
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/name = "keywordsai-tracing"/name = "respan-tracing"/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai-sdk/respan-sdk/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_tracing/respan_tracing/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_sdk/respan_sdk/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI <team@keywordsai.co>/Respan <team@respan.ai>/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/api\.keywordsai\.co/api.respan.ai/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find python-sdks/keywordsai-tracing -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordsai|respan-ai/respan-sdks|g' {} +
+
+# B3: Verify build
+cd python-sdks/keywordsai-tracing && poetry install && poetry build
+```
+
+---
+
+### Phase C: Python Exporters (batch)
+
+```bash
+# C1: Rename all source directories
+mv python-sdks/keywordsai-exporter-agno/src/keywordsai_exporter_agno python-sdks/keywordsai-exporter-agno/src/respan_exporter_agno
+mv python-sdks/keywordsai-exporter-haystack/src/keywordsai_exporter_haystack python-sdks/keywordsai-exporter-haystack/src/respan_exporter_haystack
+mv python-sdks/keywordsai-exporter-litellm/src/keywordsai_exporter_litellm python-sdks/keywordsai-exporter-litellm/src/respan_exporter_litellm
+mv python-sdks/keywordsai-exporter-openai-agents/src/keywordsai_exporter_openai_agents python-sdks/keywordsai-exporter-openai-agents/src/respan_exporter_openai_agents
+mv python-sdks/keywordsai-instrumentation-langfuse/src/keywordsai_instrumentation_langfuse python-sdks/keywordsai-instrumentation-langfuse/src/respan_instrumentation_langfuse
+
+# C2: Find/Replace across all exporters
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/name = "keywordsai-exporter-/name = "respan-exporter-/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/name = "keywordsai-instrumentation-/name = "respan-instrumentation-/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai-tracing/respan-tracing/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_exporter_/respan_exporter_/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_instrumentation_/respan_instrumentation_/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai_tracing/respan_tracing/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI <team@keywordsai.co>/Respan <team@respan.ai>/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+find python-sdks/keywordsai-exporter-* python-sdks/keywordsai-instrumentation-* -type f \( -name "*.py" -o -name "*.toml" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordsai|respan-ai/respan-sdks|g' {} +
+
+# C3: Verify builds (run each separately)
+cd python-sdks/keywordsai-exporter-agno && poetry install && poetry build && cd ../..
+cd python-sdks/keywordsai-exporter-haystack && poetry install && poetry build && cd ../..
+cd python-sdks/keywordsai-exporter-litellm && poetry install && poetry build && cd ../..
+cd python-sdks/keywordsai-exporter-openai-agents && poetry install && poetry build && cd ../..
+cd python-sdks/keywordsai-instrumentation-langfuse && poetry install && poetry build && cd ../..
+```
+
+---
+
+### Phase D: JavaScript SDK - `@keywordsai/keywordsai-sdk` → `@respan/sdk`
+
+```bash
+# D1: Find/Replace
+find javascript-sdks/keywordsai-sdk -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/keywordsai-sdk/@respan\/sdk/g' {} +
+find javascript-sdks/keywordsai-sdk -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find javascript-sdks/keywordsai-sdk -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find javascript-sdks/keywordsai-sdk -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+find javascript-sdks/keywordsai-sdk -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordsai|respan-ai/respan-sdks|g' {} +
+
+# D2: Verify build
+cd javascript-sdks/keywordsai-sdk && yarn install && yarn build
+```
+
+---
+
+### Phase E: JavaScript SDK - `@keywordsai/tracing` → `@respan/tracing`
+
+```bash
+# E1: Find/Replace
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/tracing/@respan\/tracing/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/keywordsai-sdk/@respan\/sdk/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/api\.keywordsai\.co/api.respan.ai/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/KeywordsAI/Respan/g' {} +
+find javascript-sdks/keywordsai-tracing -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordsai|respan-ai/respan-sdks|g' {} +
+
+# E2: Verify build
+cd javascript-sdks/keywordsai-tracing && yarn install && yarn build
+```
+
+---
+
+### Phase F: JavaScript Exporters (batch)
+
+```bash
+# F1: Find/Replace across all JS exporters
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/exporter-/@respan\/exporter-/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/n8n-nodes-keywordsai/@respan\/n8n-nodes/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/tracing/@respan\/tracing/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/@keywordsai\/keywordsai-sdk/@respan\/sdk/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's/KeywordsAI/Respan/g' {} +
+find javascript-sdks/keywordsai-exporter-* javascript-sdks/keywordsai -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) -exec sed -i '' 's|Keywords-AI/keywordsai|respan-ai/respan-sdks|g' {} +
+
+# F2: Verify builds
+cd javascript-sdks/keywordsai-exporter-vercel && yarn install && yarn build && cd ../..
+cd javascript-sdks/keywordsai-exporter-openai-agents && yarn install && yarn build && cd ../..
+cd javascript-sdks/keywordsai-exporter-n8n && yarn install && yarn build && cd ../..
+```
+
+---
+
+### Phase G: Directory Renames (after all code changes verified)
+
+```bash
+# Python directories
+cd python-sdks
+mv keywordsai-sdk respan-sdk
+mv keywordsai-tracing respan-tracing
+mv keywordsai-exporter-agno respan-exporter-agno
+mv keywordsai-exporter-haystack respan-exporter-haystack
+mv keywordsai-exporter-litellm respan-exporter-litellm
+mv keywordsai-exporter-openai-agents respan-exporter-openai-agents
+mv keywordsai-instrumentation-langfuse respan-instrumentation-langfuse
+cd ..
+
+# JavaScript directories
+cd javascript-sdks
+mv keywordsai-sdk respan-sdk
+mv keywordsai-tracing respan-tracing
+mv keywordsai-exporter-vercel respan-exporter-vercel
+mv keywordsai-exporter-openai-agents respan-exporter-openai-agents
+mv keywordsai-exporter-n8n respan-n8n-nodes
+cd ..
+```
+
+---
+
+### Phase H: Update Root Files
+
+```bash
+# Update README.md and CLAUDE.md
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/keywordsai-sdk/respan-sdk/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/keywordsai-tracing/respan-tracing/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/keywordsai_sdk/respan_sdk/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/keywordsai_tracing/respan_tracing/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/@keywordsai\//@respan\//g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/keywordsai\.co/respan.ai/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/Keywords AI/Respan/g' {} +
+find . -maxdepth 1 -type f -name "*.md" -exec sed -i '' 's/KEYWORDSAI_/RESPAN_/g' {} +
+```
+
+---
+
+## Execution Progress Tracker
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| A: keywordsai-sdk (Python) | ⬜ Not Started | |
+| B: keywordsai-tracing (Python) | ⬜ Not Started | |
+| C: Python Exporters | ⬜ Not Started | |
+| D: @keywordsai/keywordsai-sdk (JS) | ⬜ Not Started | |
+| E: @keywordsai/tracing (JS) | ⬜ Not Started | |
+| F: JS Exporters | ⬜ Not Started | |
+| G: Directory Renames | ⬜ Not Started | |
+| H: Root Files | ⬜ Not Started | |

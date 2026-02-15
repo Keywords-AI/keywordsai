@@ -50,15 +50,22 @@ def assign_with_validation(
 
 def separate_params(params: dict, remove_none=True, raise_exception=False):
     """
-    Separate the params into llm_params and respan_params
-    If the params are falsely, they are removed from the dictionary (no params are valid with value 0)
+    .. deprecated::
+        Use ``validate_and_separate_params()`` instead. This function manually pops
+        fields and is not kept in sync with new RespanParams fields. It will be
+        removed in a future release.
+
+    Separate the params into llm_params and respan_params.
     Returns:
     llm_params: dict
     respan_params: dict
-
-    RULES:
-        1. For cleanliness, all params that are default as False should end with "or None" as fallback so that they get removed
     """
+    import warnings
+    warnings.warn(
+        "separate_params() is deprecated. Use validate_and_separate_params() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     respan_params = {}
     respan_params["cache_enabled"] = params.pop("cache_enabled", None) or None

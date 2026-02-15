@@ -1,21 +1,24 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { Agent, Bat, setTraceProcessorschTraceProcessor, run, BatchTraceProcessor, setTraceProcessors } from '@openai/agents';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
-import { withTrace } from '@openai/agents';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import {
+  Agent,
+  BatchTraceProcessor,
+  run,
+  setTraceProcessors,
+  withTrace,
+} from '@openai/agents';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 import * as dotenv from 'dotenv';
-dotenv.config(
-  {
-      path: '../../../.env',
-      override: true
-  }
-);
+
+dotenv.config({
+  path: '../../../.env',
+  override: true,
+});
 
 setTraceProcessors([
-new BatchTraceProcessor(
-  new KeywordsAIOpenAIAgentsTracingExporter(),
-),
-]);       
+  new BatchTraceProcessor(new RespanOpenAIAgentsTracingExporter()),
+]);
+
 const bisonImagePath = path.join(__dirname, 'media/image_bison.jpg');
 
 function imageToBase64(imagePath: string): string {

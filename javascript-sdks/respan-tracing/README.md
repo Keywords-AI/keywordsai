@@ -1,6 +1,8 @@
-# KeywordsAI Tracing SDK
+# Respan Tracing SDK
 
-A lightweight OpenTelemetry-based tracing SDK for KeywordsAI, built with minimal dependencies and optional instrumentation support.
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
+
+A lightweight OpenTelemetry-based tracing SDK for Respan, built with minimal dependencies and optional instrumentation support.
 Inspired by [Openllmetry](https://github.com/traceloop/openllmetry-js)
 
 ## Features

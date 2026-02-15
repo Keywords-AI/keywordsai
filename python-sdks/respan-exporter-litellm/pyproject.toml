@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "respan-exporter-litellm"
-version = "1.0.0"
+version = "1.0.1"
 description = "Respan exporter for LiteLLM"
 authors = ["Respan <team@respan.ai>"]
 readme = "README.md"

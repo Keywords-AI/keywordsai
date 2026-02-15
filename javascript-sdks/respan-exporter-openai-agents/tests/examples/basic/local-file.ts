@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Agent, BatchTraceProcessor, run, setTraceProcessors } from '@openai/agents';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 import { withTrace } from '@openai/agents';
 import * as dotenv from 'dotenv';
 
@@ -13,7 +13,7 @@ dotenv.config(
 );
 setTraceProcessors([
   new BatchTraceProcessor(
-    new KeywordsAIOpenAIAgentsTracingExporter(),
+    new RespanOpenAIAgentsTracingExporter(),
   ),
 ]);
 const filePath = path.join(

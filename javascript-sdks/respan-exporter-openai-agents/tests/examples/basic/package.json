@@ -28,6 +28,7 @@
     "start:local-file": "tsx local-file.ts"
   },
   "devDependencies": {
-    "tsx": "^4.20.3"
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
   }
 }

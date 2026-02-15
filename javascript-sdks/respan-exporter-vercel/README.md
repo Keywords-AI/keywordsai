@@ -1,30 +1,8 @@
-# respan-exporter-vercel
+# Respan Exporter for Vercel AI SDK
 
-Respan integration with the [Vercel AI SDK (AI SDK)](https://ai-sdk.dev/docs/introduction).
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
 
-This package provides an OpenTelemetry `SpanExporter` (`RespanExporter`) that converts AI SDK spans into Respan payloads and sends them to Respan's ingest endpoint.
-
-## Usage
-
-```ts
-import { RespanExporter } from '@respan/exporter-vercel';
-import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { registerOTel } from '@vercel/otel';
-
-export function register() {
-  registerOTel({
-    serviceName: 'my-app',
-    spanProcessors: [
-      new SimpleSpanProcessor(
-        new RespanExporter({
-          apiKey: process.env.RESPAN_API_KEY,
-          baseUrl: process.env.RESPAN_BASE_URL, // optional
-          debug: false,
-        })
-      ),
-    ],
-  });
-}
+Respan's integration with [Vercel AI SDK](https://github.com/vercel/ai)
 ```
 
 ## Development

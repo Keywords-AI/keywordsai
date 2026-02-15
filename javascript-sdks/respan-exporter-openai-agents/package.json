@@ -22,8 +22,8 @@
     "release": "yarn build && yarn version patch && yarn publish"
   },
   "dependencies": {
-    "@respan/respan-sdk": "^1.0.0",
-    "@openai/agents": "^0.0.8"
+    "@openai/agents": "^0.0.8",
+    "@respan/respan-sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
