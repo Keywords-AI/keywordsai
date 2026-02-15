@@ -4,7 +4,7 @@ import {
   RespanPayload,
   RespanPayloadSchema,
   LogType,
-  RESPAN_INGEST_URL,
+  RESPAN_TRACING_INGEST_ENDPOINT,
 } from "@respan/respan-sdk";
 import { VERCEL_SPAN_TO_RESPAN_LOG_TYPE } from "./constants/index.js";
 
@@ -35,7 +35,7 @@ export class RespanExporter implements SpanExporter {
     if (!this.apiKey) {
       throw new Error("RESPAN_API_KEY is required");
     }
-    this.url = RESPAN_INGEST_URL;
+    this.url = RESPAN_TRACING_INGEST_ENDPOINT;
     this.logDebug("RespanExporter initialized", {
       url: this.url,
       apiKey: this.apiKey.slice(0, 4) + "..." + this.apiKey.slice(-4),
@@ -284,19 +284,37 @@ export class RespanExporter implements SpanExporter {
     toolCalls?: any[]
   ): any[] {
     let content = "";
+    const stringifyContent = (value: unknown): string => {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "string") return value;
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    };
 
     if (span.attributes["ai.response.object"]) {
       try {
-        const response = JSON.parse(
-          String(span.attributes["ai.response.object"])
-        );
-        content = String(response.response || "");
+        const rawObject = span.attributes["ai.response.object"];
+        const parsedObject =
+          typeof rawObject === "string" ? JSON.parse(rawObject) : rawObject;
+
+        // generateObject returns the object directly (no `response` wrapper).
+        // Prefer known wrappers when present, otherwise serialize the object itself.
+        const normalizedContent =
+          (parsedObject as any)?.response ??
+          (parsedObject as any)?.object ??
+          (parsedObject as any)?.output ??
+          (parsedObject as any)?.result ??
+          parsedObject;
+        content = stringifyContent(normalizedContent);
       } catch (error) {
         this.logDebug("Error parsing ai.response.object:", error);
-        content = String(span.attributes["ai.response.text"] || "");
+        content = stringifyContent(span.attributes["ai.response.text"]);
       }
     } else {
-      content = String(span.attributes["ai.response.text"] || "");
+      content = stringifyContent(span.attributes["ai.response.text"]);
     }
 
     const message = {
