@@ -25,7 +25,7 @@ class HyperspellAddMemoryParams(RespanBaseModel):
 class HyperspellSearchMemoriesParams(RespanBaseModel):
     """Schema for /memories/query payload."""
 
-    query: str
+    query: Optional[str] = None
     answer: Optional[bool] = None
     sources: Optional[List[str]] = None
     options: Optional[Dict[str, Any]] = None
