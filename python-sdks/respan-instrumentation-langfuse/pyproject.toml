@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "respan-instrumentation-langfuse"
-version = "1.0.0"
+version = "1.0.1"
 description = "OTEL-compliant instrumentation for Langfuse to send traces to Respan"
 authors = ["Respan <team@respan.ai>"]
 license = "Apache-2.0"

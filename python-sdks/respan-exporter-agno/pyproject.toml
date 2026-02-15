@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "respan-exporter-agno"
-version = "1.0.0"
+version = "1.0.1"
 description = "Respan exporter for Agno traces"
 authors = ["Respan <team@respan.ai>"]
 readme = "README.md"
