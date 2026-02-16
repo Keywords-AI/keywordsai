@@ -4,6 +4,7 @@ import {
   RespanPayload,
   RespanPayloadSchema,
   LogType,
+  RESPAN_TRACING_INGEST_ENDPOINT,
 } from "@respan/respan-sdk";
 import { VERCEL_SPAN_TO_RESPAN_LOG_TYPE } from "./constants/index.js";
 
@@ -15,43 +16,29 @@ import { VERCEL_SPAN_TO_RESPAN_LOG_TYPE } from "./constants/index.js";
  * @param params - The parameters for the exporter.
  * @param params.debug - Whether to enable debug mode.
  * @param params.apiKey - The API key for the exporter.
- * @param params.baseUrl - The base URL for the exporter.
  *
  * @example
  * ```ts
  * const exporter = new RespanExporter({
  *   apiKey: "your-api-key",
- *   baseUrl: "https://api.respan.co/api",
  * });
  */
 export class RespanExporter implements SpanExporter {
   private readonly debug: boolean;
   private readonly apiKey: string;
-  private readonly baseUrl: string;
   private readonly url: string;
-  private resolveURL(baseURL: string | undefined) {
-    if (!baseURL) {
-      return "https://api.respan.co/api/integrations/v1/traces/ingest";
-    }
-    if (baseURL.endsWith("/api")) {
-      return baseURL + "/integrations/v1/traces/ingest";
-    }
-    return baseURL + "/api/integrations/v1/traces/ingest";
-  }
   constructor(
-    params: { debug?: boolean; apiKey?: string; baseUrl?: string } = {}
+    params: { debug?: boolean; apiKey?: string } = {}
   ) {
     this.debug = params.debug ?? false;
     this.apiKey = params.apiKey ?? (process.env.RESPAN_API_KEY || "");
     if (!this.apiKey) {
       throw new Error("RESPAN_API_KEY is required");
     }
-    this.baseUrl = params.baseUrl ?? "https://api.respan.co/api";
-    this.url = this.resolveURL(this.baseUrl);
+    this.url = RESPAN_TRACING_INGEST_ENDPOINT;
     this.logDebug("RespanExporter initialized", {
       url: this.url,
       apiKey: this.apiKey.slice(0, 4) + "..." + this.apiKey.slice(-4),
-      baseUrl: this.baseUrl,
     });
   }
 
@@ -297,19 +284,37 @@ export class RespanExporter implements SpanExporter {
     toolCalls?: any[]
   ): any[] {
     let content = "";
+    const stringifyContent = (value: unknown): string => {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "string") return value;
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    };
 
     if (span.attributes["ai.response.object"]) {
       try {
-        const response = JSON.parse(
-          String(span.attributes["ai.response.object"])
-        );
-        content = String(response.response || "");
+        const rawObject = span.attributes["ai.response.object"];
+        const parsedObject =
+          typeof rawObject === "string" ? JSON.parse(rawObject) : rawObject;
+
+        // generateObject returns the object directly (no `response` wrapper).
+        // Prefer known wrappers when present, otherwise serialize the object itself.
+        const normalizedContent =
+          (parsedObject as any)?.response ??
+          (parsedObject as any)?.object ??
+          (parsedObject as any)?.output ??
+          (parsedObject as any)?.result ??
+          parsedObject;
+        content = stringifyContent(normalizedContent);
       } catch (error) {
         this.logDebug("Error parsing ai.response.object:", error);
-        content = String(span.attributes["ai.response.text"] || "");
+        content = stringifyContent(span.attributes["ai.response.text"]);
       }
     } else {
-      content = String(span.attributes["ai.response.text"] || "");
+      content = stringifyContent(span.attributes["ai.response.text"]);
     }
 
     const message = {
@@ -333,7 +338,8 @@ export class RespanExporter implements SpanExporter {
   }
 
   private calculateLatency(span: ReadableSpan): number {
-    return span.duration[0] / 1e9 + span.duration[1] / 1e9;
+    // duration is an HrTime tuple: [seconds, nanoseconds]
+    return span.duration[0] + span.duration[1] / 1e9;
   }
 
   private async sendToRespan(payloads: RespanPayload[]): Promise<void> {
@@ -356,13 +362,23 @@ export class RespanExporter implements SpanExporter {
         body: JSON.stringify(payloads),
       });
 
+      const responseText = await response.text();
       if (!response.ok) {
-        const text = await response.text();
-        this.logDebug("Failed to send to Respan", text);
-        throw new Error(`Failed to send to Respan: ${response.statusText}`);
-      } else {
-        this.logDebug("Successfully sent payloads to Respan");
+        this.logDebug(
+          "Failed to send to Respan",
+          response.status,
+          response.statusText,
+          responseText
+        );
+        throw new Error(
+          `Respan ingest failed: ${response.status} ${response.statusText} - ${responseText}`
+        );
       }
+      this.logDebug(
+        "Successfully sent payloads to Respan",
+        response.status,
+        responseText || "(empty body)"
+      );
     } catch (error) {
       this.logDebug("Error sending to Respan", error);
       throw error;
