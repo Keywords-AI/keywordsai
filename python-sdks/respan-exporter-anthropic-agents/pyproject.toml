@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "respan-exporter-anthropic-agents"
+version = "1.0.0"
+description = "Exporter for Anthropic Agent SDK telemetry to Respan"
+authors = ["Respan <team@respan.ai>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [
+    { include = "respan_exporter_anthropic_agents", from = "./src" },
+]
+
+[tool.poetry.dependencies]
+python = ">3.10,<3.13"
+claude-agent-sdk = "*"
+respan-sdk = "^2.3.1"
+respan-tracing = "^2.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
