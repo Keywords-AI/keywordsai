@@ -2,17 +2,24 @@
 
 import os
 from haystack import Pipeline
-from keywordsai_exporter_haystack import KeywordsAIConnector, KeywordsAIGenerator
+from respan_exporter_haystack.connector import RespanConnector
+from respan_exporter_haystack.gateway import RespanGenerator
 
 os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
 
 # Create pipeline with gateway, prompt management, and tracing
 pipeline = Pipeline()
-pipeline.add_component("tracer", KeywordsAIConnector("Full Stack: Gateway + Prompt + Tracing"))
-pipeline.add_component("llm", KeywordsAIGenerator(
+pipeline.add_component(
+    name="tracer",
+    instance=RespanConnector(name="Full Stack: Gateway + Prompt + Tracing"),
+)
+pipeline.add_component(
+    name="llm",
+    instance=RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",
-    api_key=os.getenv("KEYWORDSAI_API_KEY")
-))
+    api_key=os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")
+),
+)
 
 # Run with prompt variables
 result = pipeline.run({

@@ -32,7 +32,7 @@ Use both together for:
 ## Installation
 
 ```bash
-pip install keywordsai-exporter-haystack
+pip install respan-exporter-haystack
 ```
 
 ## Quick Start
@@ -45,7 +45,7 @@ pip install keywordsai-exporter-haystack
 ### 2. Set Environment Variables
 
 ```bash
-export KEYWORDSAI_API_KEY="your-keywords-ai-key"
+export RESPAN_API_KEY="your-respan-key"
 export OPENAI_API_KEY="your-openai-key"
 export HAYSTACK_CONTENT_TRACING_ENABLED="true"  # For tracing mode
 ```
@@ -56,22 +56,28 @@ export HAYSTACK_CONTENT_TRACING_ENABLED="true"  # For tracing mode
 
 ### Gateway Mode (Auto-Logging)
 
-**Just replace `OpenAIGenerator` with `KeywordsAIGenerator`:**
+**Just replace `OpenAIGenerator` with `RespanGenerator`:**
 
 ```python
 import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
-from keywordsai_exporter_haystack import KeywordsAIGenerator
+from respan_exporter_haystack.gateway import RespanGenerator
 
 # Create pipeline
 pipeline = Pipeline()
-pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
-pipeline.add_component("llm", KeywordsAIGenerator(
+pipeline.add_component(
+    name="prompt",
+    instance=PromptBuilder(template="Tell me about {{topic}}."),
+)
+pipeline.add_component(
+    name="llm",
+    instance=RespanGenerator(
     model="gpt-4o-mini",
-    api_key=os.getenv("KEYWORDSAI_API_KEY")
-))
-pipeline.connect("prompt", "llm")
+    api_key=os.getenv("RESPAN_API_KEY")
+),
+)
+pipeline.connect(sender="prompt", receiver="llm")
 
 # Run
 result = pipeline.run({"prompt": {"topic": "machine learning"}})
@@ -91,17 +97,20 @@ print(result["llm"]["replies"][0])
 ```python
 import os
 from haystack import Pipeline
-from keywordsai_exporter_haystack import KeywordsAIGenerator
+from respan_exporter_haystack.gateway import RespanGenerator
 
 # Create prompt on platform: https://platform.keywordsai.co/platform/prompts
 # Get your prompt_id from the platform
 
 # Create pipeline with platform prompt (model config comes from platform)
 pipeline = Pipeline()
-pipeline.add_component("llm", KeywordsAIGenerator(
+pipeline.add_component(
+    name="llm",
+    instance=RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",  # Your prompt ID
-    api_key=os.getenv("KEYWORDSAI_API_KEY")
-))
+    api_key=os.getenv("RESPAN_API_KEY")
+),
+)
 
 # Run with prompt variables
 result = pipeline.run({
@@ -130,23 +139,26 @@ print(f"Tokens: {result['llm']['meta'][0]['usage']['total_tokens']}")
 
 ### Tracing Mode (Workflow Monitoring)
 
-**Add `KeywordsAIConnector` to capture the entire pipeline:**
+**Add `RespanConnector` to capture the entire pipeline:**
 
 ```python
 import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
 from haystack.components.generators import OpenAIGenerator
-from keywordsai_exporter_haystack import KeywordsAIConnector
+from respan_exporter_haystack.connector import RespanConnector
 
 os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
 
 # Create pipeline with tracing
 pipeline = Pipeline()
-pipeline.add_component("tracer", KeywordsAIConnector("My Workflow"))
-pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
-pipeline.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))
-pipeline.connect("prompt", "llm")
+pipeline.add_component(name="tracer", instance=RespanConnector(name="My Workflow"))
+pipeline.add_component(
+    name="prompt",
+    instance=PromptBuilder(template="Tell me about {{topic}}."),
+)
+pipeline.add_component(name="llm", instance=OpenAIGenerator(model="gpt-4o-mini"))
+pipeline.connect(sender="prompt", receiver="llm")
 
 # Run
 result = pipeline.run({"prompt": {"topic": "artificial intelligence"}})
@@ -171,17 +183,24 @@ print(f"\nTrace URL: {result['tracer']['trace_url']}")
 ```python
 import os
 from haystack import Pipeline
-from keywordsai_exporter_haystack import KeywordsAIConnector, KeywordsAIGenerator
+from respan_exporter_haystack.connector import RespanConnector
+from respan_exporter_haystack.gateway import RespanGenerator
 
 os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
 
 # Create pipeline with gateway, prompt management, and tracing
 pipeline = Pipeline()
-pipeline.add_component("tracer", KeywordsAIConnector("Full Stack: Gateway + Prompt + Tracing"))
-pipeline.add_component("llm", KeywordsAIGenerator(
+pipeline.add_component(
+    name="tracer",
+    instance=RespanConnector(name="Full Stack: Gateway + Prompt + Tracing"),
+)
+pipeline.add_component(
+    name="llm",
+    instance=RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",  # Platform-managed prompt
-    api_key=os.getenv("KEYWORDSAI_API_KEY")
-))
+    api_key=os.getenv("RESPAN_API_KEY")
+),
+)
 
 # Run with prompt variables
 result = pipeline.run({
@@ -242,15 +261,15 @@ All logs and traces appear in your Keywords AI dashboard:
 
 ## API Reference
 
-### `KeywordsAIGenerator`
+### `RespanGenerator`
 
 Gateway component for LLM calls.
 
 ```python
-KeywordsAIGenerator(
+RespanGenerator(
     model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini") - optional if using prompt_id
-    api_key: Optional[str] = None,       # Keywords AI API key (defaults to KEYWORDSAI_API_KEY env var)
-    base_url: Optional[str] = None,      # API base URL (defaults to https://api.keywordsai.co)
+    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY, with legacy env fallback)
+    base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
     prompt_id: Optional[str] = None,     # Platform prompt ID for prompt management
     generation_kwargs: Optional[Dict] = None
 )
@@ -262,15 +281,15 @@ KeywordsAIGenerator(
 
 ---
 
-### `KeywordsAIConnector`
+### `RespanConnector`
 
 Tracing component for workflow monitoring.
 
 ```python
-KeywordsAIConnector(
+RespanConnector(
     name: str,                           # Pipeline name for dashboard
-    api_key: Optional[str] = None,       # Keywords AI API key (defaults to KEYWORDSAI_API_KEY env var)
-    base_url: Optional[str] = None,      # API base URL (defaults to https://api.keywordsai.co)
+    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY, with legacy env fallback)
+    base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai/api)
     metadata: Optional[Dict] = None      # Custom metadata for all spans
 )
 ```
@@ -287,7 +306,9 @@ Run the examples:
 
 ```bash
 # Set environment variables
-export KEYWORDSAI_API_KEY="your-key"
+export RESPAN_API_KEY="your-key"
+# Or use legacy env var name if needed:
+# export KEYWORDSAI_API_KEY="your-key"
 export OPENAI_API_KEY="your-openai-key"
 export HAYSTACK_CONTENT_TRACING_ENABLED="true"
 

@@ -3,6 +3,7 @@
 import requests
 from typing import Any, Dict, Optional, List
 from haystack import logging
+from respan_sdk.constants import RESPAN_DOGFOOD_HEADER, resolve_tracing_ingest_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class RespanLogger:
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
-        self.traces_endpoint = f"{self.base_url}/v1/traces/ingest"
+        self.traces_endpoint = resolve_tracing_ingest_endpoint(base_url=self.base_url)
 
     def send_trace(self, spans: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
@@ -40,6 +41,7 @@ class RespanLogger:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
+                RESPAN_DOGFOOD_HEADER: "1",
             }
             
             logger.debug(f"Sending {len(spans)} spans to Keywords AI")

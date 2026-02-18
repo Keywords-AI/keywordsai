@@ -1,15 +1,14 @@
-"""Keywords AI integration for Haystack pipelines."""
+"""Respan Haystack integration package.
 
-from .connector import RespanConnector
-from .tracer import RespanTracer
-from .gateway import RespanGenerator, RespanChatGenerator
+Import components directly from implementation modules:
+    from respan_exporter_haystack.connector import RespanConnector
+    from respan_exporter_haystack.gateway import RespanGenerator, RespanChatGenerator
+    from respan_exporter_haystack.tracer import RespanTracer
+"""
 
-__version__ = "0.1.0"
-__all__ = [
-    # Tracing (track workflow spans)
-    "RespanConnector",
-    "RespanTracer",
-    # Gateway (route LLM calls through Keywords AI)
-    "RespanGenerator",
-    "RespanChatGenerator",
-]
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("respan-exporter-haystack")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
