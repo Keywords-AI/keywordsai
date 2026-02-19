@@ -1,7 +1,7 @@
 """Session state models for respan exporters (e.g. Anthropic Agent SDK)."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from pydantic import Field
 
@@ -14,7 +14,7 @@ class PendingToolState(RespanBaseModel):
     span_unique_id: str
     started_at: datetime
     tool_name: str
-    tool_input: Optional[Any] = None
+    tool_input: Any = None
 
 
 class ExporterSessionState(RespanBaseModel):

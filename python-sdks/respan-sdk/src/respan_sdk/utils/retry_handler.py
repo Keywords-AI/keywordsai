@@ -97,6 +97,3 @@ class RetryHandler:
                     delay = min(delay, self.max_delay)
                 if delay > 0:
                     time.sleep(delay)
-        if last_error is not None:
-            raise last_error
-        raise RuntimeError(f"Retry handler failed for {context}")
