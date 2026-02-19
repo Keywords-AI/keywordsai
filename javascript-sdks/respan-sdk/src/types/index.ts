@@ -9,3 +9,4 @@ export * from "./datasetTypes.js";
 export * from "./promptTypes.js";
 export * from "./evaluatorTypes.js";
 export * from "./experimentTypes.js";
+export * from "./exporterTypes.js";
