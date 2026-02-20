@@ -1,4 +1,4 @@
-"""Keywords AI Logger for sending trace data to the API."""
+"""Respan Logger for sending trace data to the API."""
 
 import requests
 from typing import Any, Dict, Optional, List
@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 class RespanLogger:
     """
-    Logger class for sending trace and log data to Keywords AI API.
+    Logger class for sending trace and log data to Respan API.
     
-    This class handles the HTTP communication with Keywords AI's logging endpoints.
+    This class handles the HTTP communication with Respan's logging endpoints.
     """
 
     def __init__(self, api_key: str, base_url: str = "https://api.respan.ai"):
@@ -20,8 +20,8 @@ class RespanLogger:
         Initialize the logger.
         
         Args:
-            api_key: Keywords AI API key
-            base_url: Base URL for the Keywords AI API
+            api_key: Respan API key
+            base_url: Base URL for the Respan API
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -29,7 +29,7 @@ class RespanLogger:
 
     def send_trace(self, spans: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
-        Send a batch of spans to construct a trace in Keywords AI.
+        Send a batch of spans to construct a trace in Respan.
         
         Args:
             spans: List of span data (each span represents a component in the pipeline)
@@ -44,7 +44,7 @@ class RespanLogger:
                 RESPAN_DOGFOOD_HEADER: "1",
             }
             
-            logger.debug(f"Sending {len(spans)} spans to Keywords AI")
+            logger.debug(f"Sending {len(spans)} spans to Respan")
             
             response = requests.post(
                 url=self.traces_endpoint,
@@ -54,17 +54,17 @@ class RespanLogger:
             )
             
             if response.status_code in [200, 201]:
-                logger.debug("Successfully sent trace to Keywords AI")
+                logger.debug("Successfully sent trace to Respan")
                 return response.json()
             else:
                 logger.warning(
-                    f"Failed to send trace to Keywords AI: {response.status_code} - {response.text}"
+                    f"Failed to send trace to Respan: {response.status_code} - {response.text}"
                 )
                 return None
                 
         except requests.exceptions.Timeout:
-            logger.warning("Request to Keywords AI timed out")
+            logger.warning("Request to Respan timed out")
             return None
         except Exception as e:
-            logger.warning(f"Error sending trace to Keywords AI: {e}")
+            logger.warning(f"Error sending trace to Respan: {e}")
             return None

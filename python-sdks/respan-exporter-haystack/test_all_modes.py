@@ -1,5 +1,5 @@
 """
-Comprehensive Test Suite - Keywords AI Haystack Integration
+Comprehensive Test Suite - Respan Haystack Integration
 
 Tests all 5 integration modes:
 1. Gateway only (no tracing, no prompt)
@@ -19,8 +19,8 @@ from respan_exporter_haystack.gateway import RespanGenerator
 
 def check_env():
     """Check required environment variables."""
-    if not (os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")):
-        print("ERROR: RESPAN_API_KEY (or KEYWORDSAI_API_KEY) not set")
+    if not os.getenv("RESPAN_API_KEY"):
+        print("ERROR: RESPAN_API_KEY not set")
         return False
     if not os.getenv("OPENAI_API_KEY"):
         print("ERROR: OPENAI_API_KEY not set")
@@ -53,7 +53,7 @@ def test_1_gateway_only():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.co/logs")
     print("  What to see: Single log entry (NOT in traces view)")
     print("  Log type: Chat completion")
     return True
@@ -93,7 +93,7 @@ def test_2_gateway_with_prompt():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.co/logs")
     print("  What to see: Log shows prompt_id in metadata")
     print("  Filter by: Prompt name (if set on platform)")
     return True
@@ -128,7 +128,7 @@ def test_3_trace_only():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.co/logs")
     print("  View: Switch to 'Traces' tab")
     print("  What to see:")
     print("    - Test 3: Trace Only (root)")
@@ -169,7 +169,7 @@ def test_4_trace_with_gateway():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.co/logs")
     print("  What to see:")
     print("    1. LOGS TAB: Individual LLM call from gateway")
     print("    2. TRACES TAB: Full workflow trace with:")
@@ -216,7 +216,7 @@ def test_5_full_stack():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.co/logs")
     print("  What to see:")
     print("    1. LOGS TAB: LLM call with prompt_id metadata")
     print("    2. TRACES TAB: Trace with:")
@@ -229,7 +229,7 @@ def test_5_full_stack():
 def main():
     """Run all tests."""
     print("\n" + "="*80)
-    print("KEYWORDS AI HAYSTACK INTEGRATION - COMPREHENSIVE TEST SUITE")
+    print("RESPAN HAYSTACK INTEGRATION - COMPREHENSIVE TEST SUITE")
     print("="*80)
     
     if not check_env():
@@ -239,7 +239,7 @@ def main():
         return
     
     print("\nRunning 5 test scenarios...")
-    print("After each test, check the Keywords AI dashboard to verify results.")
+    print("After each test, check the Respan dashboard to verify results.")
     
     tests = [
         ("Test 1: Gateway Only", test_1_gateway_only),
@@ -276,8 +276,8 @@ def main():
     print("\n" + "="*80)
     print("DASHBOARD CHECK")
     print("="*80)
-    print("  Logs: https://platform.keywordsai.co/logs")
-    print("  Traces: https://platform.keywordsai.co/logs (switch to Traces tab)")
+    print("  Logs: https://platform.respan.co/logs")
+    print("  Traces: https://platform.respan.co/logs (switch to Traces tab)")
     print("\nExpected results:")
     print("  - 5 LLM logs (Tests 1, 2, 4, 5 + Test 3 direct)")
     print("  - 3 Traces (Tests 3, 4, 5)")

@@ -1,4 +1,4 @@
-"""Keywords AI Gateway Generator for Haystack pipelines."""
+"""Respan Gateway Generator for Haystack pipelines."""
 
 from typing import Any, Callable, Dict, List, Optional
 
@@ -23,15 +23,15 @@ logger = logging.getLogger(__name__)
 @component
 class RespanGenerator:
     """
-    A Haystack Generator component that routes LLM calls through Keywords AI gateway.
+    A Haystack Generator component that routes LLM calls through Respan gateway.
     
-    This replaces OpenAIGenerator and routes all calls through Keywords AI for:
+    This replaces OpenAIGenerator and routes all calls through Respan for:
     - Automatic logging
     - Fallbacks and retries
     - Load balancing
     - Cost optimization
     - Prompt management (use platform-managed prompts)
-    - All Keywords AI platform features
+    - All Respan platform features
     
     Example usage:
         ```python
@@ -40,24 +40,24 @@ class RespanGenerator:
         # Basic usage
         generator = RespanGenerator(
             model="gpt-4o-mini",
-            api_key="your-keywords-ai-key"
+            api_key="your-respan-key"
         )
         result = generator.run(messages=[{"role": "user", "content": "Hello!"}])
         
         # With platform-managed prompts
         generator = RespanGenerator(
             model="gpt-4o-mini",
-            prompt_id="042f5f",  # Prompt from Keywords AI platform
-            api_key="your-keywords-ai-key"
+            prompt_id="042f5f",  # Prompt from Respan platform
+            api_key="your-respan-key"
         )
         result = generator.run(prompt_variables={"customer_name": "John"})
         ```
     
     Args:
         model: Model name (e.g., "gpt-4o-mini", "gpt-4"). Optional if using prompt_id.
-        api_key: Keywords AI API key (defaults to RESPAN_API_KEY env var)
-        base_url: Keywords AI API base URL (defaults to https://api.respan.ai)
-        prompt_id: Optional prompt ID from Keywords AI platform for prompt management
+        api_key: Respan API key (defaults to RESPAN_API_KEY env var)
+        base_url: Respan API base URL (defaults to https://api.respan.ai)
+        prompt_id: Optional prompt ID from Respan platform for prompt management
         generation_kwargs: Additional parameters (temperature, max_tokens, etc.)
         streaming_callback: Optional callback for streaming responses
     """
@@ -71,7 +71,7 @@ class RespanGenerator:
         generation_kwargs: Optional[Dict[str, Any]] = None,
         streaming_callback: Optional[Callable[..., None]] = None,
     ):
-        """Initialize the Keywords AI gateway generator."""
+        """Initialize the Respan gateway generator."""
         self.model = model
         self.api_key = resolve_api_key(api_key=api_key)
         self.base_url = resolve_base_url(base_url=base_url)
@@ -81,8 +81,7 @@ class RespanGenerator:
         
         if not self.api_key:
             raise ValueError(
-                "Keywords AI API key is required. Set RESPAN_API_KEY (or "
-                "KEYWORDSAI_API_KEY / KEYWORDS_AI_API_KEY) environment variable "
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
         
@@ -103,7 +102,7 @@ class RespanGenerator:
         prompt_variables: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Generate text using Keywords AI gateway.
+        Generate text using Respan gateway.
         
         Args:
             prompt: Simple prompt string (will be converted to user message)
@@ -159,7 +158,7 @@ class RespanGenerator:
         }
         
         try:
-            logger.debug(f"Calling Keywords AI gateway with model {self.model}")
+            logger.debug(f"Calling Respan gateway with model {self.model}")
             
             response = requests.post(
                 url=self.endpoint,
@@ -191,7 +190,7 @@ class RespanGenerator:
                     "prompt_tokens": usage.get("prompt_tokens"),
                     "completion_tokens": usage.get("completion_tokens"),
                     "total_tokens": usage.get("total_tokens"),
-                    "cost": data.get("cost"),  # Keywords AI provides cost
+                    "cost": data.get("cost"),  # Respan provides cost
                 })
             
             logger.debug(f"Successfully generated {len(replies)} replies")
@@ -202,15 +201,15 @@ class RespanGenerator:
             }
             
         except requests.exceptions.HTTPError as e:
-            error_msg = f"HTTP error from Keywords AI: {e.response.status_code} - {e.response.text}"
+            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
         except requests.exceptions.Timeout:
-            error_msg = "Request to Keywords AI timed out"
+            error_msg = "Request to Respan timed out"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
         except Exception as e:
-            error_msg = f"Error calling Keywords AI gateway: {str(e)}"
+            error_msg = f"Error calling Respan gateway: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
@@ -234,7 +233,7 @@ class RespanGenerator:
 @component
 class RespanChatGenerator:
     """
-    Keywords AI Chat Generator for Haystack pipelines.
+    Respan Chat Generator for Haystack pipelines.
     
     Similar to RespanGenerator but with chat-specific features.
     Use this when you want ChatMessage support and chat-specific parameters.
@@ -246,7 +245,7 @@ class RespanChatGenerator:
         
         generator = RespanChatGenerator(
             model="gpt-4",
-            api_key="your-keywords-ai-key"
+            api_key="your-respan-key"
         )
         
         messages = [
@@ -273,8 +272,7 @@ class RespanChatGenerator:
         
         if not self.api_key:
             raise ValueError(
-                "Keywords AI API key is required. Set RESPAN_API_KEY (or "
-                "KEYWORDSAI_API_KEY / KEYWORDS_AI_API_KEY) environment variable "
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
         
@@ -287,7 +285,7 @@ class RespanChatGenerator:
         generation_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Generate chat responses using Keywords AI gateway.
+        Generate chat responses using Respan gateway.
         
         Args:
             messages: List of ChatMessage objects
@@ -320,7 +318,7 @@ class RespanChatGenerator:
         }
         
         try:
-            logger.debug(f"Calling Keywords AI gateway with model {self.model}")
+            logger.debug(f"Calling Respan gateway with model {self.model}")
             
             response = requests.post(
                 url=self.endpoint,
@@ -364,7 +362,7 @@ class RespanChatGenerator:
             }
             
         except Exception as e:
-            error_msg = f"Error calling Keywords AI gateway: {str(e)}"
+            error_msg = f"Error calling Respan gateway: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 

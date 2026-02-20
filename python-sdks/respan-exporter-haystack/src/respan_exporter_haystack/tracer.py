@@ -1,4 +1,4 @@
-"""Keywords AI Tracer implementation for Haystack content tracing."""
+"""Respan Tracer implementation for Haystack content tracing."""
 
 import time
 import uuid
@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 class RespanTracer(Tracer):
     """
-    Custom tracer implementation for Keywords AI that integrates with Haystack's tracing system.
+    Custom tracer implementation for Respan that integrates with Haystack's tracing system.
     
-    This tracer captures all pipeline operations and sends them to Keywords AI for monitoring.
+    This tracer captures all pipeline operations and sends them to Respan for monitoring.
     It implements the Haystack Tracer protocol to seamlessly integrate with Haystack pipelines.
     """
 
@@ -29,12 +29,12 @@ class RespanTracer(Tracer):
         metadata: Optional[Dict[str, Any]] = None,
     ):
         """
-        Initialize the Keywords AI tracer.
+        Initialize the Respan tracer.
         
         Args:
             name: Name of the trace/pipeline
-            api_key: Keywords AI API key
-            base_url: Keywords AI API base URL
+            api_key: Respan API key
+            base_url: Respan API base URL
             metadata: Additional metadata to attach to traces
         """
         self.name = name
@@ -138,7 +138,7 @@ class RespanTracer(Tracer):
         else:
             span_data["status_code"] = 200
         
-        # Format span for Keywords AI traces API
+        # Format span for Respan traces API
         try:
             formatted_span = format_span_for_api(
                 span_data=span_data,
@@ -156,7 +156,7 @@ class RespanTracer(Tracer):
             logger.warning(f"Failed to format span: {e}")
 
     def send_trace(self):
-        """Send all collected spans to Keywords AI as a batch."""
+        """Send all collected spans to Respan as a batch."""
         if not self.completed_spans:
             logger.debug("No spans to send")
             return
@@ -166,7 +166,7 @@ class RespanTracer(Tracer):
             return
             
         try:
-            logger.debug(f"Sending trace with {len(self.completed_spans)} spans to Keywords AI")
+            logger.debug(f"Sending trace with {len(self.completed_spans)} spans to Respan")
             response = self.kw_logger.send_trace(self.completed_spans)
             
             if response:
@@ -178,10 +178,10 @@ class RespanTracer(Tracer):
                     
             self.pipeline_finished = True
         except Exception as e:
-            logger.warning(f"Failed to send trace to Keywords AI: {e}")
+            logger.warning(f"Failed to send trace to Respan: {e}")
     
     def get_trace_url(self) -> Optional[str]:
-        """Get the URL to view this trace in Keywords AI dashboard."""
+        """Get the URL to view this trace in Respan dashboard."""
         if self.trace_url:
             return self.trace_url
         # Return a default URL pattern if not set yet
@@ -190,7 +190,7 @@ class RespanTracer(Tracer):
 
 class RespanSpan(Span):
     """
-    Span implementation for Keywords AI tracing.
+    Span implementation for Respan tracing.
     
     Represents a single operation in the pipeline execution.
     """
@@ -240,7 +240,7 @@ class RespanSpan(Span):
         return self.tracer.spans.get(self.span_id)
 
     def finish(self, output: Any = None, error: Optional[Exception] = None):
-        """Finish the span and send to Keywords AI."""
+        """Finish the span and send to Respan."""
         if not self._is_finished:
             self.tracer.finalize_span(self.span_id, output=output, error=error)
             self._is_finished = True

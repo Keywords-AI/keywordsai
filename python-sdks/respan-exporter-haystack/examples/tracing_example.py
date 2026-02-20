@@ -1,4 +1,4 @@
-"""Simple tracing example for Keywords AI Haystack integration."""
+"""Simple tracing example for Respan Haystack integration."""
 
 import os
 from haystack import Pipeline

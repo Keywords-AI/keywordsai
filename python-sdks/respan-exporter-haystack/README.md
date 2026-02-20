@@ -7,7 +7,7 @@ Respan integration for Haystack pipelines with tracing and logging support.
 ## Features
 
 ### Gateway Mode
-Route LLM calls through Keywords AI gateway:
+Route LLM calls through Respan gateway:
 - Automatic logging (zero config)
 - Model fallbacks & retries
 - Load balancing
@@ -39,7 +39,7 @@ pip install respan-exporter-haystack
 
 ### 1. Get API Keys
 
-- [Keywords AI API Key](https://platform.keywordsai.co/)
+- [Respan API Key](https://platform.respan.co/)
 - OpenAI API Key (for examples)
 
 ### 2. Set Environment Variables
@@ -84,7 +84,7 @@ result = pipeline.run({"prompt": {"topic": "machine learning"}})
 print(result["llm"]["replies"][0])
 ```
 
-**That's it!** All LLM calls are automatically logged to Keywords AI with no additional code.
+**That's it!** All LLM calls are automatically logged to Respan with no additional code.
 
 **See:** [`examples/gateway_example.py`](examples/gateway_example.py)
 
@@ -99,7 +99,7 @@ import os
 from haystack import Pipeline
 from respan_exporter_haystack.gateway import RespanGenerator
 
-# Create prompt on platform: https://platform.keywordsai.co/platform/prompts
+# Create prompt on platform: https://platform.respan.co/platform/prompts
 # Get your prompt_id from the platform
 
 # Create pipeline with platform prompt (model config comes from platform)
@@ -250,9 +250,9 @@ For LLM spans, additionally:
 
 ## View Your Data
 
-All logs and traces appear in your Keywords AI dashboard:
+All logs and traces appear in your Respan dashboard:
 
-**Dashboard:** https://platform.keywordsai.co/logs
+**Dashboard:** https://platform.respan.co/logs
 
 - **Logs view:** Individual LLM calls
 - **Traces view:** Full pipeline workflows with tree visualization
@@ -268,7 +268,7 @@ Gateway component for LLM calls.
 ```python
 RespanGenerator(
     model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini") - optional if using prompt_id
-    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY, with legacy env fallback)
+    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY)
     base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
     prompt_id: Optional[str] = None,     # Platform prompt ID for prompt management
     generation_kwargs: Optional[Dict] = None
@@ -288,7 +288,7 @@ Tracing component for workflow monitoring.
 ```python
 RespanConnector(
     name: str,                           # Pipeline name for dashboard
-    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY, with legacy env fallback)
+    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY)
     base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai/api)
     metadata: Optional[Dict] = None      # Custom metadata for all spans
 )
@@ -307,8 +307,6 @@ Run the examples:
 ```bash
 # Set environment variables
 export RESPAN_API_KEY="your-key"
-# Or use legacy env var name if needed:
-# export KEYWORDSAI_API_KEY="your-key"
 export OPENAI_API_KEY="your-openai-key"
 export HAYSTACK_CONTENT_TRACING_ENABLED="true"
 
@@ -337,8 +335,8 @@ python examples/combined_example.py
 
 ## Support
 
-- **Documentation:** https://docs.keywordsai.co/
-- **Dashboard:** https://platform.keywordsai.co/
+- **Documentation:** https://docs.respan.ai/
+- **Dashboard:** https://platform.respan.co/
 - **Issues:** [GitHub Issues](https://github.com/Keywords-AI/keywordai_sdks/issues)
 
 ---

@@ -1,4 +1,4 @@
-"""Simple gateway example for Keywords AI Haystack integration."""
+"""Simple gateway example for Respan Haystack integration."""
 
 import os
 from haystack import Pipeline
@@ -15,7 +15,7 @@ pipeline.add_component(
     name="llm",
     instance=RespanGenerator(
     model="gpt-4o-mini",
-    api_key=os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")
+    api_key=os.getenv("RESPAN_API_KEY")
 ),
 )
 pipeline.connect(sender="prompt", receiver="llm")

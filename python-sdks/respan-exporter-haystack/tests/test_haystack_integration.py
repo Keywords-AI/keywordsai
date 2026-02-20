@@ -46,15 +46,6 @@ def test_chat_generator_supports_latest_haystack_chat_message_api(monkeypatch: p
     assert result["meta"][0]["total_tokens"] == 5
 
 
-def test_connector_accepts_legacy_keywordsai_api_key_env(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("RESPAN_API_KEY", raising=False)
-    monkeypatch.setenv("KEYWORDSAI_API_KEY", "legacy-key")
-
-    connector = RespanConnector(name="legacy-env-support")
-
-    assert connector.api_key == "legacy-key"
-
-
 def test_logger_resolves_tracing_endpoint_for_base_url_without_api_path():
     logger = RespanLogger(api_key="test-api-key", base_url="https://api.respan.ai")
 
