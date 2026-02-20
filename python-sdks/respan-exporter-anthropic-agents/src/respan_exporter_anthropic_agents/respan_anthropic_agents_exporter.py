@@ -3,8 +3,6 @@
 import json
 import logging
 import os
-import random
-import time
 import urllib.error
 import urllib.request
 import uuid
@@ -32,7 +30,12 @@ from respan_sdk.constants.llm_logging import (
     LOG_TYPE_TOOL,
 )
 from respan_sdk.respan_types._internal_types import Message
+from respan_sdk.respan_types.exporter_session_types import (
+    ExporterSessionState,
+    PendingToolState,
+)
 from respan_sdk.respan_types.param_types import RespanTextLogParams
+from respan_sdk.utils import RetryHandler
 from respan_exporter_anthropic_agents.utils import (
     build_trace_name_from_prompt,
     coerce_int,
@@ -74,7 +77,13 @@ class RespanAnthropicAgentsExporter:
         self.base_delay_seconds = base_delay_seconds
         self.max_delay_seconds = max_delay_seconds
 
-        self._sessions: Dict[str, Dict[str, Any]] = {}
+        self._retry_handler = RetryHandler(
+            max_retries=max_retries,
+            retry_delay=base_delay_seconds,
+            backoff_multiplier=2.0,
+            max_delay=max_delay_seconds,
+        )
+        self._sessions: Dict[str, ExporterSessionState] = {}
         self._last_session_id: Optional[str] = None
 
     def _build_endpoint(self, base_url: Optional[str] = None) -> str:
@@ -239,7 +248,7 @@ class RespanAnthropicAgentsExporter:
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
-            span_parent_id=session_state["trace_id"],
+            span_parent_id=session_state.trace_id,
             span_name="user_prompt",
             log_type=LOG_TYPE_TASK,
             start_time=now,
@@ -267,12 +276,12 @@ class RespanAnthropicAgentsExporter:
         resolved_tool_use_id = str(
             input_data.get("tool_use_id") or tool_use_id or str(uuid.uuid4())
         )
-        session_state["pending_tools"][resolved_tool_use_id] = {
-            "span_unique_id": str(uuid.uuid4()),
-            "started_at": self._utc_now(),
-            "tool_name": input_data.get("tool_name") or "tool",
-            "tool_input": input_data.get("tool_input"),
-        }
+        session_state.pending_tools[resolved_tool_use_id] = PendingToolState(
+            span_unique_id=str(uuid.uuid4()),
+            started_at=self._utc_now(),
+            tool_name=input_data.get("tool_name") or "tool",
+            tool_input=input_data.get("tool_input"),
+        )
         return {}
 
     async def _on_post_tool_use(
@@ -290,29 +299,31 @@ class RespanAnthropicAgentsExporter:
             input_data.get("tool_use_id") or tool_use_id or str(uuid.uuid4())
         )
 
-        pending_tool_state = session_state["pending_tools"].pop(
+        pending_tool_state = session_state.pending_tools.pop(
             resolved_tool_use_id,
             None,
         )
         now = self._utc_now()
         if pending_tool_state is None:
-            pending_tool_state = {
-                "span_unique_id": str(uuid.uuid4()),
-                "started_at": now,
-                "tool_name": input_data.get("tool_name") or "tool",
-                "tool_input": input_data.get("tool_input"),
-            }
+            pending_tool_state = PendingToolState(
+                span_unique_id=str(uuid.uuid4()),
+                started_at=now,
+                tool_name=input_data.get("tool_name") or "tool",
+                tool_input=input_data.get("tool_input"),
+            )
 
-        tool_name = str(input_data.get("tool_name") or pending_tool_state["tool_name"])
+        tool_name = str(
+            input_data.get("tool_name") or pending_tool_state.tool_name
+        )
         payload = self._create_payload(
             session_state=session_state,
-            span_unique_id=pending_tool_state["span_unique_id"],
-            span_parent_id=session_state["trace_id"],
+            span_unique_id=pending_tool_state.span_unique_id,
+            span_parent_id=session_state.trace_id,
             span_name=tool_name,
             log_type=LOG_TYPE_TOOL,
-            start_time=pending_tool_state["started_at"],
+            start_time=pending_tool_state.started_at,
             timestamp=now,
-            input_value=pending_tool_state.get("tool_input"),
+            input_value=pending_tool_state.tool_input,
             output_value=input_data.get("tool_response"),
             metadata={
                 "hook_event_name": "PostToolUse",
@@ -339,7 +350,7 @@ class RespanAnthropicAgentsExporter:
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
-            span_parent_id=session_state["trace_id"],
+            span_parent_id=session_state.trace_id,
             span_name="subagent_stop",
             log_type=LOG_TYPE_TASK,
             start_time=now,
@@ -397,7 +408,7 @@ class RespanAnthropicAgentsExporter:
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
-            span_parent_id=session_state["trace_id"],
+            span_parent_id=session_state.trace_id,
             span_name="user_message",
             log_type=LOG_TYPE_TASK,
             start_time=now,
@@ -448,7 +459,7 @@ class RespanAnthropicAgentsExporter:
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
-            span_parent_id=session_state["trace_id"],
+            span_parent_id=session_state.trace_id,
             span_name="assistant_message",
             log_type=LOG_TYPE_GENERATION,
             start_time=now,
@@ -504,7 +515,7 @@ class RespanAnthropicAgentsExporter:
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
-            span_parent_id=session_state["trace_id"],
+            span_parent_id=session_state.trace_id,
             span_name=f"result:{result_message.subtype}",
             log_type=LOG_TYPE_AGENT,
             start_time=now,
@@ -528,7 +539,7 @@ class RespanAnthropicAgentsExporter:
             error_message=error_message,
         )
         self._send_payloads(payloads=[payload])
-        session_state["pending_tools"] = {}
+        session_state.pending_tools.clear()
 
     def _handle_stream_event(self, stream_event: StreamEvent) -> None:
         self._last_session_id = stream_event.session_id
@@ -565,54 +576,54 @@ class RespanAnthropicAgentsExporter:
         self,
         session_id: str,
         trace_name: Optional[str],
-    ) -> Dict[str, Any]:
+    ) -> ExporterSessionState:
         existing_state = self._sessions.get(session_id)
         if existing_state is not None:
             if (
                 trace_name
-                and existing_state["trace_name"].startswith("anthropic-session-")
+                and existing_state.trace_name.startswith("anthropic-session-")
             ):
-                existing_state["trace_name"] = trace_name
+                existing_state.trace_name = trace_name
             self._last_session_id = session_id
             return existing_state
 
         resolved_trace_name = trace_name or f"anthropic-session-{session_id[:12]}"
         now = self._utc_now()
-        state = {
-            "session_id": session_id,
-            "trace_id": session_id,
-            "trace_name": resolved_trace_name,
-            "started_at": now,
-            "pending_tools": {},
-            "root_emitted": False,
-        }
+        state = ExporterSessionState(
+            session_id=session_id,
+            trace_id=session_id,
+            trace_name=resolved_trace_name,
+            started_at=now,
+            pending_tools={},
+            is_root_emitted=False,
+        )
         self._sessions[session_id] = state
         self._last_session_id = session_id
         self._emit_root_span(session_state=state)
         return state
 
-    def _emit_root_span(self, session_state: Dict[str, Any]) -> None:
-        if session_state["root_emitted"]:
+    def _emit_root_span(self, session_state: ExporterSessionState) -> None:
+        if session_state.is_root_emitted:
             return
         root_payload = self._create_payload(
             session_state=session_state,
-            span_unique_id=session_state["trace_id"],
+            span_unique_id=session_state.trace_id,
             span_parent_id=None,
-            span_name=session_state["trace_name"],
+            span_name=session_state.trace_name,
             log_type=LOG_TYPE_AGENT,
-            start_time=session_state["started_at"],
-            timestamp=session_state["started_at"],
+            start_time=session_state.started_at,
+            timestamp=session_state.started_at,
             input_value=None,
             output_value=None,
             metadata={"source": "session_root"},
             status_code=200,
         )
         self._send_payloads(payloads=[root_payload])
-        session_state["root_emitted"] = True
+        session_state.is_root_emitted = True
 
     def _create_payload(
         self,
-        session_state: Dict[str, Any],
+        session_state: ExporterSessionState,
         span_unique_id: str,
         span_parent_id: Optional[str],
         span_name: str,
@@ -643,13 +654,13 @@ class RespanAnthropicAgentsExporter:
         )
 
         payload = RespanTextLogParams(
-            trace_unique_id=session_state["trace_id"],
+            trace_unique_id=session_state.trace_id,
             span_unique_id=span_unique_id,
             span_parent_id=span_parent_id,
-            trace_name=session_state["trace_name"],
-            session_identifier=session_state["session_id"],
+            trace_name=session_state.trace_name,
+            session_identifier=session_state.session_id,
             span_name=span_name,
-            span_workflow_name=session_state["trace_name"],
+            span_workflow_name=session_state.trace_name,
             log_type=log_type,
             start_time=resolved_start_time,
             timestamp=resolved_timestamp,
@@ -696,11 +707,7 @@ class RespanAnthropicAgentsExporter:
             "Content-Type": "application/json",
         }
 
-        attempt = 0
-        delay_seconds = self.base_delay_seconds
-
-        while True:
-            attempt += 1
+        def _do_request() -> None:
             request = urllib.request.Request(
                 url=self.endpoint,
                 data=request_body,
@@ -727,6 +734,10 @@ class RespanAnthropicAgentsExporter:
                         response.status,
                         response_body,
                     )
+                    raise RuntimeError(
+                        "Respan export server error %s: %s"
+                        % (response.status, response_body)
+                    )
             except urllib.error.HTTPError as error:
                 error_body = error.read().decode("utf-8", errors="replace")
                 if 400 <= error.code < 500:
@@ -741,16 +752,18 @@ class RespanAnthropicAgentsExporter:
                     error.code,
                     error_body,
                 )
+                raise
             except urllib.error.URLError as error:
                 logger.warning("Respan export network error: %s", error)
+                raise
 
-            if attempt >= self.max_retries:
-                logger.error("Respan export failed after %s attempts", attempt)
-                return
-
-            jitter_seconds = random.uniform(0, 0.1 * delay_seconds)
-            time.sleep(delay_seconds + jitter_seconds)
-            delay_seconds = min(delay_seconds * 2, self.max_delay_seconds)
+        try:
+            self._retry_handler.execute(
+                _do_request,
+                context="Respan export ingest",
+            )
+        except Exception:
+            pass
 
     def _coerce_int(self, value: Any) -> Optional[int]:
         return coerce_int(value=value)
