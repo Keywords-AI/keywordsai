@@ -1,11 +1,21 @@
-"""Keywords AI Gateway Generator for Haystack pipelines."""
+"""Respan Gateway Generator for Haystack pipelines."""
 
-import os
-from typing import Any, Dict, List, Optional, Union
-from haystack import component, default_from_dict, default_to_dict, logging
-from haystack.dataclasses import StreamingChunk
+from typing import Any, Callable, Dict, List, Optional
 
 import requests
+from haystack import component, default_from_dict, default_to_dict, logging
+from haystack.dataclasses import ChatMessage
+
+from respan_exporter_haystack.utils.chat_utils import (
+    extract_response_text,
+    to_chat_message,
+    to_request_message,
+)
+from respan_exporter_haystack.utils.config_utils import (
+    build_chat_completions_endpoint,
+    resolve_api_key,
+    resolve_base_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -13,41 +23,41 @@ logger = logging.getLogger(__name__)
 @component
 class RespanGenerator:
     """
-    A Haystack Generator component that routes LLM calls through Keywords AI gateway.
+    A Haystack Generator component that routes LLM calls through Respan gateway.
     
-    This replaces OpenAIGenerator and routes all calls through Keywords AI for:
+    This replaces OpenAIGenerator and routes all calls through Respan for:
     - Automatic logging
     - Fallbacks and retries
     - Load balancing
     - Cost optimization
     - Prompt management (use platform-managed prompts)
-    - All Keywords AI platform features
+    - All Respan platform features
     
     Example usage:
         ```python
-        from respan_exporter_haystack import RespanGenerator
+        from respan_exporter_haystack.gateway import RespanGenerator
         
         # Basic usage
         generator = RespanGenerator(
             model="gpt-4o-mini",
-            api_key="your-keywords-ai-key"
+            api_key="your-respan-key"
         )
         result = generator.run(messages=[{"role": "user", "content": "Hello!"}])
         
         # With platform-managed prompts
         generator = RespanGenerator(
             model="gpt-4o-mini",
-            prompt_id="042f5f",  # Prompt from Keywords AI platform
-            api_key="your-keywords-ai-key"
+            prompt_id="042f5f",  # Prompt from Respan platform
+            api_key="your-respan-key"
         )
         result = generator.run(prompt_variables={"customer_name": "John"})
         ```
     
     Args:
         model: Model name (e.g., "gpt-4o-mini", "gpt-4"). Optional if using prompt_id.
-        api_key: Keywords AI API key (defaults to RESPAN_API_KEY env var)
-        base_url: Keywords AI API base URL (defaults to https://api.respan.ai)
-        prompt_id: Optional prompt ID from Keywords AI platform for prompt management
+        api_key: Respan API key (defaults to RESPAN_API_KEY env var)
+        base_url: Respan API base URL (defaults to https://api.respan.ai)
+        prompt_id: Optional prompt ID from Respan platform for prompt management
         generation_kwargs: Additional parameters (temperature, max_tokens, etc.)
         streaming_callback: Optional callback for streaming responses
     """
@@ -59,21 +69,19 @@ class RespanGenerator:
         base_url: Optional[str] = None,
         prompt_id: Optional[str] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
-        streaming_callback: Optional[callable] = None,
+        streaming_callback: Optional[Callable[..., None]] = None,
     ):
-        """Initialize the Keywords AI gateway generator."""
+        """Initialize the Respan gateway generator."""
         self.model = model
-        self.api_key = api_key or os.getenv("RESPAN_API_KEY")
-        self.base_url = base_url or os.getenv(
-            "RESPAN_BASE_URL", "https://api.respan.ai"
-        )
+        self.api_key = resolve_api_key(api_key=api_key)
+        self.base_url = resolve_base_url(base_url=base_url)
         self.prompt_id = prompt_id
         self.generation_kwargs = generation_kwargs or {}
         self.streaming_callback = streaming_callback
         
         if not self.api_key:
             raise ValueError(
-                "Keywords AI API key is required. Set RESPAN_API_KEY environment variable "
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
         
@@ -83,12 +91,7 @@ class RespanGenerator:
                 "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
             )
         
-        # Build endpoint - handle if base_url already has /api
-        base = self.base_url.rstrip('/')
-        if base.endswith('/api'):
-            self.endpoint = f"{base}/chat/completions"
-        else:
-            self.endpoint = f"{base}/api/chat/completions"
+        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
 
     @component.output_types(replies=List[str], meta=List[Dict[str, Any]])
     def run(
@@ -99,7 +102,7 @@ class RespanGenerator:
         prompt_variables: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Generate text using Keywords AI gateway.
+        Generate text using Respan gateway.
         
         Args:
             prompt: Simple prompt string (will be converted to user message)
@@ -155,7 +158,7 @@ class RespanGenerator:
         }
         
         try:
-            logger.debug(f"Calling Keywords AI gateway with model {self.model}")
+            logger.debug(f"Calling Respan gateway with model {self.model}")
             
             response = requests.post(
                 url=self.endpoint,
@@ -169,7 +172,10 @@ class RespanGenerator:
             
             # Extract replies and metadata
             choices = data.get("choices", [])
-            replies = [choice["message"]["content"] for choice in choices]
+            replies = [
+                extract_response_text(content=choice.get("message", {}).get("content"))
+                for choice in choices
+            ]
             
             # Build metadata
             meta = []
@@ -184,7 +190,7 @@ class RespanGenerator:
                     "prompt_tokens": usage.get("prompt_tokens"),
                     "completion_tokens": usage.get("completion_tokens"),
                     "total_tokens": usage.get("total_tokens"),
-                    "cost": data.get("cost"),  # Keywords AI provides cost
+                    "cost": data.get("cost"),  # Respan provides cost
                 })
             
             logger.debug(f"Successfully generated {len(replies)} replies")
@@ -195,22 +201,22 @@ class RespanGenerator:
             }
             
         except requests.exceptions.HTTPError as e:
-            error_msg = f"HTTP error from Keywords AI: {e.response.status_code} - {e.response.text}"
+            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
         except requests.exceptions.Timeout:
-            error_msg = "Request to Keywords AI timed out"
+            error_msg = "Request to Respan timed out"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
         except Exception as e:
-            error_msg = f"Error calling Keywords AI gateway: {str(e)}"
+            error_msg = f"Error calling Respan gateway: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize component to dictionary."""
         return default_to_dict(
-            self,
+            obj=self,
             model=self.model,
             api_key=self.api_key,
             base_url=self.base_url,
@@ -221,13 +227,13 @@ class RespanGenerator:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RespanGenerator":
         """Deserialize component from dictionary."""
-        return default_from_dict(cls, data)
+        return default_from_dict(cls=cls, data=data)
 
 
 @component
 class RespanChatGenerator:
     """
-    Keywords AI Chat Generator for Haystack pipelines.
+    Respan Chat Generator for Haystack pipelines.
     
     Similar to RespanGenerator but with chat-specific features.
     Use this when you want ChatMessage support and chat-specific parameters.
@@ -235,11 +241,11 @@ class RespanChatGenerator:
     Example:
         ```python
         from haystack.dataclasses import ChatMessage
-        from respan_exporter_haystack import RespanChatGenerator
+        from respan_exporter_haystack.gateway import RespanChatGenerator
         
         generator = RespanChatGenerator(
             model="gpt-4",
-            api_key="your-keywords-ai-key"
+            api_key="your-respan-key"
         )
         
         messages = [
@@ -260,33 +266,26 @@ class RespanChatGenerator:
     ):
         """Initialize the chat generator."""
         self.model = model
-        self.api_key = api_key or os.getenv("RESPAN_API_KEY")
-        self.base_url = base_url or os.getenv(
-            "RESPAN_BASE_URL", "https://api.respan.ai"
-        )
+        self.api_key = resolve_api_key(api_key=api_key)
+        self.base_url = resolve_base_url(base_url=base_url)
         self.generation_kwargs = generation_kwargs or {}
         
         if not self.api_key:
             raise ValueError(
-                "Keywords AI API key is required. Set RESPAN_API_KEY environment variable "
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
         
-        # Build endpoint - handle if base_url already has /api
-        base = self.base_url.rstrip('/')
-        if base.endswith('/api'):
-            self.endpoint = f"{base}/chat/completions"
-        else:
-            self.endpoint = f"{base}/api/chat/completions"
+        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
 
-    @component.output_types(replies=List["ChatMessage"], meta=List[Dict[str, Any]])
+    @component.output_types(replies=List[ChatMessage], meta=List[Dict[str, Any]])
     def run(
         self,
-        messages: List["ChatMessage"],
+        messages: List[ChatMessage],
         generation_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Generate chat responses using Keywords AI gateway.
+        Generate chat responses using Respan gateway.
         
         Args:
             messages: List of ChatMessage objects
@@ -297,11 +296,9 @@ class RespanChatGenerator:
                 - replies: List of ChatMessage objects
                 - meta: List of metadata dicts
         """
-        from haystack.dataclasses import ChatMessage, ChatRole
-        
         # Convert ChatMessage to dict format
         messages_dict = [
-            {"role": msg.role.value, "content": msg.text if hasattr(msg, "text") else msg.content}
+            to_request_message(message=msg)
             for msg in messages
         ]
         
@@ -321,7 +318,7 @@ class RespanChatGenerator:
         }
         
         try:
-            logger.debug(f"Calling Keywords AI gateway with model {self.model}")
+            logger.debug(f"Calling Respan gateway with model {self.model}")
             
             response = requests.post(
                 url=self.endpoint,
@@ -338,10 +335,8 @@ class RespanChatGenerator:
             replies = []
             
             for choice in choices:
-                msg_data = choice["message"]
-                role = ChatRole(msg_data["role"])
-                content = msg_data["content"]
-                replies.append(ChatMessage(role=role, content=content))
+                msg_data = choice.get("message", {})
+                replies.append(to_chat_message(message_payload=msg_data))
             
             # Build metadata
             meta = []
@@ -367,14 +362,14 @@ class RespanChatGenerator:
             }
             
         except Exception as e:
-            error_msg = f"Error calling Keywords AI gateway: {str(e)}"
+            error_msg = f"Error calling Respan gateway: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize component to dictionary."""
         return default_to_dict(
-            self,
+            obj=self,
             model=self.model,
             api_key=self.api_key,
             base_url=self.base_url,
@@ -384,4 +379,4 @@ class RespanChatGenerator:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RespanChatGenerator":
         """Deserialize component from dictionary."""
-        return default_from_dict(cls, data)
+        return default_from_dict(cls=cls, data=data)
