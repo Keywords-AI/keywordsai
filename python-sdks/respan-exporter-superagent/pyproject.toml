@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "respan-exporter-superagent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Respan exporter for Superagent (safety-agent) SDK"
 authors = ["Respan <team@respan.ai>"]
 license = "Apache-2.0"
