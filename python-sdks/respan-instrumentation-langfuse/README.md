@@ -1,6 +1,8 @@
-# Keywords AI Instrumentation for Langfuse
+# Respan Instrumentation for Langfuse
 
-**OTEL-compliant** automatic instrumentation for Langfuse that sends all traces to Keywords AI.
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)** | **[PyPI](https://pypi.org/project/respan-instrumentation-langfuse/)**
+
+**OTEL-compliant** automatic instrumentation for Langfuse to send traces to Respan.
 
 ## ✅ Why This Implementation is OTEL-Compliant
 

@@ -1,6 +1,8 @@
 # Keywords AI Python SDK
 
-A comprehensive Python SDK for Keywords AI monitoring, evaluation, and analytics APIs. Build, test, and evaluate your AI applications with ease.
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)** | **[PyPI](https://pypi.org/project/respan-ai/)**
+
+A comprehensive Python SDK for Respan monitoring, evaluation, and analytics APIs. Build, test, and evaluate your AI applications with ease.
 
 ## 🚀 Features
 

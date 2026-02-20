@@ -1,16 +1,39 @@
-# keywordsai-exporter-vercel
+# Respan Exporter for Vercel AI SDK
 
-Keywords AI's integration with [Vercel AI SDK](https://github.com/vercel/ai)
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
+
+Respan's integration with [Vercel AI SDK](https://github.com/vercel/ai)
 ```
-opentelemetry-exporter-myexporter
-   ├── src
-   │   └── index.ts
-   │   └── transform.ts
-   │   └── types.ts
-   │   └── my-trace-exporter.ts
-   │   └── my-metric-exporter.ts
-   └── test
-       └── transform.test.ts
-       └── my-trace-exporter.test.ts
-       └── my-metric-exporter.test.ts
+
+## Development
+
+```bash
+yarn build
+yarn test
+```
+
+## Quickstart (simplest real send)
+
+This sends **one trace** (root + child span) to Respan using your real API key.
+
+```bash
+export RESPAN_API_KEY="..."
+# optional:
+# export RESPAN_BASE_URL="https://api.respan.ai/api"
+
+yarn quickstart
+```
+
+It prints a `runId` and `traceId` you can search for in the Respan UI.
+
+## Live test (runs via `node --test`, sends real data)
+
+This is an integration test that only runs when explicitly enabled:
+
+```bash
+export RESPAN_API_KEY="..."
+# optional:
+# export RESPAN_BASE_URL="https://api.respan.ai/api"
+
+yarn test:live
 ```

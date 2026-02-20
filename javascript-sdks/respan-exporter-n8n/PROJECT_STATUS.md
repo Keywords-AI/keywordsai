@@ -7,20 +7,20 @@ This project has been cleaned up and is ready for a fresh Git push and reinstall
 ### What's Included
 
 ```
-n8n-keywordsai/
+respan-exporter-n8n/
 ├── credentials/
-│   └── KeywordsAIApi.credentials.ts     ✅ Keywords AI credentials
+│   └── RespanApi.credentials.ts         ✅ Respan credentials
 ├── nodes/
-│   └── KeywordsAi/
-│       ├── KeywordsAi.node.ts           ✅ Main node implementation
-│       └── KeywordsAi.node.json         ✅ Node metadata
+│   └── Respan/
+│       ├── Respan.node.ts               ✅ Main node implementation
+│       └── Respan.node.json             ✅ Node metadata
 ├── icons/
-│   ├── keywordsai.svg                   ✅ Light theme icon
-│   ├── keywordsai.dark.svg              ✅ Dark theme icon
+│   ├── respan.svg                       ✅ Light theme icon
+│   └── respan.dark.svg                  ✅ Dark theme icon
 │   ├── github.svg                       (legacy, can be removed)
 │   └── github.dark.svg                  (legacy, can be removed)
 ├── .gitignore                           ✅ Properly configured
-├── package.json                         ✅ Clean, only Keywords AI node
+├── package.json                         ✅ Clean, only Respan node
 ├── package-lock.json                    ✅ Included for consistency
 ├── tsconfig.json                        ✅ TypeScript configuration
 ├── eslint.config.mjs                    ✅ Linting configuration
@@ -59,7 +59,7 @@ npm run lint   # ✅ No errors
 - ✅ Override parameters support
 
 ### 2. Gateway with Prompt
-- ✅ Dynamic prompt selection (loads from Keywords AI API)
+- ✅ Dynamic prompt selection (loads from Respan API)
 - ✅ Dynamic version selection (loads versions for selected prompt)
 - ✅ Auto-populated variable names (no manual entry needed!)
 - ✅ Variable value filling
@@ -92,7 +92,7 @@ npm run lint   # ✅ No errors
 1. **Clone the Repository:**
    ```bash
    git clone <your-repo-url>
-   cd n8n-keywordsai
+   cd respan-exporter-n8n
    ```
 
 2. **Install Dependencies:**
@@ -111,7 +111,7 @@ npm run lint   # ✅ No errors
    mkdir -p ~/.n8n/custom
    cd ~/.n8n/custom
    npm init -y  # if needed
-   npm link n8n-nodes-keywordsai
+   npm link @respan/n8n-nodes-respan
    ```
 
 5. **Start n8n:**
@@ -128,7 +128,7 @@ See `INSTALL.md` for detailed step-by-step instructions.
 ### Recommended Commands
 
 ```bash
-cd /Users/chensihan/Documents/github/n8n-keywordsai
+cd /path/to/respan-exporter-n8n
 
 # Check git status
 git status
@@ -137,7 +137,7 @@ git status
 git add .
 
 # Commit
-git commit -m "Initial release: Keywords AI node for n8n"
+git commit -m "Initial release: Respan node for n8n"
 
 # Push (set your remote first if not set)
 git remote add origin <your-repo-url>
@@ -162,7 +162,7 @@ After pushing, on any machine:
 ```bash
 # 1. Clone
 git clone <your-repo-url>
-cd n8n-keywordsai
+cd respan-exporter-n8n
 
 # 2. Install
 npm install
@@ -173,7 +173,7 @@ npm run build
 # 4. Link
 npm link
 cd ~/.n8n/custom
-npm link n8n-nodes-keywordsai
+npm link @respan/n8n-nodes-respan
 
 # 5. Run
 npx n8n start
@@ -220,7 +220,7 @@ Before using on production:
 ## ✨ Key Features
 
 1. **No Manual Variable Entry**: Variables are automatically discovered from your prompts
-2. **Dynamic Loading**: Prompts and versions load directly from Keywords AI API
+2. **Dynamic Loading**: Prompts and versions load directly from Respan API
 3. **Type Safe**: Full TypeScript implementation with no `any` types
 4. **Well Documented**: Comprehensive README and INSTALL guides
 5. **Clean Code**: Passes all n8n linters and follows best practices

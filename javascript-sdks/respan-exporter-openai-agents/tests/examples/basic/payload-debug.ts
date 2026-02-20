@@ -10,7 +10,7 @@ import {
   Span
 } from '@openai/agents';
 import * as dotenv from 'dotenv';
-import { KeywordsAISpanExporter } from '../../../dist';
+import { RespanSpanExporter } from '../../../dist';
 
 dotenv.config({
   path: '../../../.env',
@@ -19,10 +19,10 @@ dotenv.config({
 
 // Create a custom exporter that logs the payload
 class PayloadDebugExporter implements TracingExporter {
-  private realExporter: KeywordsAISpanExporter;
+  private realExporter: RespanSpanExporter;
 
   constructor() {
-    this.realExporter = new KeywordsAISpanExporter();
+    this.realExporter = new RespanSpanExporter();
   }
 
   async export(items: (Trace | Span<any>)[], signal?: AbortSignal): Promise<void> {

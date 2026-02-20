@@ -1,6 +1,6 @@
 # Clean Installation Guide
 
-Follow these steps for a fresh installation of the Keywords AI node for n8n.
+Follow these steps for a fresh installation of the Respan node for n8n.
 
 ## Prerequisites Check
 
@@ -8,7 +8,7 @@ Before starting, ensure you have:
 
 - [ ] Node.js v18+ installed: `node --version`
 - [ ] npm installed: `npm --version`
-- [ ] Keywords AI API Key from https://platform.keywordsai.co
+- [ ] Respan API Key from https://platform.respan.ai
 - [ ] Git installed (if cloning): `git --version`
 
 ## Step 1: Get the Code
@@ -16,11 +16,11 @@ Before starting, ensure you have:
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd n8n-keywordsai
+cd respan-exporter-n8n
 
 # OR if you downloaded a zip
-unzip n8n-keywordsai.zip
-cd n8n-keywordsai
+unzip respan-exporter-n8n.zip
+cd respan-exporter-n8n
 ```
 
 ## Step 2: Install Dependencies
@@ -62,21 +62,21 @@ npm init -y
 ## Step 5: Link the Node
 
 ```bash
-# From the n8n-keywordsai directory
-cd /path/to/n8n-keywordsai
+# From the respan-exporter-n8n directory
+cd /path/to/respan-exporter-n8n
 npm link
 
 # Then link to n8n custom
 cd ~/.n8n/custom
-npm link n8n-nodes-keywordsai
+npm link @respan/n8n-nodes-respan
 ```
 
 **Verify the link:**
 ```bash
-npm list n8n-nodes-keywordsai
+npm list @respan/n8n-nodes-respan
 ```
 
-You should see: `n8n-nodes-keywordsai@0.1.0 -> ./../../../../../path/to/n8n-keywordsai`
+You should see: `@respan/n8n-nodes-respan@1.0.0 -> ./../../../../../path/to/respan-exporter-n8n`
 
 ## Step 6: Start n8n
 
@@ -96,7 +96,7 @@ http://localhost:5678/
 1. Open http://localhost:5678 in your browser
 2. Click **Settings** (gear icon) → **Credentials**
 3. Click **+ Add Credential**
-4. Search for "Keywords AI" and select it
+4. Search for "Respan" and select it
 5. Enter your API Key
 6. Click **Test** - should show "Connection tested successfully"
 7. Click **Save**
@@ -105,12 +105,12 @@ http://localhost:5678/
 
 1. Create a new workflow
 2. Add a **Manual Trigger** node
-3. Add a **Keywords AI** node
+3. Add a **Respan** node
 4. Connect them
-5. Configure Keywords AI node:
+5. Configure Respan node:
    - Select your credentials
    - Choose **"Gateway with Prompt"**
-   - Select a prompt (should load from your Keywords AI account)
+   - Select a prompt (should load from your Respan account)
    - Select a version
    - Fill in variable values
 6. Click **Execute Node**
@@ -122,7 +122,7 @@ You should see a successful response!
 - [ ] `npm run build` completes successfully
 - [ ] No errors when linking with `npm link`
 - [ ] n8n starts without errors
-- [ ] Keywords AI node appears in n8n's node list
+- [ ] Respan node appears in n8n's node list
 - [ ] Credentials test successfully
 - [ ] Node executes and returns data
 
@@ -140,11 +140,11 @@ npm run build
 
 ```bash
 # Unlink and relink
-npm unlink n8n-nodes-keywordsai
-cd /path/to/n8n-keywordsai
+npm unlink @respan/n8n-nodes-respan
+cd /path/to/respan-exporter-n8n
 npm link
 cd ~/.n8n/custom
-npm link n8n-nodes-keywordsai
+npm link @respan/n8n-nodes-respan
 ```
 
 ### n8n Won't Start
@@ -185,13 +185,13 @@ To completely remove and start over:
 
 # 2. Unlink from n8n
 cd ~/.n8n/custom
-npm unlink n8n-nodes-keywordsai
+npm unlink @respan/n8n-nodes-respan
 
 # 3. Remove from global npm
-npm unlink -g n8n-nodes-keywordsai
+npm unlink -g @respan/n8n-nodes-respan
 
 # 4. Clean the project
-cd /path/to/n8n-keywordsai
+cd /path/to/respan-exporter-n8n
 rm -rf dist node_modules package-lock.json
 
 # 5. Clean npm cache
@@ -219,18 +219,18 @@ npm cache clean --force
 
 After successful installation:
 
-1. Create prompts in Keywords AI platform
+1. Create prompts in Respan platform
 2. Build workflows in n8n
 3. Test with different models and prompts
 4. Explore advanced features (streaming, overrides, etc.)
 
 ## Getting Help
 
-- **Documentation**: https://docs.keywordsai.co
+- **Documentation**: https://docs.respan.co
 - **Issues**: Create an issue on GitHub
-- **Support**: support@keywordsai.co
+- **Support**: team@respan.ai
 
 ---
 
-✅ Installation complete! Happy automating with Keywords AI + n8n!
+✅ Installation complete! Happy automating with Respan + n8n!
 

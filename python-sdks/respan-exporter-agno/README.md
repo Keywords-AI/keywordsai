@@ -1,4 +1,8 @@
-# Keywords AI Exporter for Agno
+# Respan Exporter for Agno
+
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)** | **[PyPI](https://pypi.org/project/respan-exporter-agno/)**
+
+Respan exporter for Agno traces.
 
 ## Installation
 

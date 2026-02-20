@@ -1,11 +1,13 @@
-# Keywords AI Node for n8n
+# Respan Node for n8n
 
-A custom n8n node for integrating Keywords AI's LLM Gateway and Prompt Management features into your n8n workflows.
+**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
+
+A custom n8n node for integrating Respan's LLM Gateway and Prompt Management features into your n8n workflows.
 
 ## Features
 
 - 🚀 **Gateway (Standard)**: Make direct LLM calls with custom messages
-- 📝 **Gateway with Prompt**: Use managed prompts from Keywords AI
+- 📝 **Gateway with Prompt**: Use managed prompts from Respan
 - 🔄 **Auto-populated Variables**: Automatically fetch variable names from your prompts
 - 📊 **Dynamic Version Selection**: Choose from live, draft, or specific prompt versions
 - 🔐 **Secure Authentication**: API key-based authentication
@@ -17,14 +19,14 @@ A custom n8n node for integrating Keywords AI's LLM Gateway and Prompt Managemen
 
 - Node.js v18 or higher
 - npm or yarn
-- Keywords AI API Key ([Get one here](https://platform.keywordsai.co))
+- Respan API Key ([Get one here](https://platform.respan.ai))
 
 ### Fresh Installation
 
 1. **Clone the repository:**
    ```bash
    git clone <your-repo-url>
-   cd n8n-keywordsai
+   cd respan-exporter-n8n
    ```
 
 2. **Install dependencies:**
@@ -49,8 +51,8 @@ A custom n8n node for integrating Keywords AI's LLM Gateway and Prompt Managemen
    # Initialize if package.json doesn't exist
    npm init -y
    
-   # Link the Keywords AI node
-   npm link n8n-nodes-keywordsai
+   # Link the Respan node
+   npm link @respan/n8n-nodes-respan
    ```
 
 5. **Start n8n:**
@@ -67,7 +69,7 @@ A custom n8n node for integrating Keywords AI's LLM Gateway and Prompt Managemen
 
 1. In n8n, go to **Settings** → **Credentials**
 2. Click **+ Add Credential**
-3. Search for **"Keywords AI"**
+3. Search for **"Respan"**
 4. Enter your API Key
 5. Click **Test** to verify
 6. Click **Save**
@@ -76,7 +78,7 @@ A custom n8n node for integrating Keywords AI's LLM Gateway and Prompt Managemen
 
 Direct LLM calls without using saved prompts:
 
-1. Add **Keywords AI** node to your workflow
+1. Add **Respan** node to your workflow
 2. Select **"Gateway (Standard)"**
 3. Configure:
    - **Model**: `gpt-4o-mini` (or any supported model)
@@ -86,9 +88,9 @@ Direct LLM calls without using saved prompts:
 
 ### Gateway with Prompt
 
-Use your managed prompts from Keywords AI:
+Use your managed prompts from Respan:
 
-1. Add **Keywords AI** node to your workflow
+1. Add **Respan** node to your workflow
 2. Select **"Gateway with Prompt"**
 3. Configure:
    - **Prompt Name or ID**: Select from dropdown (auto-populated)
@@ -111,7 +113,7 @@ See [OBSERVABILITY_GUIDE.md](./OBSERVABILITY_GUIDE.md) for detailed documentatio
 ### Example Workflow
 
 ```
-Manual Trigger → Keywords AI → Send Email
+Manual Trigger → Respan → Send Email
 ```
 
 ## Development
@@ -119,16 +121,16 @@ Manual Trigger → Keywords AI → Send Email
 ### Project Structure
 
 ```
-n8n-keywordsai/
+respan-exporter-n8n/
 ├── nodes/
-│   └── KeywordsAi/
-│       ├── KeywordsAi.node.ts       # Main node logic
-│       └── KeywordsAi.node.json     # Node metadata
+│   └── Respan/
+│       ├── Respan.node.ts          # Main node logic
+│       └── Respan.node.json        # Node metadata
 ├── credentials/
-│   └── KeywordsAIApi.credentials.ts # Credentials definition
+│   └── RespanApi.credentials.ts    # Credentials definition
 ├── icons/
-│   ├── keywordsai.svg              # Light theme icon
-│   └── keywordsai.dark.svg         # Dark theme icon
+│   ├── respan.svg                  # Light theme icon
+│   └── respan.dark.svg             # Dark theme icon
 ├── dist/                            # Compiled output (gitignored)
 ├── package.json
 └── README.md
@@ -162,7 +164,7 @@ If you need to start fresh:
 
 ```bash
 # In the project directory
-cd /path/to/n8n-keywordsai
+cd /path/to/respan-exporter-n8n
 
 # Remove build artifacts and dependencies
 rm -rf dist node_modules package-lock.json
@@ -179,7 +181,7 @@ npm run build
 # Relink
 npm link
 cd ~/.n8n/custom
-npm link n8n-nodes-keywordsai
+npm link @respan/n8n-nodes-respan
 
 # Restart n8n
 npx n8n start
@@ -187,7 +189,7 @@ npx n8n start
 
 ## API Reference
 
-This node uses the following Keywords AI API endpoints:
+This node uses the following Respan API endpoints:
 
 - `GET /api/prompts/` - List all prompts
 - `GET /api/prompts/<prompt_id>/versions/` - List prompt versions
@@ -199,7 +201,7 @@ This node uses the following Keywords AI API endpoints:
 ### Node not showing in n8n
 
 1. Ensure the node is built: `npm run build`
-2. Check the link: `cd ~/.n8n/custom && npm list n8n-nodes-keywordsai`
+2. Check the link: `cd ~/.n8n/custom && npm list @respan/n8n-nodes-respan`
 3. Clear n8n cache: `rm -rf ~/.n8n/cache`
 4. Restart n8n
 
@@ -229,8 +231,8 @@ rm -rf ~/.npm/_npx
 
 ## Documentation
 
-- [Keywords AI Documentation](https://docs.keywordsai.co)
-- [Keywords AI Platform](https://platform.keywordsai.co)
+- [Respan Documentation](https://docs.respan.co)
+- [Respan Platform](https://platform.respan.ai)
 - [n8n Community Nodes Guide](https://docs.n8n.io/integrations/community-nodes/)
 
 ## Contributing
@@ -248,9 +250,9 @@ rm -rf ~/.npm/_npx
 ## Support
 
 For issues and questions:
-- Keywords AI: [support@keywordsai.co](mailto:support@keywordsai.co)
+- Respan: [team@respan.ai](mailto:team@respan.ai)
 - GitHub Issues: [Create an issue](https://github.com/your-repo/issues)
 
 ## Credits
 
-Built with ❤️ for the n8n and Keywords AI communities.
+Built with ❤️ for the n8n and Respan communities.

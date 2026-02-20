@@ -9,7 +9,7 @@ import {
 } from '@openai/agents';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 
 dotenv.config(
     {
@@ -17,8 +17,6 @@ dotenv.config(
         override: true
     }
 );
-
-console.log("KEYWORDSAI_API_KEY", process.env.KEYWORDSAI_API_KEY, "ENV", process.env);
 
 // Add debug logging for API calls
 const originalFetch = global.fetch;
@@ -48,13 +46,16 @@ global.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
 };
 
 // Create exporter with debug info
-const exporter = new KeywordsAIOpenAIAgentsTracingExporter();
-console.log('📡 KeywordsAI Exporter Configuration:');
-console.log('  API Key:', process.env.KEYWORDSAI_API_KEY ? '***' + process.env.KEYWORDSAI_API_KEY.slice(-4) : 'Not set');
-console.log('  Base URL:', process.env.KEYWORDSAI_BASE_URL || 'Using default');
-console.log('  Expected Endpoint:', process.env.KEYWORDSAI_BASE_URL ? 
-  `${process.env.KEYWORDSAI_BASE_URL}/v1/traces/ingest` : 
-  'https://api.keywordsai.co/api/v1/traces/ingest');
+const exporter = new RespanOpenAIAgentsTracingExporter();
+console.log('📡 Respan Exporter Configuration:');
+console.log('  API Key:', process.env.RESPAN_API_KEY ? '***' + process.env.RESPAN_API_KEY.slice(-4) : 'Not set');
+console.log('  Base URL:', process.env.RESPAN_BASE_URL || 'Using default');
+const expectedEndpoint = process.env.RESPAN_BASE_URL
+  ? (process.env.RESPAN_BASE_URL.endsWith('/api')
+      ? `${process.env.RESPAN_BASE_URL}/v1/traces/ingest`
+      : `${process.env.RESPAN_BASE_URL}/api/v1/traces/ingest`)
+  : 'https://api.respan.ai/api/v1/traces/ingest';
+console.log('  Expected Endpoint:', expectedEndpoint);
 
 // Set up our custom exporter
 setTraceProcessors([
@@ -79,7 +80,7 @@ const agent = new Agent({
 });
 
 async function testAgent() {
-  console.log('Testing KeywordsAI OpenAI Agents Exporter...');
+  console.log('Testing Respan OpenAI Agents Exporter...');
   
   try {
     await withTrace('Weather Test', async () => {

@@ -15,6 +15,11 @@ from .param_types import (
     PromptParam,
     PostHogIntegration,
 )
+from .services_types.hyperspell_types import (
+    HyperspellAddMemoryParams,
+    HyperspellSearchMemoriesParams,
+    HyperspellParams,
+)
 
 from ._internal_types import (
     Message,
@@ -22,6 +27,7 @@ from ._internal_types import (
     LiteLLMCompletionParams,
     BasicEmbeddingParams,
 )
+from .exporter_session_types import ExporterSessionState, PendingToolState
 
 # Prompt types
 from .prompt_types import (
@@ -53,13 +59,18 @@ __all__ = [
     "Customer",
     "PromptParam",
     "PostHogIntegration",
+    "HyperspellAddMemoryParams",
+    "HyperspellSearchMemoriesParams",
+    "HyperspellParams",
     
     # Basic types
     "Message",
     "Usage",
     "LiteLLMCompletionParams",
     "BasicEmbeddingParams",
-    
+    "ExporterSessionState",
+    "PendingToolState",
+
     # Prompt types
     "Prompt",
     "PromptVersion",

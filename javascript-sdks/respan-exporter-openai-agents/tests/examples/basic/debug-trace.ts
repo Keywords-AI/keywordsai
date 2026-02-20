@@ -9,7 +9,7 @@ import {
 } from '@openai/agents';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import { KeywordsAIOpenAIAgentsTracingExporter } from '../../../dist';
+import { RespanOpenAIAgentsTracingExporter } from '../../../dist';
 
 dotenv.config({
   path: '../../../.env',
@@ -17,7 +17,7 @@ dotenv.config({
 });
 
 // Create a custom exporter that logs everything
-class DebugKeywordsAIExporter extends KeywordsAIOpenAIAgentsTracingExporter {
+class DebugRespanExporter extends RespanOpenAIAgentsTracingExporter {
   async export(items: any[], signal?: AbortSignal): Promise<void> {
     console.log('=== DEBUG: Items being exported ===');
     console.log('Number of items:', items.length);
@@ -40,7 +40,7 @@ class DebugKeywordsAIExporter extends KeywordsAIOpenAIAgentsTracingExporter {
 // Set up debug exporter
 setTraceProcessors([
   new BatchTraceProcessor(
-    new DebugKeywordsAIExporter(),
+    new DebugRespanExporter(),
   ),
 ]);
 

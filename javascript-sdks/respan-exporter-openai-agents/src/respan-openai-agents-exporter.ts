@@ -398,7 +398,7 @@ export class RespanSpanExporter implements TracingExporter {
 
   private resolveEndpoint(baseURL: string | undefined): string {
     if (!baseURL) {
-      return `https://api.respan.co/api/v1/traces/ingest`;
+      return `https://api.respan.ai/api/v1/traces/ingest`;
     }
     if (baseURL.endsWith("/api")) {
       return `${baseURL}/v1/traces/ingest`;
@@ -811,7 +811,7 @@ export class RespanTraceProcessor extends BatchTraceProcessor {
     project = process.env.OPENAI_PROJECT_ID || null,
     endpoint = process.env.RESPAN_BASE_URL
       ? `${process.env.RESPAN_BASE_URL}/v1/traces/ingest`
-      : "https://api.respan.co/api/v1/traces/ingest",
+      : "https://api.respan.ai/api/v1/traces/ingest",
     maxRetries = 3,
     baseDelay = 1.0,
     maxDelay = 30.0,

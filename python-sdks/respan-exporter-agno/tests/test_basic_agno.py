@@ -16,21 +16,21 @@ from opentelemetry import trace as trace_api
 from opentelemetry.sdk import trace as trace_sdk
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 
-from keywordsai_exporter_agno import KeywordsAIAgnoInstrumentor
+from respan_exporter_agno import RespanAgnoInstrumentor
 
 
 def test_agno_tracing_exporter_basic():
-    """Run an Agno agent and send traces to Keywords AI."""
+    """Run an Agno agent and send traces to Respan."""
 
-    keywordsai_api_key = os.getenv("KEYWORDSAI_API_KEY")
-    if not keywordsai_api_key:
-        pytest.skip("KEYWORDSAI_API_KEY not set")
+    respan_api_key = os.getenv("RESPAN_API_KEY")
+    if not respan_api_key:
+        pytest.skip("RESPAN_API_KEY not set")
 
     def _gateway_base_url() -> str:
         base_url = (
-            os.getenv("KEYWORDSAI_GATEWAY_BASE_URL")
-            or os.getenv("KEYWORDSAI_BASE_URL")
-            or "https://api.keywordsai.co"
+            os.getenv("RESPAN_GATEWAY_BASE_URL")
+            or os.getenv("RESPAN_BASE_URL")
+            or "https://api.respan.ai"
         )
         base = base_url.rstrip("/")
         for suffix in ("/v1/traces/ingest", "/v1/traces", "/v1"):
@@ -48,10 +48,10 @@ def test_agno_tracing_exporter_basic():
 
     tracer_provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
 
-    KeywordsAIAgnoInstrumentor().instrument(
-        api_key=keywordsai_api_key,
-        endpoint=os.getenv("KEYWORDSAI_ENDPOINT"),
-        base_url=os.getenv("KEYWORDSAI_BASE_URL"),
+    RespanAgnoInstrumentor().instrument(
+        api_key=respan_api_key,
+        endpoint=os.getenv("RESPAN_ENDPOINT"),
+        base_url=os.getenv("RESPAN_BASE_URL"),
         passthrough=False,
     )
     AgnoInstrumentor().instrument()
@@ -61,11 +61,11 @@ def test_agno_tracing_exporter_basic():
         name="Test Agent",
         model=OpenAIChat(
             id=model_id,
-            api_key=keywordsai_api_key,
+            api_key=respan_api_key,
             base_url=_gateway_base_url(),
         ),
     )
-    result = agent.run("hello from KeywordsAI Agno exporter test")
+    result = agent.run("hello from Respan Agno exporter test")
 
     tracer_provider.force_flush()
 
