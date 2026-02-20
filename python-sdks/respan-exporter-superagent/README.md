@@ -21,8 +21,8 @@ client = create_client(
 
 result = await client.guard(
     input="hello",
-    keywordsai_params={
-        "workflow_name": "wf",
+    respan_params={
+        "span_workflow_name": "wf",
         "span_name": "sp",
         "customer_identifier": "user-123",
     },
@@ -35,8 +35,4 @@ print(result)
 - `RESPAN_API_KEY`: API key used for ingest authorization.
 - `RESPAN_ENDPOINT`: optional override for ingest endpoint.
 
-Backwards-compatible aliases (if you already use KeywordsAI env vars):
-
-- `KEYWORDSAI_API_KEY`
-- `KEYWORDSAI_ENDPOINT`
 
