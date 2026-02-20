@@ -39,12 +39,10 @@ class RespanSuperagentClient:
         timeout: int = 10,
         client: Optional[Any] = None,
     ) -> None:
-        # Prefer Respan env vars, but keep KeywordsAI aliases for backward compatibility.
-        self.api_key = api_key or os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")
+        self.api_key = api_key or os.getenv("RESPAN_API_KEY")
         self.endpoint = (
             endpoint
             or os.getenv("RESPAN_ENDPOINT")
-            or os.getenv("KEYWORDSAI_ENDPOINT")
             or RESPAN_TRACING_INGEST_ENDPOINT
         )
         self.timeout = timeout
@@ -56,28 +54,28 @@ class RespanSuperagentClient:
                 raise RuntimeError("safety-agent must be installed to create a Superagent client")
             self._client = superagent_create_client()
 
-    async def guard(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
-        return await self._call_and_export(method_name="guard", keywordsai_params=keywordsai_params, **kwargs)
+    async def guard(self, *, respan_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
+        return await self._call_and_export(method_name="guard", respan_params=respan_params, **kwargs)
 
-    async def redact(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
-        return await self._call_and_export(method_name="redact", keywordsai_params=keywordsai_params, **kwargs)
+    async def redact(self, *, respan_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
+        return await self._call_and_export(method_name="redact", respan_params=respan_params, **kwargs)
 
-    async def scan(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
-        return await self._call_and_export(method_name="scan", keywordsai_params=keywordsai_params, **kwargs)
+    async def scan(self, *, respan_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
+        return await self._call_and_export(method_name="scan", respan_params=respan_params, **kwargs)
 
-    async def test(self, *, keywordsai_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
-        return await self._call_and_export(method_name="test", keywordsai_params=keywordsai_params, **kwargs)
+    async def test(self, *, respan_params: Optional[RespanParams] = None, **kwargs: Any) -> Any:
+        return await self._call_and_export(method_name="test", respan_params=respan_params, **kwargs)
 
     async def _call_and_export(
         self,
         *,
         method_name: str,
-        keywordsai_params: Optional[RespanParams],
+        respan_params: Optional[RespanParams],
         **kwargs: Any,
     ) -> Any:
         params = (
-            RespanParams.model_validate(keywordsai_params)
-            if keywordsai_params
+            RespanParams.model_validate(respan_params)
+            if respan_params
             else RespanParams()
         )
         if params.disable_log is True:
@@ -153,12 +151,8 @@ def create_client(
     Create a Respan-exporting Superagent client.
 
     This intentionally mirrors `safety_agent.create_client()` while adding:
-    - `RESPAN_API_KEY` / `RESPAN_ENDPOINT` (and `KEYWORDSAI_*` aliases) forwarding
+    - `RESPAN_API_KEY` / `RESPAN_ENDPOINT` forwarding
     - automatic export of `guard`, `redact`, `scan`, `test` call logs
     """
     return RespanSuperagentClient(api_key=api_key, endpoint=endpoint, timeout=timeout, client=client)
-
-
-# Backwards-compatible aliases
-KeywordsAISuperagentClient = RespanSuperagentClient
 

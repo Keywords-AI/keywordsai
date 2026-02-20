@@ -50,21 +50,21 @@ class InlineThread:
 
 
 @pytest.mark.asyncio
-async def test_guard_call_sends_validated_log_to_keywordsai_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_guard_call_sends_validated_log_to_respan_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     requests_capture = CapturingRequests()
     monkeypatch.setattr("respan_exporter_superagent.utils.requests", requests_capture)
     monkeypatch.setattr(threading, "Thread", InlineThread)
 
     client = create_client(
         api_key="kw_test_key",
-        endpoint="https://example.keywordsai.local/api/v1/traces/ingest",
+        endpoint="https://example.respan.local/api/v1/traces/ingest",
         client=DummySuperagentClient(),
     )
 
     result = await client.guard(
         input="hello",
-        keywordsai_params={
-            "workflow_name": "wf",
+        respan_params={
+            "span_workflow_name": "wf",
             "span_name": "sp",
             "customer_identifier": "user-123",
         },
@@ -75,7 +75,7 @@ async def test_guard_call_sends_validated_log_to_keywordsai_endpoint(monkeypatch
     assert len(requests_capture.calls) == 1
     call = requests_capture.calls[0]
 
-    assert call["url"] == "https://example.keywordsai.local/api/v1/traces/ingest"
+    assert call["url"] == "https://example.respan.local/api/v1/traces/ingest"
     assert call["headers"]["Authorization"] == "Bearer kw_test_key"
 
     payloads = call["json"]
@@ -99,13 +99,13 @@ async def test_disable_log_does_not_send(monkeypatch: pytest.MonkeyPatch) -> Non
 
     client = create_client(
         api_key="kw_test_key",
-        endpoint="https://example.keywordsai.local/api/v1/traces/ingest",
+        endpoint="https://example.respan.local/api/v1/traces/ingest",
         client=DummySuperagentClient(),
     )
 
     await client.guard(
         input="hello",
-        keywordsai_params={"disable_log": True},
+        respan_params={"disable_log": True},
     )
 
     assert requests_capture.calls == []
@@ -151,15 +151,15 @@ async def test_live_redact_openai_provider_sends_log(monkeypatch: pytest.MonkeyP
     real_superagent_client = superagent_create_client()
     exporter_client = create_client(
         api_key="kw_test_key",
-        endpoint="https://example.keywordsai.local/api/v1/traces/ingest",
+        endpoint="https://example.respan.local/api/v1/traces/ingest",
         client=real_superagent_client,
     )
 
     result = await exporter_client.redact(
         input="My email is john@example.com",
         model="openai/gpt-4o-mini",
-        keywordsai_params={
-            "workflow_name": "wf_live",
+        respan_params={
+            "span_workflow_name": "wf_live",
             "span_name": "redact_live",
             "customer_identifier": "user-123",
         },
@@ -178,21 +178,21 @@ async def test_live_redact_openai_provider_sends_log(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_live_guard_superagent_provider_posts_to_keywordsai(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_live_guard_superagent_provider_posts_to_respan(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Live test that:
     - calls the real Superagent guard model (default superagent/guard-1.7b)
-    - verifies the exporter successfully POSTs to a real KeywordsAI endpoint
+    - verifies the exporter successfully POSTs to a real Respan endpoint
 
     Requirements:
     - SUPERAGENT_API_KEY: required by safety-agent client
-    - RESPAN_API_KEY: required by exporter (KEYWORDSAI_API_KEY supported as an alias)
-    - RESPAN_ENDPOINT: optional; defaults to https://api.respan.ai/api/v1/traces/ingest (KEYWORDSAI_ENDPOINT supported as an alias)
+    - RESPAN_API_KEY: required by exporter
+    - RESPAN_ENDPOINT: optional; defaults to https://api.respan.ai/api/v1/traces/ingest
     """
     if not os.getenv("SUPERAGENT_API_KEY"):
         pytest.skip("SUPERAGENT_API_KEY not set")
-    if not (os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")):
-        pytest.skip("RESPAN_API_KEY (or KEYWORDSAI_API_KEY) not set")
+    if not os.getenv("RESPAN_API_KEY"):
+        pytest.skip("RESPAN_API_KEY not set")
 
     try:
         from safety_agent import create_client as superagent_create_client
@@ -225,8 +225,8 @@ async def test_live_guard_superagent_provider_posts_to_keywordsai(monkeypatch: p
     monkeypatch.setattr("respan_exporter_superagent.utils.requests.post", recording_post)
 
     exporter_client = create_client(
-        api_key=os.getenv("RESPAN_API_KEY") or os.environ["KEYWORDSAI_API_KEY"],
-        endpoint=os.getenv("RESPAN_ENDPOINT") or os.getenv("KEYWORDSAI_ENDPOINT"),
+        api_key=os.environ["RESPAN_API_KEY"],
+        endpoint=os.getenv("RESPAN_ENDPOINT"),
         client=superagent_create_client(),
         timeout=30,
     )
@@ -236,8 +236,8 @@ async def test_live_guard_superagent_provider_posts_to_keywordsai(monkeypatch: p
         result = await exporter_client.guard(
             input="Hello! Please say 'ok'.",
             model=model,
-            keywordsai_params={
-                "workflow_name": "wf_live_guard",
+            respan_params={
+                "span_workflow_name": "wf_live_guard",
                 "span_name": "guard_live",
                 "customer_identifier": "integration-test",
             },
