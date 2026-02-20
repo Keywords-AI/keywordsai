@@ -1,9 +1,11 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { randomUUID } from "node:crypto";
 import {
+  type PendingToolState,
   RespanLogType,
   RespanPayload,
   RESPAN_TRACING_INGEST_ENDPOINT,
+  type SessionState,
 } from "@respan/respan-sdk";
 import {
   buildTraceNameFromPrompt,
@@ -14,22 +16,6 @@ import {
   toSerializableToolCalls,
   toSerializableValue,
 } from "./utils.js";
-
-type PendingToolState = {
-  spanUniqueId: string;
-  startedAt: Date;
-  toolName: string;
-  toolInput: unknown;
-};
-
-type SessionState = {
-  sessionId: string;
-  traceId: string;
-  traceName: string;
-  startedAt: Date;
-  pendingTools: Map<string, PendingToolState>;
-  rootEmitted: boolean;
-};
 
 export class RespanAnthropicAgentsExporter {
   private apiKey: string | null;
