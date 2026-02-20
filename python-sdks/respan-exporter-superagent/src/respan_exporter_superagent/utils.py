@@ -2,12 +2,12 @@ import json
 import logging
 from datetime import datetime
 from datetime import timezone
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import requests
-from typing import Dict
 from respan_sdk.respan_types import RespanFullLogParams
 from respan_sdk.respan_types import RespanParams
+from respan_sdk.utils import RetryHandler
 
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,9 @@ def send_payloads(
     timeout: int,
     payloads: list[Dict[str, Any]],
 ) -> None:
-    try:
+    handler = RetryHandler(max_retries=3, retry_delay=1.0, backoff_multiplier=2.0, max_delay=30.0)
+
+    def _post() -> None:
         response = requests.post(
             endpoint,
             json=payloads,
@@ -103,8 +105,13 @@ def send_payloads(
             },
             timeout=timeout,
         )
+        if response.status_code >= 500:
+            raise RuntimeError(f"Respan ingest server error status_code={response.status_code}")
         if response.status_code >= 300:
-            logger.warning("Respan ingest error status_code=%s", response.status_code)
+            logger.warning("Respan ingest client error status_code=%s", response.status_code)
+
+    try:
+        handler.execute(func=_post, context="respan superagent ingest")
     except Exception as exc:
-        logger.exception("Respan ingest request failed: %s", exc)
+        logger.exception("Respan ingest failed after retries: %s", exc)
 
