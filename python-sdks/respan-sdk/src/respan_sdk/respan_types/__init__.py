@@ -27,6 +27,7 @@ from ._internal_types import (
     LiteLLMCompletionParams,
     BasicEmbeddingParams,
 )
+from .exporter_session_types import ExporterSessionState, PendingToolState
 
 # Prompt types
 from .prompt_types import (
@@ -67,7 +68,9 @@ __all__ = [
     "Usage",
     "LiteLLMCompletionParams",
     "BasicEmbeddingParams",
-    
+    "ExporterSessionState",
+    "PendingToolState",
+
     # Prompt types
     "Prompt",
     "PromptVersion",
