@@ -103,10 +103,12 @@ except ImportError:
         "respan_sdk.respan_types.param_types"
     )
 
-    @dataclass
     class Message:
-        role: str
-        content: str
+        """Plain class stub for respan_sdk.respan_types._internal_types.Message."""
+
+        def __init__(self, role: str, content: str) -> None:
+            self.role = role
+            self.content = content
 
     class RespanTextLogParams:
         def __init__(self, **kwargs: Any) -> None:

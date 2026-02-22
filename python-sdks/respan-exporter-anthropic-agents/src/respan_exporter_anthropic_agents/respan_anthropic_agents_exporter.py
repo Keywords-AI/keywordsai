@@ -1,5 +1,6 @@
 """Respan exporter for Anthropic Agent SDK hooks and message streams."""
 
+import asyncio
 import json
 import logging
 import os
@@ -757,11 +758,28 @@ class RespanAnthropicAgentsExporter:
                 logger.warning("Respan export network error: %s", error)
                 raise
 
-        try:
+        def _run_export_sync() -> None:
             self._retry_handler.execute(
                 _do_request,
                 context="Respan export ingest",
             )
+
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop is not None:
+                timeout = (
+                    self.timeout_seconds * (self.max_retries + 1)
+                    + self.max_delay_seconds
+                    + 10
+                )
+                asyncio.run_coroutine_threadsafe(
+                    asyncio.to_thread(_run_export_sync), loop
+                ).result(timeout=timeout)
+            else:
+                _run_export_sync()
         except Exception:
             pass
 
