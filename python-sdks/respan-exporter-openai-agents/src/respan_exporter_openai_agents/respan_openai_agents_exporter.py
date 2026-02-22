@@ -18,16 +18,6 @@ from agents.tracing.span_data import (
 )
 from agents.tracing.spans import Span, SpanImpl
 from agents.tracing.traces import Trace
-from openai.types.responses.response_input_item_param import (
-    ResponseFunctionToolCallParam,
-)
-from openai.types.responses.response_output_item import (
-    ResponseFileSearchToolCall,
-    ResponseFunctionToolCall,
-    ResponseFunctionWebSearch,
-    ResponseOutputMessage,
-)
-from respan_sdk.respan_types._internal_types import Message
 from respan_sdk.respan_types.param_types import RespanTextLogParams
 
 logger = logging.getLogger(__name__)
@@ -37,98 +27,27 @@ logger = logging.getLogger(__name__)
 def _response_data_to_respan_log(
     data: RespanTextLogParams, span_data: ResponseSpanData
 ) -> RespanTextLogParams:
-    """
-    Convert ResponseSpanData to Respan log format.
+    """Convert ResponseSpanData to Respan log format.
 
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The ResponseSpanData to convert
-
-    Returns:
-        Dictionary with ResponseSpanData fields mapped to Respan log format
+    Extracts only ingestion-contract fields (model, usage tokens, input/output
+    as strings) and lets the backend handle detailed message parsing.
     """
-    data.span_name = span_data.type # response
-    data.log_type = "text" # The corresponding respan log type
+    data.span_name = span_data.type  # "response"
+    data.log_type = "response"
     try:
-        # Extract prompt messages from input if available
         if span_data.input:
-            if isinstance(span_data.input, list):
-                # Handle list of messages
-                for item in span_data.input:
-                    try:
-                        data.prompt_messages = data.prompt_messages or []
-                        data.prompt_messages.append(Message.model_validate(dict(item)))
-                    except Exception as e:
-                        if isinstance(item, dict):
-                            item_type = item.get("type")
-                            if item_type == "function_call" or item_type == "function_call_output":
-                                data.tool_calls = data.tool_calls or []
-                                data.tool_calls.append(item)
-                            elif item_type == "user":
-                                data.output = "" + str(item)
-                        elif isinstance(item, ResponseFunctionToolCallParam):
-                            data.tools = data.tools or []
-                            data.tools.append(item.model_dump())
-                        elif isinstance(item, ResponseFileSearchToolCall):
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item.model_dump())
-                        else:
-                            logger.warning(f"Failed to convert item to Message: {e}, type: {item}")
-                            data.output = "" + str(item)
-            elif isinstance(span_data.input, str):
-                # Handle string input (convert to a single user message)
-                data.input = span_data.input
+            data.input = str(span_data.input)
 
-        # If response object exists, extract additional data
         if span_data.response:
             response = span_data.response
-            # Extract usage information if available
-            if hasattr(response, "usage") and response.usage:
-                usage = span_data.response.usage
-                data.prompt_tokens = usage.input_tokens
-                data.completion_tokens = usage.output_tokens
-                data.total_request_tokens = usage.total_tokens
-
-
-            # Extract model information if available
             if hasattr(response, "model"):
                 data.model = response.model
-
-            # Extract completion message from response
+            if hasattr(response, "usage") and response.usage:
+                data.prompt_tokens = response.usage.input_tokens
+                data.completion_tokens = response.usage.output_tokens
+                data.total_request_tokens = response.usage.total_tokens
             if hasattr(response, "output") and response.output:
-                response_items = response.output
-                for item in response_items:
-                    if isinstance(item, dict):
-                        item_type = item.get("type")
-                        if item_type == "file_search_call":
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item)
-                        elif item_type == "web_search_call":
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item)
-                        else:
-                            data.output = "" + str(item)
-                    elif isinstance(item, ResponseOutputMessage):
-                        data.completion_messages = data.completion_messages or []
-                        data.completion_messages.append(
-                            Message.model_validate(item.model_dump())
-                        )
-                        if data.completion_messages and not data.completion_message:
-                            data.completion_message = data.completion_messages[0]
-                    elif isinstance(item, ResponseFunctionToolCall):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    elif isinstance(item, ResponseFunctionWebSearch):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    elif isinstance(item, ResponseFileSearchToolCall):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    else:
-                        data.output = "" + str(item.model_dump())
-
-            # Add full response for logging
-            data.full_response = response.model_dump(mode="json")
+                data.output = str(response.output)
     except Exception as e:
         logger.error(f"Error converting response data to Respan log: {e}")
 
@@ -164,45 +83,19 @@ def _function_data_to_respan_log(
 def _generation_data_to_respan_log(
     data: RespanTextLogParams, span_data: GenerationSpanData
 ) -> RespanTextLogParams:
-    """
-    Convert GenerationSpanData to Respan log format.
+    """Convert GenerationSpanData to Respan log format.
 
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The GenerationSpanData to convert
-
-    Returns:
-        Dictionary with GenerationSpanData fields mapped to Respan log format
+    Extracts only ingestion-contract fields (model, usage tokens, input/output
+    as strings) and lets the backend handle detailed parsing.
     """
-    data.span_name = span_data.type # generation
+    data.span_name = span_data.type  # "generation"
     data.log_type = "generation"
     data.model = span_data.model
-
     try:
-        # Extract prompt messages from input if available
         if span_data.input:
-            # Try to extract messages from input
             data.input = str(span_data.input)
-
-        # Extract completion message from output if available
         if span_data.output:
-            # Try to extract completion from output
             data.output = str(span_data.output)
-
-        # Add model configuration if available
-        if span_data.model_config:
-            # Extract common LLM parameters from model_config
-            for param in [
-                "temperature",
-                "max_tokens",
-                "top_p",
-                "frequency_penalty",
-                "presence_penalty",
-            ]:
-                if param in span_data.model_config:
-                    data[param] = span_data.model_config[param]
-
-        # Add usage information if available
         if span_data.usage:
             data.prompt_tokens = span_data.usage.get("prompt_tokens")
             data.completion_tokens = span_data.usage.get("completion_tokens")
