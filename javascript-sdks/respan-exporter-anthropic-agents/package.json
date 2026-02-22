@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "*",
-    "@respan/respan-sdk": "^1.0.2"
+    "@respan/respan-sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",

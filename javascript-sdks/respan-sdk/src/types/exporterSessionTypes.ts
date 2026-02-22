@@ -18,7 +18,7 @@ export type SessionState = {
   traceName: string;
   startedAt: Date;
   pendingTools: Map<string, PendingToolState>;
-  rootEmitted: boolean;
+  isRootEmitted: boolean;
 };
 
 /** Alias for cross-language consistency with Python ExporterSessionState. */

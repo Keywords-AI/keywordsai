@@ -1,0 +1,12 @@
+{
+  "name": "respan-javascript-sdks",
+  "private": true,
+  "packageManager": "yarn@4.9.2",
+  "workspaces": [
+    "respan-sdk",
+    "respan-exporter-anthropic-agents"
+  ],
+  "scripts": {
+    "test:exporter": "cd respan-exporter-anthropic-agents && node ../node_modules/tsx/dist/cli.mjs --test tests/exporter.test.ts"
+  }
+}
