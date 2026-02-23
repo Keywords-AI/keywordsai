@@ -33,15 +33,35 @@ logger = logging.getLogger(__name__)
 
 
 def _serialize(obj):
-    """Return a JSON-serializable value: str, dict, list, or None."""
+    """Recursively convert *obj* to plain JSON-serializable Python types.
+
+    Pydantic v2 defers serializer construction for models with forward
+    references (``MockValSer``).  The deferred rebuild uses
+    ``sys._getframe(5)`` which fails in shallow call stacks (Celery
+    workers, asyncio callbacks).  By never storing foreign Pydantic
+    model instances on ``RespanTextLogParams``, we sidestep the issue
+    entirely — ``data.model_dump()`` only ever sees plain types.
+    """
     if obj is None:
         return None
     if isinstance(obj, (str, int, float, bool)):
         return obj
-    if isinstance(obj, (dict, list)):
-        return obj
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize(item) for item in obj]
     if hasattr(obj, "model_dump"):
-        return obj.model_dump(mode="json")
+        try:
+            return obj.model_dump(mode="json")
+        except Exception:
+            # MockValSer or other serializer failure — extract public attrs
+            return {
+                k: _serialize(v)
+                for k, v in vars(obj).items()
+                if not k.startswith("_")
+            }
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
     return str(obj)
 
 
