@@ -33,7 +33,11 @@ logger = logging.getLogger(__name__)
 
 
 def _serialize(obj):
-    """Return a JSON-serializable value: str, dict, list, or None."""
+    """Return a JSON-serializable value: str, dict, list, or None.
+
+    Falls back to ``vars()`` extraction when ``model_dump`` raises — works
+    around Pydantic v2 ``MockValSer`` errors in ``openai-agents >= 0.9``.
+    """
     if obj is None:
         return None
     if isinstance(obj, (str, int, float, bool)):
@@ -41,7 +45,16 @@ def _serialize(obj):
     if isinstance(obj, (dict, list)):
         return obj
     if hasattr(obj, "model_dump"):
-        return obj.model_dump(mode="json")
+        try:
+            return obj.model_dump(mode="json")
+        except Exception:
+            if hasattr(obj, "__dict__"):
+                return {
+                    k: v
+                    for k, v in vars(obj).items()
+                    if not k.startswith("_") and not callable(v)
+                }
+            return str(obj)
     return str(obj)
 
 
@@ -49,7 +62,12 @@ def _serialize(obj):
 def _response_data_to_respan_log(
     data: RespanTextLogParams, span_data: ResponseSpanData
 ) -> None:
-    """Convert ResponseSpanData — pass raw usage through, BE parses."""
+    """Convert ResponseSpanData — extract usage fields manually.
+
+    Uses ``getattr`` instead of ``_serialize(usage)`` to avoid the Pydantic
+    ``MockValSer`` crash in ``openai-agents >= 0.9`` where the ``Usage``
+    model's serializer is not properly initialised.
+    """
     data.span_name = span_data.type
     data.log_type = LOG_TYPE_RESPONSE
     data.input = _serialize(span_data.input)
@@ -58,9 +76,17 @@ def _response_data_to_respan_log(
         if hasattr(span_data.response, "model"):
             data.model = span_data.response.model
         if hasattr(span_data.response, "usage") and span_data.response.usage:
-            data.usage = _serialize(span_data.response.usage)
+            usage = span_data.response.usage
+            data.usage = {
+                "input_tokens": getattr(usage, "input_tokens", 0) or 0,
+                "output_tokens": getattr(usage, "output_tokens", 0) or 0,
+                "total_tokens": getattr(usage, "total_tokens", 0) or 0,
+            }
         if hasattr(span_data.response, "output"):
-            data.output = _serialize(span_data.response.output)
+            try:
+                data.output = _serialize(span_data.response.output)
+            except Exception:
+                data.output = str(span_data.response.output)
 
 
 def _function_data_to_respan_log(
@@ -146,6 +172,39 @@ def _guardrail_data_to_respan_log(
 
 
 # ---------------------------------------------------------------------------
+# Pydantic serialization helper — works around MockValSer errors
+# ---------------------------------------------------------------------------
+
+def _safe_model_dump(params: RespanTextLogParams) -> Dict[str, Any]:
+    """Dump a ``RespanTextLogParams`` to a JSON-serializable dict.
+
+    Falls back to manual field iteration when ``model_dump(mode="json")``
+    raises — this happens with ``openai-agents >= 0.9`` where certain
+    nested Pydantic models have uninitialised ``MockValSer`` serializers.
+    """
+    try:
+        return params.model_dump(mode="json")
+    except Exception:
+        result: Dict[str, Any] = {}
+        for field_name in params.model_fields:
+            val = getattr(params, field_name, None)
+            if val is None:
+                continue
+            if isinstance(val, (str, int, float, bool, list, dict)):
+                result[field_name] = val
+            elif hasattr(val, "isoformat"):
+                result[field_name] = val.isoformat()
+            elif hasattr(val, "model_dump"):
+                try:
+                    result[field_name] = val.model_dump(mode="json")
+                except Exception:
+                    result[field_name] = str(val)
+            else:
+                result[field_name] = str(val)
+        return result
+
+
+# ---------------------------------------------------------------------------
 # Public conversion function — used by both RespanSpanExporter and
 # LocalSpanCollector so conversion logic is defined once.
 # ---------------------------------------------------------------------------
@@ -166,12 +225,13 @@ def convert_to_respan_log(
         if the item type is unrecognised.
     """
     if isinstance(item, Trace):
-        return RespanTextLogParams(
+        trace_data = RespanTextLogParams(
             trace_unique_id=item.trace_id,
             span_unique_id=item.trace_id,
             span_name=item.name,
             log_type=LOG_TYPE_AGENT,
-        ).model_dump(mode="json")
+        )
+        return _safe_model_dump(trace_data)
 
     if isinstance(item, SpanImpl):
         parent_id = item.parent_id or item.trace_id
@@ -204,7 +264,7 @@ def convert_to_respan_log(
             else:
                 logger.warning(f"Unknown span data type: {item.span_data}")
                 return None
-            return data.model_dump(mode="json")
+            return _safe_model_dump(data)
         except Exception as e:
             logger.error(
                 f"Error converting span data of {item.span_data} to Respan log: {e}"
