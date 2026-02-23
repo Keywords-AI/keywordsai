@@ -31,6 +31,25 @@ from respan_sdk.respan_types.param_types import RespanTextLogParams
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Eagerly rebuild OpenAI Response models to resolve Pydantic MockValSer.
+#
+# openai-agents >= 0.9 uses forward references in Response and related
+# models.  Pydantic defers serializer construction (MockValSer) until first
+# access, then calls sys._getframe(5) to resolve the forward refs.  If the
+# call stack is too shallow (e.g. Celery worker, asyncio callback), that
+# raises ValueError and the span is silently dropped.
+#
+# Calling model_rebuild() here — at module import time — ensures the
+# serializers are built while the stack is still deep enough.
+# ---------------------------------------------------------------------------
+try:
+    from openai.types.responses import Response as _OAIResponse
+
+    _OAIResponse.model_rebuild()
+except Exception:
+    pass  # Older openai versions or import issues — defensive fallbacks below
+
 
 def _serialize(obj):
     """Return a JSON-serializable value: str, dict, list, or None.
