@@ -49,18 +49,16 @@ def _serialize(obj):
 def _response_data_to_respan_log(
     data: RespanTextLogParams, span_data: ResponseSpanData
 ) -> None:
-    """Convert ResponseSpanData to Respan log format with generic I/O."""
+    """Convert ResponseSpanData — pass raw usage through, BE parses."""
     data.span_name = span_data.type
     data.log_type = LOG_TYPE_RESPONSE
     data.input = _serialize(span_data.input)
 
     if span_data.response:
-        if hasattr(span_data.response, "usage") and span_data.response.usage:
-            data.prompt_tokens = span_data.response.usage.input_tokens
-            data.completion_tokens = span_data.response.usage.output_tokens
-            data.total_request_tokens = span_data.response.usage.total_tokens
         if hasattr(span_data.response, "model"):
             data.model = span_data.response.model
+        if hasattr(span_data.response, "usage") and span_data.response.usage:
+            data.usage = _serialize(span_data.response.usage)
         if hasattr(span_data.response, "output"):
             data.output = _serialize(span_data.response.output)
 
@@ -79,33 +77,21 @@ def _function_data_to_respan_log(
 def _generation_data_to_respan_log(
     data: RespanTextLogParams, span_data: GenerationSpanData
 ) -> None:
-    """Convert GenerationSpanData to Respan log format."""
+    """Convert GenerationSpanData — pass raw usage through, BE parses."""
     data.span_name = span_data.type
     data.log_type = LOG_TYPE_GENERATION
     data.model = span_data.model
     data.input = _serialize(span_data.input)
     data.output = _serialize(span_data.output)
-
     if span_data.usage:
-        data.prompt_tokens = span_data.usage.get("prompt_tokens")
-        data.completion_tokens = span_data.usage.get("completion_tokens")
-        data.total_request_tokens = span_data.usage.get("total_tokens")
+        data.usage = span_data.usage
 
 
 def _handoff_data_to_respan_log(
     data: RespanTextLogParams, span_data: HandoffSpanData
-) -> RespanTextLogParams:
-    """
-    Convert HandoffSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The HandoffSpanData to convert
-
-    Returns:
-        Dictionary with HandoffSpanData fields mapped to Respan log format
-    """
-    data.span_name = span_data.type # handoff
+) -> None:
+    """Convert HandoffSpanData to Respan log format."""
+    data.span_name = span_data.type
     data.log_type = LOG_TYPE_HANDOFF
     data.span_handoffs = [f"{span_data.from_agent} -> {span_data.to_agent}"]
     data.metadata = {
@@ -148,27 +134,15 @@ def _agent_data_to_respan_log(
 
 def _guardrail_data_to_respan_log(
     data: RespanTextLogParams, span_data: GuardrailSpanData
-) -> RespanTextLogParams:
-    """
-    Convert GuardrailSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The GuardrailSpanData to convert
-
-    Returns:
-        Dictionary with GuardrailSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert GuardrailSpanData to Respan log format."""
     data.span_name = f"guardrail:{span_data.name}"
     data.log_type = LOG_TYPE_GUARDRAIL
     data.has_warnings = span_data.triggered
     if span_data.triggered:
-        data.warnings_dict = data.warnings_dict or {}
-        data.warnings_dict =  {
+        data.warnings_dict = {
             f"guardrail:{span_data.name}": "guardrail triggered"
         }
-
-    return data
 
 
 # ---------------------------------------------------------------------------
