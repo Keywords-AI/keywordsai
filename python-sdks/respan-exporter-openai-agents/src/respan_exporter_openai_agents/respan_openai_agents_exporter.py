@@ -18,107 +18,81 @@ from agents.tracing.span_data import (
 )
 from agents.tracing.spans import Span, SpanImpl
 from agents.tracing.traces import Trace
+from respan_sdk.constants.llm_logging import (
+    LOG_TYPE_AGENT,
+    LOG_TYPE_CUSTOM,
+    LOG_TYPE_GENERATION,
+    LOG_TYPE_GUARDRAIL,
+    LOG_TYPE_HANDOFF,
+    LOG_TYPE_RESPONSE,
+    LOG_TYPE_TOOL,
+)
 from respan_sdk.respan_types.param_types import RespanTextLogParams
 
 logger = logging.getLogger(__name__)
 
 
+def _serialize(obj):
+    """Return a JSON-serializable value: str, dict, list, or None."""
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, (dict, list)):
+        return obj
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump(mode="json")
+    return str(obj)
+
+
 # Internal helper functions for converting span data to Respan log format
 def _response_data_to_respan_log(
     data: RespanTextLogParams, span_data: ResponseSpanData
-) -> RespanTextLogParams:
-    """Convert ResponseSpanData to Respan log format.
+) -> None:
+    """Convert ResponseSpanData — pass raw usage through, BE parses."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_RESPONSE
+    data.input = _serialize(span_data.input)
 
-    Extracts only ingestion-contract fields (model, usage tokens, input/output
-    as strings) and lets the backend handle detailed message parsing.
-    """
-    data.span_name = span_data.type  # "response"
-    data.log_type = "response"
-    try:
-        if span_data.input:
-            data.input = str(span_data.input)
-
-        if span_data.response:
-            response = span_data.response
-            if hasattr(response, "model"):
-                data.model = response.model
-            if hasattr(response, "usage") and response.usage:
-                data.prompt_tokens = response.usage.input_tokens
-                data.completion_tokens = response.usage.output_tokens
-                data.total_request_tokens = response.usage.total_tokens
-            if hasattr(response, "output") and response.output:
-                data.output = str(response.output)
-    except Exception as e:
-        logger.error(f"Error converting response data to Respan log: {e}")
+    if span_data.response:
+        if hasattr(span_data.response, "model"):
+            data.model = span_data.response.model
+        if hasattr(span_data.response, "usage") and span_data.response.usage:
+            data.usage = _serialize(span_data.response.usage)
+        if hasattr(span_data.response, "output"):
+            data.output = _serialize(span_data.response.output)
 
 
 def _function_data_to_respan_log(
     data: RespanTextLogParams, span_data: FunctionSpanData
-) -> RespanTextLogParams:
-    """
-    Convert FunctionSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The FunctionSpanData to convert
-
-    Returns:
-        Dictionary with FunctionSpanData fields mapped to Respan log format
-    """
-    try:
-        data.span_name = span_data.name
-        data.log_type = "function" # The corresponding respan log type
-        data.input = span_data.input
-        data.output = span_data.output
-        data.span_tools = [span_data.name]
-
-        # Try to extract tool calls if the input is in a format that might contain them
-        if span_data.input:
-            data.log_type = "tool"
-            data.input = span_data.input
-    except Exception as e:
-        logger.error(f"Error converting function data to Respan log: {e}")
+) -> None:
+    """Convert FunctionSpanData to Respan log format."""
+    data.span_name = span_data.name
+    data.log_type = LOG_TYPE_TOOL
+    data.input = _serialize(span_data.input)
+    data.output = _serialize(span_data.output)
+    data.span_tools = [span_data.name]
 
 
 def _generation_data_to_respan_log(
     data: RespanTextLogParams, span_data: GenerationSpanData
-) -> RespanTextLogParams:
-    """Convert GenerationSpanData to Respan log format.
-
-    Extracts only ingestion-contract fields (model, usage tokens, input/output
-    as strings) and lets the backend handle detailed parsing.
-    """
-    data.span_name = span_data.type  # "generation"
-    data.log_type = "generation"
+) -> None:
+    """Convert GenerationSpanData — pass raw usage through, BE parses."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_GENERATION
     data.model = span_data.model
-    try:
-        if span_data.input:
-            data.input = str(span_data.input)
-        if span_data.output:
-            data.output = str(span_data.output)
-        if span_data.usage:
-            data.prompt_tokens = span_data.usage.get("prompt_tokens")
-            data.completion_tokens = span_data.usage.get("completion_tokens")
-            data.total_request_tokens = span_data.usage.get("total_tokens")
-    except Exception as e:
-        logger.error(f"Error converting generation data to Respan log: {e}")
+    data.input = _serialize(span_data.input)
+    data.output = _serialize(span_data.output)
+    if span_data.usage:
+        data.usage = span_data.usage
 
 
 def _handoff_data_to_respan_log(
     data: RespanTextLogParams, span_data: HandoffSpanData
-) -> RespanTextLogParams:
-    """
-    Convert HandoffSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The HandoffSpanData to convert
-
-    Returns:
-        Dictionary with HandoffSpanData fields mapped to Respan log format
-    """
-    data.span_name = span_data.type # handoff
-    data.log_type = "handoff" # The corresponding respan log type
+) -> None:
+    """Convert HandoffSpanData to Respan log format."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_HANDOFF
     data.span_handoffs = [f"{span_data.from_agent} -> {span_data.to_agent}"]
     data.metadata = {
         "from_agent": span_data.from_agent,
@@ -128,100 +102,47 @@ def _handoff_data_to_respan_log(
 
 def _custom_data_to_respan_log(
     data: RespanTextLogParams, span_data: CustomSpanData
-) -> RespanTextLogParams:
-    """
-    Convert CustomSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The CustomSpanData to convert
-
-    Returns:
-        Dictionary with CustomSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert CustomSpanData to Respan log format."""
     data.span_name = span_data.name
-    data.log_type = "custom" # The corresponding respan log type
+    data.log_type = LOG_TYPE_CUSTOM
     data.metadata = span_data.data
 
-    # If the custom data contains specific fields that map to Respan fields, extract them
     for key in ["input", "output", "model", "prompt_tokens", "completion_tokens"]:
         if key in span_data.data:
-            data[key] = span_data.data[key]
-
-    return data
+            setattr(data, key, span_data.data[key])
 
 
 def _agent_data_to_respan_log(
     data: RespanTextLogParams, span_data: AgentSpanData
-) -> RespanTextLogParams:
-    """
-    Convert AgentSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The AgentSpanData to convert
-
-    Returns:
-        Dictionary with AgentSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert AgentSpanData to Respan log format."""
     data.span_name = span_data.name
-    data.log_type = "agent" # The corresponding respan log type
+    data.log_type = LOG_TYPE_AGENT
     data.span_workflow_name = span_data.name
 
-    # Add tools if available
     if span_data.tools:
         data.span_tools = span_data.tools
-
-    # Add handoffs if available
     if span_data.handoffs:
         data.span_handoffs = span_data.handoffs
 
-    # Add metadata with agent information
     data.metadata = {
         "output_type": span_data.output_type,
         "agent_name": span_data.name,
     }
 
-    # Add agent name to metadata
-    data.metadata["agent_name"] = span_data.name
-
-    # Add tools to metadata if available
-    if span_data.tools:
-        data.span_tools = span_data.tools
-
-    # Add handoffs to metadata if available
-    if span_data.handoffs:
-        data.span_handoffs = span_data.handoffs
-
-    # Set metadata in log data
-    data.metadata = data.metadata
-
-    return data
-
 
 def _guardrail_data_to_respan_log(
     data: RespanTextLogParams, span_data: GuardrailSpanData
-) -> RespanTextLogParams:
-    """
-    Convert GuardrailSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The GuardrailSpanData to convert
-
-    Returns:
-        Dictionary with GuardrailSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert GuardrailSpanData to Respan log format."""
     data.span_name = f"guardrail:{span_data.name}"
-    data.log_type = "guardrail" # The corresponding respan log type
+    data.log_type = LOG_TYPE_GUARDRAIL
     data.has_warnings = span_data.triggered
     if span_data.triggered:
-        data.warnings_dict = data.warnings_dict or {}
-        data.warnings_dict =  {
+        data.warnings_dict = {
             f"guardrail:{span_data.name}": "guardrail triggered"
         }
-
-    return data
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +170,7 @@ def convert_to_respan_log(
             trace_unique_id=item.trace_id,
             span_unique_id=item.trace_id,
             span_name=item.name,
-            log_type="agent",
+            log_type=LOG_TYPE_AGENT,
         ).model_dump(mode="json")
 
     if isinstance(item, SpanImpl):
