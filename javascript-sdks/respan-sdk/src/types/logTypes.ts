@@ -362,6 +362,10 @@ const PromptParamSchema = z.object({
   version: z.number().optional(),
   variables: z.record(z.string(), z.any()).optional(),
   echo: z.boolean().optional().default(true),
+  // v2 fields (set schema_version=2 to use v2 prompt processing)
+  schema_version: z.number().optional(),
+  patch: z.record(z.string(), z.any()).optional(),
+  // v1 fields (preserved for back-compat, ignored when schema_version=2)
   override: z.boolean().optional().default(false),
   override_params: z.record(z.string(), z.any()).optional(), // BasicLLMParams placeholder
   override_config: OverrideConfigSchema.optional(),

@@ -50,6 +50,12 @@ class PromptParam(RespanBaseModel):
     version: Optional[Union[int, Literal["latest"]]] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
+
+    # v2 fields (set schema_version=2 to use v2 prompt processing)
+    schema_version: Optional[int] = None
+    patch: Optional[dict] = None
+
+    # v1 fields (preserved for back-compat, ignored when schema_version=2)
     override: Optional[bool] = (
         False  # Allow prompt to override other params in the request body. (e.g. model defined in the prompt will override the model defined in the request body)
     )
