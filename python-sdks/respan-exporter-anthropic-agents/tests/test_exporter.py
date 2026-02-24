@@ -39,6 +39,8 @@ except ImportError:
     class AssistantMessage:
         content: List[Any]
         model: str
+        id: Optional[str] = None
+        usage: Optional[Dict[str, Any]] = None
 
     @dataclass
     class UserMessage:
@@ -166,7 +168,7 @@ except ImportError:
     sys.modules["respan_sdk.respan_types.param_types"] = respan_sdk_param_types_module
 
 
-from claude_agent_sdk import ResultMessage
+from claude_agent_sdk import ResultMessage, AssistantMessage
 from respan_exporter_anthropic_agents.respan_anthropic_agents_exporter import (
     RespanAnthropicAgentsExporter,
 )
@@ -217,6 +219,51 @@ class RespanAnthropicExporterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result_payload.get("trace_unique_id"), "session-1")
         self.assertEqual(result_payload.get("log_type"), "agent")
         self.assertEqual(result_payload.get("total_request_tokens"), 5)
+
+    async def test_track_assistant_message_exports_payload_with_usage(self) -> None:
+        exporter = RespanAnthropicAgentsExporter(
+            api_key="test-api-key",
+            endpoint="https://example.com/ingest",
+        )
+
+        captured_batches: List[List[Dict[str, Any]]] = []
+
+        def capture_payloads(payloads: List[Dict[str, Any]]) -> None:
+            captured_batches.append(payloads)
+
+        exporter._send_payloads = capture_payloads  # type: ignore[method-assign]
+
+        assistant_message = AssistantMessage(
+            content=[{"type": "text", "text": "Hello"}],
+            model="claude-3-5-sonnet",
+        )
+        assistant_message.id = "msg-1"
+        assistant_message.usage = {
+            "input_tokens": 10,
+            "output_tokens": 5,
+            "total_tokens": 15,
+            "cache_read_input_tokens": 2,
+            "cache_creation_input_tokens": 3,
+        }
+
+        await exporter.track_message(message=assistant_message, session_id="session-1")
+
+        flattened_payloads = [payload for batch in captured_batches for payload in batch]
+        self.assertTrue(flattened_payloads)
+
+        result_payload = next(
+            payload
+            for payload in flattened_payloads
+            if payload.get("span_name") == "assistant_message"
+        )
+        self.assertEqual(result_payload.get("trace_unique_id"), "session-1")
+        self.assertEqual(result_payload.get("span_unique_id"), "msg-1")
+        self.assertEqual(result_payload.get("log_type"), "generation")
+        self.assertEqual(result_payload.get("prompt_tokens"), 10)
+        self.assertEqual(result_payload.get("completion_tokens"), 5)
+        self.assertEqual(result_payload.get("total_request_tokens"), 15)
+        self.assertEqual(result_payload.get("prompt_cache_hit_tokens"), 2)
+        self.assertEqual(result_payload.get("prompt_cache_creation_tokens"), 3)
 
     async def test_create_hooks_contains_expected_events(self) -> None:
         exporter = RespanAnthropicAgentsExporter(api_key="test-api-key")

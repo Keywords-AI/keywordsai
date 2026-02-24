@@ -30,7 +30,6 @@ from respan_sdk.constants.llm_logging import (
     LOG_TYPE_TASK,
     LOG_TYPE_TOOL,
 )
-from respan_sdk.respan_types._internal_types import Message
 from respan_sdk.respan_types.exporter_session_types import (
     ExporterSessionState,
     PendingToolState,
@@ -40,9 +39,7 @@ from respan_sdk.utils import RetryHandler
 from respan_exporter_anthropic_agents.utils import (
     build_trace_name_from_prompt,
     coerce_int,
-    extract_assistant_content,
     extract_session_id_from_system_message,
-    extract_user_text,
     resolve_export_endpoint,
     serialize_metadata,
     serialize_tool_calls,
@@ -164,7 +161,7 @@ class RespanAnthropicAgentsExporter:
 
         async for message in query(prompt=prompt, options=instrumented_options):
             if isinstance(message, SystemMessage):
-                detected_session_id = self._extract_session_id_from_system_message(
+                detected_session_id = extract_session_id_from_system_message(
                     system_message=message
                 )
                 if detected_session_id:
@@ -239,13 +236,13 @@ class RespanAnthropicAgentsExporter:
     ) -> Dict[str, Any]:
         session_id = self._extract_session_id_from_hook_input(input_data=input_data)
         prompt = input_data.get("prompt")
-        trace_name = self._build_trace_name_from_prompt(prompt=prompt)
+        trace_name = build_trace_name_from_prompt(prompt=prompt)
         session_state = self._ensure_session_state(
             session_id=session_id,
             trace_name=trace_name,
         )
 
-        now = self._utc_now()
+        now = utc_now()
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
@@ -279,7 +276,7 @@ class RespanAnthropicAgentsExporter:
         )
         session_state.pending_tools[resolved_tool_use_id] = PendingToolState(
             span_unique_id=str(uuid.uuid4()),
-            started_at=self._utc_now(),
+            started_at=utc_now(),
             tool_name=input_data.get("tool_name") or "tool",
             tool_input=input_data.get("tool_input"),
         )
@@ -304,7 +301,7 @@ class RespanAnthropicAgentsExporter:
             resolved_tool_use_id,
             None,
         )
-        now = self._utc_now()
+        now = utc_now()
         if pending_tool_state is None:
             pending_tool_state = PendingToolState(
                 span_unique_id=str(uuid.uuid4()),
@@ -347,7 +344,7 @@ class RespanAnthropicAgentsExporter:
             session_id=session_id,
             trace_name=None,
         )
-        now = self._utc_now()
+        now = utc_now()
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
@@ -379,7 +376,7 @@ class RespanAnthropicAgentsExporter:
         system_message: SystemMessage,
         explicit_session_id: Optional[str],
     ) -> None:
-        session_id = explicit_session_id or self._extract_session_id_from_system_message(
+        session_id = explicit_session_id or extract_session_id_from_system_message(
             system_message=system_message
         )
         if not session_id:
@@ -400,12 +397,8 @@ class RespanAnthropicAgentsExporter:
             session_id=session_id,
             trace_name=None,
         )
-
-        message_text = self._extract_user_text(user_message=user_message)
-        if not message_text:
-            return
-
-        now = self._utc_now()
+        now = utc_now()
+        input_value = serialize_value(getattr(user_message, "content", user_message))
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
@@ -414,7 +407,7 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_TASK,
             start_time=now,
             timestamp=now,
-            input_value=message_text,
+            input_value=input_value,
             output_value=None,
             metadata={"source": "stream_user_message"},
             status_code=200,
@@ -433,49 +426,28 @@ class RespanAnthropicAgentsExporter:
             session_id=session_id,
             trace_name=None,
         )
-        extracted_content = self._extract_assistant_content(assistant_message=assistant_message)
-        if (
-            not extracted_content["output_text"]
-            and not extracted_content["tool_calls"]
-            and not extracted_content["reasoning"]
-        ):
-            return
+        now = utc_now()
+        usage = getattr(assistant_message, "usage", None) or {}
+        span_id = getattr(assistant_message, "id", None) or str(uuid.uuid4())
+        output_value = serialize_value(getattr(assistant_message, "content", assistant_message))
 
-        completion_message = None
-        completion_messages = None
-        if extracted_content["output_text"]:
-            completion_message = Message(
-                role="assistant",
-                content=extracted_content["output_text"],
-            )
-            completion_messages = [completion_message]
-
-        tool_names = []
-        for tool_call in extracted_content["tool_calls"]:
-            tool_name = tool_call.get("name")
-            if tool_name:
-                tool_names.append(str(tool_name))
-
-        now = self._utc_now()
         payload = self._create_payload(
             session_state=session_state,
-            span_unique_id=str(uuid.uuid4()),
+            span_unique_id=span_id,
             span_parent_id=session_state.trace_id,
             span_name="assistant_message",
             log_type=LOG_TYPE_GENERATION,
             start_time=now,
             timestamp=now,
             input_value=None,
-            output_value=extracted_content["output_text"],
+            output_value=output_value,
             model=assistant_message.model,
-            metadata={
-                "reasoning": extracted_content["reasoning"] or None,
-                "source": "stream_assistant_message",
-            },
-            span_tools=tool_names or None,
-            tool_calls=extracted_content["tool_calls"] or None,
-            completion_message=completion_message,
-            completion_messages=completion_messages,
+            metadata={"source": "stream_assistant_message"},
+            prompt_tokens=coerce_int(usage.get("input_tokens") or usage.get("prompt_tokens")),
+            completion_tokens=coerce_int(usage.get("output_tokens") or usage.get("completion_tokens")),
+            total_request_tokens=coerce_int(usage.get("total_tokens")),
+            prompt_cache_hit_tokens=coerce_int(usage.get("cache_read_input_tokens")),
+            prompt_cache_creation_tokens=coerce_int(usage.get("cache_creation_input_tokens")),
             status_code=200,
         )
         self._send_payloads(payloads=[payload])
@@ -487,26 +459,13 @@ class RespanAnthropicAgentsExporter:
         )
 
         usage = result_message.usage or {}
-        prompt_tokens = self._coerce_int(
-            value=usage.get("input_tokens") or usage.get("prompt_tokens")
-        )
-        completion_tokens = self._coerce_int(
-            value=usage.get("output_tokens") or usage.get("completion_tokens")
-        )
-        total_request_tokens = self._coerce_int(value=usage.get("total_tokens"))
-        if total_request_tokens is None and (
-            prompt_tokens is not None or completion_tokens is not None
-        ):
-            total_request_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
+        prompt_tokens = coerce_int(usage.get("input_tokens") or usage.get("prompt_tokens"))
+        completion_tokens = coerce_int(usage.get("output_tokens") or usage.get("completion_tokens"))
+        total_request_tokens = coerce_int(usage.get("total_tokens"))
+        prompt_cache_hit_tokens = coerce_int(usage.get("cache_read_input_tokens"))
+        prompt_cache_creation_tokens = coerce_int(usage.get("cache_creation_input_tokens"))
 
-        prompt_cache_hit_tokens = self._coerce_int(
-            value=usage.get("cache_read_input_tokens")
-        )
-        prompt_cache_creation_tokens = self._coerce_int(
-            value=usage.get("cache_creation_input_tokens")
-        )
-
-        now = self._utc_now()
+        now = utc_now()
         error_message = None
         status_code = 200
         if result_message.is_error:
@@ -545,18 +504,6 @@ class RespanAnthropicAgentsExporter:
     def _handle_stream_event(self, stream_event: StreamEvent) -> None:
         self._last_session_id = stream_event.session_id
 
-    def _extract_assistant_content(self, assistant_message: AssistantMessage) -> Dict[str, Any]:
-        return extract_assistant_content(assistant_message=assistant_message)
-
-    def _extract_user_text(self, user_message: UserMessage) -> Optional[str]:
-        return extract_user_text(user_message=user_message)
-
-    def _extract_session_id_from_system_message(
-        self,
-        system_message: SystemMessage,
-    ) -> Optional[str]:
-        return extract_session_id_from_system_message(system_message=system_message)
-
     def _extract_session_id_from_hook_input(self, input_data: Dict[str, Any]) -> str:
         raw_session_id = input_data.get("session_id") or input_data.get("sessionId")
         if raw_session_id:
@@ -569,9 +516,6 @@ class RespanAnthropicAgentsExporter:
         generated_session_id = str(uuid.uuid4())
         self._last_session_id = generated_session_id
         return generated_session_id
-
-    def _build_trace_name_from_prompt(self, prompt: Any) -> Optional[str]:
-        return build_trace_name_from_prompt(prompt=prompt)
 
     def _ensure_session_state(
         self,
@@ -589,7 +533,7 @@ class RespanAnthropicAgentsExporter:
             return existing_state
 
         resolved_trace_name = trace_name or f"anthropic-session-{session_id[:12]}"
-        now = self._utc_now()
+        now = utc_now()
         state = ExporterSessionState(
             session_id=session_id,
             trace_id=session_id,
@@ -637,8 +581,6 @@ class RespanAnthropicAgentsExporter:
         metadata: Optional[Dict[str, Any]] = None,
         span_tools: Optional[List[str]] = None,
         tool_calls: Optional[List[Dict[str, Any]]] = None,
-        completion_message: Optional[Message] = None,
-        completion_messages: Optional[List[Message]] = None,
         prompt_tokens: Optional[int] = None,
         completion_tokens: Optional[int] = None,
         total_request_tokens: Optional[int] = None,
@@ -647,7 +589,7 @@ class RespanAnthropicAgentsExporter:
         status_code: int = 200,
         error_message: Optional[str] = None,
     ) -> Dict[str, Any]:
-        resolved_start_time = start_time or self._utc_now()
+        resolved_start_time = start_time or utc_now()
         resolved_timestamp = timestamp or resolved_start_time
         latency_seconds = max(
             (resolved_timestamp - resolved_start_time).total_seconds(),
@@ -669,14 +611,12 @@ class RespanAnthropicAgentsExporter:
             status_code=status_code,
             error_bit=1 if error_message else 0,
             error_message=error_message,
-            input=self._serialize_value(value=input_value),
-            output=self._serialize_value(value=output_value),
+            input=serialize_value(input_value),
+            output=serialize_value(output_value),
             model=model,
-            metadata=self._serialize_metadata(value=metadata),
+            metadata=serialize_metadata(metadata),
             span_tools=span_tools,
-            tool_calls=self._serialize_tool_calls(value=tool_calls),
-            completion_message=completion_message,
-            completion_messages=completion_messages,
+            tool_calls=serialize_tool_calls(tool_calls),
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             total_request_tokens=total_request_tokens,
@@ -684,15 +624,6 @@ class RespanAnthropicAgentsExporter:
             prompt_cache_creation_tokens=prompt_cache_creation_tokens,
         )
         return payload.model_dump(mode="json", exclude_none=True)
-
-    def _serialize_metadata(self, value: Any) -> Optional[Dict[str, Any]]:
-        return serialize_metadata(value=value)
-
-    def _serialize_tool_calls(self, value: Any) -> Optional[List[Dict[str, Any]]]:
-        return serialize_tool_calls(value=value)
-
-    def _serialize_value(self, value: Any) -> Any:
-        return serialize_value(value=value)
 
     def _send_payloads(self, payloads: List[Dict[str, Any]]) -> None:
         if not payloads:
@@ -782,12 +713,6 @@ class RespanAnthropicAgentsExporter:
                 _run_export_sync()
         except Exception:
             pass
-
-    def _coerce_int(self, value: Any) -> Optional[int]:
-        return coerce_int(value=value)
-
-    def _utc_now(self) -> datetime:
-        return utc_now()
 
 
 class RespanSpanExporter(RespanAnthropicAgentsExporter):

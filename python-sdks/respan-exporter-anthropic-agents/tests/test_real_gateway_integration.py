@@ -109,6 +109,9 @@ class RespanAnthropicExporterGatewayIntegrationTests(unittest.IsolatedAsyncioTes
         from respan_exporter_anthropic_agents.respan_anthropic_agents_exporter import (
             RespanAnthropicAgentsExporter,
         )
+        from respan_exporter_anthropic_agents.utils import (
+            extract_session_id_from_system_message,
+        )
 
         gateway_base_url = _resolve_gateway_base_url()
         anthropic_base_url = _resolve_anthropic_base_url(
@@ -164,7 +167,7 @@ class RespanAnthropicExporterGatewayIntegrationTests(unittest.IsolatedAsyncioTes
                 ):
                     if isinstance(message, SystemMessage):
                         detected_session_id = (
-                            exporter._extract_session_id_from_system_message(
+                            extract_session_id_from_system_message(
                                 system_message=message
                             )
                         )
