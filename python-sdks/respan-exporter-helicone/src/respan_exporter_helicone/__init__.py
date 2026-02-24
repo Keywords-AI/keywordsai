@@ -1,8 +1,5 @@
-"""Respan Helicone Exporter.
+"""Respan Helicone exporter package.
 
-Instrumentor for intercepting Helicone Manual Logger logs and sending to Respan.
+Import directly from submodules:
+    from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
 """
-
-from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
-
-__all__ = ["HeliconeInstrumentor"]

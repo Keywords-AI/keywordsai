@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from helicone_helpers import HeliconeManualLogger
 
+from respan_sdk.constants.llm_logging import LOG_TYPE_GENERATION, LogMethodChoices
 from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
 
 
@@ -71,8 +72,10 @@ def test_helicone_instrumentor_patching(instrumentor, mock_requests_post):
     
     # Verify payload
     payload = call_args.kwargs["json"][0]
-    assert payload["log_type"] == "generation"
+    assert payload["log_method"] == LogMethodChoices.TRACING_INTEGRATION.value
+    assert payload["log_type"] == LOG_TYPE_GENERATION
     assert payload["provider"] == "openai"
+    assert payload["provider_id"] == "openai"
     assert payload["model"] == "gpt-4"
     assert payload["prompt_tokens"] == 10
     assert payload["completion_tokens"] == 5
@@ -113,6 +116,8 @@ def test_helicone_metadata_header_mapping_is_case_insensitive(mock_requests_post
     )
 
     payload = mock_requests_post.call_args.kwargs["json"][0]
+    assert payload["provider"] == "openai"
+    assert payload["provider_id"] == "openai"
     assert payload["customer_identifier"] == "user-lower"
     assert payload["session_identifier"] == "session-lower"
 

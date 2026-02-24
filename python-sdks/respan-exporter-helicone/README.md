@@ -13,10 +13,11 @@ pip install respan-exporter-helicone
 ## Quick Start
 
 ```python
-from respan_exporter_helicone import HeliconeInstrumentor
-from helicone_helpers import HeliconeManualLogger
-import time
+import json
 import openai
+
+from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
+from helicone_helpers import HeliconeManualLogger
 
 # Setup instrumentation
 instrumentor = HeliconeInstrumentor()
@@ -34,7 +35,6 @@ request = {
 
 def chat_operation(result_recorder):
     response = client.chat.completions.create(**request)
-    import json
     result_recorder.append_results(json.loads(response.to_json()))
     return response
 
