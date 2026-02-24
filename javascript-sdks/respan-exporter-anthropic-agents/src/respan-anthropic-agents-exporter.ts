@@ -444,16 +444,16 @@ export class RespanAnthropicAgentsExporter {
       ? message.usage
       : {}) as Record<string, unknown>;
     const promptTokens = this.coerceInteger({
-      value: usage.input_tokens || usage.prompt_tokens,
+      value: usage.input_tokens ?? usage.prompt_tokens,
     });
     const completionTokens = this.coerceInteger({
-      value: usage.output_tokens || usage.completion_tokens,
+      value: usage.output_tokens ?? usage.completion_tokens,
     });
     let totalRequestTokens = this.coerceInteger({
       value: usage.total_tokens,
     });
     if (totalRequestTokens === null) {
-      totalRequestTokens = (promptTokens || 0) + (completionTokens || 0);
+      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0) || null;
     }
 
     const promptCacheHitTokens = this.coerceInteger({
