@@ -701,18 +701,11 @@ class RespanAnthropicAgentsExporter:
             except RuntimeError:
                 loop = None
             if loop is not None:
-                timeout = (
-                    self.timeout_seconds * (self.max_retries + 1)
-                    + self.max_delay_seconds
-                    + 10
-                )
-                asyncio.run_coroutine_threadsafe(
-                    asyncio.to_thread(_run_export_sync), loop
-                ).result(timeout=timeout)
+                loop.run_in_executor(None, _run_export_sync)
             else:
                 _run_export_sync()
         except Exception:
-            pass
+            logger.debug("Respan export failed", exc_info=True)
 
 
 class RespanSpanExporter(RespanAnthropicAgentsExporter):

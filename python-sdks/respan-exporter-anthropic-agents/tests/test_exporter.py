@@ -85,7 +85,9 @@ except ImportError:
 
 try:
     import respan_sdk  # noqa: F401
-except ImportError:
+    from respan_sdk.respan_types.exporter_session_types import ExporterSessionState  # noqa: F401
+    from respan_sdk.utils import RetryHandler  # noqa: F401
+except (ImportError, ModuleNotFoundError):
     respan_sdk_module = types.ModuleType("respan_sdk")
     respan_sdk_module.__path__ = []  # type: ignore[attr-defined]
     respan_sdk_constants_module = types.ModuleType("respan_sdk.constants")
@@ -144,16 +146,53 @@ except ImportError:
         resolve_tracing_ingest_endpoint
     )
 
+    respan_sdk_exporter_session_types_module = types.ModuleType(
+        "respan_sdk.respan_types.exporter_session_types"
+    )
+    respan_sdk_utils_module = types.ModuleType("respan_sdk.utils")
+    respan_sdk_utils_module.__path__ = []  # type: ignore[attr-defined]
+
+    @dataclass
+    class ExporterSessionState:
+        session_id: str
+        trace_id: str
+        trace_name: str
+        started_at: Any
+        pending_tools: Dict[str, Any] = field(default_factory=dict)
+        is_root_emitted: bool = False
+
+    @dataclass
+    class PendingToolState:
+        span_unique_id: str
+        started_at: Any
+        tool_name: str
+        tool_input: Any = None
+
+    class RetryHandler:
+        def __init__(self, **kwargs: Any) -> None:
+            pass
+
+        def execute(self, fn: Callable[..., Any], context: str = "") -> None:
+            fn()
+
+    respan_sdk_exporter_session_types_module.ExporterSessionState = ExporterSessionState
+    respan_sdk_exporter_session_types_module.PendingToolState = PendingToolState
+    respan_sdk_utils_module.RetryHandler = RetryHandler
+
     respan_sdk_internal_types_module.Message = Message
     respan_sdk_param_types_module.RespanTextLogParams = RespanTextLogParams
     respan_sdk_module.constants = respan_sdk_constants_module
     respan_sdk_module.respan_types = respan_sdk_types_module
+    respan_sdk_module.utils = respan_sdk_utils_module
     respan_sdk_constants_module.llm_logging = respan_sdk_llm_logging_module
     respan_sdk_constants_module.tracing_constants = (
         respan_sdk_tracing_constants_module
     )
     respan_sdk_types_module._internal_types = respan_sdk_internal_types_module
     respan_sdk_types_module.param_types = respan_sdk_param_types_module
+    respan_sdk_types_module.exporter_session_types = (
+        respan_sdk_exporter_session_types_module
+    )
 
     sys.modules["respan_sdk"] = respan_sdk_module
     sys.modules["respan_sdk.constants"] = respan_sdk_constants_module
@@ -166,6 +205,10 @@ except ImportError:
         respan_sdk_internal_types_module
     )
     sys.modules["respan_sdk.respan_types.param_types"] = respan_sdk_param_types_module
+    sys.modules["respan_sdk.respan_types.exporter_session_types"] = (
+        respan_sdk_exporter_session_types_module
+    )
+    sys.modules["respan_sdk.utils"] = respan_sdk_utils_module
 
 
 from claude_agent_sdk import ResultMessage, AssistantMessage
