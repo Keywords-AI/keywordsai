@@ -12,7 +12,7 @@ pip install respan-exporter-dify
 
 ```python
 from dify_client import Client
-from respan_exporter_dify import create_client
+from respan_exporter_dify.exporter import create_client
 
 dify_client = Client(api_key="your-dify-api-key")
 

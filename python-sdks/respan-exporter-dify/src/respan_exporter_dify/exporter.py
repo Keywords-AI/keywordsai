@@ -1,13 +1,10 @@
 import logging
 import os
+from datetime import datetime
 from typing import Any, Optional
 
-try:
-    from dify_client import Client, AsyncClient
-    from dify_client.models import ResponseMode
-except ImportError:
-    pass
-
+from dify_client import AsyncClient, Client
+from dify_client.models import ResponseMode
 from respan_sdk.constants import RESPAN_TRACING_INGEST_ENDPOINT
 from respan_sdk.respan_types import RespanParams
 from respan_exporter_dify.utils import export_dify_call, now_utc
@@ -59,67 +56,14 @@ class RespanDifyClient:
         is_stream = req and getattr(req, "response_mode", None) == ResponseMode.STREAMING
 
         start_time = now_utc()
-        
-        try:
-            result = method(**kwargs)
-            
-            if is_stream:
-                def stream_generator():
-                    events = []
-                    try:
-                        for chunk in result:
-                            events.append(chunk)
-                            yield chunk
-                        end_time = now_utc()
-                        export_dify_call(
-                            api_key=self.api_key,
-                            endpoint=self.endpoint,
-                            timeout=self.timeout,
-                            method_name=method_name,
-                            start_time=start_time,
-                            end_time=end_time,
-                            status="success",
-                            kwargs=kwargs,
-                            result=events,
-                            error_message=None,
-                            params=params,
-                        )
-                    except Exception as e:
-                        end_time = now_utc()
-                        export_dify_call(
-                            api_key=self.api_key,
-                            endpoint=self.endpoint,
-                            timeout=self.timeout,
-                            method_name=method_name,
-                            start_time=start_time,
-                            end_time=end_time,
-                            status="error",
-                            kwargs=kwargs,
-                            result=events,
-                            error_message=str(e),
-                            params=params,
-                        )
-                        raise
-                return stream_generator()
-            else:
-                end_time = now_utc()
-                export_dify_call(
-                    api_key=self.api_key,
-                    endpoint=self.endpoint,
-                    timeout=self.timeout,
-                    method_name=method_name,
-                    start_time=start_time,
-                    end_time=end_time,
-                    status="success",
-                    kwargs=kwargs,
-                    result=result,
-                    error_message=None,
-                    params=params,
-                )
-                return result
-                
-        except Exception as exc:
-            end_time = now_utc()
+
+        def _export(
+            *,
+            end_time: datetime,
+            status: str,
+            result: Any,
+            error_message: Optional[str],
+        ) -> None:
             export_dify_call(
                 api_key=self.api_key,
                 endpoint=self.endpoint,
@@ -127,11 +71,54 @@ class RespanDifyClient:
                 method_name=method_name,
                 start_time=start_time,
                 end_time=end_time,
-                status="error",
+                status=status,
                 kwargs=kwargs,
+                result=result,
+                error_message=error_message,
+                params=params,
+            )
+
+        try:
+            result = method(**kwargs)
+
+            if is_stream:
+                def stream_generator():
+                    events = []
+                    try:
+                        for chunk in result:
+                            events.append(chunk)
+                            yield chunk
+                        _export(
+                            end_time=now_utc(),
+                            status="success",
+                            result=events,
+                            error_message=None,
+                        )
+                    except Exception as exc:
+                        _export(
+                            end_time=now_utc(),
+                            status="error",
+                            result=events,
+                            error_message=str(exc),
+                        )
+                        raise
+
+                return stream_generator()
+            else:
+                _export(
+                    end_time=now_utc(),
+                    status="success",
+                    result=result,
+                    error_message=None,
+                )
+                return result
+
+        except Exception as exc:
+            _export(
+                end_time=now_utc(),
+                status="error",
                 result=None,
                 error_message=str(exc),
-                params=params,
             )
             raise
 
@@ -188,67 +175,14 @@ class RespanAsyncDifyClient:
         is_stream = req and getattr(req, "response_mode", None) == ResponseMode.STREAMING
 
         start_time = now_utc()
-        
-        try:
-            result = await method(**kwargs)
-            
-            if is_stream:
-                async def stream_generator():
-                    events = []
-                    try:
-                        async for chunk in result:
-                            events.append(chunk)
-                            yield chunk
-                        end_time = now_utc()
-                        export_dify_call(
-                            api_key=self.api_key,
-                            endpoint=self.endpoint,
-                            timeout=self.timeout,
-                            method_name=method_name,
-                            start_time=start_time,
-                            end_time=end_time,
-                            status="success",
-                            kwargs=kwargs,
-                            result=events,
-                            error_message=None,
-                            params=params,
-                        )
-                    except Exception as e:
-                        end_time = now_utc()
-                        export_dify_call(
-                            api_key=self.api_key,
-                            endpoint=self.endpoint,
-                            timeout=self.timeout,
-                            method_name=method_name,
-                            start_time=start_time,
-                            end_time=end_time,
-                            status="error",
-                            kwargs=kwargs,
-                            result=events,
-                            error_message=str(e),
-                            params=params,
-                        )
-                        raise
-                return stream_generator()
-            else:
-                end_time = now_utc()
-                export_dify_call(
-                    api_key=self.api_key,
-                    endpoint=self.endpoint,
-                    timeout=self.timeout,
-                    method_name=method_name,
-                    start_time=start_time,
-                    end_time=end_time,
-                    status="success",
-                    kwargs=kwargs,
-                    result=result,
-                    error_message=None,
-                    params=params,
-                )
-                return result
-                
-        except Exception as exc:
-            end_time = now_utc()
+
+        def _export(
+            *,
+            end_time: datetime,
+            status: str,
+            result: Any,
+            error_message: Optional[str],
+        ) -> None:
             export_dify_call(
                 api_key=self.api_key,
                 endpoint=self.endpoint,
@@ -256,11 +190,54 @@ class RespanAsyncDifyClient:
                 method_name=method_name,
                 start_time=start_time,
                 end_time=end_time,
-                status="error",
+                status=status,
                 kwargs=kwargs,
+                result=result,
+                error_message=error_message,
+                params=params,
+            )
+
+        try:
+            result = await method(**kwargs)
+
+            if is_stream:
+                async def stream_generator():
+                    events = []
+                    try:
+                        async for chunk in result:
+                            events.append(chunk)
+                            yield chunk
+                        _export(
+                            end_time=now_utc(),
+                            status="success",
+                            result=events,
+                            error_message=None,
+                        )
+                    except Exception as exc:
+                        _export(
+                            end_time=now_utc(),
+                            status="error",
+                            result=events,
+                            error_message=str(exc),
+                        )
+                        raise
+
+                return stream_generator()
+            else:
+                _export(
+                    end_time=now_utc(),
+                    status="success",
+                    result=result,
+                    error_message=None,
+                )
+                return result
+
+        except Exception as exc:
+            _export(
+                end_time=now_utc(),
+                status="error",
                 result=None,
                 error_message=str(exc),
-                params=params,
             )
             raise
 

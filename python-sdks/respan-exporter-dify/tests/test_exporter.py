@@ -1,6 +1,22 @@
-import pytest
-from dify_client import Client, AsyncClient
-from respan_exporter_dify import create_client, create_async_client
+from dify_client import AsyncClient, Client
+from respan_sdk.respan_types import RespanParams
+from respan_exporter_dify.exporter import create_async_client, create_client
+from respan_exporter_dify.utils import _build_export_payloads, now_utc
+
+
+class AssistantMessage:
+    def __init__(self, *, message_id: str, usage: dict, content: str):
+        self.id = message_id
+        self.type = "assistant"
+        self.usage = usage
+        self.content = content
+
+
+class ResultMessage:
+    def __init__(self, *, messages: list, usage: dict):
+        self.messages = messages
+        self.usage = usage
+
 
 def test_create_client():
     client = Client(api_key="test-dify-key")
@@ -8,13 +24,139 @@ def test_create_client():
     assert respan_client.api_key == "test-respan-key"
     assert respan_client._client == client
 
+
 def test_create_async_client():
     client = AsyncClient(api_key="test-dify-key")
     respan_client = create_async_client(client=client, api_key="test-respan-key")
     assert respan_client.api_key == "test-respan-key"
     assert respan_client._client == client
 
+
 def test_create_client_with_dify_key():
     respan_client = create_client(dify_api_key="test-dify-key", api_key="test-respan-key")
     assert respan_client.api_key == "test-respan-key"
     assert respan_client._client.api_key == "test-dify-key"
+
+
+def test_build_export_payloads_prefers_message_usage_and_session():
+    start_time = now_utc()
+    end_time = now_utc()
+    params = RespanParams()
+    result = [
+        {
+            "event": "message",
+            "sessionId": "session-from-message",
+            "usage": {"input_tokens": 11, "output_tokens": 5},
+            "response": {"answer": "hello world"},
+        }
+    ]
+
+    payloads = _build_export_payloads(
+        method_name="chat_messages",
+        start_time=start_time,
+        end_time=end_time,
+        status="success",
+        kwargs={"req": {"sessionId": "session-from-hook"}},
+        result=result,
+        error_message=None,
+        params=params,
+    )
+
+    assert len(payloads) == 1
+    payload = payloads[0]
+    assert payload["span_name"] == "dify.message"
+    assert payload["session_identifier"] == "session-from-message"
+    assert payload["prompt_tokens"] == 11
+    assert payload["completion_tokens"] == 5
+    assert payload["usage"]["prompt_tokens"] == 11
+    assert payload["usage"]["completion_tokens"] == 5
+    assert "total_request_tokens" not in payload
+    assert "total_tokens" not in payload["usage"]
+    assert "hello world" in payload["output"]
+    assert "completion_message" not in payload
+    assert "completion_messages" not in payload
+
+
+def test_build_export_payloads_falls_back_to_result_usage_and_hook_session():
+    start_time = now_utc()
+    end_time = now_utc()
+    params = RespanParams()
+    result = {
+        "usage": {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 5},
+        "messages": [{"type": "assistant", "content": "final answer"}],
+    }
+
+    payloads = _build_export_payloads(
+        method_name="chat_messages",
+        start_time=start_time,
+        end_time=end_time,
+        status="success",
+        kwargs={"req": {"sessionId": "session-from-hook"}},
+        result=result,
+        error_message=None,
+        params=params,
+    )
+
+    assert len(payloads) == 1
+    payload = payloads[0]
+    assert payload["span_name"] == "dify.assistant"
+    assert payload["session_identifier"] == "session-from-hook"
+    assert payload["prompt_tokens"] == 2
+    assert payload["completion_tokens"] == 3
+    assert payload["total_request_tokens"] == 5
+    assert payload["usage"]["prompt_tokens"] == 2
+    assert payload["usage"]["completion_tokens"] == 3
+    assert payload["usage"]["total_tokens"] == 5
+
+
+def test_build_export_payloads_uses_assistant_message_usage_and_dedupes_by_id():
+    start_time = now_utc()
+    end_time = now_utc()
+    params = RespanParams()
+    result = ResultMessage(
+        messages=[
+            AssistantMessage(
+                message_id="turn-1",
+                usage={"input_tokens": 7, "output_tokens": 4, "cache_read_input_tokens": 2},
+                content="first",
+            ),
+            AssistantMessage(
+                message_id="turn-1",
+                usage={"input_tokens": 99, "output_tokens": 99},
+                content="duplicate same turn",
+            ),
+            AssistantMessage(
+                message_id="turn-2",
+                usage={"input_tokens": 3, "output_tokens": 1},
+                content="second",
+            ),
+        ],
+        usage={"prompt_tokens": 100, "completion_tokens": 100, "total_tokens": 200},
+    )
+
+    payloads = _build_export_payloads(
+        method_name="chat_messages",
+        start_time=start_time,
+        end_time=end_time,
+        status="success",
+        kwargs={"req": {"sessionId": "session-from-hook"}},
+        result=result,
+        error_message=None,
+        params=params,
+    )
+
+    assert len(payloads) == 2
+
+    first_payload = payloads[0]
+    assert first_payload["span_name"] == "dify.assistant"
+    assert first_payload["prompt_tokens"] == 7
+    assert first_payload["completion_tokens"] == 4
+    assert first_payload["usage"]["cache_read_input_tokens"] == 2
+    assert "total_request_tokens" not in first_payload
+    assert first_payload["metadata"]["message_id"] == "turn-1"
+
+    second_payload = payloads[1]
+    assert second_payload["prompt_tokens"] == 3
+    assert second_payload["completion_tokens"] == 1
+    assert "total_request_tokens" not in second_payload
+    assert second_payload["metadata"]["message_id"] == "turn-2"
