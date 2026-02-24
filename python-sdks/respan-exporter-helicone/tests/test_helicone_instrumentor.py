@@ -1,8 +1,5 @@
 import json
-import logging
-import os
 import threading
-from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -92,4 +89,30 @@ def test_helicone_instrumentor_patching(instrumentor, mock_requests_post):
     
     output_decoded = json.loads(payload["output"])
     assert output_decoded == response_data["choices"]
+
+
+def test_helicone_metadata_header_mapping_is_case_insensitive(mock_requests_post):
+    instr = HeliconeInstrumentor()
+    instr.instrument(
+        api_key="test-api-key",
+        endpoint="https://test.endpoint/api",
+    )
+
+    instr._send_to_respan(
+        provider="openai",
+        request={"model": "gpt-4", "prompt": "hello"},
+        response="world",
+        options={
+            "start_time": 1000.0,
+            "end_time": 1001.0,
+            "additional_headers": {
+                "helicone-user-id": "user-lower",
+                "helicone-session-id": "session-lower",
+            },
+        },
+    )
+
+    payload = mock_requests_post.call_args.kwargs["json"][0]
+    assert payload["customer_identifier"] == "user-lower"
+    assert payload["session_identifier"] == "session-lower"
 

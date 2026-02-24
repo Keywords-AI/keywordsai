@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import requests
 import wrapt
@@ -22,6 +22,11 @@ except ImportError:
     HeliconeManualLogger = None
 
 logger = logging.getLogger(__name__)
+
+HELICONE_LOGGER_MODULE = "helicone_helpers.manual_logger"
+HELICONE_SEND_LOG_FUNCTION = "HeliconeManualLogger.send_log"
+HELICONE_USER_ID_HEADER = "helicone-user-id"
+HELICONE_SESSION_ID_HEADER = "helicone-session-id"
 
 
 class HeliconeInstrumentor:
@@ -37,8 +42,11 @@ class HeliconeInstrumentor:
         # Helicone logs will now also go to Respan!
     """
 
-    _api_key: Optional[str] = None
-    _endpoint: Optional[str] = None
+    def __init__(self) -> None:
+        self._api_key: Optional[str] = None
+        self._endpoint: Optional[str] = None
+        self._timeout = 10
+        self._is_patched = False
 
     def instrument(
         self,
@@ -71,39 +79,47 @@ class HeliconeInstrumentor:
 
     def uninstrument(self) -> None:
         """Disable instrumentation by removing wrappers."""
+        if self._is_patched and hasattr(wrapt, "unwrap_function_wrapper"):
+            try:
+                wrapt.unwrap_function_wrapper(
+                    module=HELICONE_LOGGER_MODULE,
+                    name=HELICONE_SEND_LOG_FUNCTION,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to unwrap Helicone instrumentation cleanly: %s",
+                    exc,
+                )
+        self._is_patched = False
         logger.info("Helicone instrumentation disabled")
 
     def _patch(self) -> None:
         """Patch HeliconeManualLogger.send_log to intercept data."""
+        if self._is_patched:
+            return
+
         if HeliconeManualLogger is None:
             logger.error("helicone-helpers is not installed. Cannot instrument Helicone.")
             return
 
-        def send_log_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+        def send_log_wrapper(
+            wrapped: Any,
+            instance: Any,
+            args: Tuple[Any, ...],
+            kwargs: Dict[str, Any],
+        ) -> Any:
             """Wrapper for send_log that intercepts log events."""
-            # Extract arguments based on HeliconeManualLogger signature
-            provider = kwargs.get("provider")
-            if not provider and len(args) > 0:
-                provider = args[0]
+            del instance
+            provider, request, response, options = self._resolve_send_log_args(
+                args=args,
+                kwargs=kwargs,
+            )
 
-            request = kwargs.get("request")
-            if not request and len(args) > 1:
-                request = args[1]
+            # Always call original send_log exactly once so Helicone behavior is preserved.
+            result = wrapped(*args, **kwargs)
 
-            response = kwargs.get("response")
-            if not response and len(args) > 2:
-                response = args[2]
-
-            options = kwargs.get("options")
-            if not options and len(args) > 3:
-                options = args[3]
-
-            try:
-                # Still call the original send_log to ensure Helicone receives it
-                result = wrapped(*args, **kwargs)
-                
-                # Transform and send to Respan in a background thread
-                if self._api_key and request:
+            if self._api_key and isinstance(request, dict):
+                try:
                     threading.Thread(
                         target=self._send_to_respan,
                         kwargs={
@@ -114,16 +130,28 @@ class HeliconeInstrumentor:
                         },
                         daemon=True,
                     ).start()
-                return result
-            except Exception as e:
-                logger.error(f"Error in Helicone wrap: {e}")
-                return wrapped(*args, **kwargs)
+                except Exception as exc:
+                    logger.error("Error in Helicone wrapper: %s", exc)
+            return result
 
         wrapt.wrap_function_wrapper(
-            module="helicone_helpers.manual_logger",
-            name="HeliconeManualLogger.send_log",
-            wrapper=send_log_wrapper
+            module=HELICONE_LOGGER_MODULE,
+            name=HELICONE_SEND_LOG_FUNCTION,
+            wrapper=send_log_wrapper,
         )
+        self._is_patched = True
+
+    @staticmethod
+    def _resolve_send_log_args(
+        args: Tuple[Any, ...],
+        kwargs: Dict[str, Any],
+    ) -> Tuple[Optional[str], Optional[Dict[str, Any]], Union[Dict[str, Any], str, None], Optional[Dict[str, Any]]]:
+        """Resolve Helicone send_log args regardless of positional/keyword calling style."""
+        provider = kwargs.get("provider", args[0] if len(args) > 0 else None)
+        request = kwargs.get("request", args[1] if len(args) > 1 else None)
+        response = kwargs.get("response", args[2] if len(args) > 2 else None)
+        options = kwargs.get("options", args[3] if len(args) > 3 else None)
+        return provider, request, response, options
 
     def _send_to_respan(
         self,
@@ -184,18 +212,22 @@ class HeliconeInstrumentor:
             # Process metadata and headers
             metadata = {}
             additional_headers = options.get("additional_headers", {})
-            for key, value in additional_headers.items():
-                if key.lower().startswith("helicone-"):
-                    metadata[key] = value
+            if isinstance(additional_headers, dict):
+                for key, value in additional_headers.items():
+                    if isinstance(key, str) and key.lower().startswith("helicone-"):
+                        metadata[key] = value
 
             if metadata:
                 payload["metadata"] = metadata
                 # Map specific helicone properties to Respan customer_identifier or session_id
                 # (e.g., Helicone-User-Id, Helicone-Session-Id)
-                if "Helicone-User-Id" in metadata:
-                    payload["customer_identifier"] = metadata["Helicone-User-Id"]
-                if "Helicone-Session-Id" in metadata:
-                    payload["session_identifier"] = metadata["Helicone-Session-Id"]
+                normalized_metadata = {
+                    key.lower(): value for key, value in metadata.items()
+                }
+                if HELICONE_USER_ID_HEADER in normalized_metadata:
+                    payload["customer_identifier"] = normalized_metadata[HELICONE_USER_ID_HEADER]
+                if HELICONE_SESSION_ID_HEADER in normalized_metadata:
+                    payload["session_identifier"] = normalized_metadata[HELICONE_SESSION_ID_HEADER]
 
             # Send payload
             headers = {
@@ -213,5 +245,5 @@ class HeliconeInstrumentor:
             if resp.status_code not in (200, 201):
                 logger.warning(f"Respan export failed: {resp.status_code} - {resp.text}")
 
-        except Exception as e:
-            logger.error(f"Failed to send Helicone log to Respan: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error("Failed to send Helicone log to Respan: %s", exc, exc_info=True)
