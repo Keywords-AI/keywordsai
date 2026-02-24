@@ -11,8 +11,6 @@ import {
 import {
   buildTraceNameFromPrompt,
   coerceInteger,
-  extractAssistantContent,
-  extractUserText,
   toSerializableMetadata,
   toSerializableToolCalls,
   toSerializableValue,
@@ -364,11 +362,6 @@ export class RespanAnthropicAgentsExporter {
       return;
     }
     const sessionState = this.ensureSessionState({ sessionId: resolvedSessionId });
-    const userText = this.extractUserText({ message });
-    if (!userText) {
-      return;
-    }
-
     const now = new Date();
     const payload = this.createPayload({
       sessionState,
@@ -378,7 +371,7 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.TASK,
       startTime: now,
       timestamp: now,
-      inputValue: userText,
+      inputValue: message,
       metadata: { source: "stream_user_message" },
     });
     await this.sendPayloads({ payloads: [payload] });
@@ -396,52 +389,49 @@ export class RespanAnthropicAgentsExporter {
       return;
     }
     const sessionState = this.ensureSessionState({ sessionId: resolvedSessionId });
-    const extractedContent = this.extractAssistantContent({ message });
+    const inner = message?.message && typeof message.message === "object" ? message.message : message;
+    const content = inner?.content;
 
-    if (
-      !extractedContent.outputText &&
-      extractedContent.toolCalls.length === 0 &&
-      extractedContent.reasoning.length === 0
-    ) {
-      return;
+    const usage = (message?.usage && typeof message.usage === "object"
+      ? message.usage
+      : inner?.usage && typeof inner.usage === "object"
+        ? inner.usage
+        : {}) as Record<string, unknown>;
+    const promptTokens = this.coerceInteger({
+      value: usage.input_tokens ?? usage.prompt_tokens,
+    });
+    const completionTokens = this.coerceInteger({
+      value: usage.output_tokens ?? usage.completion_tokens,
+    });
+    let totalRequestTokens = this.coerceInteger({ value: usage.total_tokens });
+    if (totalRequestTokens === null) {
+      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0) || null;
     }
-
-    const spanTools = extractedContent.toolCalls
-      .map((toolCall) => {
-        if (typeof toolCall.name === "string") {
-          return toolCall.name;
-        }
-        return null;
-      })
-      .filter((toolName): toolName is string => Boolean(toolName));
-
-    const completionMessage =
-      extractedContent.outputText && extractedContent.outputText.length > 0
-        ? {
-            role: "assistant",
-            content: extractedContent.outputText,
-          }
-        : undefined;
+    const promptCacheHitTokens = this.coerceInteger({
+      value: usage.cache_read_input_tokens,
+    });
+    const promptCacheCreationTokens = this.coerceInteger({
+      value: usage.cache_creation_input_tokens,
+    });
 
     const now = new Date();
     const payload = this.createPayload({
       sessionState,
-      spanUniqueId: randomUUID(),
+      spanUniqueId: (message?.id && String(message.id)) || randomUUID(),
       spanParentId: sessionState.traceId,
       spanName: "assistant_message",
       logType: RespanLogType.GENERATION,
       startTime: now,
       timestamp: now,
-      outputValue: extractedContent.outputText,
-      model: extractedContent.model || null,
-      metadata: {
-        reasoning: extractedContent.reasoning.length > 0 ? extractedContent.reasoning : undefined,
-        source: "stream_assistant_message",
-      },
-      spanTools: spanTools.length > 0 ? spanTools : undefined,
-      toolCalls: extractedContent.toolCalls.length > 0 ? extractedContent.toolCalls : undefined,
-      completionMessage,
-      completionMessages: completionMessage ? [completionMessage] : undefined,
+      inputValue: message,
+      outputValue: content !== undefined ? content : message,
+      model: (inner?.model && String(inner.model)) || (message?.model && String(message.model)) || null,
+      metadata: { source: "stream_assistant_message" },
+      promptTokens,
+      completionTokens,
+      totalRequestTokens,
+      promptCacheHitTokens,
+      promptCacheCreationTokens,
     });
     await this.sendPayloads({ payloads: [payload] });
   }
@@ -647,8 +637,6 @@ export class RespanAnthropicAgentsExporter {
     metadata,
     spanTools,
     toolCalls,
-    completionMessage,
-    completionMessages,
     promptTokens,
     completionTokens,
     totalRequestTokens,
@@ -670,8 +658,6 @@ export class RespanAnthropicAgentsExporter {
     metadata?: Record<string, unknown>;
     spanTools?: string[];
     toolCalls?: Record<string, unknown>[];
-    completionMessage?: Record<string, unknown>;
-    completionMessages?: Record<string, unknown>[];
     promptTokens?: number | null;
     completionTokens?: number | null;
     totalRequestTokens?: number | null;
@@ -708,8 +694,6 @@ export class RespanAnthropicAgentsExporter {
       metadata: this.toSerializableMetadata({ value: metadata }),
       span_tools: spanTools,
       tool_calls: this.toSerializableToolCalls({ value: toolCalls }) as any,
-      completion_message: completionMessage as any,
-      completion_messages: completionMessages as any,
       prompt_tokens: promptTokens ?? undefined,
       completion_tokens: completionTokens ?? undefined,
       total_request_tokens: totalRequestTokens ?? undefined,
@@ -738,23 +722,6 @@ export class RespanAnthropicAgentsExporter {
 
   private toSerializableValue({ value }: { value: unknown }): unknown {
     return toSerializableValue({ value });
-  }
-
-  private extractAssistantContent({
-    message,
-  }: {
-    message: any;
-  }): {
-    outputText: string | null;
-    toolCalls: Record<string, unknown>[];
-    reasoning: Record<string, unknown>[];
-    model: string | null;
-  } {
-    return extractAssistantContent({ message });
-  }
-
-  private extractUserText({ message }: { message: any }): string | null {
-    return extractUserText({ message });
   }
 
   private async sendPayloads({

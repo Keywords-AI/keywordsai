@@ -246,7 +246,7 @@ test("payload serialization - dates and metadata are JSON-serializable", async (
   }
 });
 
-test("payload serialization - assistant message with tool_calls and reasoning", async () => {
+test("payload serialization - assistant message with generic I/O and per-turn usage", async () => {
   const originalFetch = globalThis.fetch;
   const capturedBodies: string[] = [];
   globalThis.fetch = captureFetch(capturedBodies);
@@ -257,21 +257,28 @@ test("payload serialization - assistant message with tool_calls and reasoning", 
       endpoint: "https://example.com/ingest",
     });
 
-    await exporter.trackMessage({
-      message: {
-        type: "assistant",
-        content: [
-          { type: "text", text: "Done." },
-          {
-            type: "tool_use",
-            id: "tc-1",
-            name: "my_tool",
-            input: { x: 1 },
-          },
-        ],
-        model: "claude-3-5-sonnet",
-        reasoning: [{ type: "reasoning", thinking: "Consider..." }],
+    const assistantMessage = {
+      id: "msg-abc",
+      type: "assistant",
+      content: [
+        { type: "text", text: "Done." },
+        {
+          type: "tool_use",
+          id: "tc-1",
+          name: "my_tool",
+          input: { x: 1 },
+        },
+      ],
+      model: "claude-3-5-sonnet",
+      usage: {
+        input_tokens: 10,
+        output_tokens: 5,
+        cache_read_input_tokens: 2,
       },
+    };
+
+    await exporter.trackMessage({
+      message: assistantMessage,
       sessionId: "sess-ast",
     });
 
@@ -282,7 +289,12 @@ test("payload serialization - assistant message with tool_calls and reasoning", 
     );
     assert.ok(genPayload, "expected assistant_message payload");
     assert.equal(genPayload?.model, "claude-3-5-sonnet");
-    assert.ok(Array.isArray(genPayload?.tool_calls));
+    assert.ok(genPayload?.input && typeof genPayload.input === "object", "input is serialized raw message");
+    assert.ok(genPayload?.output && Array.isArray(genPayload.output), "output is serialized raw content");
+    assert.equal(genPayload?.prompt_tokens, 10, "per-turn input_tokens");
+    assert.equal(genPayload?.completion_tokens, 5, "per-turn output_tokens");
+    assert.equal(genPayload?.prompt_cache_hit_tokens, 2, "per-turn cache_read_input_tokens");
+    assert.equal(genPayload?.span_unique_id, "msg-abc", "deduplicate by message.id");
     assert.ok(genPayload?.metadata && typeof genPayload.metadata === "object", "expected metadata object");
   } finally {
     globalThis.fetch = originalFetch;
