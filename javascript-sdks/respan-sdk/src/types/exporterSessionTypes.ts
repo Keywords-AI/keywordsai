@@ -19,6 +19,7 @@ export type SessionState = {
   startedAt: Date;
   pendingTools: Map<string, PendingToolState>;
   isRootEmitted: boolean;
+  prompt?: unknown;
 };
 
 /** Alias for cross-language consistency with Python ExporterSessionState. */

@@ -245,6 +245,7 @@ class RespanAnthropicAgentsExporter:
             session_id=session_id,
             trace_name=trace_name,
         )
+        session_state.prompt = prompt
 
         now = utc_now()
         payload = self._create_payload(
@@ -441,9 +442,9 @@ class RespanAnthropicAgentsExporter:
             span_parent_id=session_state.trace_id,
             span_name="assistant_message",
             log_type=LOG_TYPE_GENERATION,
-            start_time=now,
+            start_time=session_state.started_at,
             timestamp=now,
-            input_value=None,
+            input_value=session_state.prompt,
             output_value=output_value,
             model=assistant_message.model,
             metadata={"source": "stream_assistant_message"},
@@ -482,9 +483,9 @@ class RespanAnthropicAgentsExporter:
             span_parent_id=session_state.trace_id,
             span_name=f"result:{result_message.subtype}",
             log_type=LOG_TYPE_AGENT,
-            start_time=now,
+            start_time=session_state.started_at,
             timestamp=now,
-            input_value=None,
+            input_value=session_state.prompt,
             output_value=result_message.result or result_message.subtype,
             model=None,
             metadata={

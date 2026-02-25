@@ -221,6 +221,7 @@ export class RespanAnthropicAgentsExporter {
     const prompt = input.prompt;
     const traceName = this.buildTraceNameFromPrompt({ prompt });
     const sessionState = this.ensureSessionState({ sessionId, traceName });
+    sessionState.prompt = prompt;
 
     const now = new Date();
     const payload = this.createPayload({
@@ -421,9 +422,9 @@ export class RespanAnthropicAgentsExporter {
       spanParentId: sessionState.traceId,
       spanName: "assistant_message",
       logType: RespanLogType.GENERATION,
-      startTime: now,
+      startTime: sessionState.startedAt,
       timestamp: now,
-      inputValue: message,
+      inputValue: sessionState.prompt,
       outputValue: content !== undefined ? content : message,
       model: (inner?.model && String(inner.model)) || (message?.model && String(message.model)) || null,
       metadata: { source: "stream_assistant_message" },
@@ -475,8 +476,9 @@ export class RespanAnthropicAgentsExporter {
       spanParentId: sessionState.traceId,
       spanName: `result:${String(message.subtype || "unknown")}`,
       logType: RespanLogType.AGENT,
-      startTime: now,
+      startTime: sessionState.startedAt,
       timestamp: now,
+      inputValue: sessionState.prompt,
       outputValue: message.result || message.subtype,
       metadata: {
         duration_ms: message.duration_ms,
