@@ -26,6 +26,7 @@ export class RespanAnthropicAgentsExporter {
 
   private sessions: Map<string, SessionState>;
   private lastSessionId: string | null;
+  private lastModel: string | null;
 
   constructor({
     apiKey = process.env.RESPAN_API_KEY || process.env.KEYWORDSAI_API_KEY || null,
@@ -51,6 +52,7 @@ export class RespanAnthropicAgentsExporter {
 
     this.sessions = new Map();
     this.lastSessionId = null;
+    this.lastModel = null;
   }
   setEndpoint(endpoint: string): void {
     this.endpoint = endpoint;
@@ -125,7 +127,6 @@ export class RespanAnthropicAgentsExporter {
       await this.trackMessage({
         message,
         sessionId: resolvedSessionId || undefined,
-        prompt,
       });
       yield message;
     }
@@ -134,32 +135,12 @@ export class RespanAnthropicAgentsExporter {
   async trackMessage({
     message,
     sessionId,
-    prompt,
   }: {
     message: any;
     sessionId?: string;
-    prompt?: string | AsyncIterable<any>;
   }): Promise<void> {
     if (!message || typeof message !== "object") {
       return;
-    }
-
-    // Store prompt on the session if provided and not yet captured
-    if (prompt) {
-      const resolvedSid = sessionId || this.lastSessionId;
-      if (resolvedSid) {
-        const session = this.sessions.get(resolvedSid);
-        if (session && !session.prompt) {
-          session.prompt = prompt;
-          // Also fix the trace name if it's still auto-generated
-          if (session.traceName.startsWith("anthropic-session-")) {
-            const traceName = this.buildTraceNameFromPrompt({ prompt });
-            if (traceName) {
-              session.traceName = traceName;
-            }
-          }
-        }
-      }
     }
 
     if (message.type === "system") {
@@ -242,7 +223,6 @@ export class RespanAnthropicAgentsExporter {
     const prompt = input.prompt;
     const traceName = this.buildTraceNameFromPrompt({ prompt });
     const sessionState = this.ensureSessionState({ sessionId, traceName });
-    sessionState.prompt = prompt;
 
     const now = new Date();
     const payload = this.createPayload({
@@ -253,7 +233,7 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.TASK,
       startTime: now,
       timestamp: now,
-      inputValue: prompt,
+      inputValue: input,
       metadata: { hook_event_name: "UserPromptSubmit" },
     });
     await this.sendPayloads({ payloads: [payload] });
@@ -394,7 +374,6 @@ export class RespanAnthropicAgentsExporter {
       startTime: now,
       timestamp: now,
       inputValue: message,
-      metadata: { source: "stream_user_message" },
     });
     await this.sendPayloads({ payloads: [payload] });
   }
@@ -411,30 +390,32 @@ export class RespanAnthropicAgentsExporter {
       return;
     }
     const sessionState = this.ensureSessionState({ sessionId: resolvedSessionId });
-    const inner = message?.message && typeof message.message === "object" ? message.message : message;
-    const content = inner?.content;
 
     const usage = (message?.usage && typeof message.usage === "object"
       ? message.usage
-      : inner?.usage && typeof inner.usage === "object"
-        ? inner.usage
-        : {}) as Record<string, unknown>;
-    const promptTokens = this.coerceInteger({
-      value: usage.input_tokens ?? usage.prompt_tokens,
-    });
-    const completionTokens = this.coerceInteger({
-      value: usage.output_tokens ?? usage.completion_tokens,
-    });
-    let totalRequestTokens = this.coerceInteger({ value: usage.total_tokens });
-    if (totalRequestTokens === null && (promptTokens !== null || completionTokens !== null)) {
-      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0);
+      : {}) as Record<string, unknown>;
+
+    const model = (message?.model && String(message.model)) || null;
+    if (model) {
+      this.lastModel = model;
     }
-    const promptCacheHitTokens = this.coerceInteger({
-      value: usage.cache_read_input_tokens,
-    });
-    const promptCacheCreationTokens = this.coerceInteger({
-      value: usage.cache_creation_input_tokens,
-    });
+
+    const contentBlocks: any[] = Array.isArray(message?.content) ? message.content : [];
+    const textParts: string[] = [];
+    const toolCalls: Record<string, unknown>[] = [];
+    for (const block of contentBlocks) {
+      if (block?.type === "text") {
+        textParts.push(String(block.text ?? ""));
+      } else if (block?.type === "tool_use") {
+        toolCalls.push({
+          id: block.id ?? null,
+          name: block.name ?? null,
+          input: block.input ?? null,
+        });
+      }
+    }
+
+    const outputText = textParts.length > 0 ? textParts.join("\n") : null;
 
     const now = new Date();
     const payload = this.createPayload({
@@ -445,15 +426,14 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.GENERATION,
       startTime: sessionState.startedAt,
       timestamp: now,
-      inputValue: sessionState.prompt,
-      outputValue: content !== undefined ? content : message,
-      model: (inner?.model && String(inner.model)) || (message?.model && String(message.model)) || null,
-      metadata: { source: "stream_assistant_message" },
-      promptTokens,
-      completionTokens,
-      totalRequestTokens,
-      promptCacheHitTokens,
-      promptCacheCreationTokens,
+      inputValue: undefined,
+      outputValue: outputText,
+      model,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      promptTokens: this.coerceInteger({ value: usage.input_tokens }),
+      completionTokens: this.coerceInteger({ value: usage.output_tokens }),
+      promptCacheHitTokens: this.coerceInteger({ value: usage.cache_read_input_tokens }),
+      promptCacheCreationTokens: this.coerceInteger({ value: usage.cache_creation_input_tokens }),
     });
     await this.sendPayloads({ payloads: [payload] });
   }
@@ -465,30 +445,21 @@ export class RespanAnthropicAgentsExporter {
     const usage = (message.usage && typeof message.usage === "object"
       ? message.usage
       : {}) as Record<string, unknown>;
-    const promptTokens = this.coerceInteger({
-      value: usage.input_tokens ?? usage.prompt_tokens,
-    });
-    const completionTokens = this.coerceInteger({
-      value: usage.output_tokens ?? usage.completion_tokens,
-    });
-    let totalRequestTokens = this.coerceInteger({
-      value: usage.total_tokens,
-    });
-    if (totalRequestTokens === null && (promptTokens !== null || completionTokens !== null)) {
-      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0);
-    }
-
-    const promptCacheHitTokens = this.coerceInteger({
-      value: usage.cache_read_input_tokens,
-    });
-    const promptCacheCreationTokens = this.coerceInteger({
-      value: usage.cache_creation_input_tokens,
-    });
 
     const statusCode = message.is_error ? 500 : 200;
     const errorMessage = message.is_error
       ? `agent_result_error:${String(message.subtype || "error")}`
       : undefined;
+
+    const resultOutput = message.result ?? message.structured_output ?? null;
+
+    const metadata: Record<string, unknown> = {};
+    if (message.num_turns != null) {
+      metadata.num_turns = message.num_turns;
+    }
+    if (message.total_cost_usd != null) {
+      metadata.sdk_total_cost_usd = message.total_cost_usd;
+    }
 
     const now = new Date();
     const payload = this.createPayload({
@@ -499,20 +470,14 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.AGENT,
       startTime: sessionState.startedAt,
       timestamp: now,
-      inputValue: sessionState.prompt,
-      outputValue: message.result || message.subtype,
-      metadata: {
-        duration_ms: message.duration_ms,
-        duration_api_ms: message.duration_api_ms,
-        num_turns: message.num_turns,
-        total_cost_usd: message.total_cost_usd,
-        structured_output: message.structured_output,
-      },
-      promptTokens,
-      completionTokens,
-      totalRequestTokens,
-      promptCacheHitTokens,
-      promptCacheCreationTokens,
+      inputValue: undefined,
+      outputValue: resultOutput,
+      model: this.lastModel,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      promptTokens: this.coerceInteger({ value: usage.input_tokens }),
+      completionTokens: this.coerceInteger({ value: usage.output_tokens }),
+      promptCacheHitTokens: this.coerceInteger({ value: usage.cache_read_input_tokens }),
+      promptCacheCreationTokens: this.coerceInteger({ value: usage.cache_creation_input_tokens }),
       statusCode,
       errorMessage,
     });

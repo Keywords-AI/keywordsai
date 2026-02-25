@@ -87,6 +87,7 @@ class RespanAnthropicAgentsExporter:
         )
         self._sessions: Dict[str, ExporterSessionState] = {}
         self._last_session_id: Optional[str] = None
+        self._last_model: Optional[str] = None
 
     def _build_endpoint(self, base_url: Optional[str] = None) -> str:
         """Build ingest endpoint URL from base URL."""
@@ -175,7 +176,6 @@ class RespanAnthropicAgentsExporter:
             await self.track_message(
                 message=message,
                 session_id=active_session_id,
-                prompt=prompt,
             )
             yield message
 
@@ -183,22 +183,12 @@ class RespanAnthropicAgentsExporter:
         self,
         message: Any,
         session_id: Optional[str] = None,
-        prompt: Optional[Union[str, AsyncIterable[Dict[str, Any]]]] = None,
     ) -> None:
-        """Track a single SDK message and export equivalent Respan spans."""
-        # Store prompt on the session if provided and not yet captured
-        if prompt is not None:
-            resolved_sid = session_id or self._last_session_id
-            if resolved_sid:
-                session = self._sessions.get(resolved_sid)
-                if session is not None and session.prompt is None:
-                    session.prompt = prompt
-                    # Also fix the trace name if it's still auto-generated
-                    if session.trace_name.startswith("anthropic-session-"):
-                        trace_name = build_trace_name_from_prompt(prompt=prompt)
-                        if trace_name:
-                            session.trace_name = trace_name
+        """Track a single SDK message and export equivalent Respan spans.
 
+        Raw passthrough: each message is sent as-is to input/output fields.
+        The platform stores arbitrary JSON — no custom extraction needed.
+        """
         if isinstance(message, SystemMessage):
             self._handle_system_message(
                 system_message=message,
@@ -263,7 +253,6 @@ class RespanAnthropicAgentsExporter:
             session_id=session_id,
             trace_name=trace_name,
         )
-        session_state.prompt = prompt
 
         now = utc_now()
         payload = self._create_payload(
@@ -274,7 +263,7 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_TASK,
             start_time=now,
             timestamp=now,
-            input_value=prompt,
+            input_value=input_data,
             output_value=None,
             metadata={"hook_event_name": "UserPromptSubmit"},
             status_code=200,
@@ -421,7 +410,6 @@ class RespanAnthropicAgentsExporter:
             trace_name=None,
         )
         now = utc_now()
-        input_value = serialize_value(getattr(user_message, "content", user_message))
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=str(uuid.uuid4()),
@@ -430,9 +418,8 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_TASK,
             start_time=now,
             timestamp=now,
-            input_value=input_value,
+            input_value=user_message,
             output_value=None,
-            metadata={"source": "stream_user_message"},
             status_code=200,
         )
         self._send_payloads(payloads=[payload])
@@ -451,24 +438,41 @@ class RespanAnthropicAgentsExporter:
         )
         now = utc_now()
         usage = getattr(assistant_message, "usage", None) or {}
-        span_id = getattr(assistant_message, "id", None) or str(uuid.uuid4())
-        output_value = serialize_value(getattr(assistant_message, "content", assistant_message))
+
+        model = getattr(assistant_message, "model", None)
+        if model:
+            self._last_model = model
+
+        content_blocks = getattr(assistant_message, "content", []) or []
+        text_parts = []
+        tool_calls = []
+        for block in content_blocks:
+            block_type = getattr(block, "type", None)
+            if block_type == "text":
+                text_parts.append(getattr(block, "text", ""))
+            elif block_type == "tool_use":
+                tool_calls.append({
+                    "id": getattr(block, "id", None),
+                    "name": getattr(block, "name", None),
+                    "input": getattr(block, "input", None),
+                })
+
+        output_text = "\n".join(text_parts) if text_parts else None
 
         payload = self._create_payload(
             session_state=session_state,
-            span_unique_id=span_id,
+            span_unique_id=getattr(assistant_message, "id", None) or str(uuid.uuid4()),
             span_parent_id=session_state.trace_id,
             span_name="assistant_message",
             log_type=LOG_TYPE_GENERATION,
             start_time=session_state.started_at,
             timestamp=now,
-            input_value=session_state.prompt,
-            output_value=output_value,
-            model=assistant_message.model,
-            metadata={"source": "stream_assistant_message"},
-            prompt_tokens=coerce_int(usage.get("input_tokens") or usage.get("prompt_tokens")),
-            completion_tokens=coerce_int(usage.get("output_tokens") or usage.get("completion_tokens")),
-            total_request_tokens=coerce_int(usage.get("total_tokens")),
+            input_value=None,
+            output_value=output_text,
+            model=model,
+            tool_calls=tool_calls if tool_calls else None,
+            prompt_tokens=coerce_int(usage.get("input_tokens")),
+            completion_tokens=coerce_int(usage.get("output_tokens")),
             prompt_cache_hit_tokens=coerce_int(usage.get("cache_read_input_tokens")),
             prompt_cache_creation_tokens=coerce_int(usage.get("cache_creation_input_tokens")),
             status_code=200,
@@ -482,18 +486,25 @@ class RespanAnthropicAgentsExporter:
         )
 
         usage = result_message.usage or {}
-        prompt_tokens = coerce_int(usage.get("input_tokens") or usage.get("prompt_tokens"))
-        completion_tokens = coerce_int(usage.get("output_tokens") or usage.get("completion_tokens"))
-        total_request_tokens = coerce_int(usage.get("total_tokens"))
-        prompt_cache_hit_tokens = coerce_int(usage.get("cache_read_input_tokens"))
-        prompt_cache_creation_tokens = coerce_int(usage.get("cache_creation_input_tokens"))
-
         now = utc_now()
-        error_message = None
-        status_code = 200
-        if result_message.is_error:
-            error_message = f"agent_result_error:{result_message.subtype}"
-            status_code = 500
+        status_code = 500 if result_message.is_error else 200
+        error_message = (
+            f"agent_result_error:{result_message.subtype}"
+            if result_message.is_error
+            else None
+        )
+
+        result_output = getattr(result_message, "result", None)
+        if result_output is None:
+            result_output = getattr(result_message, "structured_output", None)
+
+        metadata = {}
+        num_turns = getattr(result_message, "num_turns", None)
+        if num_turns is not None:
+            metadata["num_turns"] = num_turns
+        total_cost = getattr(result_message, "total_cost_usd", None)
+        if total_cost is not None:
+            metadata["sdk_total_cost_usd"] = total_cost
 
         payload = self._create_payload(
             session_state=session_state,
@@ -503,21 +514,14 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_AGENT,
             start_time=session_state.started_at,
             timestamp=now,
-            input_value=session_state.prompt,
-            output_value=result_message.result or result_message.subtype,
-            model=None,
-            metadata={
-                "duration_ms": result_message.duration_ms,
-                "duration_api_ms": result_message.duration_api_ms,
-                "num_turns": result_message.num_turns,
-                "total_cost_usd": result_message.total_cost_usd,
-                "structured_output": result_message.structured_output,
-            },
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_request_tokens=total_request_tokens,
-            prompt_cache_hit_tokens=prompt_cache_hit_tokens,
-            prompt_cache_creation_tokens=prompt_cache_creation_tokens,
+            input_value=None,
+            output_value=result_output,
+            model=self._last_model,
+            metadata=metadata if metadata else None,
+            prompt_tokens=coerce_int(usage.get("input_tokens")),
+            completion_tokens=coerce_int(usage.get("output_tokens")),
+            prompt_cache_hit_tokens=coerce_int(usage.get("cache_read_input_tokens")),
+            prompt_cache_creation_tokens=coerce_int(usage.get("cache_creation_input_tokens")),
             status_code=status_code,
             error_message=error_message,
         )
