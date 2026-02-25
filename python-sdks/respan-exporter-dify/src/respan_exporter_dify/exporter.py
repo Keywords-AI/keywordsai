@@ -84,24 +84,23 @@ class RespanDifyClient:
             if is_stream:
                 def stream_generator():
                     events = []
+                    status = "success"
+                    error_msg = None
                     try:
                         for chunk in result:
                             events.append(chunk)
                             yield chunk
-                        _export(
-                            end_time=now_utc(),
-                            status="success",
-                            result=events,
-                            error_message=None,
-                        )
                     except Exception as exc:
+                        status = "error"
+                        error_msg = str(exc)
+                        raise
+                    finally:
                         _export(
                             end_time=now_utc(),
-                            status="error",
+                            status=status,
                             result=events,
-                            error_message=str(exc),
+                            error_message=error_msg,
                         )
-                        raise
 
                 return stream_generator()
             else:
@@ -203,24 +202,23 @@ class RespanAsyncDifyClient:
             if is_stream:
                 async def stream_generator():
                     events = []
+                    status = "success"
+                    error_msg = None
                     try:
                         async for chunk in result:
                             events.append(chunk)
                             yield chunk
-                        _export(
-                            end_time=now_utc(),
-                            status="success",
-                            result=events,
-                            error_message=None,
-                        )
                     except Exception as exc:
+                        status = "error"
+                        error_msg = str(exc)
+                        raise
+                    finally:
                         _export(
                             end_time=now_utc(),
-                            status="error",
+                            status=status,
                             result=events,
-                            error_message=str(exc),
+                            error_message=error_msg,
                         )
-                        raise
 
                 return stream_generator()
             else:
