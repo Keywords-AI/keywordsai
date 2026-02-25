@@ -1,21 +1,21 @@
-# KeywordsAI Client API Guide
+# Respan Client API Guide
 
-The KeywordsAI Client API provides a clean, intuitive way to interact with the current trace and span context. This replaces the need for the clumsy `@context.py` approach and provides automatic context-aware operations.
+The Respan Client API provides a clean, intuitive way to interact with the current trace and span context. This replaces the need for the clumsy `@context.py` approach and provides automatic context-aware operations.
 
 ## Overview
 
 The client API consists of:
 - **`get_client()`** - Global function to get a client instance
-- **`KeywordsAIClient`** - Main client class with trace operations
+- **`RespanClient`** - Main client class with trace operations
 - **Automatic context detection** - No need to manually manage span references
 
 ## Quick Start
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow
+from respan_tracing import RespanTelemetry, get_client, workflow
 
 # Initialize telemetry (once per application)
-telemetry = KeywordsAITelemetry(app_name="my-app")
+telemetry = RespanTelemetry(app_name="my-app")
 
 @workflow(name="my_workflow")
 def my_workflow():
@@ -26,9 +26,9 @@ def my_workflow():
     trace_id = client.get_current_trace_id()
     span_id = client.get_current_span_id()
     
-    # Update current span with KeywordsAI parameters
+    # Update current span with Respan parameters
     client.update_current_span(
-        keywordsai_params={"trace_group_identifier": "my-group"},
+        respan_params={"trace_group_identifier": "my-group"},
         attributes={"custom.attribute": "value"}
     )
     
@@ -41,15 +41,15 @@ def my_workflow():
 
 #### `get_client()` - Global Access
 ```python
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
-client = get_client()  # Returns singleton KeywordsAIClient instance
+client = get_client()  # Returns singleton RespanClient instance
 ```
 
 #### `telemetry.get_client()` - Instance Method
 ```python
-telemetry = KeywordsAITelemetry()
-client = telemetry.get_client()  # Returns new KeywordsAIClient instance
+telemetry = RespanTelemetry()
+client = telemetry.get_client()  # Returns new RespanClient instance
 ```
 
 **Recommendation**: Use the global `get_client()` function for simplicity. It uses the same singleton tracer internally.
@@ -78,8 +78,8 @@ The `update_current_span()` method is the most powerful feature, allowing you to
 
 ```python
 success = client.update_current_span(
-    # KeywordsAI-specific parameters (automatically validated)
-    keywordsai_params={
+    # Respan-specific parameters (automatically validated)
+    respan_params={
         "trace_group_identifier": "my-group",
         "metadata": {
             "user_id": "123",
@@ -142,12 +142,12 @@ Replace the old context manager approach:
 
 ```python
 # OLD WAY (clumsy)
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing.contexts.span import respan_span_attributes
 
 @workflow(name="my_workflow")
 def my_workflow():
-    with keywordsai_span_attributes(
-        keywordsai_params={"trace_group_identifier": "test"}
+    with respan_span_attributes(
+        respan_params={"trace_group_identifier": "test"}
     ):
         # Your code here
         pass
@@ -157,7 +157,7 @@ def my_workflow():
 def my_workflow():
     client = get_client()
     client.update_current_span(
-        keywordsai_params={"trace_group_identifier": "test"}
+        respan_params={"trace_group_identifier": "test"}
     )
     # Your code here - no context manager needed!
 ```
@@ -173,7 +173,7 @@ def process_data(data):
     
     # Initial setup
     client.update_current_span(
-        keywordsai_params={"trace_group_identifier": "data-processing"},
+        respan_params={"trace_group_identifier": "data-processing"},
         attributes={"input.size": len(data)}
     )
     
@@ -287,7 +287,7 @@ def step2(data):
 client = get_client()
 
 # ❌ AVOID - Unnecessary complexity
-telemetry = KeywordsAITelemetry()
+telemetry = RespanTelemetry()
 client = telemetry.get_client()
 ```
 
@@ -336,16 +336,16 @@ client.update_current_span(attributes={
 
 ## Migration from Old Context Manager
 
-If you're currently using the `keywordsai_span_attributes` context manager, here's how to migrate:
+If you're currently using the `respan_span_attributes` context manager, here's how to migrate:
 
 ### Before (Context Manager)
 ```python
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing.contexts.span import respan_span_attributes
 
 @workflow(name="my_workflow")
 def my_workflow():
-    with keywordsai_span_attributes(
-        keywordsai_params={
+    with respan_span_attributes(
+        respan_params={
             "trace_group_identifier": "my-group",
             "metadata": {"user_id": "123"}
         }
@@ -356,13 +356,13 @@ def my_workflow():
 
 ### After (Client API)
 ```python
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 @workflow(name="my_workflow")
 def my_workflow():
     client = get_client()
     client.update_current_span(
-        keywordsai_params={
+        respan_params={
             "trace_group_identifier": "my-group", 
             "metadata": {"user_id": "123"}
         }
@@ -406,7 +406,7 @@ The client API is thread-safe and works correctly in multi-threaded environments
 
 ```python
 import threading
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 def worker_function(worker_id):
     client = get_client()  # Same client instance
@@ -427,7 +427,7 @@ for i in range(5):
 
 ## Summary
 
-The KeywordsAI Client API provides:
+The Respan Client API provides:
 
 1. **Simple access** - `get_client()` works anywhere
 2. **Automatic context** - No manual span management

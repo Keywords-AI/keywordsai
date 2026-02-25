@@ -1,4 +1,4 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 import Anthropic from '@anthropic-ai/sdk';
 import dotenv from 'dotenv';
 
@@ -9,9 +9,9 @@ dotenv.config({ override: true });
  * after adding enrichTokens: true option
  */
 
-const keywordsAI = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "test-key",
-    baseURL: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "test-key",
+    baseURL: process.env.RESPAN_BASE_URL || "https://api.respan.ai",
     appName: 'anthropic-metrics-test',
     disableBatch: true,
     logLevel: 'debug',
@@ -22,9 +22,9 @@ const keywordsAI = new KeywordsAITelemetry({
 });
 
 // Wait for initialization
-await keywordsAI.initialize();
+await respan.initialize();
 
-console.log('[Test] KeywordsAI initialized with Anthropic instrumentation');
+console.log('[Test] Respan initialized with Anthropic instrumentation');
 
 // Create Anthropic client
 const anthropic = new Anthropic({
@@ -38,7 +38,7 @@ const testAnthropicMetrics = async () => {
     console.log('[Test] Starting Anthropic metrics test...');
     
     try {
-        const result = await keywordsAI.withWorkflow(
+        const result = await respan.withWorkflow(
             { name: 'anthropic_metrics_test', version: 1 },
             async () => {
                 console.log('[Test] Inside workflow, creating message...');
@@ -68,7 +68,7 @@ const testAnthropicMetrics = async () => {
         console.log('[Test] Workflow completed successfully');
         console.log('[Test] Result:', result);
         console.log('\n[Test] ✓ Anthropic metrics test passed!');
-        console.log('[Test] Check your KeywordsAI dashboard to verify that:');
+        console.log('[Test] Check your Respan dashboard to verify that:');
         console.log('[Test]   - Token counts are recorded for the span');
         console.log('[Test]   - Cost metrics are calculated and displayed');
         console.log('[Test]   - All span attributes include usage information');
@@ -86,16 +86,16 @@ testAnthropicMetrics()
         console.log('[Test] Shutting down and flushing traces...\n');
         
         // Properly shutdown to flush all traces and show detailed metrics
-        await keywordsAI.shutdown();
+        await respan.shutdown();
         console.log('[Test] ✓ Traces flushed to backend\n');
         
         process.exit(0);
     })
     .catch(async (error) => {
         console.error('\n[Test] Test suite failed:', error);
-        await keywordsAI.shutdown();
+        await respan.shutdown();
         process.exit(1);
     });
 
-export { keywordsAI, testAnthropicMetrics };
+export { respan, testAnthropicMetrics };
 

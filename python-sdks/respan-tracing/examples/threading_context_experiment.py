@@ -26,16 +26,16 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Import KeywordsAI tracing
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow, task
+# Import Respan tracing
+from respan_tracing import RespanTelemetry, get_client, workflow, task
 from opentelemetry import trace, context as otel_context
 from opentelemetry.trace import Status, StatusCode
 
 # Initialize telemetry
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="threading-experiment",
-    api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
-    base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
+    api_key=os.getenv("RESPAN_API_KEY", "test-key"),
+    base_url=os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api"),
     is_enabled=True
 )
 
@@ -184,7 +184,7 @@ def experiment_3_opentelemetry_context():
     
     # Update main span
     client.update_current_span(
-        keywordsai_params={"trace_group_identifier": "threading-experiment"},
+        respan_params={"trace_group_identifier": "threading-experiment"},
         attributes={"experiment.type": "opentelemetry_context"}
     )
     

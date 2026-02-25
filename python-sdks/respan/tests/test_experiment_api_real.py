@@ -3,11 +3,11 @@
 Experiment API Real Integration Tests
 
 These tests use real API calls to validate experiment functionality.
-No mocking - tests actual SDK behavior with Keywords AI server.
+No mocking - tests actual SDK behavior with Respan server.
 
 Environment variables required:
-- KEYWORDSAI_API_KEY
-- KEYWORDSAI_BASE_URL
+- RESPAN_API_KEY
+- RESPAN_BASE_URL
 
 Usage:
     python -m pytest tests/test_experiment_api_real.py -v -s
@@ -20,8 +20,8 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-from keywordsai.experiments.api import ExperimentAPI
-from keywordsai.types.experiment_types import (
+from respan.experiments.api import ExperimentAPI
+from respan.types.experiment_types import (
     ExperimentCreate,
     ExperimentUpdate,
     ExperimentColumnType,
@@ -40,16 +40,16 @@ from keywordsai.types.experiment_types import (
 @pytest.fixture
 def api_key():
     """Get API key from environment"""
-    key = os.getenv("KEYWORDSAI_API_KEY")
+    key = os.getenv("RESPAN_API_KEY")
     if not key:
-        pytest.skip("KEYWORDSAI_API_KEY not found in environment")
+        pytest.skip("RESPAN_API_KEY not found in environment")
     return key
 
 
 @pytest.fixture
 def base_url():
     """Get base URL from environment"""
-    return os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    return os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
 
 
 @pytest.fixture

@@ -14,7 +14,7 @@
     "attributes": {
       "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
       "traceloop.entity.name": "data_processing",
-      "keywordsai.entity.log_method": "python_tracing",
+      "respan.entity.log_method": "python_tracing",
       "traceloop.entity.input": "{\"args\": [\"hello world\"], \"kwargs\": {}}",
       "traceloop.entity.output": "{\"processed\": \"HELLO WORLD\", \"length\": 11, \"metadata\": {\"processed_at\": \"2024-01-01\"}}"
     },
@@ -38,7 +38,7 @@
     "attributes": {
       "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
       "traceloop.entity.name": "data_processing",
-      "keywordsai.entity.log_method": "python_tracing",
+      "respan.entity.log_method": "python_tracing",
       "traceloop.entity.input": "{\"args\": [\"testing export\"], \"kwargs\": {}}",
       "traceloop.entity.output": "{\"processed\": \"TESTING EXPORT\", \"length\": 14, \"metadata\": {\"processed_at\": \"2024-01-01\"}}"
     },
@@ -62,7 +62,7 @@
     "attributes": {
       "traceloop.span.kind": "TraceloopSpanKindValues.WORKFLOW",
       "traceloop.entity.name": "main_workflow",
-      "keywordsai.entity.log_method": "python_tracing",
+      "respan.entity.log_method": "python_tracing",
       "traceloop.entity.input": "{\"args\": [], \"kwargs\": {}}",
       "traceloop.entity.output": "{\"results\": [{\"processed\": \"HELLO WORLD\", \"length\": 11, \"metadata\": {\"processed_at\": \"2024-01-01\"}}, {\"processed\": \"TESTING EXPORT\", \"length\": 14, \"metadata\": {\"processed_at\": \"2024-01-01\"}}]}"
     },
@@ -86,7 +86,7 @@
     "attributes": {
       "traceloop.span.kind": "TraceloopSpanKindValues.TASK",
       "traceloop.entity.name": "inspection_task",
-      "keywordsai.entity.log_method": "python_tracing",
+      "respan.entity.log_method": "python_tracing",
       "traceloop.entity.input": "{\"args\": [], \"kwargs\": {}}",
       "traceloop.entity.output": "\"test_output\""
     },

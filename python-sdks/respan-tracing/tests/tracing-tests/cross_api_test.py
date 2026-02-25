@@ -5,10 +5,10 @@ load_dotenv("tests/.env", override=True)
 Call an endpoint and check if the telemetry headers are included in the request
 """
 
-from keywordsai_tracing import KeywordsAITelemetry, workflow
+from respan_tracing import RespanTelemetry, workflow
 from requests import post
 
-k_tl = KeywordsAITelemetry(
+k_tl = RespanTelemetry(
 )
 
 

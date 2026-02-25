@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for Keywords AI SDK tests
+Pytest configuration and fixtures for Respan SDK tests
 """
 
 from dotenv import load_dotenv
@@ -9,20 +9,20 @@ load_dotenv(override=True)
 import pytest
 import os
 from unittest.mock import AsyncMock, MagicMock
-from keywordsai.datasets.api import DatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI
+from respan.datasets.api import DatasetAPI
+from respan.evaluators.api import EvaluatorAPI
 
 
 @pytest.fixture
 def api_key():
     """Test API key fixture"""
-    return os.getenv("KEYWORDSAI_API_KEY")
+    return os.getenv("RESPAN_API_KEY")
 
 
 @pytest.fixture
 def base_url():
     """Test base URL fixture"""
-    return os.getenv("KEYWORDSAI_BASE_URL")
+    return os.getenv("RESPAN_BASE_URL")
 
 
 @pytest.fixture
@@ -175,7 +175,7 @@ def mock_sync_client():
 @pytest.fixture
 def sample_dataset_create():
     """Sample dataset creation data"""
-    from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate
+    from respan_sdk.respan_types.dataset_types import DatasetCreate
 
     return DatasetCreate(
         name="TEST",
@@ -193,7 +193,7 @@ def sample_dataset_create():
 @pytest.fixture
 def sample_dataset_update():
     """Sample dataset update data"""
-    from keywordsai_sdk.keywordsai_types.dataset_types import DatasetUpdate
+    from respan_sdk.respan_types.dataset_types import DatasetUpdate
 
     return DatasetUpdate(name="test_ds")
 
@@ -201,7 +201,7 @@ def sample_dataset_update():
 @pytest.fixture
 def sample_log_management_request():
     """Sample log management request data"""
-    from keywordsai_sdk.keywordsai_types.dataset_types import LogManagementRequest
+    from respan_sdk.respan_types.dataset_types import LogManagementRequest
 
     return LogManagementRequest(
         start_time="2025-07-31 00:00:00",

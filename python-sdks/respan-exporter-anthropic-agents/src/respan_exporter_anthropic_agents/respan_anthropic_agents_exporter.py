@@ -71,7 +71,6 @@ class RespanAnthropicAgentsExporter:
         self.api_key = (
             api_key
             or os.getenv("RESPAN_API_KEY")
-            or os.getenv("KEYWORDSAI_API_KEY")
             or None
         )
         self.endpoint = endpoint or self._build_endpoint(base_url=base_url)
@@ -96,7 +95,6 @@ class RespanAnthropicAgentsExporter:
         resolved_base_url = (
             base_url
             or os.getenv("RESPAN_BASE_URL")
-            or os.getenv("KEYWORDSAI_BASE_URL")
         )
         return resolve_export_endpoint(base_url=resolved_base_url)
 

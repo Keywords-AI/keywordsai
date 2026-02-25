@@ -1,7 +1,7 @@
 """
-Basic test demonstrating KeywordsAI tracing with Instructor structured outputs.
+Basic test demonstrating Respan tracing with Instructor structured outputs.
 
-This test shows how KeywordsAI tracing automatically captures:
+This test shows how Respan tracing automatically captures:
 - LLM requests and responses through Instructor
 - Structured output validation and parsing
 - Token usage and costs
@@ -13,16 +13,16 @@ import os
 from typing import List, Optional
 from pydantic import BaseModel, Field
 import instructor
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task, workflow
 
 # Load environment variables
 load_dotenv(".env", override=True)
 
-# Initialize KeywordsAI Telemetry
-print("KEYWORDSAI_BASE_URL:", os.environ.get("KEYWORDSAI_BASE_URL"))
-print("KEYWORDSAI_API_KEY:", os.environ.get("KEYWORDSAI_API_KEY"))
-k_tl = KeywordsAITelemetry(app_name="instructor-basic-test")
+# Initialize Respan Telemetry
+print("RESPAN_BASE_URL:", os.environ.get("RESPAN_BASE_URL"))
+print("RESPAN_API_KEY:", os.environ.get("RESPAN_API_KEY"))
+k_tl = RespanTelemetry(app_name="instructor-basic-test")
 
 # Define Pydantic models for structured outputs
 class User(BaseModel):
@@ -164,8 +164,8 @@ def validate_results(results: dict):
 
 @workflow(name="instructor_basic_demo")
 def main():
-    """Main workflow demonstrating Instructor with KeywordsAI tracing."""
-    print("🚀 Starting Instructor + KeywordsAI Tracing Demo")
+    """Main workflow demonstrating Instructor with Respan tracing."""
+    print("🚀 Starting Instructor + Respan Tracing Demo")
     print("=" * 50)
     
     # Run the extraction tests
@@ -177,7 +177,7 @@ def main():
     print("\n" + "=" * 50)
     print("✅ Demo completed successfully!")
     print(f"✅ Validation passed: {validation_passed}")
-    print("\n📊 Check your KeywordsAI dashboard to see the traced LLM calls:")
+    print("\n📊 Check your Respan dashboard to see the traced LLM calls:")
     print("   - Structured output requests and responses")
     print("   - Token usage and costs")
     print("   - Model parameters and validation")

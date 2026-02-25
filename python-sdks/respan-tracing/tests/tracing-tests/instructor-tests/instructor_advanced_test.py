@@ -1,5 +1,5 @@
 """
-Advanced test demonstrating KeywordsAI tracing with Instructor's advanced features.
+Advanced test demonstrating Respan tracing with Instructor's advanced features.
 
 This test showcases:
 - Complex nested Pydantic models
@@ -16,14 +16,14 @@ from datetime import datetime, date
 from pydantic import BaseModel, Field, field_validator, model_validator
 from enum import Enum
 import instructor
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task, workflow
 
 # Load environment variables
 load_dotenv(".env", override=True)
 
-# Initialize KeywordsAI Telemetry
-k_tl = KeywordsAITelemetry(app_name="instructor-advanced-test")
+# Initialize Respan Telemetry
+k_tl = RespanTelemetry(app_name="instructor-advanced-test")
 
 # Define advanced Pydantic models with validation
 class Priority(str, Enum):
@@ -302,8 +302,8 @@ def validate_advanced_results(results: dict):
 
 @workflow(name="instructor_advanced_demo")
 def main():
-    """Main workflow for advanced Instructor features with KeywordsAI tracing."""
-    print("🚀 Starting Advanced Instructor + KeywordsAI Tracing Demo")
+    """Main workflow for advanced Instructor features with Respan tracing."""
+    print("🚀 Starting Advanced Instructor + Respan Tracing Demo")
     print("=" * 60)
     
     # Run advanced extraction tests
@@ -321,7 +321,7 @@ def main():
     print("   ✅ Chain of thought reasoning")
     print("   ✅ Error handling and validation failures")
     print("   ✅ Multiple extraction strategies")
-    print("\n📈 Check your KeywordsAI dashboard for detailed traces:")
+    print("\n📈 Check your Respan dashboard for detailed traces:")
     print("   - Retry attempts on validation failures")
     print("   - Complex model validation traces")
     print("   - Chain of thought reasoning steps")

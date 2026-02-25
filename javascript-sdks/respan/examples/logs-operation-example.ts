@@ -12,8 +12,8 @@
  *     npx tsx examples/logs-operation-example.ts
  *
  * Environment variables required:
- * - KEYWORDSAI_API_KEY
- * - KEYWORDSAI_BASE_URL (optional)
+ * - RESPAN_API_KEY
+ * - RESPAN_BASE_URL (optional)
  */
 
 import { config } from 'dotenv';
@@ -23,11 +23,11 @@ import { LogAPI } from '../src/index.js';
 config({ override: true });
 
 async function main() {
-  const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL;
+  const apiKey = process.env.RESPAN_API_KEY;
+  const baseUrl = process.env.RESPAN_BASE_URL;
 
   if (!apiKey) {
-    console.log('❌ KEYWORDSAI_API_KEY not found in environment');
+    console.log('❌ RESPAN_API_KEY not found in environment');
     return;
   }
 

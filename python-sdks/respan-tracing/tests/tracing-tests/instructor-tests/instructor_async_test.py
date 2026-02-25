@@ -1,8 +1,8 @@
 """
-Async Instructor test with KeywordsAI tracing.
+Async Instructor test with Respan tracing.
 
 This test investigates why async Instructor clients might not work properly
-with KeywordsAI tracing and provides debugging information.
+with Respan tracing and provides debugging information.
 """
 
 import asyncio
@@ -12,16 +12,16 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 import instructor
 from openai import AsyncOpenAI
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task, workflow
 
 # Load environment variables
 load_dotenv(".env", override=True)
 
-# Initialize KeywordsAI Telemetry
-print("🔧 Initializing KeywordsAI Telemetry...")
-k_tl = KeywordsAITelemetry(app_name="instructor-async-test", log_level="DEBUG")
-print("✅ KeywordsAI Telemetry initialized")
+# Initialize Respan Telemetry
+print("🔧 Initializing Respan Telemetry...")
+k_tl = RespanTelemetry(app_name="instructor-async-test", log_level="DEBUG")
+print("✅ Respan Telemetry initialized")
 
 # Define test models
 class AsyncUser(BaseModel):
@@ -240,7 +240,7 @@ async def debug_async_instrumentation():
 @workflow(name="async_instructor_debug")
 async def main():
     """Main async workflow for debugging Instructor integration."""
-    print("🚀 Starting Async Instructor + KeywordsAI Tracing Debug")
+    print("🚀 Starting Async Instructor + Respan Tracing Debug")
     print("=" * 60)
     
     # Debug instrumentation first
@@ -274,7 +274,7 @@ async def main():
     else:
         print("   ❌ instructor.apatch - FAILED")
     
-    print("\n🎯 Check your KeywordsAI dashboard for async traces")
+    print("\n🎯 Check your Respan dashboard for async traces")
     
     return results
 

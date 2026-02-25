@@ -2,7 +2,7 @@ import { updateCurrentSpan } from "../src/utils/tracing";
 import { withAgent } from "../src/decorators/base";
 import { SpanStatusCode } from "@opentelemetry/api";
 
-// Example 5: Advanced span updating with KeywordsAI parameters
+// Example 5: Advanced span updating with Respan parameters
 async function advancedSpanUpdating() {
   console.log("\n=== Example 5: Advanced Span Updating ===");
 
@@ -15,9 +15,9 @@ async function advancedSpanUpdating() {
       },
     },
     async () => {
-      // Update span with KeywordsAI-specific parameters
+      // Update span with Respan-specific parameters
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           model: "gpt-4",
           provider: "openai",
           temperature: 0.7,

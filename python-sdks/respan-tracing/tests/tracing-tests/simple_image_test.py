@@ -4,13 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv(".env", override=True)
 
-from keywordsai_tracing.decorators.base import R
-from keywordsai_tracing.main import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task
+from respan_tracing.decorators.base import R
+from respan_tracing.main import RespanTelemetry
+from respan_tracing.decorators import task
 from openai import OpenAI
 
 # Initialize telemetry
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="products-tests",
     log_level="DEBUG",
     is_batching_enabled=False,
@@ -54,7 +54,7 @@ def main():
 
     print("✨ Check the output above for debug export preview!")
     print("   Look for lines containing:")
-    print("   - '[KeywordsAI Debug] Export preview'")
+    print("   - '[Respan Debug] Export preview'")
     print("   - 'image_analysis.task'")
     print("   - 'What is in this image?'")
 

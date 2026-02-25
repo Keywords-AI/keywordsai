@@ -1,15 +1,15 @@
-import { KeywordsAIExporter } from "@keywordsai/tracing";
+import { RespanExporter } from "@respan/tracing";
 import { registerOTel } from "@vercel/otel";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 
 export function register() {
   registerOTel({
-    serviceName: "keywords-ai-nextjs-example",
-    traceExporter: new KeywordsAIExporter({
+    serviceName: "respan-nextjs-example",
+    traceExporter: new RespanExporter({
       debug: true,
       url: "http://localhost:8000/api/integrations/v1/traces/ingest",
-      apiKey: process.env.KEYWORDSAI_API_KEY_TEST,
+      apiKey: process.env.RESPAN_API_KEY_TEST,
     }),
   });
 }

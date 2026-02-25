@@ -306,7 +306,7 @@ class LocalSpanCollector(TracingProcessor):
 
 class RespanSpanExporter(BackendSpanExporter):
     """
-    Custom exporter for Keywords AI that handles all span types and allows for dynamic endpoint configuration.
+    Custom exporter for Respan that handles all span types and allows for dynamic endpoint configuration.
     """
 
     def __init__(
@@ -320,7 +320,7 @@ class RespanSpanExporter(BackendSpanExporter):
         max_delay: float = 30.0,
     ):
         """
-        Initialize the Keywords AI exporter.
+        Initialize the Respan exporter.
 
         Args:
             api_key: The API key for authentication. Defaults to os.environ["OPENAI_API_KEY"] if not provided.
@@ -349,7 +349,7 @@ class RespanSpanExporter(BackendSpanExporter):
             endpoint: The new endpoint URL to use for exporting spans.
         """
         self.endpoint = endpoint
-        logger.info(f"Keywords AI exporter endpoint changed to: {endpoint}")
+        logger.info(f"Respan exporter endpoint changed to: {endpoint}")
 
     def _respan_export(
         self, item: Union[Trace, Span[Any]]
@@ -362,7 +362,7 @@ class RespanSpanExporter(BackendSpanExporter):
 
     def export(self, items: list[Union[Trace, Span[Any]]]) -> None:
         """
-        Export traces and spans to the Keywords AI backend.
+        Export traces and spans to the Respan backend.
 
         Args:
             items: List of Trace or Span objects to export.
@@ -402,13 +402,13 @@ class RespanSpanExporter(BackendSpanExporter):
 
                 # If the response is successful, break out of the loop
                 if response.status_code < 300:
-                    logger.debug(f"Exported {len(data)} items to Keywords AI")
+                    logger.debug(f"Exported {len(data)} items to Respan")
                     return
 
                 # If the response is a client error (4xx), we won't retry
                 if 400 <= response.status_code < 500:
                     logger.error(
-                        f"Keywords AI client error {response.status_code}: {response.text}"
+                        f"Respan client error {response.status_code}: {response.text}"
                     )
                     return
 
@@ -431,7 +431,7 @@ class RespanSpanExporter(BackendSpanExporter):
 
 class RespanTraceProcessor(BatchTraceProcessor):
     """
-    A processor that uses RespanSpanExporter to send traces and spans to Keywords AI.
+    A processor that uses RespanSpanExporter to send traces and spans to Respan.
     """
 
     def __init__(
@@ -449,7 +449,7 @@ class RespanTraceProcessor(BatchTraceProcessor):
         export_trigger_ratio: float = 0.7,
     ):
         """
-        Initialize the Keywords AI processor.
+        Initialize the Respan processor.
 
         Args:
             api_key: The API key for authentication.
@@ -486,7 +486,7 @@ class RespanTraceProcessor(BatchTraceProcessor):
         )
 
         # Store the exporter for easy access
-        self._keywords_exporter = exporter
+        self._respan_exporter = exporter
 
     def set_endpoint(self, endpoint: str) -> None:
         """
@@ -495,4 +495,4 @@ class RespanTraceProcessor(BatchTraceProcessor):
         Args:
             endpoint: The new endpoint URL to use for exporting spans.
         """
-        self._keywords_exporter.set_endpoint(endpoint)
+        self._respan_exporter.set_endpoint(endpoint)

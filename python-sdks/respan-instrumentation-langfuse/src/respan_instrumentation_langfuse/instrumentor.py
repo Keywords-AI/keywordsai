@@ -1,10 +1,10 @@
 """OpenTelemetry Instrumentor for Langfuse.
 
 This module provides OTEL-compliant instrumentation for Langfuse using BaseInstrumentor.
-It uses wrapt for safe, reversible monkey-patching to redirect Langfuse data to Keywords AI.
+It uses wrapt for safe, reversible monkey-patching to redirect Langfuse data to Respan.
 
 The approach: Langfuse SDK already collects OTEL spans and exports them via OTLPSpanExporter.
-We simply intercept the OTLP export and redirect Langfuse spans to Keywords AI with format transformation.
+We simply intercept the OTLP export and redirect Langfuse spans to Respan with format transformation.
 """
 
 import logging
@@ -24,17 +24,17 @@ _instruments = ("langfuse >= 2.0.0",)
 
 
 class LangfuseInstrumentor(BaseInstrumentor):
-    """An instrumentor for Langfuse that redirects traces to Keywords AI.
+    """An instrumentor for Langfuse that redirects traces to Respan.
     
     This instrumentor patches the OTLP exporter to intercept Langfuse OTEL spans
-    and redirect them to Keywords AI instead.
+    and redirect them to Respan instead.
     
     Usage:
         from respan_instrumentation_langfuse import LangfuseInstrumentor
         
         LangfuseInstrumentor().instrument(api_key="your-api-key")
         
-        # Now use Langfuse normally - data goes to Keywords AI!
+        # Now use Langfuse normally - data goes to Respan!
         from langfuse import Langfuse, observe
         
         langfuse = Langfuse()
@@ -55,11 +55,11 @@ class LangfuseInstrumentor(BaseInstrumentor):
         """Enable instrumentation by patching OTLP exporter.
         
         This patches OTLPSpanExporter.export to intercept Langfuse OTEL spans
-        and redirect them to Keywords AI instead.
+        and redirect them to Respan instead.
         
         Args:
-            api_key: Keywords AI API key (optional, uses RESPAN_API_KEY env var if not provided)
-            endpoint: Keywords AI endpoint (optional, defaults to production endpoint)
+            api_key: Respan API key (optional, uses RESPAN_API_KEY env var if not provided)
+            endpoint: Respan endpoint (optional, defaults to production endpoint)
         """
         self._api_key = kwargs.get("api_key") or os.getenv("RESPAN_API_KEY")
         self._endpoint = kwargs.get("endpoint") or os.getenv(
@@ -69,7 +69,7 @@ class LangfuseInstrumentor(BaseInstrumentor):
         
         if not self._api_key:
             logger.warning(
-                "Keywords AI API key not provided. "
+                "Respan API key not provided. "
                 "Set RESPAN_API_KEY environment variable or pass api_key parameter."
             )
             return
@@ -77,7 +77,7 @@ class LangfuseInstrumentor(BaseInstrumentor):
         # Patch OTLP exporter to intercept Langfuse spans
         self._patch_otlp_exporter()
         
-        logger.info("Langfuse instrumentation enabled for Keywords AI")
+        logger.info("Langfuse instrumentation enabled for Respan")
     
     def _uninstrument(self, **kwargs):
         """Disable instrumentation by removing patches."""
@@ -88,7 +88,7 @@ class LangfuseInstrumentor(BaseInstrumentor):
         """Patch OTLPSpanExporter to intercept Langfuse spans.
         
         This uses wrapt to safely wrap the export method so we can
-        intercept OTEL spans going to Langfuse and redirect to Keywords AI.
+        intercept OTEL spans going to Langfuse and redirect to Respan.
         
         IMPORTANT: We only intercept exports going to Langfuse URLs to avoid
         breaking other OTLP exports the user might have configured.
@@ -119,13 +119,13 @@ class LangfuseInstrumentor(BaseInstrumentor):
             spans = args[0] if args else kwargs.get('spans', [])
             
             try:
-                # Transform OTEL spans to Keywords AI format
-                keywords_logs = []
+                # Transform OTEL spans to Respan format
+                respan_logs = []
                 
                 for span in spans:
                     attributes = dict(span.attributes) if span.attributes else {}
                     
-                    # Map Langfuse observation types to Keywords AI log types
+                    # Map Langfuse observation types to Respan log types
                     langfuse_type = attributes.get("langfuse.observation.type", "span")
                     log_type_mapping = {
                         "span": "workflow" if not span.parent else "tool",
@@ -185,20 +185,20 @@ class LangfuseInstrumentor(BaseInstrumentor):
                     if metadata:
                         payload["metadata"] = metadata
                     
-                    keywords_logs.append(payload)
+                    respan_logs.append(payload)
                 
-                logger.debug(f"Transformed {len(keywords_logs)} OTEL spans to Keywords AI format")
+                logger.debug(f"Transformed {len(respan_logs)} OTEL spans to Respan format")
                 
-                # Send to Keywords AI
-                if keywords_logs:
+                # Send to Respan
+                if respan_logs:
                     headers = {
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     }
-                    response = requests.post(endpoint, json=keywords_logs, headers=headers, timeout=10)
+                    response = requests.post(endpoint, json=respan_logs, headers=headers, timeout=10)
                     response.raise_for_status()
-                    logger.debug(f"Successfully sent {len(keywords_logs)} spans to Keywords AI")
+                    logger.debug(f"Successfully sent {len(respan_logs)} spans to Respan")
                 
                 # Return success to Langfuse
                 return SpanExportResult.SUCCESS

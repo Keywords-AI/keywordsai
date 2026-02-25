@@ -7,8 +7,8 @@ logging inheritance that only worked by coincidence.
 """
 
 import logging
-from keywordsai_tracing.constants import LOGGER_NAME
-from keywordsai_tracing.utils.logging import get_keywordsai_logger, get_main_logger
+from respan_tracing.constants import LOGGER_NAME
+from respan_tracing.utils.logging import get_respan_logger, get_main_logger
 
 print("=== Before and After: Logging Inheritance Fix ===\n")
 
@@ -24,14 +24,14 @@ print("     - Fragile and accidental")
 # Demonstrate the problem
 print("\n   Demonstrating the problem:")
 print(f"   Current LOGGER_NAME: '{LOGGER_NAME}'")
-print(f"   Exporter __name__: 'keywordsai_tracing.core.exporter'")
-print(f"   Starts with LOGGER_NAME? {'keywordsai_tracing.core.exporter'.startswith(LOGGER_NAME)}")
+print(f"   Exporter __name__: 'respan_tracing.core.exporter'")
+print(f"   Starts with LOGGER_NAME? {'respan_tracing.core.exporter'.startswith(LOGGER_NAME)}")
 
 # Show what happens with different LOGGER_NAME
 different_name = "my_custom_app"
 print(f"\n   If LOGGER_NAME was '{different_name}':")
-print(f"   Exporter __name__: 'keywordsai_tracing.core.exporter'")
-print(f"   Starts with LOGGER_NAME? {'keywordsai_tracing.core.exporter'.startswith(different_name)}")
+print(f"   Exporter __name__: 'respan_tracing.core.exporter'")
+print(f"   Starts with LOGGER_NAME? {'respan_tracing.core.exporter'.startswith(different_name)}")
 print("   → Inheritance would be BROKEN!")
 
 # AFTER: Clear and robust approach
@@ -45,7 +45,7 @@ print("     - No accidental dependencies")
 
 print("\n   Code changes:")
 print("   OLD: logger = logging.getLogger(__name__)")
-print("   NEW: logger = get_keywordsai_logger('core.exporter')")
+print("   NEW: logger = get_respan_logger('core.exporter')")
 
 # Demonstrate the solution
 print("\n   Demonstrating the solution:")
@@ -59,8 +59,8 @@ for test_name in ["my_app", "totally_different", "xyz_system"]:
 print("\n🎯 Real-world test with current system:")
 # Test the actual functions
 main_logger = get_main_logger()
-exporter_logger = get_keywordsai_logger('core.exporter')
-client_logger = get_keywordsai_logger('core.client')
+exporter_logger = get_respan_logger('core.exporter')
+client_logger = get_respan_logger('core.client')
 
 print(f"   Main logger: {main_logger.name}")
 print(f"   Exporter logger: {exporter_logger.name}")

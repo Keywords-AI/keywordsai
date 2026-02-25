@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-url = f"{os.getenv('KEYWORDSAI_BASE_URL')}/v1/traces"
+url = f"{os.getenv('RESPAN_BASE_URL')}/v1/traces"
 
 response = requests.post(url)
 

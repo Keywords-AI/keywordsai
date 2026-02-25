@@ -2,7 +2,7 @@
 """
 Real Logs API Integration Test
 
-This comprehensive test demonstrates the logs API functionality in Keywords AI,
+This comprehensive test demonstrates the logs API functionality in Respan,
 including creating, retrieving, and listing logs with various filters.
 
 🎯 TEST OVERVIEW:
@@ -34,8 +34,8 @@ This test demonstrates:
 
 🌍 ENVIRONMENT SETUP:
 Required environment variables:
-- KEYWORDSAI_API_KEY: Your Keywords AI API key
-- KEYWORDSAI_BASE_URL: API endpoint (defaults to localhost:8000 for development)
+- RESPAN_API_KEY: Your Respan API key
+- RESPAN_BASE_URL: API endpoint (defaults to localhost:8000 for development)
 
 📖 USAGE EXAMPLES:
 
@@ -63,8 +63,8 @@ from typing import List
 
 load_dotenv(override=True)
 
-from keywordsai.logs.api import LogAPI, SyncLogAPI
-from keywordsai.types.log_types import KeywordsAILogParams
+from respan.logs.api import LogAPI, SyncLogAPI
+from respan.types.log_types import RespanLogParams
 
 
 class TestLogsAPIReal:
@@ -72,7 +72,7 @@ class TestLogsAPIReal:
     Real logs API integration test class.
     
     This class contains comprehensive integration tests that demonstrate real-world
-    usage patterns of the Keywords AI Logs API. The tests are designed to be both
+    usage patterns of the Respan Logs API. The tests are designed to be both
     functional tests and educational examples.
     
     The tests simulate actual user workflows, including:
@@ -91,7 +91,7 @@ class TestLogsAPIReal:
         Comprehensive logs API integration test.
         
         This test demonstrates a complete end-to-end workflow for log management
-        in Keywords AI. It simulates real usage scenarios where:
+        in Respan. It simulates real usage scenarios where:
         
         1. A developer wants to log API requests and responses
         2. They create logs with various parameters and configurations
@@ -116,26 +116,26 @@ class TestLogsAPIReal:
         
         # 🔧 SETUP: Initialize API client (reads from .env automatically)
         # Skip test if API key is not configured
-        if not os.getenv("KEYWORDSAI_API_KEY"):
-            pytest.skip("KEYWORDSAI_API_KEY not found in environment")
+        if not os.getenv("RESPAN_API_KEY"):
+            pytest.skip("RESPAN_API_KEY not found in environment")
         
         print(f"\n🚀 Logs API Comprehensive Test")
         print(f"📅 Test Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
         print(f"🎯 Goal: Test comprehensive log management functionality")
-        print(f"🔗 API: {os.getenv('KEYWORDSAI_BASE_URL', 'default')}")
+        print(f"🔗 API: {os.getenv('RESPAN_BASE_URL', 'default')}")
         print("=" * 60)
         
         # Initialize SDK client for log operations (automatically reads from .env)
         log_api = LogAPI()
         
         # Track created log responses for reference
-        created_log_data: List[KeywordsAILogParams] = []
+        created_log_data: List[RespanLogParams] = []
         
         try:
             # 📝 STEP 1: Create a minimal log
             print(f"📝 Step 1: Creating minimal log...")
             
-            minimal_log_data = KeywordsAILogParams(
+            minimal_log_data = RespanLogParams(
                 model="gpt-4",
                 input="Hello, world!",
                 output="Hi there! How can I help you today?",
@@ -163,7 +163,7 @@ class TestLogsAPIReal:
             
             current_time = datetime.now(timezone.utc)
             
-            comprehensive_log_data = KeywordsAILogParams(
+            comprehensive_log_data = RespanLogParams(
                 # Core parameters
                 model="gpt-3.5-turbo",
                 input="What is the meaning of life?",
@@ -208,7 +208,7 @@ class TestLogsAPIReal:
             # 📝 STEP 3: Create an error log
             print(f"📝 Step 3: Creating error log...")
             
-            error_log_data = KeywordsAILogParams(
+            error_log_data = RespanLogParams(
                 model="gpt-4",
                 input="This is a test error scenario",
                 output=None,  # No output for error case
@@ -391,8 +391,8 @@ class TestLogsAPIReal:
         
         # 🔧 SETUP: Initialize sync API client (reads from .env automatically)
         # Skip test if API key is not configured
-        if not os.getenv("KEYWORDSAI_API_KEY"):
-            pytest.skip("KEYWORDSAI_API_KEY not found in environment")
+        if not os.getenv("RESPAN_API_KEY"):
+            pytest.skip("RESPAN_API_KEY not found in environment")
         
         print(f"\n🔄 Synchronous Logs API Test")
         print(f"🎯 Goal: Test sync API functionality")
@@ -405,7 +405,7 @@ class TestLogsAPIReal:
             # Create a log synchronously
             print(f"📝 Creating log synchronously...")
             
-            log_data = KeywordsAILogParams(
+            log_data = RespanLogParams(
                 model="gpt-3.5-turbo",
                 input="Sync API test",
                 output="This is a sync API response",

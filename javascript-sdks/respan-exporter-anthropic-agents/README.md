@@ -34,7 +34,7 @@ for await (const message of exporter.query({
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RESPAN_API_KEY` | Yes | Your Respan API key. Falls back to `KEYWORDSAI_API_KEY`. |
+| `RESPAN_API_KEY` | Yes | Your Respan API key. Falls back to `RESPAN_API_KEY`. |
 | `RESPAN_BASE_URL` | No | Base URL for all Respan services. Defaults to `https://api.respan.ai`. Pass as `endpoint` constructor param with `/api/v1/traces/ingest` appended. |
 
 `RESPAN_BASE_URL` is the single base URL for all Respan services. To use it with the TypeScript exporter, pass it as the `endpoint` constructor param:

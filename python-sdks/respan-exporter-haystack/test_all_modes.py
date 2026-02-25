@@ -1,5 +1,5 @@
 """
-Comprehensive Test Suite - Keywords AI Haystack Integration
+Comprehensive Test Suite - Respan Haystack Integration
 
 Tests all 5 integration modes:
 1. Gateway only (no tracing, no prompt)
@@ -13,13 +13,13 @@ import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
 from haystack.components.generators import OpenAIGenerator
-from keywordsai_exporter_haystack import KeywordsAIConnector, KeywordsAIGenerator
+from respan_exporter_haystack import RespanConnector, RespanGenerator
 
 
 def check_env():
     """Check required environment variables."""
-    if not os.getenv("KEYWORDSAI_API_KEY"):
-        print("ERROR: KEYWORDSAI_API_KEY not set")
+    if not os.getenv("RESPAN_API_KEY"):
+        print("ERROR: RESPAN_API_KEY not set")
         return False
     if not os.getenv("OPENAI_API_KEY"):
         print("ERROR: OPENAI_API_KEY not set")
@@ -37,7 +37,7 @@ def test_1_gateway_only():
     
     pipeline = Pipeline()
     pipeline.add_component("prompt", PromptBuilder(template="Tell me a joke about {{topic}}."))
-    pipeline.add_component("llm", KeywordsAIGenerator(model="gpt-4o-mini"))
+    pipeline.add_component("llm", RespanGenerator(model="gpt-4o-mini"))
     pipeline.connect("prompt", "llm")
     
     result = pipeline.run({"prompt": {"topic": "Python"}})
@@ -49,7 +49,7 @@ def test_1_gateway_only():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see: Single log entry (NOT in traces view)")
     print("  Log type: Chat completion")
     return True
@@ -66,7 +66,7 @@ def test_2_gateway_with_prompt():
     PROMPT_ID = "1210b368ce2f4e5599d307bc591d9b7a"
     
     pipeline = Pipeline()
-    pipeline.add_component("llm", KeywordsAIGenerator(
+    pipeline.add_component("llm", RespanGenerator(
         model="gpt-4o-mini",
         prompt_id=PROMPT_ID
     ))
@@ -86,7 +86,7 @@ def test_2_gateway_with_prompt():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see: Log shows prompt_id in metadata")
     print("  Filter by: Prompt name (if set on platform)")
     return True
@@ -103,7 +103,7 @@ def test_3_trace_only():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component("tracer", KeywordsAIConnector("Test 3: Trace Only"))
+    pipeline.add_component("tracer", RespanConnector("Test 3: Trace Only"))
     pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
     pipeline.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))
     pipeline.connect("prompt", "llm")
@@ -118,7 +118,7 @@ def test_3_trace_only():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  View: Switch to 'Traces' tab")
     print("  What to see:")
     print("    - Test 3: Trace Only (root)")
@@ -138,9 +138,9 @@ def test_4_trace_with_gateway():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component("tracer", KeywordsAIConnector("Test 4: Gateway + Trace"))
+    pipeline.add_component("tracer", RespanConnector("Test 4: Gateway + Trace"))
     pipeline.add_component("prompt", PromptBuilder(template="Explain {{topic}} in one sentence."))
-    pipeline.add_component("llm", KeywordsAIGenerator(model="gpt-4o-mini"))
+    pipeline.add_component("llm", RespanGenerator(model="gpt-4o-mini"))
     pipeline.connect("prompt", "llm")
     
     result = pipeline.run({"prompt": {"topic": "neural networks"}})
@@ -153,13 +153,13 @@ def test_4_trace_with_gateway():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see:")
     print("    1. LOGS TAB: Individual LLM call from gateway")
     print("    2. TRACES TAB: Full workflow trace with:")
     print("       - Test 4: Gateway + Trace (root)")
     print("       - prompt (PromptBuilder)")
-    print("       - llm (KeywordsAI gateway)")
+    print("       - llm (Respan gateway)")
     return True
 
 
@@ -175,8 +175,8 @@ def test_5_full_stack():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component("tracer", KeywordsAIConnector("Test 5: Full Stack"))
-    pipeline.add_component("llm", KeywordsAIGenerator(
+    pipeline.add_component("tracer", RespanConnector("Test 5: Full Stack"))
+    pipeline.add_component("llm", RespanGenerator(
         model="gpt-4o-mini",
         prompt_id=PROMPT_ID
     ))
@@ -197,7 +197,7 @@ def test_5_full_stack():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.keywordsai.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see:")
     print("    1. LOGS TAB: LLM call with prompt_id metadata")
     print("    2. TRACES TAB: Trace with:")
@@ -210,17 +210,17 @@ def test_5_full_stack():
 def main():
     """Run all tests."""
     print("\n" + "="*80)
-    print("KEYWORDS AI HAYSTACK INTEGRATION - COMPREHENSIVE TEST SUITE")
+    print("RESPAN HAYSTACK INTEGRATION - COMPREHENSIVE TEST SUITE")
     print("="*80)
     
     if not check_env():
         print("\nPlease set required environment variables:")
-        print("  export KEYWORDSAI_API_KEY='your-key'")
+        print("  export RESPAN_API_KEY='your-key'")
         print("  export OPENAI_API_KEY='your-openai-key'")
         return
     
     print("\nRunning 5 test scenarios...")
-    print("After each test, check the Keywords AI dashboard to verify results.")
+    print("After each test, check the Respan dashboard to verify results.")
     
     tests = [
         ("Test 1: Gateway Only", test_1_gateway_only),
@@ -257,8 +257,8 @@ def main():
     print("\n" + "="*80)
     print("DASHBOARD CHECK")
     print("="*80)
-    print("  Logs: https://platform.keywordsai.co/logs")
-    print("  Traces: https://platform.keywordsai.co/logs (switch to Traces tab)")
+    print("  Logs: https://platform.respan.ai/logs")
+    print("  Traces: https://platform.respan.ai/logs (switch to Traces tab)")
     print("\nExpected results:")
     print("  - 5 LLM logs (Tests 1, 2, 4, 5 + Test 3 direct)")
     print("  - 3 Traces (Tests 3, 4, 5)")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example usage of the new KeywordsAI OpenTelemetry implementation.
+Example usage of the new Respan OpenTelemetry implementation.
 
 This script demonstrates how to use the new implementation that replaces Traceloop
 with direct OpenTelemetry usage while maintaining the same API.
@@ -14,18 +14,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import the new implementation
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task, agent, tool
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing import RespanTelemetry, workflow, task, agent, tool
+from respan_tracing.contexts.span import respan_span_attributes
 
 # Initialize telemetry (same as before, but now uses OpenTelemetry directly)
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="example-app",
-    api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
-    base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
+    api_key=os.getenv("RESPAN_API_KEY", "test-key"),
+    base_url=os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api"),
     is_enabled=True
 )
 
-print("🚀 KeywordsAI OpenTelemetry Example")
+print("🚀 Respan OpenTelemetry Example")
 print("=" * 50)
 
 # Example 1: Basic workflow with tasks
@@ -115,8 +115,8 @@ async def async_process_item(item):
 @workflow(name="context_workflow")
 def context_workflow(user_id, session_id):
     """Workflow that uses context manager for additional tracing metadata"""
-    with keywordsai_span_attributes(
-        keywordsai_params={
+    with respan_span_attributes(
+        respan_params={
             "trace_group_identifier": f"user_{user_id}_session_{session_id}",
             "user_id": user_id,
             "session_id": session_id

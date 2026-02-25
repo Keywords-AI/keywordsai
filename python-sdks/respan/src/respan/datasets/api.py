@@ -1,5 +1,5 @@
 """
-Keywords AI Dataset APIs
+Respan Dataset APIs
 
 This module provides functionality for managing datasets, including:
 - Creating and managing datasets
@@ -32,9 +32,9 @@ from respan.constants.dataset_constants import (
 
 class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
     """
-    Unified Dataset API client for Keywords AI with both sync and async methods.
+    Unified Dataset API client for Respan with both sync and async methods.
 
-    This class provides comprehensive functionality for managing datasets in Keywords AI,
+    This class provides comprehensive functionality for managing datasets in Respan,
     including creating datasets, managing logs within datasets, running evaluations,
     and retrieving results. All operations are available in both synchronous and
     asynchronous variants.
@@ -47,9 +47,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         - Full CRUD operations for dataset management
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
         >>> from respan.datasets.api import DatasetAPI
@@ -99,9 +99,9 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         Initialize the Dataset API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -110,7 +110,7 @@ class DatasetAPI(BaseAPI[Dataset, DatasetList, DatasetCreate, DatasetUpdate]):
         """
         Create a new dataset with specified parameters (asynchronous).
 
-        This method creates a new dataset in Keywords AI with the provided configuration.
+        This method creates a new dataset in Respan with the provided configuration.
         The dataset can be configured for different types of log collection and filtering.
 
         Args:
@@ -669,8 +669,8 @@ def create_dataset_client(api_key: str, base_url: str = None) -> DatasetAPI:
     Create a unified dataset API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         DatasetAPI client instance with both sync and async methods

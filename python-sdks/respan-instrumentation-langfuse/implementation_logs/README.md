@@ -31,7 +31,7 @@ The previous developer used **FOUR different patching approaches**, all wrong:
 
 #### 1. Custom SpanProcessor (❌ WRONG)
 ```python
-class KeywordsAISpanProcessor(SpanProcessor):
+class RespanSpanProcessor(SpanProcessor):
     def on_end(self, span):
         # Process spans...
 ```
@@ -49,14 +49,14 @@ otlp_module.OTLPSpanExporter.export = patched_export
 #### 3. Import Substitution (❌ WRONG)
 ```python
 # Forces users to change imports
-from keywordsai_instrumentation_langfuse import Langfuse, observe
+from respan_instrumentation_langfuse import Langfuse, observe
 ```
 
 **Why wrong:** Not OTEL standard, breaks IDE features, requires code changes.
 
 #### 4. HTTP Client Interception (❌ WRONG)
 ```python
-class KeywordsAIHTTPClient(httpx.Client):
+class RespanHTTPClient(httpx.Client):
     def send(self, request):
         # Intercept...
 ```
@@ -93,10 +93,10 @@ class LangfuseInstrumentor(BaseInstrumentor):
         
         # Is this going to Langfuse?
         if 'langfuse' in endpoint.lower() or 'cloud.langfuse.com' in endpoint:
-            # YES - Transform and redirect to Keywords AI
+            # YES - Transform and redirect to Respan
             spans = args[0]
-            keywords_logs = transform_otel_to_keywords(spans)
-            send_to_keywords_ai(keywords_logs)
+            respan_logs = transform_otel_to_respan(spans)
+            send_to_respan(respan_logs)
             return SpanExportResult.SUCCESS
         else:
             # NO - Pass through unchanged (don't break other exports!)
@@ -121,7 +121,7 @@ class LangfuseInstrumentor(BaseInstrumentor):
 
 ```python
 # What customers add (ONE LINE):
-from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
+from respan_instrumentation_langfuse import LangfuseInstrumentor
 LangfuseInstrumentor().instrument(api_key="kai-xxx")
 
 # Everything else stays exactly the same:
@@ -202,10 +202,10 @@ class LangfuseInstrumentor(BaseInstrumentor):
 
 #### Proper Environment Variables
 ```python
-api_key = kwargs.get("api_key") or os.getenv("KEYWORDSAI_API_KEY")
+api_key = kwargs.get("api_key") or os.getenv("RESPAN_API_KEY")
 endpoint = kwargs.get("endpoint") or os.getenv(
-    "KEYWORDSAI_ENDPOINT",
-    "https://api.keywordsai.co/api/v1/traces/ingest"
+    "RESPAN_ENDPOINT",
+    "https://api.respan.ai/api/v1/traces/ingest"
 )
 ```
 
@@ -237,7 +237,7 @@ User Code
   OTLPSpanExporter.export() ← WE PATCH HERE (with wrapt)
        ↓
   Check: Is endpoint Langfuse?
-       ├─ YES → Transform OTEL spans → Keywords AI format → Send to Keywords AI
+       ├─ YES → Transform OTEL spans → Respan format → Send to Respan
        └─ NO  → Pass through unchanged (don't break other exports)
 ```
 
@@ -279,8 +279,8 @@ def export_wrapper(wrapped, instance, args, kwargs):
     
     # This IS Langfuse - intercept and redirect
     spans = args[0]
-    keywords_logs = transform_otel_to_keywords(spans)
-    send_to_keywords_ai(keywords_logs)
+    respan_logs = transform_otel_to_respan(spans)
+    send_to_respan(respan_logs)
     return SpanExportResult.SUCCESS
 ```
 
@@ -292,7 +292,7 @@ def export_wrapper(wrapped, instance, args, kwargs):
 
 ```python
 # tests/test_basic_langfuse.py
-from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
+from respan_instrumentation_langfuse import LangfuseInstrumentor
 
 # Instrument BEFORE importing Langfuse
 LangfuseInstrumentor().instrument(api_key="test-key")
@@ -314,12 +314,12 @@ langfuse.flush()
 $ poetry run python tests/test_basic_langfuse.py
 
 ✅ Intercepting Langfuse OTLP export from: https://cloud.langfuse.com/api/public/otel/v1/traces
-✅ Transformed 1 OTEL spans to Keywords AI format
-✅ Successfully sent 1 spans to Keywords AI
+✅ Transformed 1 OTEL spans to Respan format
+✅ Successfully sent 1 spans to Respan
 
 ✅ Intercepting Langfuse OTLP export from: https://cloud.langfuse.com/api/public/otel/v1/traces
-✅ Transformed 3 OTEL spans to Keywords AI format
-✅ Successfully sent 3 spans to Keywords AI
+✅ Transformed 3 OTEL spans to Respan format
+✅ Successfully sent 3 spans to Respan
 
 ALL TESTS PASSED!
 ```
@@ -417,9 +417,9 @@ def wrapper(wrapped, instance, args, kwargs):
 ## 📂 Project Structure
 
 ```
-python-sdks/keywordsai-instrumentation-langfuse/
+python-sdks/respan-instrumentation-langfuse/
 ├── src/
-│   └── keywordsai_instrumentation_langfuse/
+│   └── respan_instrumentation_langfuse/
 │       ├── __init__.py              # Public API
 │       └── instrumentor.py          # Main implementation
 ├── tests/
@@ -437,7 +437,7 @@ python-sdks/keywordsai-instrumentation-langfuse/
 ### For Users
 
 ```python
-from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
+from respan_instrumentation_langfuse import LangfuseInstrumentor
 
 LangfuseInstrumentor().instrument(api_key="kai-xxx")
 

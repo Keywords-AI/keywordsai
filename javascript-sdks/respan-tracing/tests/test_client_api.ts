@@ -3,22 +3,22 @@
  * 
  * Tests:
  * - Get current trace and span IDs
- * - Update span with KeywordsAI parameters
+ * - Update span with Respan parameters
  * - Add events
  * - Record exceptions
  * - Check recording status
  */
 
-import { KeywordsAITelemetry, getClient } from "../src/index.js";
+import { RespanTelemetry, getClient } from "../src/index.js";
 import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
 
 // Initialize with debug logging
-const kai = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+const kai = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "test-client-api",
   logLevel: "debug",
   traceContent: true,
@@ -51,16 +51,16 @@ const test1_getTraceAndSpanIds = async () => {
   });
 };
 
-// Test 2: Update span with KeywordsAI parameters
-const test2_updateSpanWithKeywordsAIParams = async () => {
-  console.log("\n[Test 2] Update Span with KeywordsAI Parameters");
+// Test 2: Update span with Respan parameters
+const test2_updateSpanWithRespanParams = async () => {
+  console.log("\n[Test 2] Update Span with Respan Parameters");
   
-  await kai.withTask({ name: "test_keywordsai_params" }, async () => {
+  await kai.withTask({ name: "test_respan_params" }, async () => {
     const client = getClient();
     
-    // Update with all KeywordsAI parameters
+    // Update with all Respan parameters
     client.updateCurrentSpan({
-      keywordsaiParams: {
+      respanParams: {
         customerIdentifier: "test-user-123",
         traceGroupIdentifier: "test-experiment-456",
         metadata: {
@@ -75,7 +75,7 @@ const test2_updateSpanWithKeywordsAIParams = async () => {
     console.log("✓ Updated span with trace_group_identifier: test-experiment-456");
     console.log("✓ Updated span with metadata");
     
-    console.log("✅ Test 2 Passed: Updated span with KeywordsAI params");
+    console.log("✅ Test 2 Passed: Updated span with Respan params");
   });
 };
 
@@ -206,14 +206,14 @@ const test8_combinedWorkflow = async () => {
       const traceId = client.getCurrentTraceId();
       console.log(`✓ Trace ID: ${traceId}`);
       
-      // Update with KeywordsAI params
+      // Update with Respan params
       client.updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           customerIdentifier: "combined-user",
           traceGroupIdentifier: "combined-test",
         },
       });
-      console.log("✓ Set KeywordsAI params");
+      console.log("✓ Set Respan params");
       
       // Add event
       client.addEvent("workflow_started");
@@ -245,14 +245,14 @@ const test8_combinedWorkflow = async () => {
 const runAllTests = async () => {
   console.log("Starting Client API tests...\n");
   console.log("Environment:");
-  console.log(`- Base URL: ${process.env.KEYWORDSAI_BASE_URL}`);
-  console.log(`- API Key: ${process.env.KEYWORDSAI_API_KEY?.substring(0, 10)}...`);
+  console.log(`- Base URL: ${process.env.RESPAN_BASE_URL}`);
+  console.log(`- API Key: ${process.env.RESPAN_API_KEY?.substring(0, 10)}...`);
   
   await kai.initialize();
   
   try {
     await test1_getTraceAndSpanIds();
-    await test2_updateSpanWithKeywordsAIParams();
+    await test2_updateSpanWithRespanParams();
     await test3_addEvents();
     await test4_recordExceptions();
     await test5_isRecording();

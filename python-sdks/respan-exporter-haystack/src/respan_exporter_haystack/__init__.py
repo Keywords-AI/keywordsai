@@ -1,4 +1,4 @@
-"""Keywords AI integration for Haystack pipelines."""
+"""Respan integration for Haystack pipelines."""
 
 from .connector import RespanConnector
 from .tracer import RespanTracer
@@ -9,7 +9,7 @@ __all__ = [
     # Tracing (track workflow spans)
     "RespanConnector",
     "RespanTracer",
-    # Gateway (route LLM calls through Keywords AI)
+    # Gateway (route LLM calls through Respan)
     "RespanGenerator",
     "RespanChatGenerator",
 ]

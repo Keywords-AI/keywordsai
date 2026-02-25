@@ -1,4 +1,4 @@
-import { KeywordsAITelemetry } from '../src/index';
+import { RespanTelemetry } from '../src/index';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 
@@ -6,21 +6,21 @@ const result = dotenv.config({ override: true, path: '.env' });
 console.log(result);
 
 // Initialize clients
-const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "",
-    baseURL: process.env.KEYWORDSAI_BASE_URL || "",
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "",
+    baseURL: process.env.RESPAN_BASE_URL || "",
     appName: 'test-decorator-app',
     disableBatch: true  // For testing, disable batching
 });
 
 // Enable OpenAI instrumentation
-await keywordsAi.enableInstrumentation('openai');
+await respan.enableInstrumentation('openai');
 
 const openai = new OpenAI();
 
 // Step 1: Basic Task using decorator pattern
 const createJoke = async () => {
-    return await keywordsAi.withTask(
+    return await respan.withTask(
         { name: 'joke_creation' },
         async () => {
             const completion = await openai.chat.completions.create({
@@ -35,7 +35,7 @@ const createJoke = async () => {
 
 // Step 2: Task with Parameters using decorator pattern
 const translateJoke = async (joke: string) => {
-    return await keywordsAi.withTask(
+    return await respan.withTask(
         { 
             name: 'joke_translation',
             version: 1,
@@ -58,7 +58,7 @@ const translateJoke = async (joke: string) => {
 
 // Step 3: Simple Workflow using decorator pattern
 const jokeWorkflow = async () => {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'pirate_joke_workflow', version: 1 },
         async () => {
             const joke = await createJoke();
@@ -70,12 +70,12 @@ const jokeWorkflow = async () => {
 
 // Step 4: Complex Workflow with Multiple Tasks using decorator pattern
 const audienceReaction = async (joke: string) => {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'audience_reaction', version: 1 },
         async () => {
             // Run reactions in parallel
             const [laughs, applause] = await Promise.all([
-                keywordsAi.withTask(
+                respan.withTask(
                     { name: 'audience_laughs' },
                     async () => {
                         const completion = await openai.chat.completions.create({
@@ -88,7 +88,7 @@ const audienceReaction = async (joke: string) => {
                         return completion.choices[0].message.content;
                     }
                 ),
-                keywordsAi.withTask(
+                respan.withTask(
                     { name: 'audience_applause' },
                     async () => {
                         const completion = await openai.chat.completions.create({
@@ -110,7 +110,7 @@ const audienceReaction = async (joke: string) => {
 
 // Step 5: Complete Example using decorator pattern
 const completeJokeExperience = async () => {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { 
             name: 'complete_joke_experience',
             version: 1,
@@ -121,7 +121,7 @@ const completeJokeExperience = async () => {
             const reaction = await audienceReaction(pirateJoke);
             
             // Add non-LLM task using decorator pattern
-            await keywordsAi.withTask(
+            await respan.withTask(
                 { name: 'logging', suppressTracing: false },
                 async () => {
                     console.log('Joke:', pirateJoke);
@@ -140,7 +140,7 @@ const completeJokeExperience = async () => {
 
 // Step 6: Agent example using decorator pattern
 const jokeAgent = async (topic: string) => {
-    return await keywordsAi.withAgent(
+    return await respan.withAgent(
         { 
             name: 'joke_agent',
             version: 1,
@@ -148,7 +148,7 @@ const jokeAgent = async (topic: string) => {
         },
         async () => {
             // Agent can use tools
-            const research = await keywordsAi.withTool(
+            const research = await respan.withTool(
                 { name: 'topic_research' },
                 async () => {
                     const completion = await openai.chat.completions.create({
@@ -162,7 +162,7 @@ const jokeAgent = async (topic: string) => {
                 }
             );
 
-            const joke = await keywordsAi.withTool(
+            const joke = await respan.withTool(
                 { name: 'joke_generator' },
                 async () => {
                     const completion = await openai.chat.completions.create({
@@ -199,11 +199,11 @@ async function main() {
         console.log('\n=== All tests completed ===');
         
         // Shutdown tracing
-        await keywordsAi.shutdown();
+        await respan.shutdown();
         
     } catch (error) {
         console.error('Error:', error);
-        await keywordsAi.shutdown();
+        await respan.shutdown();
     }
 }
 

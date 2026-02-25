@@ -1,6 +1,6 @@
-# Keywords AI SDK Examples
+# Respan SDK Examples
 
-This directory contains clean, readable examples showing how to use the Keywords AI Python SDK.
+This directory contains clean, readable examples showing how to use the Respan Python SDK.
 
 ## Available Examples
 
@@ -84,8 +84,8 @@ python examples/sdk_structure_demo.py
 1. **Set up environment variables**:
    ```bash
    # Create .env file in project root
-   KEYWORDSAI_API_KEY=your_api_key_here
-   KEYWORDSAI_BASE_URL=http://localhost:8000  # optional
+   RESPAN_API_KEY=your_api_key_here
+   RESPAN_BASE_URL=http://localhost:8000  # optional
    ```
 
 2. **Install dependencies**:
@@ -124,13 +124,13 @@ python examples/sdk_structure_demo.py
 python examples/dataset_workflow_example.py
 
 # Run robust test suites  
-python -m pytest tests/test_keywords_ai_api_integration.py -v -s
+python -m pytest tests/test_respan_api_integration.py -v -s
 
 # Hybrid: Demo mode from integration test file
-python tests/test_keywords_ai_api_integration.py
+python tests/test_respan_api_integration.py
 
 # Test mode from integration test file
-python tests/test_keywords_ai_api_integration.py --test
+python tests/test_respan_api_integration.py --test
 ```
 
 ## Best Practices

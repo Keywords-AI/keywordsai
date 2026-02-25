@@ -1,14 +1,14 @@
 """
 Real API Integration Tests
 
-These tests use actual API calls against the Keywords AI service.
+These tests use actual API calls against the Respan service.
 They require valid credentials in the .env file and a running API server.
 
 Environment variables required:
-- KEYWORDSAI_API_KEY
-- KEYWORDSAI_BASE_URL (defaults to http://localhost:8000)
+- RESPAN_API_KEY
+- RESPAN_BASE_URL (defaults to http://localhost:8000)
 
-Run with: python -m pytest tests/test_keywords_ai_api_integration.py -v -s
+Run with: python -m pytest tests/test_respan_api_integration.py -v -s
 """
 
 import pytest
@@ -19,9 +19,9 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-from keywordsai.datasets.api import DatasetAPI, SyncDatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+from respan.datasets.api import DatasetAPI, SyncDatasetAPI
+from respan.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
+from respan_sdk.respan_types.dataset_types import (
     DatasetCreate,
     DatasetUpdate,
 )
@@ -30,16 +30,16 @@ from keywordsai_sdk.keywordsai_types.dataset_types import (
 @pytest.fixture
 def real_api_key():
     """Get real API key from environment"""
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
+    api_key = os.getenv("RESPAN_API_KEY")
     if not api_key:
-        pytest.skip("KEYWORDSAI_API_KEY not found in environment")
+        pytest.skip("RESPAN_API_KEY not found in environment")
     return api_key
 
 
 @pytest.fixture
 def real_base_url():
     """Get real base URL from environment"""
-    return os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    return os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
 
 
 @pytest.fixture
@@ -82,12 +82,12 @@ def test_dataset_data():
     )
 
 
-class TestKeywordsAIEvaluatorAPIIntegration:
-    """Test Keywords AI Evaluator API with real API calls"""
+class TestRespanEvaluatorAPIIntegration:
+    """Test Respan Evaluator API with real API calls"""
 
     @pytest.mark.asyncio
-    async def test_keywords_ai_list_evaluators_integration(self, real_evaluator_api):
-        """Test listing evaluators with real Keywords AI API"""
+    async def test_respan_list_evaluators_integration(self, real_evaluator_api):
+        """Test listing evaluators with real Respan API"""
         print("\n🔍 Testing real evaluator listing...")
 
         try:
@@ -109,8 +109,8 @@ class TestKeywordsAIEvaluatorAPIIntegration:
             raise
 
     @pytest.mark.asyncio
-    async def test_keywords_ai_get_evaluator_integration(self, real_evaluator_api):
-        """Test getting a specific evaluator with real Keywords AI API"""
+    async def test_respan_get_evaluator_integration(self, real_evaluator_api):
+        """Test getting a specific evaluator with real Respan API"""
         print("\n🔍 Testing real evaluator retrieval...")
 
         try:
@@ -134,10 +134,10 @@ class TestKeywordsAIEvaluatorAPIIntegration:
             print(f"❌ Error retrieving evaluator: {e}")
             raise
 
-    def test_keywords_ai_sync_list_evaluators_integration(
+    def test_respan_sync_list_evaluators_integration(
         self, real_sync_evaluator_api
     ):
-        """Test sync evaluator listing with real Keywords AI API"""
+        """Test sync evaluator listing with real Respan API"""
         print("\n🔍 Testing real sync evaluator listing...")
 
         try:
@@ -152,14 +152,14 @@ class TestKeywordsAIEvaluatorAPIIntegration:
             raise
 
 
-class TestKeywordsAIDatasetAPIIntegration:
-    """Test Keywords AI Dataset API with real API calls"""
+class TestRespanDatasetAPIIntegration:
+    """Test Respan Dataset API with real API calls"""
 
     @pytest.mark.asyncio
-    async def test_keywords_ai_dataset_crud_workflow_integration(
+    async def test_respan_dataset_crud_workflow_integration(
         self, real_dataset_api, test_dataset_data
     ):
-        """Test complete dataset CRUD workflow with real Keywords AI API"""
+        """Test complete dataset CRUD workflow with real Respan API"""
         print("\n🔍 Testing real dataset CRUD workflow...")
 
         created_dataset = None
@@ -284,8 +284,8 @@ class TestKeywordsAIDatasetAPIIntegration:
                     print(f"⚠️ Warning: Could not delete test dataset: {cleanup_error}")
 
 
-class TestKeywordsAIEvaluationWorkflowIntegration:
-    """Test Keywords AI evaluation workflow with real API calls"""
+class TestRespanEvaluationWorkflowIntegration:
+    """Test Respan evaluation workflow with real API calls"""
 
     @pytest.mark.asyncio
     async def test_evaluation_discovery_real(
@@ -347,8 +347,8 @@ class TestKeywordsAIEvaluationWorkflowIntegration:
                     print(f"⚠️ Warning: Could not delete test dataset: {cleanup_error}")
 
 
-class TestKeywordsAIAPIErrorHandlingIntegration:
-    """Test error handling with real Keywords AI API calls"""
+class TestRespanAPIErrorHandlingIntegration:
+    """Test error handling with real Respan API calls"""
 
     @pytest.mark.asyncio
     async def test_nonexistent_dataset_real(self, real_dataset_api):
@@ -393,15 +393,15 @@ class TestKeywordsAIAPIErrorHandlingIntegration:
 
 async def demo_workflow():
     """Demo workflow when running as script (not pytest)"""
-    print("🚀 Keywords AI SDK Demo Workflow")
+    print("🚀 Respan SDK Demo Workflow")
     print("=" * 50)
     
     # Setup
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
     
     if not api_key:
-        print("❌ KEYWORDSAI_API_KEY not found in environment")
+        print("❌ RESPAN_API_KEY not found in environment")
         print("   Please set your API key in .env file")
         return
     
@@ -462,7 +462,7 @@ async def demo_workflow():
         
         print("🎉 Demo completed successfully!")
         print("\n💡 To run the full test suite instead:")
-        print("   python -m pytest tests/test_keywords_ai_api_integration.py -v -s")
+        print("   python -m pytest tests/test_respan_api_integration.py -v -s")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")

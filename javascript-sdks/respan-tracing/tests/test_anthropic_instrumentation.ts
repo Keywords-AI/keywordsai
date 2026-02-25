@@ -12,13 +12,13 @@
  * but SDK v0.50.0+ introduced breaking changes that prevent instrumentation from working.
  * Last confirmed working version: 0.41.0
  * 
- * This example shows how to trace Anthropic API calls with KeywordsAI.
+ * This example shows how to trace Anthropic API calls with Respan.
  * Use case: Building a content summarization tool with Claude
  * 
  * Setup:
  * 1. Use compatible SDK version (already in package.json at 0.41.0):
  *    yarn add -D @anthropic-ai/sdk@0.41.0 @traceloop/instrumentation-anthropic
- * 2. Set ANTHROPIC_API_KEY and KEYWORDSAI_API_KEY environment variables
+ * 2. Set ANTHROPIC_API_KEY and RESPAN_API_KEY environment variables
  * 3. Run: tsx tests/test_anthropic_instrumentation.ts
  * 
  * Alternative:
@@ -26,7 +26,7 @@
  * - See examples/openai-integration-test.ts
  */
 
-import { KeywordsAITelemetry } from '../src/main.js';
+import { RespanTelemetry } from '../src/main.js';
 import Anthropic from '@anthropic-ai/sdk';
 import * as dotenv from 'dotenv';
 
@@ -42,9 +42,9 @@ if (!process.env.ANTHROPIC_API_KEY) {
 console.log('\n🚀 Content Summarization with Claude\n');
 
 // Initialize tracing with MANUAL instrumentation
-const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseURL: process.env.KEYWORDSAI_BASE_URL,
+const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
+    baseURL: process.env.RESPAN_BASE_URL,
     appName: 'content-summarizer',
     traceContent: true,
     logLevel: 'debug',  // Enable debug logging to see spans

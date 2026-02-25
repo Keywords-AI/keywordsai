@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Example demonstrating flexible input options for Keywords AI TypeScript SDK
+ * Example demonstrating flexible input options for Respan TypeScript SDK
  *
  * This example shows how you can use either plain objects or strongly-typed interfaces
  * as input to all API methods. This makes the SDK much more user-friendly
@@ -27,8 +27,8 @@ config({ override: true });
 
 async function main() {
   // Initialize clients
-  const apiKey = process.env.KEYWORDSAI_API_KEY || 'your-api-key';
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL;
+  const apiKey = process.env.RESPAN_API_KEY || 'your-api-key';
+  const baseUrl = process.env.RESPAN_BASE_URL;
 
   const experimentClient = new ExperimentAPI({ apiKey, baseUrl });
   const datasetClient = new DatasetAPI({ apiKey, baseUrl });

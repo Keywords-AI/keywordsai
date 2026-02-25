@@ -1,23 +1,23 @@
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing.contexts.span import respan_span_attributes
 from openai import OpenAI
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import workflow, task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import workflow, task
 import os
 
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 client = OpenAI()
 
-os.environ["KEYWORDSAI_API_KEY"] = "test"
-os.environ["KEYWORDSAI_BASE_URL"] = "https://api.keywordsai.co/api"
-os.environ["KEYWORDSAI_API_KEY"] = os.getenv("KEYWORDSAI_API_KEY")
+os.environ["RESPAN_API_KEY"] = "test"
+os.environ["RESPAN_BASE_URL"] = "https://api.respan.ai/api"
+os.environ["RESPAN_API_KEY"] = os.getenv("RESPAN_API_KEY")
 
 @workflow(name="test_dynamic_attributes")
 def test_dynamic_attributes():
-    with keywordsai_span_attributes(
-        keywordsai_params={
+    with respan_span_attributes(
+        respan_params={
             "trace_group_identifier": "test_dynamic_attributes",
         }
     ):

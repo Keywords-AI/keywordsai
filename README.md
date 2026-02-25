@@ -11,7 +11,7 @@
 </p>
 
 <div align="center">
-  <a href="https://www.ycombinator.com/companies/keywords-ai"><img src="https://img.shields.io/badge/Y%20Combinator-W24-orange" alt="Y Combinator W24"></a>
+  <a href="https://www.ycombinator.com/companies/respan"><img src="https://img.shields.io/badge/Y%20Combinator-W24-orange" alt="Y Combinator W24"></a>
   <a href="https://www.respan.ai"><img src="https://img.shields.io/badge/Platform-green.svg?style=flat-square" alt="Platform" style="height: 20px;"></a>
   <a href="https://docs.respan.ai/get-started/overview"><img src="https://img.shields.io/badge/Documentation-blue.svg?style=flat-square" alt="Documentation" style="height: 20px;"></a>
   <a href="https://x.com/respan/"><img src="https://img.shields.io/twitter/follow/respan?style=social" alt="Twitter" style="height: 20px;"></a>
@@ -75,7 +75,7 @@ import { RespanTelemetry } from '@respan/tracing';
 
 // Initialize clients
 // Make sure to set these environment variables or pass them directly
-const keywordsAI = new RespanTelemetry({
+const respan = new RespanTelemetry({
     apiKey: process.env.RESPAN_API_KEY || "",
     baseUrl: process.env.RESPAN_BASE_URL || "",
     appName: 'test-app',
@@ -103,14 +103,14 @@ def my_workflow():
 
 
 #### Typescript/JavaScript
-You can now trace your LLM applications by wrapping the wrappers around your functions (`keywordsAI.withTask` in the below example)
+You can now trace your LLM applications by wrapping the wrappers around your functions (`respan.withTask` in the below example)
 
 > A workflow is the whole process of an AI agent run, and a workflow may contains several tasks also could say tools/LLM calls.
 >
 > In the example, below, this means there's an Agent run named `pirate_joke_workflow` and it contains 1 task `joke_creation` in this agent.
 ```TypeScript
 async function createJoke() {
-    return await keywordsAI.withTask(
+    return await respan.withTask(
         { name: 'joke_creation' },
         async () => {
             const completion = await openai.chat.completions.create({
@@ -124,7 +124,7 @@ async function createJoke() {
 }
 
 async function jokeWorkflow() {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'pirate_joke_workflow' },
         async () => {
             const joke = await createJoke();

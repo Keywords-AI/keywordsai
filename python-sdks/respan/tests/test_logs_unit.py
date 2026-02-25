@@ -6,7 +6,7 @@ This module contains unit tests for the Logs API functionality,
 focusing on SDK-specific logic like client initialization, URL building,
 and input validation - without mocking API calls.
 
-Following Keywords AI SDK Testing Strategy:
+Following Respan SDK Testing Strategy:
 - Focus on SDK logic only (no mocked API calls)
 - Test client initialization and configuration
 - Test input validation and parameter building
@@ -14,8 +14,8 @@ Following Keywords AI SDK Testing Strategy:
 """
 
 import pytest
-from keywordsai.logs.api import LogAPI, SyncLogAPI
-from keywordsai.types.log_types import KeywordsAILogParams, LogList
+from respan.logs.api import LogAPI, SyncLogAPI
+from respan.types.log_types import RespanLogParams, LogList
 
 
 class TestLogsAPIUnit:
@@ -46,7 +46,7 @@ class TestLogsAPIUnit:
         
         assert api is not None
         assert hasattr(api, 'client')
-        # SyncKeywordsAIClient uses internal _async_client for actual HTTP operations
+        # SyncRespanClient uses internal _async_client for actual HTTP operations
         assert hasattr(api.client, '_async_client')
         assert api.client._async_client.base_url == "http://test.com"
         assert "test-key" in api.client._async_client.headers.get("Authorization", "")
@@ -56,7 +56,7 @@ class TestLogsAPIUnit:
         api = SyncLogAPI()
         assert api is not None
         assert hasattr(api, 'client')
-        # SyncKeywordsAIClient uses internal _async_client
+        # SyncRespanClient uses internal _async_client
         assert hasattr(api.client, '_async_client')
         assert hasattr(api.client._async_client, 'base_url')
         assert hasattr(api.client._async_client, 'headers')
@@ -94,7 +94,7 @@ class TestLogsAPIUnit:
 
     def test_convenience_functions_with_explicit_params(self):
         """Test the convenience functions for creating clients with explicit parameters"""
-        from keywordsai.logs.api import create_log_client, create_sync_log_client
+        from respan.logs.api import create_log_client, create_sync_log_client
         
         # Test async client creation with explicit params
         async_client = create_log_client("test-key", "http://test.com")
@@ -108,7 +108,7 @@ class TestLogsAPIUnit:
 
     def test_convenience_functions_with_env_vars(self):
         """Test the convenience functions with environment variable loading"""
-        from keywordsai.logs.api import create_log_client, create_sync_log_client
+        from respan.logs.api import create_log_client, create_sync_log_client
         
         # Test async client creation with .env reading
         async_client_auto = create_log_client()
@@ -136,9 +136,9 @@ class TestLogsAPIUnit:
         assert log_list.count == 0
 
     def test_log_params_validation(self):
-        """Test KeywordsAILogParams input validation"""
+        """Test RespanLogParams input validation"""
         # Test valid log params
-        valid_params = KeywordsAILogParams(
+        valid_params = RespanLogParams(
             model="gpt-4",
             input="test input",
             output="test output",
@@ -151,7 +151,7 @@ class TestLogsAPIUnit:
         assert valid_params.status_code == 200
         
         # Test optional params
-        minimal_params = KeywordsAILogParams()
+        minimal_params = RespanLogParams()
         assert minimal_params.model is None
         assert minimal_params.input is None
 

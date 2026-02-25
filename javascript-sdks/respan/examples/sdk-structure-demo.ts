@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keywords AI SDK Structure Demo
+ * Respan SDK Structure Demo
  *
  * This example shows the SDK structure and how to initialize clients
  * without making actual API calls.
@@ -23,7 +23,7 @@ import {
 config({ override: true });
 
 function main() {
-  console.log('🏗️  Keywords AI SDK Structure Demo');
+  console.log('🏗️  Respan SDK Structure Demo');
   console.log('='.repeat(50));
 
   // 1. Show SDK structure
@@ -36,8 +36,8 @@ function main() {
 
   // 2. Show initialization
   console.log('🔧 Client Initialization:');
-  const apiKey = process.env.KEYWORDSAI_API_KEY || 'your-api-key-here';
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL || 'http://localhost:8000';
+  const apiKey = process.env.RESPAN_API_KEY || 'your-api-key-here';
+  const baseUrl = process.env.RESPAN_BASE_URL || 'http://localhost:8000';
 
   console.log(`   🔑 API Key: ${apiKey.length > 10 ? apiKey.slice(0, 10) + '...' : apiKey}`);
   console.log(`   🌐 Base URL: ${baseUrl}`);
@@ -95,8 +95,8 @@ function main() {
   console.log('      • EvaluatorList - List of evaluators with pagination');
   console.log();
   console.log('   📝 Log Types:');
-  console.log('      • KeywordsAILogParams - For creating logs');
-  console.log('      • KeywordsAIFullLogParams - Full log data');
+  console.log('      • RespanLogParams - For creating logs');
+  console.log('      • RespanFullLogParams - Full log data');
   console.log('      • LogList - List of logs with pagination');
   console.log();
 
@@ -122,7 +122,7 @@ function main() {
   console.log();
 
   console.log('🎯 Next Steps:');
-  console.log('   1. Set KEYWORDSAI_API_KEY environment variable');
+  console.log('   1. Set RESPAN_API_KEY environment variable');
   console.log('   2. Run examples: npm run example:simple-evaluator');
   console.log('   3. Check out the dataset-workflow example');
   console.log('   4. Explore the experiment-workflow example');

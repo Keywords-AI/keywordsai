@@ -1,5 +1,5 @@
 """
-Example demonstrating flexible input options for Keywords AI Python SDK
+Example demonstrating flexible input options for Respan Python SDK
 
 This example shows how you can use either dictionaries or Pydantic models
 as input to all API methods. This makes the SDK much more user-friendly
@@ -7,7 +7,7 @@ by eliminating the need to import and construct complex nested Pydantic types.
 """
 
 import asyncio
-from keywordsai import (
+from respan import (
     ExperimentAPI,
     DatasetAPI, 
     LogAPI,
@@ -15,8 +15,8 @@ from keywordsai import (
     ExperimentCreate,
     DatasetCreate,
 )
-from keywordsai.prompts.api import PromptAPI
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+from respan.prompts.api import PromptAPI
+from respan_sdk.respan_types.prompt_types import Prompt, PromptVersion
 
 
 async def main():
@@ -64,7 +64,7 @@ async def main():
     # Option 2: Using Pydantic models (still supported)
     print("\n2. Creating experiment with Pydantic model:")
     try:
-        from keywordsai.types.experiment_types import ExperimentColumnType, ExperimentRowType
+        from respan.types.experiment_types import ExperimentColumnType, ExperimentRowType
         
         experiment_pydantic = ExperimentCreate(
             name="My Pydantic Experiment", 
@@ -147,9 +147,9 @@ async def main():
     # Option 2: Using Pydantic model (still supported)
     print("\n2. Creating log with Pydantic model:")
     try:
-        from keywordsai.types.log_types import KeywordsAILogParams
+        from respan.types.log_types import RespanLogParams
         
-        log_pydantic = KeywordsAILogParams(
+        log_pydantic = RespanLogParams(
             model="gpt-3.5-turbo",
             input="How does photosynthesis work?",
             output="Photosynthesis is the process by which plants...",
@@ -280,8 +280,8 @@ if __name__ == "__main__":
     
     print("\nBEFORE (Complex imports and nested types):")
     print("""
-from keywordsai import ExperimentAPI
-from keywordsai.types.experiment_types import (
+from respan import ExperimentAPI
+from respan.types.experiment_types import (
     ExperimentCreate, 
     ExperimentColumnType,
     ExperimentRowType
@@ -309,7 +309,7 @@ result = client.create(experiment)
     
     print("\nAFTER (Simple dictionary syntax):")
     print("""
-from keywordsai import ExperimentAPI
+from respan import ExperimentAPI
 
 client = ExperimentAPI(api_key="key")
 experiment = {

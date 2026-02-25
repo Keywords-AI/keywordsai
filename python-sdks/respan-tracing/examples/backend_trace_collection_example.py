@@ -17,7 +17,7 @@ Two production-ready patterns for backend systems that need custom logging:
 from typing import List, Dict, Any, Sequence
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.sdk.trace import ReadableSpan
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task
+from respan_tracing import RespanTelemetry, workflow, task
 import threading
 import time
 
@@ -39,7 +39,7 @@ class DirectLoggingExporter(SpanExporter):
     
     Usage:
         exporter = DirectLoggingExporter(log_function=your_logger)
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             custom_exporter=exporter,
             is_batching_enabled=False,
         )
@@ -109,7 +109,7 @@ class SafeTraceCollector(SpanExporter):
             log_function=your_trace_logger,
             max_traces=100
         )
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             custom_exporter=collector,
             is_batching_enabled=False,
         )
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         print(f"  Logged: {span_data['name']}")
     
     exporter = DirectLoggingExporter(log_function=my_span_logger)
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="backend-direct",
         custom_exporter=exporter,
         is_batching_enabled=False,
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         max_traces=100
     )
     
-    telemetry2 = KeywordsAITelemetry(
+    telemetry2 = RespanTelemetry(
         app_name="backend-collector",
         custom_exporter=collector,
         is_batching_enabled=False,

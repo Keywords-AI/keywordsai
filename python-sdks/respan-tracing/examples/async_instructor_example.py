@@ -1,7 +1,7 @@
 """
-Simple Async Instructor + KeywordsAI Tracing Example
+Simple Async Instructor + Respan Tracing Example
 
-This example shows how easy it is to add KeywordsAI tracing to your async Instructor workflows.
+This example shows how easy it is to add Respan tracing to your async Instructor workflows.
 Just 3 lines of setup, then your structured outputs are automatically traced!
 """
 
@@ -10,13 +10,13 @@ import os
 from pydantic import BaseModel, Field
 import instructor
 from openai import AsyncOpenAI
-from keywordsai_tracing import KeywordsAITelemetry, Instruments
-from keywordsai_tracing.decorators import task
+from respan_tracing import RespanTelemetry, Instruments
+from respan_tracing.decorators import task
 from dotenv import load_dotenv
 load_dotenv()
 
-# 1️⃣ Initialize KeywordsAI tracing (one line!)
-k_tl = KeywordsAITelemetry(app_name="async-instructor-demo", instruments={Instruments.OPENAI})
+# 1️⃣ Initialize Respan tracing (one line!)
+k_tl = RespanTelemetry(app_name="async-instructor-demo", instruments={Instruments.OPENAI})
 
 # 2️⃣ Set up your async Instructor client (your existing code)
 async_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))

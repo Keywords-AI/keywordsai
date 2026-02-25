@@ -1,5 +1,5 @@
 """
-Keywords AI Experiment API Constants
+Respan Experiment API Constants
 
 This module defines the API endpoints and constants used for experiment operations.
 """

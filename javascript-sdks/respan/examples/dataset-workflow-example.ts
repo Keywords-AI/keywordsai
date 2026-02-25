@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Keywords AI Dataset Workflow Example
+ * Respan Dataset Workflow Example
  *
  * This example demonstrates the complete dataset workflow:
  * 1. List available logs
@@ -17,8 +17,8 @@
  *     npx tsx examples/dataset-workflow-example.ts
  *
  * Environment variables required:
- * - KEYWORDSAI_API_KEY
- * - KEYWORDSAI_BASE_URL (optional, defaults to http://localhost:8000)
+ * - RESPAN_API_KEY
+ * - RESPAN_BASE_URL (optional, defaults to http://localhost:8000)
  */
 
 import { config } from 'dotenv';
@@ -35,16 +35,16 @@ config({ override: true });
 
 async function main() {
   // Setup
-  const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL || 'http://localhost:8000';
+  const apiKey = process.env.RESPAN_API_KEY;
+  const baseUrl = process.env.RESPAN_BASE_URL || 'http://localhost:8000';
 
   if (!apiKey) {
-    console.log('❌ KEYWORDSAI_API_KEY not found in environment');
+    console.log('❌ RESPAN_API_KEY not found in environment');
     console.log('   Please set your API key in .env file');
     return;
   }
 
-  console.log('🚀 Keywords AI Dataset Workflow Example');
+  console.log('🚀 Respan Dataset Workflow Example');
   console.log('='.repeat(50));
   console.log(`🔗 Using API: ${baseUrl}`);
   console.log();

@@ -1,15 +1,15 @@
-import { KeywordsAITelemetry } from "../src/main";
+import { RespanTelemetry } from "../src/main";
 import { trace } from "@opentelemetry/api";
 
 async function debugHttpInstrumentation() {
-  console.log("1. Creating KeywordsAI instance...");
-  const keywordsai = new KeywordsAITelemetry({
+  console.log("1. Creating Respan instance...");
+  const respan = new RespanTelemetry({
     apiKey: "test-api-key",
-    baseURL: "https://api.keywordsai.co",
+    baseURL: "https://api.respan.ai",
   });
 
-  console.log("2. Initializing KeywordsAI tracing...");
-  await keywordsai.initialize();
+  console.log("2. Initializing Respan tracing...");
+  await respan.initialize();
 
   console.log("3. Creating manual span...");
   const tracer = trace.getTracer('test-tracer');
@@ -37,8 +37,8 @@ async function debugHttpInstrumentation() {
   console.log("6. Waiting for traces to be sent...");
   await new Promise(resolve => setTimeout(resolve, 2000));
 
-  console.log("7. Shutting down KeywordsAI...");
-  await keywordsai.shutdown();
+  console.log("7. Shutting down Respan...");
+  await respan.shutdown();
 }
 
 debugHttpInstrumentation().catch(console.error); 

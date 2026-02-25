@@ -4,11 +4,11 @@ load_dotenv(override=True)
 
 import json
 from opentelemetry.semconv_ai import SpanAttributes
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import workflow
 import os
 
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 client = k_tl.get_client()
 
 
@@ -22,7 +22,7 @@ def update_attributes_test(input: str):
     }
 
     client.update_current_span(
-        keywordsai_params={
+        respan_params={
             # keep metadata here if needed
             "metadata": {"test": "test"},
         },

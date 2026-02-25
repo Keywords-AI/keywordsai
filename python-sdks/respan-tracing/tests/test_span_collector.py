@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import Mock, MagicMock
 from opentelemetry.sdk.trace.export import SpanExportResult
 
-from keywordsai_tracing.core.span_collector import SpanCollector, LocalQueueSpanProcessor, _active_span_collector
-from keywordsai_tracing import KeywordsAITelemetry, get_client
+from respan_tracing.core.span_collector import SpanCollector, LocalQueueSpanProcessor, _active_span_collector
+from respan_tracing import RespanTelemetry, get_client
 
 
 class TestLocalQueueSpanProcessor:
@@ -96,7 +96,7 @@ class TestSpanCollector:
     def test_create_span_adds_to_queue(self):
         """Test that create_span adds spans to local queue"""
         # Initialize telemetry first
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             app_name="test-app",
             api_key="test-key",
             is_enabled=True,
@@ -178,12 +178,12 @@ class TestSpanCollector:
 
 
 class TestIntegration:
-    """Integration tests with KeywordsAIClient"""
+    """Integration tests with RespanClient"""
     
     def test_client_get_span_collector(self):
         """Test getting span collector from client"""
         # Initialize telemetry
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             app_name="test-app",
             api_key="test-key",
             is_enabled=True,
@@ -201,7 +201,7 @@ class TestIntegration:
     def test_span_collector_isolation(self):
         """Test that span collector collects ALL spans within its context"""
         # Initialize telemetry
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             app_name="test-app",
             api_key="test-key",
             is_enabled=True,

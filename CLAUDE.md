@@ -4,21 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a monorepo containing Keywords AI SDKs for Python and JavaScript/TypeScript. The SDKs provide OpenTelemetry-based tracing for LLM applications, sending telemetry data in OpenLLMetry format to Keywords AI.
+This is a monorepo containing Respan SDKs for Python and JavaScript/TypeScript. The SDKs provide OpenTelemetry-based tracing for LLM applications, sending telemetry data in OpenLLMetry format to Respan.
 
 ## Project Structure
 
 ```
-keywordsai_public/
+respan/
 ├── python-sdks/           # Python packages (Poetry)
-│   ├── keywordsai-sdk/        # Core types, preprocessing, API payload helpers
-│   ├── keywordsai-tracing/    # Main tracing library with OpenTelemetry
-│   ├── keywordsai-exporter-*/  # Integration exporters (litellm, agno, haystack, openai-agents, langfuse)
-│   └── keywordsai/            # Legacy/standalone package
+│   ├── respan-sdk/            # Core types, preprocessing, API payload helpers
+│   ├── respan-tracing/        # Main tracing library with OpenTelemetry
+│   ├── respan-exporter-*/     # Integration exporters (litellm, agno, haystack, openai-agents, langfuse)
+│   └── respan/                # Standalone package
 ├── javascript-sdks/       # JavaScript/TypeScript packages (Yarn)
-│   ├── keywordsai-sdk/        # Core types and SDK (@keywordsai/keywordsai-sdk)
-│   ├── keywordsai-tracing/    # Main tracing library (@keywordsai/tracing)
-│   └── keywordsai-exporter-*/  # Integration exporters (n8n, vercel, openai-agents)
+│   ├── respan-sdk/            # Core types and SDK (@respan/respan-sdk)
+│   ├── respan-tracing/        # Main tracing library (@respan/tracing)
+│   └── respan-exporter-*/     # Integration exporters (n8n, vercel, openai-agents)
 └── boilerplates/          # Implementation logs and guides
 ```
 
@@ -30,7 +30,7 @@ Each Python package is managed independently with Poetry:
 
 ```bash
 # Navigate to package directory first
-cd python-sdks/keywordsai-tracing
+cd python-sdks/respan-tracing
 
 # Install dependencies
 poetry install
@@ -55,7 +55,7 @@ poetry build
 
 ```bash
 # Navigate to package directory
-cd javascript-sdks/keywordsai-tracing
+cd javascript-sdks/respan-tracing
 
 # Install dependencies
 yarn install
@@ -75,14 +75,14 @@ yarn test:build
 
 ### Tracing Architecture (Python)
 
-- **KeywordsAITelemetry** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/main.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/main.py)) - Main entry point, initializes OpenTelemetry tracer
-- **KeywordsAITracer** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/tracer.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/tracer.py)) - Core tracer implementation with processor management
-- **KeywordsAIClient** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/client.py](python-sdks/keywordsai-tracing/src/keywordsai_tracing/core/client.py)) - Client for trace operations (get trace ID, update spans, etc.)
-- **Decorators** ([python-sdks/keywordsai-tracing/src/keywordsai_tracing/decorators/](python-sdks/keywordsai-tracing/src/keywordsai_tracing/decorators/)) - `@workflow`, `@task`, `@agent`, `@tool` for tracing functions
+- **RespanTelemetry** ([python-sdks/respan-tracing/src/respan_tracing/main.py](python-sdks/respan-tracing/src/respan_tracing/main.py)) - Main entry point, initializes OpenTelemetry tracer
+- **RespanTracer** ([python-sdks/respan-tracing/src/respan_tracing/core/tracer.py](python-sdks/respan-tracing/src/respan_tracing/core/tracer.py)) - Core tracer implementation with processor management
+- **RespanClient** ([python-sdks/respan-tracing/src/respan_tracing/core/client.py](python-sdks/respan-tracing/src/respan_tracing/core/client.py)) - Client for trace operations (get trace ID, update spans, etc.)
+- **Decorators** ([python-sdks/respan-tracing/src/respan_tracing/decorators/](python-sdks/respan-tracing/src/respan_tracing/decorators/)) - `@workflow`, `@task`, `@agent`, `@tool` for tracing functions
 
 ### Tracing Architecture (TypeScript)
 
-- **KeywordsAITelemetry** ([javascript-sdks/keywordsai-tracing/src/main.ts](javascript-sdks/keywordsai-tracing/src/main.ts)) - Main client class with `withTask`, `withWorkflow`, `withAgent`, `withTool` wrappers
+- **RespanTelemetry** ([javascript-sdks/respan-tracing/src/main.ts](javascript-sdks/respan-tracing/src/main.ts)) - Main client class with `withTask`, `withWorkflow`, `withAgent`, `withTool` wrappers
 - Auto-discovery instrumentation for OpenAI, Anthropic, Azure, Cohere, Bedrock, Vertex AI, etc.
 - Manual instrumentation support for Next.js/Webpack environments via `instrumentModules`
 
@@ -101,7 +101,7 @@ Both Python and TypeScript SDKs support multiple processors for routing spans to
 ```python
 # Python - add custom processor
 kai.add_processor(
-    exporter=KeywordsAISpanExporter(...),
+    exporter=RespanSpanExporter(...),
     name="production",
     filter_fn=lambda span: span.attributes.get("processor") == "prod"
 )
@@ -109,7 +109,7 @@ kai.add_processor(
 
 ```typescript
 // TypeScript - add custom processor
-keywordsAi.addProcessor({
+respan.addProcessor({
     exporter: new FileExporter("./debug.json"),
     name: "debug"
 });
@@ -117,19 +117,19 @@ keywordsAi.addProcessor({
 
 ## Environment Variables
 
-- `KEYWORDSAI_API_KEY` - API key for Keywords AI platform
-- `KEYWORDSAI_BASE_URL` - API endpoint (default: `https://api.keywordsai.co/api`)
-- `KEYWORDSAI_BATCHING_ENABLED` - Enable batch processing (default: true)
-- `KEYWORDSAI_LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `RESPAN_API_KEY` - API key for Respan platform
+- `RESPAN_BASE_URL` - API endpoint (default: `https://api.respan.ai/api`)
+- `IS_RESPAN_BATCHING_ENABLED` - Enable batch processing (default: true)
+- `RESPAN_LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 ## Python Version Requirements
 
-- `keywordsai-sdk`: Python >3.9, <4.0
-- `keywordsai-tracing`: Python >=3.11, <3.14
+- `respan-sdk`: Python >3.9, <4.0
+- `respan-tracing`: Python >=3.11, <3.14
 - Exporters vary (check individual pyproject.toml files)
 
 ## Package Dependencies
 
-- `keywordsai-tracing` depends on `keywordsai-sdk`
-- TypeScript `@keywordsai/tracing` depends on `@keywordsai/keywordsai-sdk`
+- `respan-tracing` depends on `respan-sdk`
+- TypeScript `@respan/tracing` depends on `@respan/respan-sdk`
 - Both use OpenTelemetry SDK for tracing infrastructure

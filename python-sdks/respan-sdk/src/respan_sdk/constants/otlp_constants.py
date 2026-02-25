@@ -2,7 +2,7 @@
 OTLP (OpenTelemetry Protocol) JSON format constants.
 
 Single source of truth for OTLP wire-format keys shared between the
-serializer (respan-tracing exporter) and deserializer (keywordsai-backend
+serializer (respan-tracing exporter) and deserializer (respan-backend
 traces ingest endpoint).
 
 Reference: https://opentelemetry.io/docs/specs/otlp/
