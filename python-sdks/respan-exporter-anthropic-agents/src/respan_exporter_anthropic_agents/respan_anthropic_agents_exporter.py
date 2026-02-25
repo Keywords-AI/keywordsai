@@ -89,6 +89,7 @@ class RespanAnthropicAgentsExporter:
         self._sessions: Dict[str, ExporterSessionState] = {}
         self._last_session_id: Optional[str] = None
         self._last_model: Optional[str] = None
+        self._last_prompt: Any = None
 
     def _build_endpoint(self, base_url: Optional[str] = None) -> str:
         """Build ingest endpoint URL from base URL."""
@@ -165,6 +166,10 @@ class RespanAnthropicAgentsExporter:
         instrumented_options = self.with_options(options=options)
         active_session_id: Optional[str] = None
 
+        # Capture prompt for input tracking on child spans.
+        if isinstance(prompt, str):
+            self._last_prompt = prompt
+
         async for message in query(prompt=prompt, options=instrumented_options):
             if isinstance(message, SystemMessage):
                 detected_session_id = extract_session_id_from_system_message(
@@ -184,12 +189,18 @@ class RespanAnthropicAgentsExporter:
         self,
         message: Any,
         session_id: Optional[str] = None,
+        prompt: Optional[str] = None,
     ) -> None:
         """Track a single SDK message and export equivalent Respan spans.
 
-        Raw passthrough: each message is sent as-is to input/output fields.
-        The platform stores arbitrary JSON — no custom extraction needed.
+        Args:
+            message: An SDK message (SystemMessage, AssistantMessage, etc.).
+            session_id: Optional session ID override.
+            prompt: Optional user prompt string. If provided, stored for use
+                as input on assistant_message and result spans.
         """
+        if prompt is not None:
+            self._last_prompt = prompt
         if isinstance(message, SystemMessage):
             self._handle_system_message(
                 system_message=message,
@@ -249,6 +260,7 @@ class RespanAnthropicAgentsExporter:
     ) -> Dict[str, Any]:
         session_id = self._extract_session_id_from_hook_input(input_data=input_data)
         prompt = input_data.get("prompt")
+        self._last_prompt = prompt
         trace_name = build_trace_name_from_prompt(prompt=prompt)
         session_state = self._ensure_session_state(
             session_id=session_id,
@@ -468,7 +480,7 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_GENERATION,
             start_time=session_state.started_at,
             timestamp=now,
-            input_value=None,
+            input_value=self._last_prompt,
             output_value=output_text,
             model=model,
             tool_calls=tool_calls if tool_calls else None,
@@ -511,7 +523,7 @@ class RespanAnthropicAgentsExporter:
             log_type=LOG_TYPE_AGENT,
             start_time=session_state.started_at,
             timestamp=now,
-            input_value=None,
+            input_value=self._last_prompt,
             output_value=result_output,
             model=self._last_model,
             metadata=metadata if metadata else None,
