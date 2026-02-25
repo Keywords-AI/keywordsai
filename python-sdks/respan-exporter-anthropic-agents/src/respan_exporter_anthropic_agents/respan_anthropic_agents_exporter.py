@@ -172,15 +172,33 @@ class RespanAnthropicAgentsExporter:
                     active_session_id = detected_session_id
             if isinstance(message, ResultMessage):
                 active_session_id = message.session_id
-            await self.track_message(message=message, session_id=active_session_id)
+            await self.track_message(
+                message=message,
+                session_id=active_session_id,
+                prompt=prompt,
+            )
             yield message
 
     async def track_message(
         self,
         message: Any,
         session_id: Optional[str] = None,
+        prompt: Optional[Union[str, AsyncIterable[Dict[str, Any]]]] = None,
     ) -> None:
         """Track a single SDK message and export equivalent Respan spans."""
+        # Store prompt on the session if provided and not yet captured
+        if prompt is not None:
+            resolved_sid = session_id or self._last_session_id
+            if resolved_sid:
+                session = self._sessions.get(resolved_sid)
+                if session is not None and session.prompt is None:
+                    session.prompt = prompt
+                    # Also fix the trace name if it's still auto-generated
+                    if session.trace_name.startswith("anthropic-session-"):
+                        trace_name = build_trace_name_from_prompt(prompt=prompt)
+                        if trace_name:
+                            session.trace_name = trace_name
+
         if isinstance(message, SystemMessage):
             self._handle_system_message(
                 system_message=message,

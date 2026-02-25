@@ -125,6 +125,7 @@ export class RespanAnthropicAgentsExporter {
       await this.trackMessage({
         message,
         sessionId: resolvedSessionId || undefined,
+        prompt,
       });
       yield message;
     }
@@ -133,12 +134,32 @@ export class RespanAnthropicAgentsExporter {
   async trackMessage({
     message,
     sessionId,
+    prompt,
   }: {
     message: any;
     sessionId?: string;
+    prompt?: string | AsyncIterable<any>;
   }): Promise<void> {
     if (!message || typeof message !== "object") {
       return;
+    }
+
+    // Store prompt on the session if provided and not yet captured
+    if (prompt) {
+      const resolvedSid = sessionId || this.lastSessionId;
+      if (resolvedSid) {
+        const session = this.sessions.get(resolvedSid);
+        if (session && !session.prompt) {
+          session.prompt = prompt;
+          // Also fix the trace name if it's still auto-generated
+          if (session.traceName.startsWith("anthropic-session-")) {
+            const traceName = this.buildTraceNameFromPrompt({ prompt });
+            if (traceName) {
+              session.traceName = traceName;
+            }
+          }
+        }
+      }
     }
 
     if (message.type === "system") {
