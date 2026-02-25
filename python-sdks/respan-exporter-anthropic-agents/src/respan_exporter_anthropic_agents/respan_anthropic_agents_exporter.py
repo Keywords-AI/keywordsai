@@ -51,7 +51,11 @@ logger = logging.getLogger(__name__)
 
 
 class RespanAnthropicAgentsExporter:
-    """Exporter that converts Anthropic Agent SDK events into Respan trace logs."""
+    """Exporter that converts Anthropic Agent SDK events into Respan trace logs.
+
+    Not thread-safe: each instance should be used from a single async context.
+    Do not share a single exporter across threads or concurrent event loops.
+    """
 
     def __init__(
         self,
@@ -701,11 +705,20 @@ class RespanAnthropicAgentsExporter:
             except RuntimeError:
                 loop = None
             if loop is not None:
-                loop.run_in_executor(None, _run_export_sync)
+                future = loop.run_in_executor(None, _run_export_sync)
+                future.add_done_callback(
+                    lambda f: (
+                        logger.warning(
+                            "Respan export failed: %s", f.exception()
+                        )
+                        if f.exception()
+                        else None
+                    )
+                )
             else:
                 _run_export_sync()
         except Exception:
-            logger.debug("Respan export failed", exc_info=True)
+            logger.warning("Respan export failed", exc_info=True)
 
 
 class RespanSpanExporter(RespanAnthropicAgentsExporter):

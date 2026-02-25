@@ -13,13 +13,7 @@ def resolve_export_endpoint(base_url: Optional[str]) -> str:
     """Resolve tracing ingest endpoint from a base URL or full ingest URL."""
     if not base_url:
         return RESPAN_TRACING_INGEST_ENDPOINT
-
-    normalized_base_url = base_url.rstrip("/")
-    if normalized_base_url.endswith("/v1/traces/ingest"):
-        return normalized_base_url
-    if normalized_base_url.endswith("/v1/traces"):
-        return f"{normalized_base_url}/ingest"
-    return resolve_tracing_ingest_endpoint(base_url=normalized_base_url)
+    return resolve_tracing_ingest_endpoint(base_url=base_url)
 
 
 def utc_now() -> datetime:
