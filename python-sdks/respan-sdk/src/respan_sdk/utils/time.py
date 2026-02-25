@@ -28,7 +28,7 @@ def now_iso() -> str:
 
 def format_timestamp(ts: Optional[float]) -> str:
     """Format Unix timestamp as ISO-8601 string."""
-    if not ts:
+    if ts is None:
         return now_iso()
     try:
         return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
