@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
 
 class MockExporter(SpanExporter):
@@ -25,7 +25,7 @@ def test_custom_exporter_used():
     """Test that custom exporter is used when provided"""
     mock_exporter = MockExporter()
     
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="test-app",
         custom_exporter=mock_exporter,
         is_enabled=True,
@@ -46,8 +46,8 @@ def test_custom_exporter_used():
 
 def test_default_exporter_when_no_custom():
     """Test that default HTTP exporter is used when no custom exporter provided"""
-    with patch('keywordsai_tracing.core.tracer.KeywordsAISpanExporter') as mock_exporter_class:
-        telemetry = KeywordsAITelemetry(
+    with patch('respan_tracing.core.tracer.RespanSpanExporter') as mock_exporter_class:
+        telemetry = RespanTelemetry(
             app_name="test-app",
             api_key="test-key",
             base_url="https://test.api",
@@ -63,7 +63,7 @@ def test_custom_exporter_ignores_api_settings():
     mock_exporter = MockExporter()
     
     # These should be ignored
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="test-app",
         api_key="should-be-ignored",
         base_url="https://should-be-ignored",

@@ -82,7 +82,7 @@ def _export_agno_spans(spans: Iterable[object]) -> SpanExportResult:
         return SpanExportResult.SUCCESS
 
     if not exporter.api_key:
-        logger.warning("Keywords AI API key is not set; skipping Agno export")
+        logger.warning("Respan API key is not set; skipping Agno export")
         return SpanExportResult.SUCCESS
 
     exporter._send(payloads=payloads)
@@ -167,10 +167,10 @@ class RespanAgnoInstrumentor(BaseInstrumentor):
         _ACTIVE_PASSTHROUGH = self._passthrough
 
         self._patch_span_processors()
-        logger.info("Keywords AI Agno instrumentation enabled")
+        logger.info("Respan Agno instrumentation enabled")
 
     def _uninstrument(self, **kwargs) -> None:
-        logger.info("Keywords AI Agno instrumentation disabled")
+        logger.info("Respan Agno instrumentation disabled")
 
     def _patch_span_processors(self) -> None:
         global _PATCHED

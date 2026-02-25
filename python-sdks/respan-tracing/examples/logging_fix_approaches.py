@@ -7,7 +7,7 @@ happens to match the module prefix. This is fragile and confusing.
 """
 
 import logging
-from keywordsai_tracing.constants import LOGGER_NAME
+from respan_tracing.constants import LOGGER_NAME
 
 print("=== Better Approaches to Fix the Logging Issue ===\n")
 
@@ -15,14 +15,14 @@ print("=== Better Approaches to Fix the Logging Issue ===\n")
 print("❌ Current problematic approach:")
 print(f"   LOGGER_NAME = '{LOGGER_NAME}'")
 print(f"   Exporter uses: logging.getLogger(__name__)")
-print(f"   __name__ = 'keywordsai_tracing.core.exporter'")
+print(f"   __name__ = 'respan_tracing.core.exporter'")
 print("   → Only works because __name__ starts with LOGGER_NAME")
 print("   → If LOGGER_NAME changes, inheritance breaks!\n")
 
 # Solution 1: Explicit child logger creation
 print("✅ Solution 1: Explicit child logger creation")
 print("   In exporter.py:")
-print("   from keywordsai_tracing.constants import LOGGER_NAME")
+print("   from respan_tracing.constants import LOGGER_NAME")
 print("   logger = logging.getLogger(f'{LOGGER_NAME}.core.exporter')")
 print("   → Always creates proper hierarchy regardless of LOGGER_NAME value")
 
@@ -38,7 +38,7 @@ print()
 # Solution 2: Use getChild() method
 print("✅ Solution 2: Use getChild() method")
 print("   In exporter.py:")
-print("   from keywordsai_tracing.constants import LOGGER_NAME")
+print("   from respan_tracing.constants import LOGGER_NAME")
 print("   base_logger = logging.getLogger(LOGGER_NAME)")
 print("   logger = base_logger.getChild('core.exporter')")
 print("   → Explicitly creates child logger")
@@ -55,15 +55,15 @@ print()
 # Solution 3: Logger factory function
 print("✅ Solution 3: Logger factory function")
 print("   Create a helper function:")
-print("   def get_keywordsai_logger(name: str):")
+print("   def get_respan_logger(name: str):")
 print("       return logging.getLogger(f'{LOGGER_NAME}.{name}')")
 print("   → All modules use the factory, ensuring consistent hierarchy")
 
-def get_keywordsai_logger(name: str):
-    """Factory function to create KeywordsAI child loggers"""
+def get_respan_logger(name: str):
+    """Factory function to create Respan child loggers"""
     return logging.getLogger(f"{LOGGER_NAME}.{name}")
 
-child3 = get_keywordsai_logger("core.exporter")
+child3 = get_respan_logger("core.exporter")
 parent3 = logging.getLogger(LOGGER_NAME)
 print(f"   Parent: {parent3.name}")
 print(f"   Child: {child3.name}")

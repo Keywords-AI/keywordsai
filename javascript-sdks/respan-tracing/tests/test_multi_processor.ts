@@ -8,7 +8,7 @@
  * - Multiple destination routing
  */
 
-import { KeywordsAITelemetry } from "../src/index.js";
+import { RespanTelemetry } from "../src/index.js";
 import {
   SpanExporter,
   ReadableSpan,
@@ -53,10 +53,10 @@ class TestExporter implements SpanExporter {
   }
 }
 
-// Initialize KeywordsAI with debug logging
-const kai = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+// Initialize Respan with debug logging
+const kai = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "test-multi-processor",
   logLevel: "debug",
   traceContent: true,
@@ -338,8 +338,8 @@ const verifyResults = () => {
 const runAllTests = async () => {
   console.log("Starting Multi-Processor Routing tests...\n");
   console.log("Environment:");
-  console.log(`- Base URL: ${process.env.KEYWORDSAI_BASE_URL}`);
-  console.log(`- API Key: ${process.env.KEYWORDSAI_API_KEY?.substring(0, 10)}...`);
+  console.log(`- Base URL: ${process.env.RESPAN_BASE_URL}`);
+  console.log(`- API Key: ${process.env.RESPAN_API_KEY?.substring(0, 10)}...`);
   
   await kai.initialize();
   setupProcessors();

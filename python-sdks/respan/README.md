@@ -1,4 +1,4 @@
-# Keywords AI Python SDK
+# Respan Python SDK
 
 **[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)** | **[PyPI](https://pypi.org/project/respan-ai/)**
 
@@ -14,13 +14,13 @@ A comprehensive Python SDK for Respan monitoring, evaluation, and analytics APIs
 ## 📦 Installation
 
 ```bash
-pip install keywordsai
+pip install respan
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add keywordsai
+poetry add respan
 ```
 
 ## 🔑 Quick Start
@@ -28,20 +28,20 @@ poetry add keywordsai
 ### 1. Set up your API key
 
 ```bash
-export KEYWORDSAI_API_KEY="your-api-key-here"
+export RESPAN_API_KEY="your-api-key-here"
 ```
 
 Or create a `.env` file:
 
 ```env
-KEYWORDSAI_API_KEY=your-api-key-here
-KEYWORDSAI_BASE_URL=https://api.keywordsai.co  # optional
+RESPAN_API_KEY=your-api-key-here
+RESPAN_BASE_URL=https://api.respan.ai  # optional
 ```
 
 ### 2. Basic Usage
 
 ```python
-from keywordsai import DatasetAPI, ExperimentAPI, EvaluatorAPI
+from respan import DatasetAPI, ExperimentAPI, EvaluatorAPI
 
 # Initialize clients
 dataset_client = DatasetAPI(api_key="your-api-key")
@@ -73,7 +73,7 @@ evaluation = dataset_client.run_dataset_evaluation(
 Manage datasets and run evaluations on your AI model outputs:
 
 ```python
-from keywordsai import DatasetAPI, DatasetCreate
+from respan import DatasetAPI, DatasetCreate
 
 client = DatasetAPI(api_key="your-api-key")
 
@@ -102,7 +102,7 @@ evaluation = client.run_dataset_evaluation(
 Run A/B tests with different model configurations:
 
 ```python
-from keywordsai import ExperimentAPI, ExperimentCreate, ExperimentColumnType
+from respan import ExperimentAPI, ExperimentCreate, ExperimentColumnType
 
 client = ExperimentAPI(api_key="your-api-key")
 
@@ -140,7 +140,7 @@ results = client.run_experiment(experiment_id=experiment.id)
 Discover and use AI evaluators:
 
 ```python
-from keywordsai import EvaluatorAPI
+from respan import EvaluatorAPI
 
 client = EvaluatorAPI(api_key="your-api-key")
 
@@ -157,8 +157,8 @@ print(f"Description: {evaluator.description}")
 Manage prompts and their versions:
 
 ```python
-from keywordsai import PromptAPI
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+from respan import PromptAPI
+from respan_sdk.respan_types.prompt_types import Prompt, PromptVersion
 
 client = PromptAPI(api_key="your-api-key")
 
@@ -187,12 +187,12 @@ prompt_details = client.get(prompt.id)
 Create and manage AI application logs:
 
 ```python
-from keywordsai import LogAPI, KeywordsAILogParams
+from respan import LogAPI, RespanLogParams
 
 client = LogAPI(api_key="your-api-key")
 
 # Create log entry
-log = client.create(KeywordsAILogParams(
+log = client.create(RespanLogParams(
     model="gpt-4",
     input="What is machine learning?",
     output="Machine learning is a subset of AI...",
@@ -208,7 +208,7 @@ All APIs support both synchronous and asynchronous operations:
 
 ```python
 import asyncio
-from keywordsai import DatasetAPI
+from respan import DatasetAPI
 
 async def main():
     client = DatasetAPI(api_key="your-api-key")
@@ -224,12 +224,12 @@ asyncio.run(main())
 
 ## 📚 Examples
 
-Check out the [`examples/`](https://github.com/Keywords-AI/keywordsai/tree/main/python-sdks/keywordsai/examples) directory for complete workflows:
+Check out the [`examples/`](https://github.com/Repsan/respan/tree/main/python-sdks/respan/examples) directory for complete workflows:
 
-- **[Simple Evaluator Example](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/simple_evaluator_example.py)** - Basic evaluator operations
-- **[Dataset Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/dataset_workflow_example.py)** - Complete dataset management
-- **[Experiment Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/experiment_workflow_example.py)** - A/B testing with experiments
-- **[Prompt Workflow](https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/examples/prompt_workflow_example.py)** - Prompt and version management
+- **[Simple Evaluator Example](https://github.com/Repsan/respan/blob/main/python-sdks/respan/examples/simple_evaluator_example.py)** - Basic evaluator operations
+- **[Dataset Workflow](https://github.com/Repsan/respan/blob/main/python-sdks/respan/examples/dataset_workflow_example.py)** - Complete dataset management
+- **[Experiment Workflow](https://github.com/Repsan/respan/blob/main/python-sdks/respan/examples/experiment_workflow_example.py)** - A/B testing with experiments
+- **[Prompt Workflow](https://github.com/Repsan/respan/blob/main/python-sdks/respan/examples/prompt_workflow_example.py)** - Prompt and version management
 
 ```bash
 # Run examples
@@ -270,14 +270,14 @@ python -m pytest tests/test_experiment_api_real.py -v
 All APIs include comprehensive type definitions:
 
 ```python
-from keywordsai import (
+from respan import (
     Dataset, DatasetCreate, DatasetUpdate,
     Experiment, ExperimentCreate, ExperimentUpdate,
     Evaluator, EvaluatorList,
-    KeywordsAILogParams, LogList,
+    RespanLogParams, LogList,
     PromptAPI
 )
-from keywordsai_sdk.keywordsai_types.prompt_types import (
+from respan_sdk.respan_types.prompt_types import (
     Prompt, PromptVersion
 )
 ```
@@ -287,21 +287,21 @@ from keywordsai_sdk.keywordsai_types.prompt_types import (
 ### Environment Variables
 
 ```bash
-KEYWORDSAI_API_KEY=your-api-key-here          # Required
-KEYWORDSAI_BASE_URL=https://api.keywordsai.co # Optional
+RESPAN_API_KEY=your-api-key-here          # Required
+RESPAN_BASE_URL=https://api.respan.ai # Optional
 ```
 
 ### Client Initialization
 
 ```python
 # Using environment variables
-dataset_client = DatasetAPI()  # Reads from KEYWORDSAI_API_KEY
-prompt_client = PromptAPI()    # Reads from KEYWORDSAI_API_KEY
+dataset_client = DatasetAPI()  # Reads from RESPAN_API_KEY
+prompt_client = PromptAPI()    # Reads from RESPAN_API_KEY
 
 # Explicit configuration
 client = DatasetAPI(
     api_key="your-api-key",
-    base_url="https://api.keywordsai.co"
+    base_url="https://api.respan.ai"
 )
 ```
 
@@ -309,22 +309,22 @@ client = DatasetAPI(
 
 - Python 3.9+
 - httpx >= 0.25.0
-- keywordsai-sdk >= 0.4.63
+- respan-sdk >= 0.4.63
 
 ## 📄 License
 
-Apache 2.0 - see [LICENSE](https://github.com/Keywords-AI/keywordsai/blob/main/LICENSE) for details.
+Apache 2.0 - see [LICENSE](https://github.com/Repsan/respan/blob/main/LICENSE) for details.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://github.com/Keywords-AI/keywordsai/blob/main/CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/Repsan/respan/blob/main/CONTRIBUTING.md) for details.
 
 ## 📞 Support
 
-- 📧 Email: [team@keywordsai.co](mailto:team@keywordsai.co)
-- 📖 Documentation: [https://docs.keywordsai.co](https://docs.keywordsai.co)
-- 🐛 Issues: [GitHub Issues](https://github.com/Keywords-AI/keywordsai/issues)
+- 📧 Email: [team@respan.ai](mailto:team@respan.ai)
+- 📖 Documentation: [https://docs.respan.ai](https://docs.respan.ai)
+- 🐛 Issues: [GitHub Issues](https://github.com/Repsan/respan/issues)
 
 ---
 
-Built with ❤️ by the Keywords AI team
+Built with ❤️ by the Respan team

@@ -1,4 +1,4 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -6,9 +6,9 @@ import Anthropic from '@anthropic-ai/sdk';
 // This is especially useful for Next.js and other environments where
 // dynamic imports might not work properly
 
-const keywordsAI = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "test-key",
-    baseURL: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "test-key",
+    baseURL: process.env.RESPAN_BASE_URL || "https://api.respan.ai",
     appName: 'manual-instrumentation-example',
     disableBatch: true, // For development
     logLevel: 'info',
@@ -26,7 +26,7 @@ const keywordsAI = new KeywordsAITelemetry({
 });
 
 // Wait for initialization to complete (optional but recommended)
-await keywordsAI.initialize();
+await respan.initialize();
 
 // Now create your clients - they will be automatically instrumented
 const openai = new OpenAI({
@@ -39,11 +39,11 @@ const anthropic = new Anthropic({
 
 // Example workflow using both providers
 const multiProviderWorkflow = async () => {
-    return await keywordsAI.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'multi_provider_workflow', version: 1 },
         async () => {
             // OpenAI task
-            const openaiResult = await keywordsAI.withTask(
+            const openaiResult = await respan.withTask(
                 { name: 'openai_completion' },
                 async () => {
                     const completion = await openai.chat.completions.create({
@@ -56,7 +56,7 @@ const multiProviderWorkflow = async () => {
             );
 
             // Anthropic task
-            const anthropicResult = await keywordsAI.withTask(
+            const anthropicResult = await respan.withTask(
                 { name: 'anthropic_completion' },
                 async () => {
                     const message = await anthropic.messages.create({
@@ -85,4 +85,4 @@ multiProviderWorkflow()
         console.error('Workflow failed:', error);
     });
 
-export { keywordsAI, multiProviderWorkflow }; 
+export { respan, multiProviderWorkflow }; 

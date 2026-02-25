@@ -16,13 +16,13 @@ Inspired by [Openllmetry](https://github.com/traceloop/openllmetry-js)
 - **Span Management**: Full control over spans with `getClient()` API
 - **Multi-Processor Routing**: Route spans to multiple destinations
 - **Span Buffering**: Manual control over span export timing
-- **KeywordsAI Parameters**: Add customer identifiers and trace group identifiers
+- **Respan Parameters**: Add customer identifiers and trace group identifiers
 
 ## Installation
 
 ### Core Package
 ```bash
-npm install @keywordsai/tracing
+npm install @respan/tracing
 ```
 
 ### Optional Instrumentations
@@ -65,24 +65,24 @@ npm install @traceloop/instrumentation-vertexai
 ### Method 1: Dynamic Instrumentation (Recommended for Node.js)
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 
 // Initialize the SDK
-const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseURL: process.env.KEYWORDSAI_BASE_URL,
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
+    baseURL: process.env.RESPAN_BASE_URL,
     appName: 'my-app'
 });
 
 // Enable instrumentations you need
-await keywordsAi.enableInstrumentation('openai');
+await respan.enableInstrumentation('openai');
 
 const openai = new OpenAI();
 
 // Use decorators to trace your functions
 const generateJoke = async () => {
-    return await keywordsAi.withTask(
+    return await respan.withTask(
         { name: 'joke_generation' },
         async () => {
             const completion = await openai.chat.completions.create({
@@ -98,14 +98,14 @@ const generateJoke = async () => {
 ### Method 2: Manual Instrumentation (Recommended for Next.js)
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Manual instrumentation - pass the actual imported modules
-const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseURL: process.env.KEYWORDSAI_BASE_URL,
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
+    baseURL: process.env.RESPAN_BASE_URL,
     appName: 'my-app',
     // Specify modules to instrument manually
     instrumentModules: {
@@ -116,7 +116,7 @@ const keywordsAi = new KeywordsAITelemetry({
 });
 
 // Wait for initialization (optional but recommended)
-await keywordsAi.initialize();
+await respan.initialize();
 
 // Create clients - they will be automatically instrumented
 const openai = new OpenAI();
@@ -124,7 +124,7 @@ const anthropic = new Anthropic();
 
 // Use decorators to trace your functions
 const generateContent = async () => {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'content_generation', version: 1 },
         async () => {
             const result = await openai.chat.completions.create({
@@ -151,15 +151,15 @@ const generateContent = async () => {
 
 ## API Reference
 
-### KeywordsAITelemetry
+### RespanTelemetry
 
 #### Constructor Options
 
 ```typescript
-interface KeywordsAIOptions {
+interface RespanOptions {
     appName?: string;                    // App name for traces
-    apiKey?: string;                     // KeywordsAI API key
-    baseURL?: string;                    // KeywordsAI base URL
+    apiKey?: string;                     // Respan API key
+    baseURL?: string;                    // Respan base URL
     disableBatch?: boolean;              // Disable batching for development
     logLevel?: "debug" | "info" | "warn" | "error";
     traceContent?: boolean;              // Log prompts and completions
@@ -211,7 +211,7 @@ interface KeywordsAIOptions {
 #### withWorkflow
 Trace high-level workflows:
 ```typescript
-await keywordsAi.withWorkflow(
+await respan.withWorkflow(
     { name: 'my_workflow', version: 1 },
     async () => {
         // Your workflow logic
@@ -222,7 +222,7 @@ await keywordsAi.withWorkflow(
 #### withTask
 Trace individual tasks:
 ```typescript
-await keywordsAi.withTask(
+await respan.withTask(
     { name: 'my_task' },
     async () => {
         // Your task logic
@@ -233,7 +233,7 @@ await keywordsAi.withTask(
 #### withAgent
 Trace agent operations:
 ```typescript
-await keywordsAi.withAgent(
+await respan.withAgent(
     { name: 'my_agent', associationProperties: { type: 'assistant' } },
     async () => {
         // Your agent logic
@@ -244,7 +244,7 @@ await keywordsAi.withAgent(
 #### withTool
 Trace tool usage:
 ```typescript
-await keywordsAi.withTool(
+await respan.withTool(
     { name: 'my_tool' },
     async () => {
         // Your tool logic
@@ -273,9 +273,9 @@ interface DecoratorConfig {
 Get full control over your spans with the client API:
 
 ```typescript
-import { KeywordsAITelemetry, getClient } from '@keywordsai/tracing';
+import { RespanTelemetry, getClient } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 await kai.initialize();
 
 await kai.withTask({ name: 'process_data' }, async () => {
@@ -286,9 +286,9 @@ await kai.withTask({ name: 'process_data' }, async () => {
     const spanId = client.getCurrentSpanId();
     console.log(`Trace: ${traceId}, Span: ${spanId}`);
     
-    // Update span with KeywordsAI parameters
+    // Update span with Respan parameters
     client.updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
             customerIdentifier: 'user-123',
             traceGroupIdentifier: 'data-pipeline',
             metadata: {
@@ -318,7 +318,7 @@ await kai.withTask({ name: 'process_data' }, async () => {
 **Available Client Methods:**
 - `getCurrentTraceId()` - Get the current trace ID
 - `getCurrentSpanId()` - Get the current span ID
-- `updateCurrentSpan(options)` - Update span attributes, name, status, or KeywordsAI params
+- `updateCurrentSpan(options)` - Update span attributes, name, status, or Respan params
 - `addEvent(name, attributes?)` - Add an event to the current span
 - `recordException(exception)` - Record an exception on the current span
 - `isRecording()` - Check if the span is recording
@@ -330,11 +330,11 @@ await kai.withTask({ name: 'process_data' }, async () => {
 Route spans to different destinations based on processor names:
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 
-// Add a debug processor (in addition to default KeywordsAI processor)
+// Add a debug processor (in addition to default Respan processor)
 kai.addProcessor({
     exporter: new YourCustomExporter(),
     name: 'debug',
@@ -361,7 +361,7 @@ await kai.withTask(
 await kai.withTask(
     { name: 'normal_task' },
     async () => {
-        // This span goes to the default KeywordsAI processor
+        // This span goes to the default Respan processor
     }
 );
 ```
@@ -381,9 +381,9 @@ interface ProcessorConfig {
 Buffer spans and control when they're exported:
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 const manager = kai.getSpanBufferManager();
 
 // Create a buffer (spans won't be auto-exported)
@@ -409,7 +409,7 @@ const isSuccessful = true;  // Your business logic
 const isPremiumUser = true; // Your business logic
 
 if (isSuccessful && isPremiumUser) {
-    // Export to KeywordsAI
+    // Export to Respan
     await manager.processSpans(spans);
 } else {
     // Discard spans
@@ -430,18 +430,18 @@ if (isSuccessful && isPremiumUser) {
 - `getSpanCount()` - Get the number of buffered spans
 - `clearSpans()` - Discard all buffered spans without exporting
 
-### KeywordsAI-Specific Parameters
+### Respan-Specific Parameters
 
 Add customer and trace group identifiers to your spans:
 
 ```typescript
-import { getClient } from '@keywordsai/tracing';
+import { getClient } from '@respan/tracing';
 
 await kai.withWorkflow({ name: 'user_workflow' }, async () => {
     const client = getClient();
     
     client.updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
             // Group traces by customer
             customerIdentifier: 'user-123',
             
@@ -520,7 +520,7 @@ Use manual instrumentation instead:
 await kai.enableInstrumentation('anthropic');
 
 // Use this:
-const kai = new KeywordsAITelemetry({
+const kai = new RespanTelemetry({
     instrumentModules: {
         anthropic: Anthropic
     }
@@ -560,16 +560,16 @@ const kai = new KeywordsAITelemetry({
 ### Spans not showing up?
 
 1. Check that you're using decorators (`withTask`, `withWorkflow`, etc.)
-2. Verify API key is set: `process.env.KEYWORDSAI_API_KEY`
+2. Verify API key is set: `process.env.RESPAN_API_KEY`
 3. Enable debug logging: `logLevel: 'debug'`
-4. Check network requests to KeywordsAI endpoint
+4. Check network requests to Respan endpoint
 
 ## Environment Variables
 
-- `KEYWORDSAI_API_KEY`: Your KeywordsAI API key
-- `KEYWORDSAI_BASE_URL`: KeywordsAI base URL (default: https://api.keywordsai.co)
-- `KEYWORDSAI_APP_NAME`: Default app name
-- `KEYWORDSAI_TRACE_CONTENT`: Enable/disable content tracing (default: true)
+- `RESPAN_API_KEY`: Your Respan API key
+- `RESPAN_BASE_URL`: Respan base URL (default: https://api.respan.ai)
+- `RESPAN_APP_NAME`: Default app name
+- `RESPAN_TRACE_CONTENT`: Enable/disable content tracing (default: true)
 
 ## Provider-Specific Examples
 
@@ -577,11 +577,11 @@ const kai = new KeywordsAITelemetry({
 
 **Method 1: Dynamic Instrumentation (Simple)**
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 
-const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
+const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
     appName: 'openai-app'
 });
 
@@ -601,11 +601,11 @@ await kai.withTask({ name: 'chat' }, async () => {
 
 **Method 2: Manual Instrumentation (Next.js/Webpack)**
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 
-const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
+const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
     appName: 'openai-app',
     instrumentModules: {
         openAI: OpenAI  // Pass the OpenAI class
@@ -628,12 +628,12 @@ await kai.withTask({ name: 'chat' }, async () => {
 ### Anthropic (Claude)
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Initialize with Anthropic instrumentation
-const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
+const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
     appName: 'anthropic-app',
     instrumentModules: {
         anthropic: Anthropic  // Pass the Anthropic class
@@ -686,11 +686,11 @@ npm install @anthropic-ai/sdk @traceloop/instrumentation-anthropic
 ### Example 1: Full Workflow with Span Management
 
 ```typescript
-import { KeywordsAITelemetry, getClient } from '@keywordsai/tracing';
+import { RespanTelemetry, getClient } from '@respan/tracing';
 import OpenAI from 'openai';
 
-const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
+const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
     appName: 'my-app',
     resourceAttributes: {
         environment: 'production',
@@ -706,7 +706,7 @@ await kai.withWorkflow({ name: 'process_user_request', version: 1 }, async () =>
     
     // Set customer context
     client.updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
             customerIdentifier: 'user-123',
             traceGroupIdentifier: 'onboarding'
         }
@@ -739,9 +739,9 @@ await kai.withWorkflow({ name: 'process_user_request', version: 1 }, async () =>
 ### Example 2: Backend Workflow with Span Buffering
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 const manager = kai.getSpanBufferManager();
 
 // Ingest workflow results from backend
@@ -783,10 +783,10 @@ async function ingestWorkflow(workflowResult: any, orgId: string) {
 ### Example 3: Multi-Destination Routing
 
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import { FileExporter, AnalyticsExporter } from './exporters';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 
 // Add debug file exporter
 kai.addProcessor({
@@ -801,10 +801,10 @@ kai.addProcessor({
     filter: (span) => !span.name.includes('test')
 });
 
-// Route to default KeywordsAI processor
+// Route to default Respan processor
 await kai.withTask(
     { name: 'production_task' },
-    async () => { /* goes to KeywordsAI */ }
+    async () => { /* goes to Respan */ }
 );
 
 // Route to debug processor
@@ -853,7 +853,7 @@ All new features are **backward compatible**. Existing code will continue to wor
 
 To use new features, simply import and use them:
 ```typescript
-import { getClient } from '@keywordsai/tracing';  // New in v1.1.0
+import { getClient } from '@respan/tracing';  // New in v1.1.0
 ```
 
 ## License

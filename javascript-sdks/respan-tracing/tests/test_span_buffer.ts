@@ -9,16 +9,16 @@
  * - Clear spans
  */
 
-import { KeywordsAITelemetry } from "../src/index.js";
+import { RespanTelemetry } from "../src/index.js";
 import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
 
-// Initialize KeywordsAI with debug logging
-const kai = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+// Initialize Respan with debug logging
+const kai = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "test-span-buffer",
   logLevel: "debug",
   traceContent: true,
@@ -364,8 +364,8 @@ const test8_multipleBuffers = async () => {
 const runAllTests = async () => {
   console.log("Starting Span Buffer tests...\n");
   console.log("Environment:");
-  console.log(`- Base URL: ${process.env.KEYWORDSAI_BASE_URL}`);
-  console.log(`- API Key: ${process.env.KEYWORDSAI_API_KEY?.substring(0, 10)}...`);
+  console.log(`- Base URL: ${process.env.RESPAN_BASE_URL}`);
+  console.log(`- API Key: ${process.env.RESPAN_API_KEY?.substring(0, 10)}...`);
   
   await kai.initialize();
   

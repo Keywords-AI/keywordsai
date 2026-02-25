@@ -1,42 +1,42 @@
-# Building an LLM Workflow with KeywordsAI Tracing
+# Building an LLM Workflow with Respan Tracing
 
-This tutorial demonstrates how to build and trace complex LLM workflows using KeywordsAI Tracing. We'll create an example that generates jokes, translates them to pirate language, and simulates audience reactions - all while capturing detailed telemetry of our LLM calls.
+This tutorial demonstrates how to build and trace complex LLM workflows using Respan Tracing. We'll create an example that generates jokes, translates them to pirate language, and simulates audience reactions - all while capturing detailed telemetry of our LLM calls.
 
 ## Prerequisites
 
 - Python 3.7+
 - OpenAI API key
 - Anthropic API key
-- Keywords AI API key, you can get your API key from the [API keys page](https://platform.keywordsai.co/platform/api/api-keys)
+- Respan API key, you can get your API key from the [API keys page](https://app.respan.ai/platform/api/api-keys)
 
 ## Installation
 ```bash
-pip install keywordsai-tracing openai anthropic
+pip install respan-tracing openai anthropic
 ```
 
 ## Initialization
 
-### KeywordsAITelemetry Configuration
+### RespanTelemetry Configuration
 
-The `KeywordsAITelemetry` class is the main entry point for the SDK. Initialize it once at application startup:
+The `RespanTelemetry` class is the main entry point for the SDK. Initialize it once at application startup:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
-    api_key="kwai-xxx",  # Or set KEYWORDSAI_API_KEY env var
+    api_key="kwai-xxx",  # Or set RESPAN_API_KEY env var
 )
 ```
 
 ### All Initialization Parameters
 
 ```python
-KeywordsAITelemetry(
+RespanTelemetry(
     # Basic Configuration
-    app_name: str = "keywordsai",              # Application name for telemetry
-    api_key: Optional[str] = None,             # API key (or KEYWORDSAI_API_KEY env var)
-    base_url: Optional[str] = None,            # API URL (or KEYWORDSAI_BASE_URL env var)
+    app_name: str = "respan",              # Application name for telemetry
+    api_key: Optional[str] = None,             # API key (or RESPAN_API_KEY env var)
+    base_url: Optional[str] = None,            # API URL (or RESPAN_BASE_URL env var)
     
     # Logging
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
@@ -62,21 +62,21 @@ KeywordsAITelemetry(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `app_name` | `str` | `"keywordsai"` | Name of your application for telemetry identification |
-| `api_key` | `str \| None` | `None` | KeywordsAI API key. Can also be set via `KEYWORDSAI_API_KEY` environment variable |
-| `base_url` | `str \| None` | `None` | KeywordsAI API base URL. Can also be set via `KEYWORDSAI_BASE_URL` environment variable. Defaults to `https://api.keywordsai.co/api` |
+| `app_name` | `str` | `"respan"` | Name of your application for telemetry identification |
+| `api_key` | `str \| None` | `None` | Respan API key. Can also be set via `RESPAN_API_KEY` environment variable |
+| `base_url` | `str \| None` | `None` | Respan API base URL. Can also be set via `RESPAN_BASE_URL` environment variable. Defaults to `https://api.respan.ai/api` |
 
 #### **Logging**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `log_level` | `str` | `"INFO"` | Logging level for KeywordsAI tracing. Options: `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`, `"CRITICAL"`. Can also be set via `KEYWORDSAI_LOG_LEVEL` environment variable |
+| `log_level` | `str` | `"INFO"` | Logging level for Respan tracing. Options: `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`, `"CRITICAL"`. Can also be set via `RESPAN_LOG_LEVEL` environment variable |
 
 #### **Performance**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `is_batching_enabled` | `bool \| None` | `None` | Enable batch span processing. When `False`, uses synchronous export (no background threads). Defaults to `True`. Useful to disable for debugging or backends with custom exporters. Can also be set via `KEYWORDSAI_BATCHING_ENABLED` environment variable |
+| `is_batching_enabled` | `bool \| None` | `None` | Enable batch span processing. When `False`, uses synchronous export (no background threads). Defaults to `True`. Useful to disable for debugging or backends with custom exporters. Can also be set via `IS_RESPAN_BATCHING_ENABLED` environment variable |
 
 #### **Instrumentation**
 
@@ -91,19 +91,19 @@ See [Instrumentation section](#instrumentation) for detailed information.
 
 ```python
 # Enable only specific instruments
-from keywordsai_tracing import Instruments
+from respan_tracing import Instruments
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     instruments={Instruments.OPENAI, Instruments.ANTHROPIC}
 )
 
 # Block specific instruments
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     block_instruments={Instruments.REQUESTS, Instruments.URLLIB3}
 )
 
 # Disable all auto-instrumentation
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     instruments=set()  # Empty set = no auto-instrumentation
 )
 ```
@@ -121,18 +121,18 @@ telemetry = KeywordsAITelemetry(
 
 ### Default Behavior
 
-**A default KeywordsAI processor is automatically added when you provide an `api_key`:**
+**A default Respan processor is automatically added when you provide an `api_key`:**
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
-# Minimal initialization - spans automatically go to KeywordsAI!
-kai = KeywordsAITelemetry(
+# Minimal initialization - spans automatically go to Respan!
+kai = RespanTelemetry(
     app_name="my-app",
     api_key="your-key"  # ← Default processor added automatically
 )
 
-# Now all spans are automatically exported to KeywordsAI
+# Now all spans are automatically exported to Respan
 @kai.task()
 def my_task():
     pass  # This span will be exported!
@@ -145,10 +145,10 @@ def my_task():
 For advanced use cases, you can route spans to **multiple destinations** using the `add_processor()` method:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
 # Initialize telemetry (default processor added automatically)
-kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
+kai = RespanTelemetry(app_name="my-app", api_key="your-key")
 
 # Add additional processors for specific routing
 kai.add_processor(
@@ -157,7 +157,7 @@ kai.add_processor(
 )
 
 # Use decorators to route spans
-@kai.task(name="normal_task")  # Goes to default KeywordsAI processor
+@kai.task(name="normal_task")  # Goes to default Respan processor
 def normal_task():
     pass
 
@@ -182,7 +182,7 @@ See [Multi-Processor Examples](#multiple-processors) for complete examples.
 #### **Development (Full Visibility)**
 
 ```python
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app-dev",
     api_key="kwai-xxx",
     log_level="DEBUG",  # Verbose logging
@@ -193,7 +193,7 @@ telemetry = KeywordsAITelemetry(
 #### **Production (Optimized)**
 
 ```python
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app-prod",
     api_key="kwai-xxx",
     log_level="WARNING",  # Less verbose
@@ -209,7 +209,7 @@ telemetry = KeywordsAITelemetry(
 ```python
 from your_exporters import DirectLoggingExporter
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-backend",
     is_batching_enabled=False,  # No background threads
     instruments=set(),  # No auto-instrumentation
@@ -226,7 +226,7 @@ telemetry.tracer.add_processor(
 #### **Testing/Disabled**
 
 ```python
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app-test",
     is_enabled=False,  # Completely disabled (no-op)
 )
@@ -234,26 +234,26 @@ telemetry = KeywordsAITelemetry(
 
 ### Environment Variables
 
-You can configure KeywordsAI tracing using environment variables:
+You can configure Respan tracing using environment variables:
 
 | Environment Variable | Description | Default |
 |---------------------|-------------|---------|
-| `KEYWORDSAI_API_KEY` | API key | None |
-| `KEYWORDSAI_BASE_URL` | API base URL | `https://api.keywordsai.co/api` |
-| `KEYWORDSAI_LOG_LEVEL` | Logging level | `INFO` |
-| `KEYWORDSAI_BATCHING_ENABLED` | Enable batch processing | `True` |
+| `RESPAN_API_KEY` | API key | None |
+| `RESPAN_BASE_URL` | API base URL | `https://api.respan.ai/api` |
+| `RESPAN_LOG_LEVEL` | Logging level | `INFO` |
+| `IS_RESPAN_BATCHING_ENABLED` | Enable batch processing | `True` |
 
 **Example:**
 
 ```bash
-export KEYWORDSAI_API_KEY="kwai-xxx"
-export KEYWORDSAI_LOG_LEVEL="DEBUG"
-export KEYWORDSAI_BATCHING_ENABLED="false"
+export RESPAN_API_KEY="kwai-xxx"
+export RESPAN_LOG_LEVEL="DEBUG"
+export IS_RESPAN_BATCHING_ENABLED="false"
 ```
 
 ```python
 # No need to pass parameters - read from env vars
-telemetry = KeywordsAITelemetry(app_name="my-app")
+telemetry = RespanTelemetry(app_name="my-app")
 ```
 
 ## Tutorial
@@ -261,13 +261,13 @@ telemetry = KeywordsAITelemetry(app_name="my-app")
 ### Step 1: Initialization
 ```
 import os
-from keywordsai_tracing.main import KeywordsAITelemetry
-from keywordsai_tracing.decorators import workflow, task
+from respan_tracing.main import RespanTelemetry
+from respan_tracing.decorators import workflow, task
 import time
 
-# Initialize KeywordsAI Telemetry
-os.environ["KEYWORDSAI_API_KEY"] = "YOUR_KEYWORDSAI_API_KEY"
-k_tl = KeywordsAITelemetry()
+# Initialize Respan Telemetry
+os.environ["RESPAN_API_KEY"] = "YOUR_RESPAN_API_KEY"
+k_tl = RespanTelemetry()
 
 # Initialize OpenAI client
 from openai import OpenAI
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     joke_workflow()
 ```
 
-Run the workflow and see the trace in Keywords AI `Traces` tab.
+Run the workflow and see the trace in Respan `Traces` tab.
 
 ### Step 3: Adding Another Workflow
 Let's add audience reactions to make our workflow more complex and demonstrate
@@ -396,7 +396,7 @@ if __name__ == "__main__":
     joke_and_audience_reaction() # <--------- Update the entrypoint here
 ```
 
-Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `audience_reaction` workflow in parallel with the `joke_workflow`. Congratulation! You have created a trace with multiple workflows.
+Run the workflow again and see the trace in Respan `Traces` tab, notice the new span for the `audience_reaction` workflow in parallel with the `joke_workflow`. Congratulation! You have created a trace with multiple workflows.
 
 ### Step 4: Adding Vector Storage Capability
 To demonstrate how to integrate with vector databases and embeddings,
@@ -431,7 +431,7 @@ def create_joke():
     store_joke(joke)  # <--------- Add the task here
     return joke
 ```
-Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `store_joke` task.
+Run the workflow again and see the trace in Respan `Traces` tab, notice the new span for the `store_joke` task.
 
 Expanding the `store_joke` task, you can see the embeddings call is recognized as `openai.embeddings`.
 
@@ -455,7 +455,7 @@ def joke_and_audience_reaction():
     logging_joke(pirate_joke, reactions) # <-------- Add this workflow here
 ```
 
-Run the workflow again and see the trace in Keywords AI `Traces` tab, notice the new span for the `logging_joke` task.
+Run the workflow again and see the trace in Respan `Traces` tab, notice the new span for the `logging_joke` task.
 
 This is a simple example of how to trace arbitrary functions. You can see the all the inputs and outputs of `logging_joke` task.
 
@@ -512,13 +512,13 @@ Instrumentation is the process of automatically adding telemetry (traces/spans) 
 
 ### Default Behavior: All Instrumentations Enabled
 
-**By default, KeywordsAI tracing attempts to enable ALL available instrumentations.**
+**By default, Respan tracing attempts to enable ALL available instrumentations.**
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
 # This enables ALL available instrumentations (if packages are installed)
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx"
 )
@@ -597,16 +597,16 @@ pip install openai
 # 2. Install OpenTelemetry instrumentation for OpenAI
 pip install opentelemetry-instrumentation-openai
 
-# 3. Install KeywordsAI tracing
-pip install keywordsai-tracing
+# 3. Install Respan tracing
+pip install respan-tracing
 ```
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 from openai import OpenAI
 
 # Initialize telemetry (OpenAI instrumentation auto-enabled)
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx"
 )
@@ -633,13 +633,13 @@ The OpenAI call will automatically create a span with:
 
 ```python
 # These all include threading by default:
-telemetry = KeywordsAITelemetry()  # All instruments including threading
+telemetry = RespanTelemetry()  # All instruments including threading
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     instruments={Instruments.OPENAI}  # OpenAI + Threading (auto-added!)
 )
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     instruments={Instruments.OPENAI, Instruments.ANTHROPIC}  # + Threading!
 )
 ```
@@ -647,7 +647,7 @@ telemetry = KeywordsAITelemetry(
 **To disable threading** (if you're certain your app is single-threaded):
 
 ```python
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     block_instruments={Instruments.THREADING}  # Explicitly disabled
 )
 ```
@@ -659,9 +659,9 @@ telemetry = KeywordsAITelemetry(
 Use `block_instruments` to disable specific instrumentations you don't want:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, Instruments
+from respan_tracing import RespanTelemetry, Instruments
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx",
     block_instruments={
@@ -679,9 +679,9 @@ telemetry = KeywordsAITelemetry(
 Use `instruments` to enable only the instrumentations you want:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, Instruments
+from respan_tracing import RespanTelemetry, Instruments
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx",
     instruments={
@@ -698,9 +698,9 @@ telemetry = KeywordsAITelemetry(
 Pass an empty set to disable all automatic instrumentation:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx",
     instruments=set(),  # No auto-instrumentation
@@ -738,12 +738,12 @@ pip install opentelemetry-instrumentation-langchain  # You use LangChain
 
 ```python
 # Development: Enable everything for visibility
-dev_telemetry = KeywordsAITelemetry(
+dev_telemetry = RespanTelemetry(
     app_name="my-app-dev"
 )
 
 # Production: Block low-level instrumentations to reduce noise
-prod_telemetry = KeywordsAITelemetry(
+prod_telemetry = RespanTelemetry(
     app_name="my-app-prod",
     block_instruments={
         Instruments.REQUESTS,
@@ -757,7 +757,7 @@ prod_telemetry = KeywordsAITelemetry(
 
 ```python
 # Backend API: Disable auto-instrumentation, use decorators only
-backend_telemetry = KeywordsAITelemetry(
+backend_telemetry = RespanTelemetry(
     app_name="backend-api",
     instruments=set(),  # No auto-instrumentation
     is_batching_enabled=False,  # No background threads
@@ -783,9 +783,9 @@ pip install opentelemetry-instrumentation-openai
 Verify it's working:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
-telemetry = KeywordsAITelemetry(log_level="DEBUG")
+telemetry = RespanTelemetry(log_level="DEBUG")
 # Check logs for: "Initialized OpenAI instrumentation"
 ```
 
@@ -794,9 +794,9 @@ telemetry = KeywordsAITelemetry(log_level="DEBUG")
 **Solution:** Block unnecessary instrumentations:
 
 ```python
-from keywordsai_tracing import Instruments
+from respan_tracing import Instruments
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     block_instruments={
         Instruments.REQUESTS,  # Block HTTP client spans
         Instruments.URLLIB3,   # Block urllib3 spans
@@ -809,7 +809,7 @@ telemetry = KeywordsAITelemetry(
 **Solution:** Disable auto-instrumentation entirely:
 
 ```python
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     instruments=set(),  # No auto-instrumentation
     is_batching_enabled=False,  # No background threads
 )
@@ -840,8 +840,8 @@ Route spans to different destinations by adding multiple processors. This is the
 #### Quick Example
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.exporters import KeywordsAISpanExporter
+from respan_tracing import RespanTelemetry
+from respan_tracing.exporters import RespanSpanExporter
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 # File exporter example
@@ -855,12 +855,12 @@ class FileExporter(SpanExporter):
     def force_flush(self, timeout_millis=30000): return True
 
 # Initialize telemetry
-kai = KeywordsAITelemetry(app_name="my-app", api_key="your-key")
+kai = RespanTelemetry(app_name="my-app", api_key="your-key")
 
 # Add production processor (all spans)
 kai.add_processor(
-    exporter=KeywordsAISpanExporter(
-        endpoint="https://api.keywordsai.co/api",
+    exporter=RespanSpanExporter(
+        endpoint="https://api.respan.ai/api",
         api_key="prod-key"
     ),
     name="production"
@@ -935,7 +935,7 @@ kai.add_processor(
 ```python
 from contextvars import ContextVar
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from keywordsai_tracing import KeywordsAITelemetry, get_client
+from respan_tracing import RespanTelemetry, get_client
 
 # Thread-safe context storage
 _request_context: ContextVar[dict] = ContextVar('request_context', default={})
@@ -988,7 +988,7 @@ class BackendExporter(SpanExporter):
 
 # At startup
 exporter = BackendExporter()
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="backend",
     custom_exporter=exporter,
     is_batching_enabled=False,
@@ -1033,17 +1033,17 @@ See [`examples/custom_exporter_example.py`](examples/custom_exporter_example.py)
 ### Update Span Functionality
 
 You can dynamically update spans while they're running using the `get_client()` API. This is useful for:
-- Adding KeywordsAI-specific parameters (like `customer_identifier`, `trace_group_identifier`)
+- Adding Respan-specific parameters (like `customer_identifier`, `trace_group_identifier`)
 - Setting custom attributes during execution
 - Adding events to track progress
 - Recording exceptions and errors
 - Changing span names based on runtime conditions
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow
+from respan_tracing import RespanTelemetry, get_client, workflow
 from openai import OpenAI
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx"
 )
@@ -1060,9 +1060,9 @@ def process_data(user_id: str, data: dict):
     span_id = kwai_client.get_current_span_id()
     print(f"Processing in trace: {trace_id}")
     
-    # Update span with KeywordsAI-specific parameters
+    # Update span with Respan-specific parameters
     kwai_client.update_current_span(
-        keywordsai_params={
+        respan_params={
             "customer_identifier": user_id,
             "trace_group_identifier": "data-processing-pipeline",
             "metadata": {
@@ -1130,11 +1130,11 @@ For fine-grained control, you can manually create custom spans using the tracer 
 - You need to create spans conditionally
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, get_client
+from respan_tracing import RespanTelemetry, get_client
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
-    api_key="keywordsai-xxx"
+    api_key="respan-xxx"
 )
 
 # Get the tracer instance using the public API
@@ -1155,7 +1155,7 @@ with tracer.start_as_current_span("database_operation") as parent_span:
         # You can still use get_client() within manual spans
         client = get_client()
         client.update_current_span(
-            keywordsai_params={
+            respan_params={
                 "customer_identifier": "admin-user"
             }
         )
@@ -1177,7 +1177,7 @@ with tracer.start_as_current_span("database_operation") as parent_span:
 You can mix manual span creation with decorator-based spans:
 
 ```python
-from keywordsai_tracing import workflow, task, get_client
+from respan_tracing import workflow, task, get_client
 
 @workflow(name="hybrid_workflow")
 def hybrid_workflow(data):
@@ -1275,9 +1275,9 @@ This is particularly useful for:
 #### Basic Usage
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, get_client
+from respan_tracing import RespanTelemetry, get_client
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="kwai-xxx"
 )
@@ -1502,7 +1502,7 @@ def ingest_workflow_output(workflow_result, trace_id, org_id, experiment_id):
     
     # Phase 2: Buffer persists - spans are now transportable!
     # Process anywhere, anytime with full control
-    if should_export_to_keywordsai(experiment_id):
+    if should_export_to_respan(experiment_id):
         success = client.process_spans(buffer)  # Process through OTEL pipeline
     elif should_export_to_internal_db(org_id):
         spans = buffer.get_all_spans()

@@ -48,7 +48,6 @@ def _resolve_gateway_base_url() -> str:
     raw_base_url = (
         os.getenv("RESPAN_GATEWAY_BASE_URL")
         or os.getenv("RESPAN_BASE_URL")
-        or os.getenv("KEYWORDSAI_BASE_URL")
         or "https://api.respan.ai"
     )
     return raw_base_url.rstrip("/")
@@ -83,14 +82,14 @@ class RespanAnthropicExporterGatewayIntegrationTests(unittest.IsolatedAsyncioTes
         This test is intentionally opt-in because it makes live network calls and
         consumes model tokens.
         """
-        if os.getenv("RUN_REAL_GATEWAY_TEST") != "1":
-            self.skipTest("Set RUN_REAL_GATEWAY_TEST=1 to run live gateway integration test.")
+        if os.getenv("IS_REAL_GATEWAY_TESTING_ENABLED") != "1":
+            self.skipTest("Set IS_REAL_GATEWAY_TESTING_ENABLED=1 to run live gateway integration test.")
 
         _load_env_from_dotenv()
 
-        respan_api_key = os.getenv("RESPAN_API_KEY") or os.getenv("KEYWORDSAI_API_KEY")
+        respan_api_key = os.getenv("RESPAN_API_KEY")
         if not respan_api_key:
-            self.skipTest("Set RESPAN_API_KEY (or KEYWORDSAI_API_KEY) for real integration test.")
+            self.skipTest("Set RESPAN_API_KEY for real integration test.")
 
         if not shutil.which("claude"):
             self.skipTest("Claude Code CLI not found. Install `@anthropic-ai/claude-code`.")

@@ -1,11 +1,11 @@
 """
-Basic test to verify Langfuse instrumentation works and sends to Keywords AI.
+Basic test to verify Langfuse instrumentation works and sends to Respan.
 
 This test uses the @observe decorator and manual tracing to verify that:
 1. The instrumentor patches httpx correctly
 2. Langfuse data is intercepted
-3. Data is transformed to Keywords AI format
-4. Requests are redirected to Keywords AI endpoint
+3. Data is transformed to Respan format
+4. Requests are redirected to Respan endpoint
 
 Run with: poetry run python -m pytest tests/test_basic_langfuse.py -v -s
 """
@@ -20,19 +20,19 @@ logging.basicConfig(
 )
 
 # IMPORTANT: Instrument BEFORE importing Langfuse
-from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
+from respan_instrumentation_langfuse import LangfuseInstrumentor
 
-# Mock Keywords AI API key for testing
-os.environ["KEYWORDSAI_API_KEY"] = "test-api-key"
+# Mock Respan API key for testing
+os.environ["RESPAN_API_KEY"] = "test-api-key"
 
 print("\n" + "="*80)
 print("INSTRUMENTING LANGFUSE")
 print("="*80)
 
-# Instrument with debug endpoint (you can change this to actual Keywords AI endpoint)
+# Instrument with debug endpoint (you can change this to actual Respan endpoint)
 instrumentor = LangfuseInstrumentor()
 instrumentor.instrument(
-    api_key=os.environ["KEYWORDSAI_API_KEY"],
+    api_key=os.environ["RESPAN_API_KEY"],
     endpoint="https://httpbin.org/post"  # For testing - echoes back what we send
 )
 
@@ -149,8 +149,8 @@ if __name__ == "__main__":
         print("\nNOTE: Check the debug logs above to see:")
         print("  1. httpx.Client.send being called")
         print("  2. Langfuse batch data being intercepted")
-        print("  3. Transformation to Keywords AI format")
-        print("  4. Redirect to Keywords AI endpoint")
+        print("  3. Transformation to Respan format")
+        print("  4. Redirect to Respan endpoint")
         
     except Exception as e:
         print(f"\nERROR: TEST FAILED: {e}")

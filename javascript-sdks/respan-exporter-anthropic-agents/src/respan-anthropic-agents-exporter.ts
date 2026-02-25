@@ -30,7 +30,7 @@ export class RespanAnthropicAgentsExporter {
   private lastPrompt: unknown;
 
   constructor({
-    apiKey = process.env.RESPAN_API_KEY || process.env.KEYWORDSAI_API_KEY || null,
+    apiKey = process.env.RESPAN_API_KEY || null,
     endpoint,
     maxRetries = 3,
     baseDelaySeconds = 1,

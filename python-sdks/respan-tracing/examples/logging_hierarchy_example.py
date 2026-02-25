@@ -2,19 +2,19 @@
 """
 Example demonstrating Python logging hierarchy and __name__ usage.
 
-This shows exactly how KeywordsAI tracing debug logging works.
+This shows exactly how Respan tracing debug logging works.
 """
 
 import logging
-from keywordsai_tracing.constants import LOGGER_NAME
+from respan_tracing.constants import LOGGER_NAME
 
 print("=== Understanding __name__ and Logger Inheritance ===\n")
 
 # 1. Show what __name__ contains in different contexts
 print("1. What __name__ contains:")
 print(f"   In this script: __name__ = '{__name__}'")
-print(f"   In exporter module: __name__ = 'keywordsai_tracing.core.exporter'")
-print(f"   In client module: __name__ = 'keywordsai_tracing.core.client'")
+print(f"   In exporter module: __name__ = 'respan_tracing.core.exporter'")
+print(f"   In client module: __name__ = 'respan_tracing.core.client'")
 print(f"   LOGGER_NAME constant = '{LOGGER_NAME}'")
 print()
 
@@ -38,8 +38,8 @@ print(f"   Child2 parent: {child2_logger.parent.name}")
 print(f"   Grandchild parent: {grandchild_logger.parent.name}")
 print()
 
-# 4. Setup logging like KeywordsAITelemetry does
-print("4. Setting up logging (like KeywordsAITelemetry):")
+# 4. Setup logging like RespanTelemetry does
+print("4. Setting up logging (like RespanTelemetry):")
 parent_logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(levelname)s - %(name)s - %(message)s'))
@@ -83,5 +83,5 @@ print("=== Summary ===")
 print("✅ __name__ creates hierarchical logger names based on module paths")
 print("✅ Dot notation automatically creates parent-child relationships")
 print("✅ Child loggers inherit log levels from their parents")
-print("✅ KeywordsAI sets parent logger to DEBUG, all children inherit it")
+print("✅ Respan sets parent logger to DEBUG, all children inherit it")
 print("✅ That's why exporter debug messages appear!") 

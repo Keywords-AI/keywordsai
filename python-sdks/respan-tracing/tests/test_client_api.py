@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 """
-Tests for the new KeywordsAI client API.
+Tests for the new Respan client API.
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
 from opentelemetry.trace import StatusCode
 
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow, task
-from keywordsai_tracing.core.client import KeywordsAIClient
+from respan_tracing import RespanTelemetry, get_client, workflow, task
+from respan_tracing.core.client import RespanClient
 
 
-class TestKeywordsAIClient:
-    """Test the KeywordsAIClient functionality"""
+class TestRespanClient:
+    """Test the RespanClient functionality"""
     
     def setup_method(self):
         """Setup for each test"""
         # Initialize telemetry for testing
-        self.telemetry = KeywordsAITelemetry(
+        self.telemetry = RespanTelemetry(
             app_name="test-app",
             api_key="test-key",
             is_enabled=True
         )
     
     def test_get_client_returns_instance(self):
-        """Test that get_client returns a KeywordsAIClient instance"""
+        """Test that get_client returns a RespanClient instance"""
         client = get_client()
-        assert isinstance(client, KeywordsAIClient)
+        assert isinstance(client, RespanClient)
     
     def test_get_client_returns_same_instance(self):
         """Test that get_client returns the same instance (singleton behavior)"""
@@ -37,7 +37,7 @@ class TestKeywordsAIClient:
     def test_telemetry_get_client_method(self):
         """Test that telemetry instance has get_client method"""
         client = self.telemetry.get_client()
-        assert isinstance(client, KeywordsAIClient)
+        assert isinstance(client, RespanClient)
     
     @workflow(name="test_workflow")
     def test_workflow_with_client_api(self):
@@ -60,7 +60,7 @@ class TestKeywordsAIClient:
         # Should be able to update span
         success = client.update_current_span(
             attributes={"test.attribute": "test_value"},
-            keywordsai_params={"trace_group_identifier": "test-group"}
+            respan_params={"trace_group_identifier": "test-group"}
         )
         assert success is True
         
@@ -151,18 +151,18 @@ class TestKeywordsAIClient:
 
 def test_module_level_get_client():
     """Test the module-level get_client function"""
-    from keywordsai_tracing import get_client
+    from respan_tracing import get_client
     
     client = get_client()
-    assert isinstance(client, KeywordsAIClient)
+    assert isinstance(client, RespanClient)
 
 
 if __name__ == "__main__":
     # Run a simple test
-    test = TestKeywordsAIClient()
+    test = TestRespanClient()
     test.setup_method()
     
-    print("🧪 Running KeywordsAI Client API Tests")
+    print("🧪 Running Respan Client API Tests")
     print("=" * 50)
     
     try:

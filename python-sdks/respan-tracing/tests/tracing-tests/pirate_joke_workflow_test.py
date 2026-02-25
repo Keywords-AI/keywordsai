@@ -4,15 +4,15 @@ loaded = load_dotenv(".env", override=True)
 
 # region: setup
 import os
-from keywordsai_tracing.main import KeywordsAITelemetry
+from respan_tracing.main import RespanTelemetry
 
 # Initialize with debug logging enabled
-k_tl = KeywordsAITelemetry(log_level="DEBUG")
+k_tl = RespanTelemetry(log_level="DEBUG")
 # endregion: setup
 import time
 from openai import OpenAI
 from anthropic import Anthropic
-from keywordsai_tracing.decorators import workflow, task
+from respan_tracing.decorators import workflow, task
 
 client = OpenAI()
 anthropic = Anthropic()

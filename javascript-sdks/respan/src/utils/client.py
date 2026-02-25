@@ -27,7 +27,7 @@ class RespanClient:
         if not base_url:
             base_url = os.getenv("RESPAN_BASE_URL", RESPAN_DEFAULT_BASE_URL)
         if not api_key:
-            api_key = os.getenv("KEYWORDSAI_API_KEY")
+            api_key = os.getenv("RESPAN_API_KEY")
         base_url = base_url.rstrip("/")
         if base_url.endswith(BASE_URL_SUFFIX):
             base_url = base_url[: -len(BASE_URL_SUFFIX)]

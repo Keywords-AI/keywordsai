@@ -6,7 +6,7 @@ python-dotenv
 langchain_ollama
 reportlab
 langfuse
-keywordsai-tracing
+respan-tracing
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-instrumentation-langchain

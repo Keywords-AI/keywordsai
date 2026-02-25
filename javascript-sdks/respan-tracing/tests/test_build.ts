@@ -4,11 +4,11 @@
  * To run this test:
  * 1. Build the package: npm run build
  * 2. Create tarball: npm pack
- * 3. Install locally: npm install ./keywordsai-tracing-*.tgz --no-save
+ * 3. Install locally: npm install ./respan-tracing-*.tgz --no-save
  * 4. Run this test: tsx tests/test_build.ts
  */
 
-import { KeywordsAITelemetry, getClient } from '@keywordsai/tracing';
+import { RespanTelemetry, getClient } from '@respan/tracing';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -20,15 +20,15 @@ async function testBuiltPackage() {
   console.log('✓ Package imports successfully');
   
   // Test 2: Initialize
-  const kai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseURL: process.env.KEYWORDSAI_BASE_URL,
+  const kai = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
+    baseURL: process.env.RESPAN_BASE_URL,
     appName: 'build-test',
     disableBatch: true,
     logLevel: 'info'
   });
   
-  console.log('✓ KeywordsAITelemetry instantiated');
+  console.log('✓ RespanTelemetry instantiated');
   
   await kai.initialize();
   console.log('✓ SDK initialized');
@@ -46,7 +46,7 @@ async function testBuiltPackage() {
     console.log(`✓ Span ID: ${spanId}`);
     
     client.updateCurrentSpan({
-      keywordsaiParams: {
+      respanParams: {
         customerIdentifier: 'test-user',
         metadata: { test: 'build' }
       }

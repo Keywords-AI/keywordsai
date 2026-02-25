@@ -2,15 +2,15 @@
 """
 Experiment API Workflow Example
 
-This example demonstrates how to use the Keywords AI Experiment API to:
+This example demonstrates how to use the Respan Experiment API to:
 1. Create an experiment with columns and rows
 2. Add more rows and columns
 3. Run the experiment
 4. Run evaluations
 
 Environment variables required:
-- KEYWORDSAI_API_KEY
-- KEYWORDSAI_BASE_URL (optional, defaults to production)
+- RESPAN_API_KEY
+- RESPAN_BASE_URL (optional, defaults to production)
 
 Usage:
     python examples/experiment_workflow_example.py
@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from keywordsai import (
+from respan import (
     ExperimentAPI,
     ExperimentCreate,
     ExperimentColumnType,
@@ -39,11 +39,11 @@ from keywordsai import (
 async def main():
     """Main workflow demonstration"""
     # Initialize the API client
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL")  # Optional
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL")  # Optional
     
     if not api_key:
-        print("❌ KEYWORDSAI_API_KEY environment variable is required")
+        print("❌ RESPAN_API_KEY environment variable is required")
         return
     
     client = ExperimentAPI(api_key=api_key, base_url=base_url)
@@ -152,7 +152,7 @@ async def main():
         # Step 4: Update experiment metadata
         print("\n✏️  Step 4: Updating experiment metadata...")
         
-        from keywordsai import ExperimentUpdate
+        from respan import ExperimentUpdate
         update_data = ExperimentUpdate(
             name=f"{experiment_name}_Updated",
             description="Updated experiment description with more details about the SDK workflow"
@@ -204,7 +204,7 @@ async def main():
         
         print(f"\n✅ Workflow completed successfully!")
         print(f"🔬 Experiment '{experiment.name}' is ready for analysis")
-        print(f"🌐 You can view it in the Keywords AI dashboard")
+        print(f"🌐 You can view it in the Respan dashboard")
         
     except Exception as e:
         print(f"❌ Error during workflow: {e}")
@@ -223,11 +223,11 @@ def sync_example():
     """Synchronous version of the workflow"""
     print("🔄 Running synchronous example...")
     
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL")
     
     if not api_key:
-        print("❌ KEYWORDSAI_API_KEY environment variable is required")
+        print("❌ RESPAN_API_KEY environment variable is required")
         return
     
     client = ExperimentAPI(api_key=api_key, base_url=base_url)
@@ -283,7 +283,7 @@ def sync_example():
 
 
 if __name__ == "__main__":
-    print("🚀 Keywords AI Experiment API Example")
+    print("🚀 Respan Experiment API Example")
     print("=====================================")
     
     # Run async example
@@ -298,7 +298,7 @@ if __name__ == "__main__":
     
     print("\n🎉 All examples completed!")
     print("\n💡 Tips:")
-    print("   - Check the Keywords AI dashboard to see your experiments")
+    print("   - Check the Respan dashboard to see your experiments")
     print("   - Use the experiment results to compare model performance")
     print("   - Run evaluations to get automated scoring")
     print("   - Export results for further analysis")

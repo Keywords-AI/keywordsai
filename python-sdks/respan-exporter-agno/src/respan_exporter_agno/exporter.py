@@ -62,20 +62,17 @@ class RespanAgnoExporter:
         if base_url is None:
             base_url = (
                 os.getenv("RESPAN_BASE_URL")
-                or os.getenv("KEYWORDS_AI_BASE_URL")
                 or "https://api.respan.ai/api"
             )
         self.endpoint = endpoint or self._build_endpoint(base_url=base_url)
         self.environment = (
             environment
             or os.getenv("RESPAN_ENVIRONMENT")
-            or os.getenv("KEYWORDS_AI_ENVIRONMENT")
             or "production"
         )
         self.customer_identifier = (
             customer_identifier
             or os.getenv("RESPAN_CUSTOMER_IDENTIFIER")
-            or os.getenv("KEYWORDS_AI_CUSTOMER_IDENTIFIER")
         )
         self.timeout = timeout
 
@@ -99,7 +96,7 @@ class RespanAgnoExporter:
             return payloads
         if not self.api_key:
             logger.warning(
-                "Keywords AI API key is not set; skipping export to %s",
+                "Respan API key is not set; skipping export to %s",
                 self.endpoint,
             )
             return payloads
@@ -605,9 +602,9 @@ class RespanAgnoExporter:
             )
             if response.status_code not in (200, 201):
                 logger.warning(
-                    "Keywords AI export failed with status %s: %s",
+                    "Respan export failed with status %s: %s",
                     response.status_code,
                     response.text,
                 )
         except Exception as exc:
-            logger.warning("Keywords AI export request failed: %s", exc)
+            logger.warning("Respan export request failed: %s", exc)

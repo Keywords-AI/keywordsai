@@ -1,12 +1,12 @@
 import * as dotenv from "dotenv";
 const result = dotenv.config({ override: true });
-import { KeywordsAITelemetry } from "@keywordsai/tracing";
+import { RespanTelemetry } from "@respan/tracing";
 
-const apiKey = process.env.KEYWORDSAI_API_KEY || "";
-const baseURL = process.env.KEYWORDSAI_BASE_URL || "";
-const appName = process.env.KEYWORDSAI_APP_NAME || "default";
+const apiKey = process.env.RESPAN_API_KEY || "";
+const baseURL = process.env.RESPAN_BASE_URL || "";
+const appName = process.env.RESPAN_APP_NAME || "default";
 
-const keywordsAI = new KeywordsAITelemetry({
+const respan = new RespanTelemetry({
   apiKey,
   baseURL,
   appName,
@@ -14,15 +14,15 @@ const keywordsAI = new KeywordsAITelemetry({
 });
 
 async function testTask() {
-  return await keywordsAI.withTask({ name: "test" }, async () => {
+  return await respan.withTask({ name: "test" }, async () => {
     console.log("test task");
     return "test task";
   });
 }
 
 async function testWorkflow() {
-  return await keywordsAI.withWorkflow({ name: "test" }, async () => {
-    keywordsAI.withKeywordsAISpanAttributes(
+  return await respan.withWorkflow({ name: "test" }, async () => {
+    respan.withRespanSpanAttributes(
       async () => {
         testTask();
       },

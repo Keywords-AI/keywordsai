@@ -1,4 +1,4 @@
-"""Keywords AI Connector component for Haystack pipelines."""
+"""Respan Connector component for Haystack pipelines."""
 
 import os
 from typing import Optional, Dict, Any
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 @component
 class RespanConnector:
     """
-    A connector component that enables Keywords AI tracing and logging for Haystack pipelines.
+    A connector component that enables Respan tracing and logging for Haystack pipelines.
     
     This component can be added to any Haystack pipeline to automatically capture execution
-    traces and send them to Keywords AI for monitoring, debugging, and analysis.
+    traces and send them to Respan for monitoring, debugging, and analysis.
     
     The component supports two modes:
     - "tracing": Uses Haystack's content tracing system (default, requires HAYSTACK_CONTENT_TRACING_ENABLED=true)
@@ -35,10 +35,10 @@ class RespanConnector:
         ```
     
     Args:
-        name: Name of the pipeline/trace for identification in Keywords AI dashboard
+        name: Name of the pipeline/trace for identification in Respan dashboard
         mode: Either "tracing" (default) or "gateway" for different logging modes
-        api_key: Keywords AI API key (defaults to RESPAN_API_KEY env var)
-        base_url: Keywords AI API base URL (defaults to RESPAN_BASE_URL env var)
+        api_key: Respan API key (defaults to RESPAN_API_KEY env var)
+        base_url: Respan API base URL (defaults to RESPAN_BASE_URL env var)
         metadata: Additional metadata to attach to all traces/logs
     """
 
@@ -50,7 +50,7 @@ class RespanConnector:
         base_url: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ):
-        """Initialize the Keywords AI connector."""
+        """Initialize the Respan connector."""
         self.name = name
         self.mode = mode
         self.api_key = api_key or os.getenv("RESPAN_API_KEY")
@@ -61,7 +61,7 @@ class RespanConnector:
         
         if not self.api_key:
             raise ValueError(
-                "Keywords AI API key is required. Set RESPAN_API_KEY environment variable "
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
         
@@ -84,7 +84,7 @@ class RespanConnector:
             try:
                 from haystack import tracing
                 tracing.tracer.actual_tracer = self.tracer
-                logger.info(f"Keywords AI tracer registered for '{self.name}'")
+                logger.info(f"Respan tracer registered for '{self.name}'")
             except Exception as e:
                 logger.warning(f"Could not register tracer: {e}")
 
@@ -99,7 +99,7 @@ class RespanConnector:
         Returns:
             Dictionary containing:
                 - name: The pipeline/trace name
-                - trace_url: URL to view the trace in Keywords AI dashboard (if available)
+                - trace_url: URL to view the trace in Respan dashboard (if available)
         """
         # Don't send here - it will be sent automatically when the root span finishes
         # Just return the trace info

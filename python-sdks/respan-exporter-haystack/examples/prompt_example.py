@@ -1,14 +1,14 @@
-"""Simple prompt management example for Keywords AI Haystack integration."""
+"""Simple prompt management example for Respan Haystack integration."""
 
 import os
 from haystack import Pipeline
-from keywordsai_exporter_haystack import KeywordsAIGenerator
+from respan_exporter_haystack import RespanGenerator
 
 # Create pipeline with platform prompt
 pipeline = Pipeline()
-pipeline.add_component("llm", KeywordsAIGenerator(
+pipeline.add_component("llm", RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",
-    api_key=os.getenv("KEYWORDSAI_API_KEY")
+    api_key=os.getenv("RESPAN_API_KEY")
 ))
 
 # Run with prompt variables

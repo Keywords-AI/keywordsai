@@ -194,13 +194,13 @@ def validate_and_separate_params(
     Validate and separate the params into llm_params and respan_params using Pydantic models
     Returns:
     basic_llm: LiteLLMCompletionParams
-    keywords_ai: RespanParams
+    respan: RespanParams
     """
 
     basic_llm = LiteLLMCompletionParams.model_validate(params)
-    keywords_ai = RespanParams.model_validate(params)
+    respan = RespanParams.model_validate(params)
 
-    return basic_llm, keywords_ai
+    return basic_llm, respan
 
 
 def validate_and_separate_log_and_llm_params(
@@ -212,11 +212,11 @@ def validate_and_separate_log_and_llm_params(
 
     Returns:
     basic_llm: LiteLLMCompletionParams
-    keywords_ai_log: RespanLogParams
+    respan_log: RespanLogParams
     """
     from respan_sdk.respan_types.log_types import RespanLogParams
 
     basic_llm = LiteLLMCompletionParams.model_validate(params)
-    keywords_ai_log = RespanLogParams.model_validate(params)
+    respan_log = RespanLogParams.model_validate(params)
 
-    return basic_llm, keywords_ai_log
+    return basic_llm, respan_log

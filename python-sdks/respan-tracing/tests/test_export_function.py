@@ -1,5 +1,5 @@
 """
-Simple test to understand and validate the KeywordsAI SDK export function.
+Simple test to understand and validate the Respan SDK export function.
 This helps understand exactly what data gets exported and in what format.
 """
 
@@ -10,18 +10,18 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExportResult
 
 # Set up environment for testing
-os.environ["KEYWORDSAI_API_KEY"] = "test_key"
-os.environ["KEYWORDSAI_BASE_URL"] = "https://test.keywordsai.co/api"
+os.environ["RESPAN_API_KEY"] = "test_key"
+os.environ["RESPAN_BASE_URL"] = "https://test.respan.ai/api"
 
-from keywordsai_tracing.main import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
-from keywordsai_tracing.core.exporter import KeywordsAISpanExporter
+from respan_tracing.main import RespanTelemetry
+from respan_tracing.decorators import task, workflow
+from respan_tracing.core.exporter import RespanSpanExporter
 
 
 def test_export_function_basic():
     """
     Test the basic export function to understand what gets exported.
-    This is the core export functionality that sends data to KeywordsAI.
+    This is the core export functionality that sends data to Respan.
     """
     print("\n=== Testing Export Function ===")
     
@@ -68,13 +68,13 @@ def test_export_function_basic():
         return SpanExportResult.SUCCESS
     
     # Patch the underlying OTLP exporter to capture exports
-    with patch('keywordsai_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
+    with patch('respan_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
         mock_exporter = Mock()
         mock_exporter.export = mock_export
         mock_otlp.return_value = mock_exporter
         
         # Initialize telemetry
-        telemetry = KeywordsAITelemetry(
+        telemetry = RespanTelemetry(
             app_name="export_test",
             is_batching_enabled=False  # Use immediate export for testing
         )
@@ -122,7 +122,7 @@ def test_export_function_basic():
                 'traceloop.entity.path', 
                 'traceloop.entity.input',
                 'traceloop.entity.output',
-                'keywordsai.trace_group_identifier'
+                'respan.trace_group_identifier'
             ]
             
             print("   Key Attributes:")
@@ -148,9 +148,9 @@ def test_export_endpoint_configuration():
     
     test_cases = [
         {
-            "input": "https://api.keywordsai.co/api",
-            "expected": "https://api.keywordsai.co/api/v1/traces",
-            "description": "Standard KeywordsAI API endpoint"
+            "input": "https://api.respan.ai/api",
+            "expected": "https://api.respan.ai/api/v1/traces",
+            "description": "Standard Respan API endpoint"
         },
         {
             "input": "https://custom.domain.com",
@@ -158,18 +158,18 @@ def test_export_endpoint_configuration():
             "description": "Custom domain"
         },
         {
-            "input": "https://api.keywordsai.co/api/v1/traces",
-            "expected": "https://api.keywordsai.co/api/v1/traces",
+            "input": "https://api.respan.ai/api/v1/traces",
+            "expected": "https://api.respan.ai/api/v1/traces",
             "description": "Already complete traces endpoint"
         }
     ]
     
     for case in test_cases:
-        with patch('keywordsai_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
+        with patch('respan_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
             print(f"\n🔗 Testing: {case['description']}")
             print(f"   Input: {case['input']}")
             
-            exporter = KeywordsAISpanExporter(
+            exporter = RespanSpanExporter(
                 endpoint=case['input'],
                 api_key="test_key"
             )
@@ -200,12 +200,12 @@ def inspect_span_structure():
         captured_spans.extend(spans)
         return SpanExportResult.SUCCESS
     
-    with patch('keywordsai_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
+    with patch('respan_tracing.core.exporter.OTLPSpanExporter') as mock_otlp:
         mock_exporter = Mock()
         mock_exporter.export = capture_span
         mock_otlp.return_value = mock_exporter
         
-        telemetry = KeywordsAITelemetry(is_batching_enabled=False)
+        telemetry = RespanTelemetry(is_batching_enabled=False)
         
         @task(name="inspection_task")
         def inspection_task():
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     print(f"\n🎯 SUMMARY:")
     print(f"   • The export() function receives ReadableSpan objects")
     print(f"   • Each span contains: name, IDs, timing, status, attributes, events, resource")
-    print(f"   • Spans are sent to KeywordsAI's /v1/traces endpoint in OTLP format")
+    print(f"   • Spans are sent to Respan's /v1/traces endpoint in OTLP format")
     print(f"   • The exporter handles endpoint building and authentication")
     print(f"   • Total spans captured in test: {len(exported_data)}")
     

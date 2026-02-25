@@ -44,8 +44,8 @@ asyncio.run(main())
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RESPAN_API_KEY` | Yes | Your Respan API key. Falls back to `KEYWORDSAI_API_KEY`. |
-| `RESPAN_BASE_URL` | No | Base URL for all Respan services. Defaults to `https://api.respan.ai`. Falls back to `KEYWORDSAI_BASE_URL`. |
+| `RESPAN_API_KEY` | Yes | Your Respan API key. |
+| `RESPAN_BASE_URL` | No | Base URL for all Respan services. Defaults to `https://api.respan.ai`. |
 
 `RESPAN_BASE_URL` is the single base URL that controls where telemetry is exported. The exporter automatically appends `/api/v1/traces/ingest` to build the full endpoint.
 
@@ -75,6 +75,6 @@ python -m unittest tests.test_exporter -v
 
 # Live integration test (opt-in, makes real API calls)
 export RESPAN_API_KEY="your_respan_key"
-export RUN_REAL_GATEWAY_TEST=1
+export IS_REAL_GATEWAY_TESTING_ENABLED=1
 python -m unittest tests.test_real_gateway_integration -v
 ```

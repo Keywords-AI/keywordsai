@@ -1,7 +1,7 @@
 """
-Dataset Type Definitions for Keywords AI SDK
+Dataset Type Definitions for Respan SDK
 
-This module provides comprehensive type definitions for dataset operations in Keywords AI.
+This module provides comprehensive type definitions for dataset operations in Respan.
 All types are Pydantic models that provide validation, serialization, and clear structure
 for API interactions.
 

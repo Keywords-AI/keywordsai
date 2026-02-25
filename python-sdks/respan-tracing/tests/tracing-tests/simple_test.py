@@ -4,15 +4,15 @@ loaded = load_dotenv(".env", override=True)
 
 # region: setup
 import os
-from keywordsai_tracing.main import KeywordsAITelemetry
+from respan_tracing.main import RespanTelemetry
 
-print(os.environ["KEYWORDSAI_BASE_URL"])
-print(os.environ["KEYWORDSAI_API_KEY"])
-k_tl = KeywordsAITelemetry()
+print(os.environ["RESPAN_BASE_URL"])
+print(os.environ["RESPAN_API_KEY"])
+k_tl = RespanTelemetry()
 # endregion: setup
 import time
 from openai import OpenAI
-from keywordsai_tracing.decorators import task
+from respan_tracing.decorators import task
 
 client = OpenAI()
 

@@ -1,6 +1,6 @@
-# Keywords AI SDK Examples
+# Respan SDK Examples
 
-This directory contains clean, readable examples showing how to use the Keywords AI TypeScript/JavaScript SDK.
+This directory contains clean, readable examples showing how to use the Respan TypeScript/JavaScript SDK.
 
 ## Available Examples
 
@@ -79,8 +79,8 @@ npx tsx examples/sdk-structure-demo.ts
 2. **Set up environment variables**:
    ```bash
    # Create .env file in project root
-   echo "KEYWORDSAI_API_KEY=your_api_key_here
-   KEYWORDSAI_BASE_URL=http://localhost:8000" > .env
+   echo "RESPAN_API_KEY=your_api_key_here
+   RESPAN_BASE_URL=http://localhost:8000" > .env
    
    # Or copy from example and edit
    cp .env.example .env

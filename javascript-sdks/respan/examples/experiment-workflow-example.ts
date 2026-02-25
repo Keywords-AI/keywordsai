@@ -2,15 +2,15 @@
 /**
  * Experiment API Workflow Example
  *
- * This example demonstrates how to use the Keywords AI Experiment API to:
+ * This example demonstrates how to use the Respan Experiment API to:
  * 1. Create an experiment with columns and rows
  * 2. Add more rows and columns
  * 3. Run the experiment
  * 4. Run evaluations
  *
  * Environment variables required:
- * - KEYWORDSAI_API_KEY
- * - KEYWORDSAI_BASE_URL (optional, defaults to production)
+ * - RESPAN_API_KEY
+ * - RESPAN_BASE_URL (optional, defaults to production)
  *
  * Usage:
  *     npm run build && node dist/examples/experiment-workflow-example.js
@@ -36,11 +36,11 @@ config({ override: true });
 
 async function main() {
   // Initialize the API client
-  const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL; // Optional
+  const apiKey = process.env.RESPAN_API_KEY;
+  const baseUrl = process.env.RESPAN_BASE_URL; // Optional
 
   if (!apiKey) {
-    console.log('❌ KEYWORDSAI_API_KEY environment variable is required');
+    console.log('❌ RESPAN_API_KEY environment variable is required');
     return;
   }
 
@@ -205,7 +205,7 @@ async function main() {
 
     console.log(`\n✅ Workflow completed successfully!`);
     console.log(`🔬 Experiment '${experiment.name}' is ready for analysis`);
-    console.log(`🌐 You can view it in the Keywords AI dashboard`);
+    console.log(`🌐 You can view it in the Respan dashboard`);
 
   } catch (error) {
     console.log(`❌ Error during workflow: ${error}`);
@@ -228,11 +228,11 @@ async function main() {
 async function syncExample() {
   console.log('🔄 Running synchronous example...');
 
-  const apiKey = process.env.KEYWORDSAI_API_KEY;
-  const baseUrl = process.env.KEYWORDSAI_BASE_URL;
+  const apiKey = process.env.RESPAN_API_KEY;
+  const baseUrl = process.env.RESPAN_BASE_URL;
 
   if (!apiKey) {
-    console.log('❌ KEYWORDSAI_API_KEY environment variable is required');
+    console.log('❌ RESPAN_API_KEY environment variable is required');
     return;
   }
 
@@ -292,7 +292,7 @@ async function syncExample() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  console.log('🚀 Keywords AI Experiment API Example');
+  console.log('🚀 Respan Experiment API Example');
   console.log('=====================================');
 
   // Run async example
@@ -306,7 +306,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }).then(() => {
     console.log('\n🎉 All examples completed!');
     console.log('\n💡 Tips:');
-    console.log('   - Check the Keywords AI dashboard to see your experiments');
+    console.log('   - Check the Respan dashboard to see your experiments');
     console.log('   - Use the experiment results to compare model performance');
     console.log('   - Run evaluations to get automated scoring');
     console.log('   - Export results for further analysis');

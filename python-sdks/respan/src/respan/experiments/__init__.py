@@ -1,5 +1,5 @@
 """
-Keywords AI Experiments Module
+Respan Experiments Module
 
 This module provides access to experiment management functionality.
 """

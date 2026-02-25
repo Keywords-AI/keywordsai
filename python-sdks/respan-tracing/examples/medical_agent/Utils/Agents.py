@@ -1,6 +1,6 @@
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from keywordsai_tracing.decorators import task, tool, agent
+from respan_tracing.decorators import task, tool, agent
 
 class Agent:
     @agent(name="Agent")

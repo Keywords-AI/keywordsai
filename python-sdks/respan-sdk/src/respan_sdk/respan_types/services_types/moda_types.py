@@ -59,7 +59,7 @@ class ModaIngestRequest(RespanBaseModel):
 
 class ModaParams(RespanBaseModel):
     """
-    Parameters for Moda integration in Keywords AI.
+    Parameters for Moda integration in Respan.
     
     This is what users pass in the respan_params.moda_params field.
     

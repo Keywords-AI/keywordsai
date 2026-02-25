@@ -10,10 +10,10 @@ This example shows:
 """
 
 import time
-from keywordsai_tracing import KeywordsAITelemetry, get_client
+from respan_tracing import RespanTelemetry, get_client
 
-# Initialize KeywordsAI telemetry
-telemetry = KeywordsAITelemetry(
+# Initialize Respan telemetry
+telemetry = RespanTelemetry(
     app_name="span-collector-example",
     api_key="your-api-key",  # Set your API key
     log_level="DEBUG",  # Enable debug logging to see what's happening

@@ -1,7 +1,7 @@
 """
-Test compatibility between KeywordsAITextLogParams and KeywordsAIFullLogParams.
-This ensures that any log that validates through KeywordsAITextLogParams
-will also validate through KeywordsAIFullLogParams.
+Test compatibility between RespanTextLogParams and RespanFullLogParams.
+This ensures that any log that validates through RespanTextLogParams
+will also validate through RespanFullLogParams.
 """
 
 import sys
@@ -10,8 +10,8 @@ import os
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
-from keywordsai_sdk.keywordsai_types.log_types import KeywordsAIFullLogParams
+from respan_sdk.respan_types.param_types import RespanTextLogParams
+from respan_sdk.respan_types.log_types import RespanFullLogParams
 from pydantic import ValidationError
 
 try:
@@ -44,7 +44,7 @@ except ImportError:
 
 
 class TestFullLogParamsCompatibility:
-    """Test that KeywordsAIFullLogParams provides complete backward compatibility with KeywordsAITextLogParams."""
+    """Test that RespanFullLogParams provides complete backward compatibility with RespanTextLogParams."""
     
     def get_comprehensive_test_data(self):
         """Create comprehensive test data that exercises many fields."""
@@ -65,7 +65,7 @@ class TestFullLogParamsCompatibility:
             "tools": [{"type": "function", "function": {"name": "test"}}],
             "tool_choice": "auto",
             
-            # Keywords AI specific fields
+            # Respan specific fields
             "custom_identifier": "test_123",
             "environment": "test",
             "api_key": "test_key",
@@ -159,8 +159,8 @@ class TestFullLogParamsCompatibility:
         }
         
         # Both should validate successfully
-        text_log_params = KeywordsAITextLogParams(**test_data)
-        full_log_params = KeywordsAIFullLogParams(**test_data)
+        text_log_params = RespanTextLogParams(**test_data)
+        full_log_params = RespanFullLogParams(**test_data)
         
         # Check that key fields match
         assert text_log_params.model == full_log_params.model
@@ -173,8 +173,8 @@ class TestFullLogParamsCompatibility:
         test_data = self.get_comprehensive_test_data()
         
         # Both should validate successfully
-        text_log_params = KeywordsAITextLogParams(**test_data)
-        full_log_params = KeywordsAIFullLogParams(**test_data)
+        text_log_params = RespanTextLogParams(**test_data)
+        full_log_params = RespanFullLogParams(**test_data)
         
         # Verify key fields are preserved
         assert text_log_params.model == full_log_params.model
@@ -187,8 +187,8 @@ class TestFullLogParamsCompatibility:
         
     def test_field_count_compatibility(self):
         """Test that both types have the same number of fields."""
-        text_log_fields = set(KeywordsAITextLogParams.model_fields.keys())
-        full_log_fields = set(KeywordsAIFullLogParams.model_fields.keys())
+        text_log_fields = set(RespanTextLogParams.model_fields.keys())
+        full_log_fields = set(RespanFullLogParams.model_fields.keys())
         
         # Should have exactly the same fields
         assert len(text_log_fields) == len(full_log_fields)
@@ -199,8 +199,8 @@ class TestFullLogParamsCompatibility:
         test_data = self.get_comprehensive_test_data()
         
         # Test valid data - both should succeed
-        text_log_params = KeywordsAITextLogParams(**test_data)
-        full_log_params = KeywordsAIFullLogParams(**test_data)
+        text_log_params = RespanTextLogParams(**test_data)
+        full_log_params = RespanFullLogParams(**test_data)
         assert text_log_params is not None
         assert full_log_params is not None
         
@@ -209,17 +209,17 @@ class TestFullLogParamsCompatibility:
         invalid_data["temperature"] = "invalid_temperature"  # Should be float
         
         with pytest.raises(ValidationError):
-            KeywordsAITextLogParams(**invalid_data)
+            RespanTextLogParams(**invalid_data)
             
         with pytest.raises(ValidationError):
-            KeywordsAIFullLogParams(**invalid_data)
+            RespanFullLogParams(**invalid_data)
     
     def test_serialization_compatibility(self):
         """Test that serialized output is compatible."""
         test_data = self.get_comprehensive_test_data()
         
-        text_log_params = KeywordsAITextLogParams(**test_data)
-        full_log_params = KeywordsAIFullLogParams(**test_data)
+        text_log_params = RespanTextLogParams(**test_data)
+        full_log_params = RespanFullLogParams(**test_data)
         
         # Both should serialize to dicts
         text_dict = text_log_params.model_dump()
@@ -230,19 +230,19 @@ class TestFullLogParamsCompatibility:
             assert text_dict.get(key) == full_dict.get(key)
             
     def test_inheritance_relationship(self):
-        """Test that KeywordsAIFullLogParams properly inherits from KeywordsAILogParams."""
-        from keywordsai_sdk.keywordsai_types.log_types import KeywordsAILogParams
+        """Test that RespanFullLogParams properly inherits from RespanLogParams."""
+        from respan_sdk.respan_types.log_types import RespanLogParams
         
-        # KeywordsAIFullLogParams should be a subclass of KeywordsAILogParams
-        assert issubclass(KeywordsAIFullLogParams, KeywordsAILogParams)
+        # RespanFullLogParams should be a subclass of RespanLogParams
+        assert issubclass(RespanFullLogParams, RespanLogParams)
         
         # Create instance and verify inheritance
         test_data = {"custom_identifier": "inheritance_test"}
-        full_log_params = KeywordsAIFullLogParams(**test_data)
+        full_log_params = RespanFullLogParams(**test_data)
         
         # Should be instance of both classes
-        assert isinstance(full_log_params, KeywordsAIFullLogParams)
-        assert isinstance(full_log_params, KeywordsAILogParams)
+        assert isinstance(full_log_params, RespanFullLogParams)
+        assert isinstance(full_log_params, RespanLogParams)
     
     def test_real_world_scenario(self):
         """Test a real-world scenario with actual LLM request/response data."""
@@ -287,8 +287,8 @@ class TestFullLogParamsCompatibility:
         }
         
         # Both should handle real-world data identically
-        text_log_params = KeywordsAITextLogParams(**real_world_data)
-        full_log_params = KeywordsAIFullLogParams(**real_world_data)
+        text_log_params = RespanTextLogParams(**real_world_data)
+        full_log_params = RespanFullLogParams(**real_world_data)
         
         # Verify critical fields match
         assert text_log_params.model == full_log_params.model == "gpt-3.5-turbo"
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     # Run the tests
     test_instance = TestFullLogParamsCompatibility()
     
-    print("Running KeywordsAIFullLogParams compatibility tests...")
+    print("Running RespanFullLogParams compatibility tests...")
     
     try:
         test_instance.test_basic_compatibility()
@@ -332,7 +332,7 @@ if __name__ == "__main__":
         test_instance.test_real_world_scenario()
         print("✅ Real-world scenario test passed")
         
-        print("\n🎉 All compatibility tests passed! KeywordsAIFullLogParams is fully backward compatible.")
+        print("\n🎉 All compatibility tests passed! RespanFullLogParams is fully backward compatible.")
         
     except Exception as e:
         print(f"❌ Test failed: {e}")

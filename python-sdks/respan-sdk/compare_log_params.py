@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to compare fields between KeywordsAILogParams, KeywordsAIFullLogParams and KeywordsAITextLogParams
+Script to compare fields between RespanLogParams, RespanFullLogParams and RespanTextLogParams
 to verify they are in sync after changes.
 """
 
@@ -10,8 +10,8 @@ import os
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from keywordsai_sdk.keywordsai_types.log_types import KeywordsAILogParams, KeywordsAIFullLogParams
-from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
+from respan_sdk.respan_types.log_types import RespanLogParams, RespanFullLogParams
+from respan_sdk.respan_types.param_types import RespanTextLogParams
 
 
 def get_field_info(model_class):
@@ -29,64 +29,64 @@ def get_field_info(model_class):
 
 
 def compare_fields():
-    """Compare fields between KeywordsAILogParams, KeywordsAIFullLogParams and KeywordsAITextLogParams."""
+    """Compare fields between RespanLogParams, RespanFullLogParams and RespanTextLogParams."""
     
     print("=" * 80)
-    print("FIELD COMPARISON: KeywordsAILogParams vs KeywordsAIFullLogParams vs KeywordsAITextLogParams")
+    print("FIELD COMPARISON: RespanLogParams vs RespanFullLogParams vs RespanTextLogParams")
     print("=" * 80)
     
-    log_fields = get_field_info(KeywordsAILogParams)
-    full_log_fields = get_field_info(KeywordsAIFullLogParams)
-    text_log_fields = get_field_info(KeywordsAITextLogParams)
+    log_fields = get_field_info(RespanLogParams)
+    full_log_fields = get_field_info(RespanFullLogParams)
+    text_log_fields = get_field_info(RespanTextLogParams)
     
     print(f"\n📊 SUMMARY:")
-    print(f"   KeywordsAILogParams fields: {len(log_fields)}")
-    print(f"   KeywordsAIFullLogParams fields: {len(full_log_fields)}")
-    print(f"   KeywordsAITextLogParams fields: {len(text_log_fields)}")
+    print(f"   RespanLogParams fields: {len(log_fields)}")
+    print(f"   RespanFullLogParams fields: {len(full_log_fields)}")
+    print(f"   RespanTextLogParams fields: {len(text_log_fields)}")
     
-    # Compare KeywordsAIFullLogParams vs KeywordsAITextLogParams (should be identical)
+    # Compare RespanFullLogParams vs RespanTextLogParams (should be identical)
     full_vs_text_missing = set(text_log_fields.keys()) - set(full_log_fields.keys())
     full_vs_text_extra = set(full_log_fields.keys()) - set(text_log_fields.keys())
     
-    # Find fields only in KeywordsAILogParams
+    # Find fields only in RespanLogParams
     only_in_log = set(log_fields.keys()) - set(text_log_fields.keys())
     
-    # Find fields only in KeywordsAITextLogParams
+    # Find fields only in RespanTextLogParams
     only_in_text_log = set(text_log_fields.keys()) - set(log_fields.keys())
     
     # Find common fields
     common_fields = set(log_fields.keys()) & set(text_log_fields.keys())
     
     print(f"   Common fields (Log vs Text): {len(common_fields)}")
-    print(f"   Only in KeywordsAILogParams: {len(only_in_log)}")
-    print(f"   Only in KeywordsAITextLogParams: {len(only_in_text_log)}")
+    print(f"   Only in RespanLogParams: {len(only_in_log)}")
+    print(f"   Only in RespanTextLogParams: {len(only_in_text_log)}")
     
-    # Check KeywordsAIFullLogParams completeness
+    # Check RespanFullLogParams completeness
     print(f"\n🎯 COMPLETENESS CHECK:")
     if not full_vs_text_missing and not full_vs_text_extra:
-        print(f"   ✅ KeywordsAIFullLogParams has EXACTLY the same fields as KeywordsAITextLogParams!")
+        print(f"   ✅ RespanFullLogParams has EXACTLY the same fields as RespanTextLogParams!")
     else:
         if full_vs_text_missing:
-            print(f"   ❌ KeywordsAIFullLogParams is missing {len(full_vs_text_missing)} fields:")
+            print(f"   ❌ RespanFullLogParams is missing {len(full_vs_text_missing)} fields:")
             for field in sorted(full_vs_text_missing):
                 print(f"      - {field}")
         if full_vs_text_extra:
-            print(f"   ⚠️  KeywordsAIFullLogParams has {len(full_vs_text_extra)} extra fields:")
+            print(f"   ⚠️  RespanFullLogParams has {len(full_vs_text_extra)} extra fields:")
             for field in sorted(full_vs_text_extra):
                 print(f"      - {field}")
     
     if only_in_log:
-        print(f"\n🟡 FIELDS ONLY IN KeywordsAILogParams ({len(only_in_log)}):")
+        print(f"\n🟡 FIELDS ONLY IN RespanLogParams ({len(only_in_log)}):")
         print("   These are already in the public log params but missing from text log params")
         for field in sorted(only_in_log):
             field_info = log_fields[field]
             print(f"   - {field}: {field_info['type']}")
     
     if only_in_text_log:
-        print(f"\n🔴 FIELDS ONLY IN KeywordsAITextLogParams ({len(only_in_text_log)}):")
-        print("   These need to be added to KeywordsAILogParams or moved to KeywordsAIFullLogParams")
+        print(f"\n🔴 FIELDS ONLY IN RespanTextLogParams ({len(only_in_text_log)}):")
+        print("   These need to be added to RespanLogParams or moved to RespanFullLogParams")
         
-        # Group by likely source (LLM vs Embedding vs KeywordsAI internal)
+        # Group by likely source (LLM vs Embedding vs Respan internal)
         llm_like_fields = []
         embedding_like_fields = []
         internal_fields = []
@@ -130,10 +130,10 @@ def compare_fields():
         print(f"\n🟠 FIELDS WITH TYPE DIFFERENCES ({len(type_differences)}):")
         for field, log_type, text_log_type in type_differences:
             print(f"   - {field}:")
-            print(f"     KeywordsAILogParams: {log_type}")
-            print(f"     KeywordsAITextLogParams: {text_log_type}")
+            print(f"     RespanLogParams: {log_type}")
+            print(f"     RespanTextLogParams: {text_log_type}")
     
-    # Check type differences between KeywordsAIFullLogParams and KeywordsAITextLogParams
+    # Check type differences between RespanFullLogParams and RespanTextLogParams
     full_type_differences = []
     for field in set(full_log_fields.keys()) & set(text_log_fields.keys()):
         full_type = full_log_fields[field]['type']
@@ -142,25 +142,25 @@ def compare_fields():
             full_type_differences.append((field, full_type, text_type))
     
     if full_type_differences:
-        print(f"\n🔴 TYPE DIFFERENCES: KeywordsAIFullLogParams vs KeywordsAITextLogParams ({len(full_type_differences)}):")
+        print(f"\n🔴 TYPE DIFFERENCES: RespanFullLogParams vs RespanTextLogParams ({len(full_type_differences)}):")
         for field, full_type, text_type in full_type_differences:
             print(f"   - {field}:")
-            print(f"     KeywordsAIFullLogParams: {full_type}")
-            print(f"     KeywordsAITextLogParams: {text_type}")
+            print(f"     RespanFullLogParams: {full_type}")
+            print(f"     RespanTextLogParams: {text_type}")
     
     print("\n" + "=" * 80)
     print("SYNC STATUS:")
     print("=" * 80)
     
     if not full_vs_text_missing and not full_vs_text_extra and not full_type_differences:
-        print("✅ PERFECT SYNC: KeywordsAIFullLogParams is perfectly synchronized with KeywordsAITextLogParams!")
+        print("✅ PERFECT SYNC: RespanFullLogParams is perfectly synchronized with RespanTextLogParams!")
     else:
-        print("❌ OUT OF SYNC: KeywordsAIFullLogParams needs updates to match KeywordsAITextLogParams")
+        print("❌ OUT OF SYNC: RespanFullLogParams needs updates to match RespanTextLogParams")
     
     if not only_in_text_log:
-        print("✅ GOOD: KeywordsAILogParams contains a proper subset of KeywordsAITextLogParams fields")
+        print("✅ GOOD: RespanLogParams contains a proper subset of RespanTextLogParams fields")
     else:
-        print("⚠️  ATTENTION: Some fields exist only in KeywordsAITextLogParams")
+        print("⚠️  ATTENTION: Some fields exist only in RespanTextLogParams")
     
     print("\n" + "=" * 80)
     

@@ -1,12 +1,12 @@
 # Prompt API
 
-The Prompt API provides functionality for managing prompts and their versions in Keywords AI.
+The Prompt API provides functionality for managing prompts and their versions in Respan.
 
 ## Quick Start
 
 ```python
-from keywordsai import PromptAPI
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+from respan import PromptAPI
+from respan_sdk.respan_types.prompt_types import Prompt, PromptVersion
 
 # Initialize client
 client = PromptAPI(api_key="your-api-key")

@@ -1,4 +1,4 @@
-"""Basic Agno tracing test for Keywords AI exporter."""
+"""Basic Agno tracing test for Respan exporter."""
 
 import os
 

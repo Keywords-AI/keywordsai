@@ -1,4 +1,4 @@
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 
@@ -7,9 +7,9 @@ console.log(result);
 
 // Initialize clients
 // Make sure to set these environment variables or pass them directly
-const keywordsAI = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "",
-    baseURL: process.env.KEYWORDSAI_BASE_URL || "",
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "",
+    baseURL: process.env.RESPAN_BASE_URL || "",
     appName: 'test-app',
     disableBatch: true  // For testing, disable batching
 });
@@ -19,7 +19,7 @@ const openai = new OpenAI();
 // Step 1: Basic Task
 // This demonstrates a simple LLM call wrapped in a task
 async function createJoke() {
-    return await keywordsAI.withTask(
+    return await respan.withTask(
         { name: 'joke_creation' },
         async () => {
             const completion = await openai.chat.completions.create({
@@ -35,7 +35,7 @@ async function createJoke() {
 // Step 2: Task with Parameters
 // Shows how to add custom identifiers and metadata to spans
 async function translateJoke(joke: string) {
-    return await keywordsAI.withTask(
+    return await respan.withTask(
         { 
             name: 'joke_translation',
         },
@@ -57,7 +57,7 @@ async function translateJoke(joke: string) {
 // Step 3: Simple Workflow
 // Demonstrates how to combine multiple tasks into a workflow
 async function jokeWorkflow() {
-    return await keywordsAI.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'pirate_joke_workflow' },
         async () => {
             const joke = await createJoke();
@@ -70,12 +70,12 @@ async function jokeWorkflow() {
 // Step 4: Complex Workflow with Multiple Tasks
 // Shows parallel execution and error handling
 async function audienceReaction(joke: string) {
-    return await keywordsAI.withWorkflow(
+    return await respan.withWorkflow(
         { name: 'audience_reaction' },
         async () => {
             // Run reactions in parallel
             const [laughs, applause] = await Promise.all([
-                keywordsAI.withTask(
+                respan.withTask(
                     { name: 'audience_laughs' },
                     async () => {
                         const completion = await openai.chat.completions.create({
@@ -88,7 +88,7 @@ async function audienceReaction(joke: string) {
                         return completion.choices[0].message.content;
                     }
                 ),
-                keywordsAI.withTask(
+                respan.withTask(
                     { name: 'audience_applause' },
                     async () => {
                         const completion = await openai.chat.completions.create({
@@ -111,7 +111,7 @@ async function audienceReaction(joke: string) {
 // Step 5: Complete Example
 // Combines everything into a final workflow
 async function completeJokeExperience() {
-    return await keywordsAI.withWorkflow(
+    return await respan.withWorkflow(
         { 
             name: 'complete_joke_experience',
         },
@@ -120,7 +120,7 @@ async function completeJokeExperience() {
             const reaction = await audienceReaction(pirateJoke as string);
             
             // Add non-LLM task
-            await keywordsAI.withTask(
+            await respan.withTask(
                 { name: 'logging' },
                 async () => {
                     console.log('Joke:', pirateJoke);

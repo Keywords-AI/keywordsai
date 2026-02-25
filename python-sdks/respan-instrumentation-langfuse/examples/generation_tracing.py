@@ -2,13 +2,13 @@
 Example: Tracing LLM generations with @observe(as_type="generation")
 """
 import os
-from keywordsai_instrumentation_langfuse import LangfuseInstrumentor
+from respan_instrumentation_langfuse import LangfuseInstrumentor
 
-os.environ["KEYWORDSAI_API_KEY"] = "your-api-key"
+os.environ["RESPAN_API_KEY"] = "your-api-key"
 
 # Instrument first
 instrumentor = LangfuseInstrumentor()
-instrumentor.instrument(api_key=os.environ["KEYWORDSAI_API_KEY"])
+instrumentor.instrument(api_key=os.environ["RESPAN_API_KEY"])
 
 from langfuse import Langfuse, observe
 

@@ -1,10 +1,10 @@
-# KeywordsAI Tracing + Instructor Integration Tests
+# Respan Tracing + Instructor Integration Tests
 
-This directory contains comprehensive tests demonstrating how to integrate KeywordsAI tracing with the [Instructor library](https://github.com/567-labs/instructor) for structured LLM outputs.
+This directory contains comprehensive tests demonstrating how to integrate Respan tracing with the [Instructor library](https://github.com/567-labs/instructor) for structured LLM outputs.
 
 ## Overview
 
-The Instructor library provides a simple way to get structured data from LLMs using Pydantic models. KeywordsAI tracing automatically captures all the LLM calls made through Instructor, providing detailed observability for your structured output workflows.
+The Instructor library provides a simple way to get structured data from LLMs using Pydantic models. Respan tracing automatically captures all the LLM calls made through Instructor, providing detailed observability for your structured output workflows.
 
 ## Test Files
 
@@ -69,14 +69,14 @@ Make sure you have the required environment variables in your `.env` file:
 
 ```bash
 # Required
-KEYWORDSAI_API_KEY=kwai-xxx
+RESPAN_API_KEY=kwai-xxx
 OPENAI_API_KEY=sk-xxx
 
 # Optional (for multi-provider tests)
 ANTHROPIC_API_KEY=sk-ant-xxx
 
-# KeywordsAI Configuration
-KEYWORDSAI_BASE_URL=http://localhost:8000/api  # or your KeywordsAI instance
+# Respan Configuration
+RESPAN_BASE_URL=http://localhost:8000/api  # or your Respan instance
 ```
 
 ### 2. Virtual Environment
@@ -92,7 +92,7 @@ poetry add instructor
 
 ### 3. Dependencies
 The following packages are automatically installed:
-- `keywordsai-tracing` - KeywordsAI tracing SDK
+- `respan-tracing` - Respan tracing SDK
 - `instructor` - Structured outputs library
 - `openai` - OpenAI client
 - `anthropic` - Anthropic client (optional)
@@ -123,7 +123,7 @@ The following packages are automatically installed:
 
 ### Expected Output
 Each test will:
-- ✅ Initialize KeywordsAI tracing
+- ✅ Initialize Respan tracing
 - ✅ Run structured extraction tasks
 - ✅ Display extracted data
 - ✅ Validate results
@@ -131,7 +131,7 @@ Each test will:
 
 ## What Gets Traced
 
-KeywordsAI automatically captures:
+Respan automatically captures:
 
 ### LLM Request Details
 - Model name and parameters
@@ -159,7 +159,7 @@ KeywordsAI automatically captures:
 
 ## Viewing Traces
 
-After running any test, check your KeywordsAI dashboard to see:
+After running any test, check your Respan dashboard to see:
 
 1. **Workflow Traces**: Complete execution flow
 2. **LLM Calls**: Individual API requests
@@ -173,7 +173,7 @@ After running any test, check your KeywordsAI dashboard to see:
 ```python
 from pydantic import BaseModel
 import instructor
-from keywordsai_tracing.decorators import task
+from respan_tracing.decorators import task
 
 client = instructor.from_provider("openai/gpt-4o-mini")
 
@@ -246,7 +246,7 @@ def extract_with_anthropic(text: str) -> User:
 
 2. **"Missing environment variables"**
    - Check your `.env` file
-   - Ensure `KEYWORDSAI_API_KEY` and `OPENAI_API_KEY` are set
+   - Ensure `RESPAN_API_KEY` and `OPENAI_API_KEY` are set
 
 3. **"Validation failed"**
    - Check your Pydantic model constraints
@@ -261,9 +261,9 @@ def extract_with_anthropic(text: str) -> User:
 Enable debug logging to see detailed trace information:
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
-k_tl = KeywordsAITelemetry(
+k_tl = RespanTelemetry(
     app_name="debug-test",
     log_level="DEBUG"
 )
@@ -271,17 +271,17 @@ k_tl = KeywordsAITelemetry(
 
 ## Integration with Existing Code
 
-To add KeywordsAI tracing to your existing Instructor code:
+To add Respan tracing to your existing Instructor code:
 
 1. **Add tracing initialization**:
    ```python
-   from keywordsai_tracing import KeywordsAITelemetry
-   k_tl = KeywordsAITelemetry(app_name="my-app")
+   from respan_tracing import RespanTelemetry
+   k_tl = RespanTelemetry(app_name="my-app")
    ```
 
 2. **Add decorators to your functions**:
    ```python
-   from keywordsai_tracing.decorators import task, workflow
+   from respan_tracing.decorators import task, workflow
    
    @task(name="my_extraction")
    def my_function():
@@ -296,13 +296,13 @@ To add KeywordsAI tracing to your existing Instructor code:
 1. **Run the integration test** to verify setup
 2. **Explore the example tests** to understand patterns
 3. **Adapt the patterns** to your use case
-4. **Check the KeywordsAI dashboard** for traces
+4. **Check the Respan dashboard** for traces
 5. **Integrate with your existing code**
 
 ## Resources
 
 - [Instructor Documentation](https://python.useinstructor.com/)
-- [KeywordsAI Tracing Documentation](../README.md)
+- [Respan Tracing Documentation](../README.md)
 - [Pydantic Documentation](https://docs.pydantic.dev/)
 - [OpenAI API Documentation](https://platform.openai.com/docs/)
 - [Anthropic API Documentation](https://docs.anthropic.com/)
@@ -312,5 +312,5 @@ To add KeywordsAI tracing to your existing Instructor code:
 If you encounter issues:
 1. Check the troubleshooting section above
 2. Review the integration test output
-3. Check your KeywordsAI dashboard for error details
+3. Check your Respan dashboard for error details
 4. Ensure all environment variables are correctly set

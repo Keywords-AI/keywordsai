@@ -1,10 +1,10 @@
-import { KeywordsAITelemetry } from "../src/main.js";
+import { RespanTelemetry } from "../src/main.js";
 
 async function example() {
   console.log("=== Example 1: Disable specific instrumentations ===");
   
-  const keywordsAI = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key",
+  const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key",
     appName: "instrumentation-management-example",
     // Disable certain instrumentations you don't want to use
     disabledInstrumentations: ['bedrock', 'chromaDB', 'qdrant'],
@@ -12,8 +12,8 @@ async function example() {
     logLevel: 'info'
   });
 
-  await keywordsAI.initialize();
-  console.log("KeywordsAI initialized with disabled instrumentations");
+  await respan.initialize();
+  console.log("Respan initialized with disabled instrumentations");
 
   console.log("\n=== Example 2: Using manual instrumentation with disabled modules ===");
   
@@ -22,8 +22,8 @@ async function example() {
   // import OpenAI from 'openai';
   // import Anthropic from '@anthropic-ai/sdk';
   
-  const keywordsAI2 = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key", 
+  const respan2 = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key", 
     appName: "manual-instrumentation-example",
     // Manually provide modules (you would use real imported modules)
     instrumentModules: {
@@ -41,7 +41,7 @@ async function example() {
   console.log("- Look for 'Disabled instrumentations:' to see what you've blocked");
   
   // Note: Don't actually initialize the second one to avoid conflicts in this example
-  // await keywordsAI2.initialize();
+  // await respan2.initialize();
 }
 
 example().catch(console.error); 

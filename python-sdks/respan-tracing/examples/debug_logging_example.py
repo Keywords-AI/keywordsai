@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """
-Example showing how to use the log_level parameter in KeywordsAITelemetry
+Example showing how to use the log_level parameter in RespanTelemetry
 to enable debug logging for troubleshooting.
 """
 
 import os
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import workflow, task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import workflow, task
 from openai import OpenAI
 
 # Example 1: Enable debug logging
 print("=== Example 1: Debug logging enabled ===")
-telemetry_debug = KeywordsAITelemetry(
+telemetry_debug = RespanTelemetry(
     log_level="DEBUG",  # Enable debug logging
     app_name="debug_example"
 )
 
 # Example 2: Default INFO logging
 print("\n=== Example 2: Default INFO logging ===")
-telemetry_info = KeywordsAITelemetry(
+telemetry_info = RespanTelemetry(
     log_level="INFO",  # Default level
     app_name="info_example"
 )
 
 # Example 3: Warning level only
 print("\n=== Example 3: Warning level only ===")
-telemetry_warning = KeywordsAITelemetry(
+telemetry_warning = RespanTelemetry(
     log_level="WARNING",  # Only warnings and errors
     app_name="warning_example"
 )
@@ -58,13 +58,13 @@ print("- ERROR: Shows only errors")
 print("- CRITICAL: Shows only critical errors")
 
 print("\n=== Environment variable alternative ===")
-print("You can also set KEYWORDSAI_LOG_LEVEL=DEBUG as an environment variable")
+print("You can also set RESPAN_LOG_LEVEL=DEBUG as an environment variable")
 
 print("\n=== What debug logging shows ===")
 print("With DEBUG level, you'll see:")
 print("- Traces endpoint configuration")
-print("- Internal KeywordsAI tracing debug messages")
+print("- Internal Respan tracing debug messages")
 print("- All child module debug messages (exporter, tracer, etc.)")
 
 print("\n=== Using the constant ===")
-print("The logger name is now defined as a constant in keywordsai_tracing.constants.generic.LOGGER_NAME") 
+print("The logger name is now defined as a constant in respan_tracing.constants.generic.LOGGER_NAME") 

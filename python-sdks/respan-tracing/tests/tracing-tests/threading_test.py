@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 load_dotenv("tests/.env", override=True)
 
 import openai
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task
-k_tl = KeywordsAITelemetry()
+from respan_tracing import RespanTelemetry, workflow, task
+k_tl = RespanTelemetry()
 
 
 topics = ["black hole"]

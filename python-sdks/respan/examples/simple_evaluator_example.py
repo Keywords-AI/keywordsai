@@ -11,8 +11,8 @@ Usage:
     python examples/simple_evaluator_example.py
 
 Environment variables required:
-- KEYWORDSAI_API_KEY
-- KEYWORDSAI_BASE_URL (optional)
+- RESPAN_API_KEY
+- RESPAN_BASE_URL (optional)
 """
 
 import asyncio
@@ -21,20 +21,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from keywordsai.evaluators.api import EvaluatorAPI
+from respan.evaluators.api import EvaluatorAPI
 
 
 async def main():
     """Simple evaluator example"""
     
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
     
     if not api_key:
-        print("❌ KEYWORDSAI_API_KEY not found in environment")
+        print("❌ RESPAN_API_KEY not found in environment")
         return
     
-    print("🔍 Keywords AI Evaluators Example")
+    print("🔍 Respan Evaluators Example")
     print("=" * 40)
     print(f"🔗 Using API: {base_url}")
     print()

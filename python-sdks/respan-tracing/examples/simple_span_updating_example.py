@@ -7,21 +7,21 @@ load_dotenv(override=True)
 
 
 """
-Example demonstrating the new KeywordsAI client API for trace operations.
+Example demonstrating the new Respan client API for trace operations.
 
-This example shows how to use the get_client() function and KeywordsAIClient
+This example shows how to use the get_client() function and RespanClient
 to interact with the current trace/span context.
 """
 import os
 # Import the new client API
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow
+from respan_tracing import RespanTelemetry, get_client, workflow
 from openai import OpenAI
 
 # Initialize telemetry
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="client-example",
-    api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
-    base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
+    api_key=os.getenv("RESPAN_API_KEY", "test-key"),
+    base_url=os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api"),
     is_enabled=True,
 )
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -40,7 +40,7 @@ def simple_span_updating_example(prompt: str = "Hello, world!"):
 
     # Update span name and add attributes
     client.update_current_span(
-        keywordsai_params={"customer_identifier": "updated_customer_id"},
+        respan_params={"customer_identifier": "updated_customer_id"},
     )
 
     return response.choices[0].message

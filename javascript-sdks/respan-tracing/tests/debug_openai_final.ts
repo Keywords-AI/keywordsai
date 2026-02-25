@@ -1,16 +1,16 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 
 async function debugOpenAIFinal() {
   console.log('=== Final OpenAI Instrumentation Debug ===');
   
-  // Initialize KeywordsAI first
-  const keywordsAI = new KeywordsAITelemetry({
+  // Initialize Respan first
+  const respan = new RespanTelemetry({
     apiKey: 'test-key',
     baseURL: 'http://localhost:8000',
   });
   
-  await keywordsAI.initialize();
-  console.log('KeywordsAI initialized');
+  await respan.initialize();
+  console.log('Respan initialized');
   
   // Wait a bit to ensure instrumentation is fully set up
   await new Promise(resolve => setTimeout(resolve, 100));
@@ -50,8 +50,8 @@ async function debugOpenAIFinal() {
   console.log('Waiting for traces to be sent...');
   await new Promise(resolve => setTimeout(resolve, 3000));
   
-  await keywordsAI.shutdown();
-  console.log('KeywordsAI shutdown complete');
+  await respan.shutdown();
+  console.log('Respan shutdown complete');
 }
 
 debugOpenAIFinal().catch(console.error); 

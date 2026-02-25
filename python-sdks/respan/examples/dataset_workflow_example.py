@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keywords AI Dataset Workflow Example
+Respan Dataset Workflow Example
 
 This example demonstrates the complete dataset workflow:
 1. List available logs
@@ -15,8 +15,8 @@ Usage:
     python examples/dataset_workflow_example.py
 
 Environment variables required:
-- KEYWORDSAI_API_KEY
-- KEYWORDSAI_BASE_URL (optional, defaults to http://localhost:8000)
+- RESPAN_API_KEY
+- RESPAN_BASE_URL (optional, defaults to http://localhost:8000)
 """
 
 import asyncio
@@ -27,9 +27,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from keywordsai.datasets.api import DatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+from respan.datasets.api import DatasetAPI
+from respan.evaluators.api import EvaluatorAPI
+from respan_sdk.respan_types.dataset_types import (
     DatasetCreate,
     DatasetUpdate,
     LogManagementRequest,
@@ -40,15 +40,15 @@ async def main():
     """Main example workflow"""
     
     # Setup
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
     
     if not api_key:
-        print("❌ KEYWORDSAI_API_KEY not found in environment")
+        print("❌ RESPAN_API_KEY not found in environment")
         print("   Please set your API key in .env file")
         return
     
-    print("🚀 Keywords AI Dataset Workflow Example")
+    print("🚀 Respan Dataset Workflow Example")
     print("=" * 50)
     print(f"🔗 Using API: {base_url}")
     print()

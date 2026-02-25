@@ -1,5 +1,5 @@
 """
-Keywords AI Prompt APIs
+Respan Prompt APIs
 
 This module provides functionality for managing prompts and prompt versions, including:
 - Creating and managing prompts
@@ -37,10 +37,10 @@ from respan.constants.prompt_constants import (
 
 class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prompt]):
     """
-    Unified Prompt API client for Keywords AI with both sync and async methods.
+    Unified Prompt API client for Respan with both sync and async methods.
 
     This class provides comprehensive functionality for managing prompts and prompt versions
-    in Keywords AI, including creating prompts, managing versions with different configurations,
+    in Respan, including creating prompts, managing versions with different configurations,
     and retrieving prompt information. All operations are available in both synchronous and
     asynchronous variants.
 
@@ -52,9 +52,9 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         - Support for prompt templates and variables
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
         >>> from respan.prompts.api import PromptAPI
@@ -102,9 +102,9 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         Initialize the Prompt API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -115,7 +115,7 @@ class PromptAPI(BaseAPI[PromptRetrieveResponse, PromptListResponse, Prompt, Prom
         """
         Create a new prompt with specified parameters (asynchronous).
 
-        This method creates a new prompt in Keywords AI with the provided configuration.
+        This method creates a new prompt in Respan with the provided configuration.
         The prompt serves as a container for multiple versions with different configurations.
 
         Args:
@@ -724,8 +724,8 @@ def create_prompt_client(api_key: str, base_url: str = None) -> PromptAPI:
     Create a unified prompt API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         PromptAPI client instance with both sync and async methods

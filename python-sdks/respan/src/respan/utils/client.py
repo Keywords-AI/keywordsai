@@ -1,7 +1,7 @@
 """
-Centralized HTTP Client for Keywords AI
+Centralized HTTP Client for Respan
 
-This module provides a centralized HTTP client for making API requests to Keywords AI services.
+This module provides a centralized HTTP client for making API requests to Respan services.
 It handles authentication, common headers, and provides both async and sync interfaces.
 """
 
@@ -9,23 +9,23 @@ import httpx
 import asyncio
 from functools import wraps
 from typing import Optional, Dict, Any, Union
-from respan.constants import BASE_URL_SUFFIX, KEYWORDS_AI_DEFAULT_BASE_URL
+from respan.constants import BASE_URL_SUFFIX, RESPAN_DEFAULT_BASE_URL
 import os
 
 
 class RespanClient:
-    """Centralized async HTTP client for Keywords AI API"""
+    """Centralized async HTTP client for Respan API"""
 
     def __init__(self, api_key: str = None, base_url: str = None):
         """
-        Initialize the Keywords AI client
+        Initialize the Respan client
 
         Args:
-            api_key: Keywords AI API key
-            base_url: Base URL for the API KEYWORDS_AI_DEFAULT_BASE_URL
+            api_key: Respan API key
+            base_url: Base URL for the API RESPAN_DEFAULT_BASE_URL
         """
         if not base_url:
-            base_url = os.getenv("KEYWORDS_AI_BASE_URL", KEYWORDS_AI_DEFAULT_BASE_URL)
+            base_url = os.getenv("RESPAN_BASE_URL", RESPAN_DEFAULT_BASE_URL)
         if not api_key:
             api_key = os.getenv("RESPAN_API_KEY")
         base_url = base_url.rstrip("/")
@@ -182,14 +182,14 @@ class SyncRespanClient:
 
     def __init__(self, api_key: str, base_url: str = None):
         """
-        Initialize the synchronous Keywords AI client
+        Initialize the synchronous Respan client
 
         Args:
-            api_key: Keywords AI API key
+            api_key: Respan API key
             base_url: Base URL for the API (default: None)
         """
         if not base_url:
-            base_url = os.getenv("KEYWORDS_AI_BASE_URL", KEYWORDS_AI_DEFAULT_BASE_URL)
+            base_url = os.getenv("RESPAN_BASE_URL", RESPAN_DEFAULT_BASE_URL)
         self._async_client = RespanClient(api_key=api_key, base_url=base_url)
 
     @sync_wrapper
@@ -236,11 +236,11 @@ class SyncRespanClient:
 # Convenience functions for creating clients
 def create_client(api_key: str, base_url: str = None) -> RespanClient:
     """
-    Create an async Keywords AI client
+    Create an async Respan client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         RespanClient instance
@@ -250,11 +250,11 @@ def create_client(api_key: str, base_url: str = None) -> RespanClient:
 
 def create_sync_client(api_key: str, base_url: str = None) -> SyncRespanClient:
     """
-    Create a synchronous Keywords AI client
+    Create a synchronous Respan client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         SyncRespanClient instance

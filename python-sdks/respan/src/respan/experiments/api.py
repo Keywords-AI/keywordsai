@@ -1,5 +1,5 @@
 """
-Keywords AI Experiment APIs
+Respan Experiment APIs
 
 This module provides functionality for managing experiments, including:
 - Creating and managing experiments with columns and rows
@@ -43,9 +43,9 @@ from respan.constants.experiment_constants import (
 
 class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, ExperimentUpdate]):
     """
-    Unified Experiment API client for Keywords AI with both sync and async methods.
+    Unified Experiment API client for Respan with both sync and async methods.
 
-    This class provides comprehensive functionality for managing experiments in Keywords AI,
+    This class provides comprehensive functionality for managing experiments in Respan,
     including creating experiments, managing columns and rows, running experiments,
     and running evaluations. All operations are available in both synchronous and
     asynchronous variants.
@@ -59,9 +59,9 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         - Full CRUD operations for experiment management
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
         >>> from respan.experiments.api import ExperimentAPI
@@ -122,9 +122,9 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         Initialize the Experiment API client.
 
         Args:
-            api_key (str): Your Keywords AI API key for authentication
+            api_key (str): Your Respan API key for authentication
             base_url (str, optional): Custom base URL for the API. If not provided,
-                uses the default Keywords AI API endpoint.
+                uses the default Respan API endpoint.
         """
         super().__init__(api_key, base_url)
 
@@ -133,7 +133,7 @@ class ExperimentAPI(BaseAPI[Experiment, ExperimentList, ExperimentCreate, Experi
         """
         Create a new experiment with specified parameters (asynchronous).
 
-        This method creates a new experiment in Keywords AI with the provided configuration.
+        This method creates a new experiment in Respan with the provided configuration.
         The experiment includes columns (model configurations) and rows (test cases).
 
         Args:
@@ -849,8 +849,8 @@ def create_experiment_client(api_key: str, base_url: str = None) -> ExperimentAP
     Create a unified experiment API client
 
     Args:
-        api_key: Keywords AI API key
-        base_url: Base URL for the API (default: KEYWORDS_AI_DEFAULT_BASE_URL)
+        api_key: Respan API key
+        base_url: Base URL for the API (default: RESPAN_DEFAULT_BASE_URL)
 
     Returns:
         ExperimentAPI client instance with both sync and async methods

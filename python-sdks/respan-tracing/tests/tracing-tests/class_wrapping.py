@@ -1,14 +1,14 @@
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing.contexts.span import respan_span_attributes
 from openai import OpenAI
 from anthropic import Anthropic
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import workflow, task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import workflow, task
 from dotenv import load_dotenv
 import time
 
 load_dotenv(override=True)
 
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 client = OpenAI()
 anthropic = Anthropic()
 
