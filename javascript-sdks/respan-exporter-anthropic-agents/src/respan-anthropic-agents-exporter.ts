@@ -404,8 +404,8 @@ export class RespanAnthropicAgentsExporter {
       value: usage.output_tokens ?? usage.completion_tokens,
     });
     let totalRequestTokens = this.coerceInteger({ value: usage.total_tokens });
-    if (totalRequestTokens === null) {
-      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0) || null;
+    if (totalRequestTokens === null && (promptTokens !== null || completionTokens !== null)) {
+      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0);
     }
     const promptCacheHitTokens = this.coerceInteger({
       value: usage.cache_read_input_tokens,
@@ -452,8 +452,8 @@ export class RespanAnthropicAgentsExporter {
     let totalRequestTokens = this.coerceInteger({
       value: usage.total_tokens,
     });
-    if (totalRequestTokens === null) {
-      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0) || null;
+    if (totalRequestTokens === null && (promptTokens !== null || completionTokens !== null)) {
+      totalRequestTokens = (promptTokens ?? 0) + (completionTokens ?? 0);
     }
 
     const promptCacheHitTokens = this.coerceInteger({

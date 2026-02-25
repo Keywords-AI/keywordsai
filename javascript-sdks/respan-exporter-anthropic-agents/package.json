@@ -23,7 +23,7 @@
     "release": "yarn build && yarn version patch && yarn publish"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "*",
+    "@anthropic-ai/claude-agent-sdk": ">=0.2.0",
     "@respan/respan-sdk": "workspace:*"
   },
   "devDependencies": {
