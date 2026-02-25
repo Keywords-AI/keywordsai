@@ -9,59 +9,20 @@ from respan_sdk.respan_types import RespanFullLogParams
 from respan_sdk.respan_types import RespanParams
 from respan_sdk.utils import RetryHandler
 
+from respan_exporter_dify.constants import (
+    EMPTY_VALUES,
+    MESSAGE_ID_PATHS,
+    MESSAGE_TYPE_PATHS,
+    NESTED_MESSAGE_PATHS,
+    NESTED_MESSAGES_PATHS,
+    RESPONSE_CONTENT_PATHS,
+    SESSION_ID_PATHS,
+    TOTAL_TOKENS_PATH,
+    USAGE_PATHS,
+)
+
 
 logger = logging.getLogger(__name__)
-
-EMPTY_VALUES = (None, "")
-USAGE_PATHS = (
-    ("usage",),
-    ("metadata", "usage"),
-    ("data", "usage"),
-    ("data", "execution_metadata"),
-    ("execution_metadata",),
-)
-TOTAL_TOKENS_PATH = ("data", "total_tokens")
-MESSAGE_ID_PATHS = (
-    ("id",),
-    ("message_id",),
-    ("messageId",),
-    ("uuid",),
-)
-SESSION_ID_PATHS = (
-    ("session_id",),
-    ("sessionId",),
-    ("session_identifier",),
-    ("conversation_id",),
-    ("conversationId",),
-)
-MESSAGE_TYPE_PATHS = (
-    ("event",),
-    ("type",),
-    ("mode",),
-    ("message_type",),
-    ("kind",),
-)
-RESPONSE_CONTENT_PATHS = (
-    ("response",),
-    ("result",),
-    ("answer",),
-    ("output",),
-    ("outputs",),
-    ("content",),
-    ("data",),
-)
-NESTED_MESSAGES_PATHS = (
-    ("messages",),
-    ("all_messages",),
-    ("assistant_messages",),
-    ("items",),
-    ("results",),
-)
-NESTED_MESSAGE_PATHS = (
-    ("message",),
-    ("assistant_message",),
-    ("last_message",),
-)
 
 
 def now_utc() -> datetime:
