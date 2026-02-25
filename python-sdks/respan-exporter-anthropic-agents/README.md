@@ -1,6 +1,6 @@
 # Respan Exporter for Anthropic Agent SDK
 
-**[respan.ai](https://respan.ai)** | **[Documentation](https://docs.respan.ai)**
+**[respan.ai](https://respan.ai)** | **[Documentation](https://respan.ai/docs)**
 
 Exporter for Anthropic Agent SDK telemetry to Respan.
 
