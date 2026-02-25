@@ -12,7 +12,6 @@ requests = "^2.32.5"
 helicone-helpers = "^1.0.0"
 wrapt = "^1.16.0"
 respan-sdk = "^2.4.0"
-respan-tracing = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
