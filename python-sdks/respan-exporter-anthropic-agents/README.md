@@ -4,6 +4,12 @@
 
 Exporter for Anthropic Agent SDK telemetry to Respan.
 
+## Installation
+
+```bash
+pip install respan-exporter-anthropic-agents
+```
+
 ## Quickstart
 
 ```python
@@ -32,35 +38,43 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## Real Gateway Integration Test
+## Configuration
 
-Run the live integration test to verify:
-- Claude Agent SDK traffic goes through Respan gateway (no direct Anthropic key required).
-- Exporter uploads tracing payloads to real Respan ingest endpoint.
+### Environment Variables
 
-Required environment variables:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `RESPAN_API_KEY` | Yes | Your Respan API key. Falls back to `KEYWORDSAI_API_KEY`. |
+| `RESPAN_BASE_URL` | No | Base URL for all Respan services. Defaults to `https://api.respan.ai`. Falls back to `KEYWORDSAI_BASE_URL`. |
+
+`RESPAN_BASE_URL` is the single base URL that controls where telemetry is exported. The exporter automatically appends `/api/v1/traces/ingest` to build the full endpoint.
+
+### Constructor Parameters
+
+All configuration can also be passed directly to the constructor (takes priority over environment variables):
+
+```python
+exporter = RespanAnthropicAgentsExporter(
+    api_key="your_respan_key",       # Overrides RESPAN_API_KEY
+    base_url="https://api.respan.ai", # Overrides RESPAN_BASE_URL
+    endpoint="https://custom/ingest", # Full endpoint URL (overrides base_url)
+    timeout_seconds=15,
+    max_retries=3,
+    base_delay_seconds=1.0,
+    max_delay_seconds=30.0,
+)
+```
+
+## Dev Guide
+
+### Running Tests
 
 ```bash
-export RUN_REAL_GATEWAY_TEST=1
+# Unit tests
+python -m unittest tests.test_exporter -v
+
+# Live integration test (opt-in, makes real API calls)
 export RESPAN_API_KEY="your_respan_key"
-```
-
-Optional environment variables:
-
-```bash
-# Defaults to RESPAN_BASE_URL, KEYWORDSAI_BASE_URL, then https://api.respan.ai
-export RESPAN_GATEWAY_BASE_URL="https://api.respan.ai"
-
-# Optional Anthropic-compatible gateway base URL override
-export RESPAN_ANTHROPIC_BASE_URL="https://api.respan.ai"
-
-# Optional model override
-export RESPAN_GATEWAY_MODEL="claude-sonnet-4-5"
-```
-
-Run test:
-
-```bash
+export RUN_REAL_GATEWAY_TEST=1
 python -m unittest tests.test_real_gateway_integration -v
 ```
-
