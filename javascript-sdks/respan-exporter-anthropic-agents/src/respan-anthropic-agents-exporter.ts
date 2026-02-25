@@ -27,6 +27,7 @@ export class RespanAnthropicAgentsExporter {
   private sessions: Map<string, SessionState>;
   private lastSessionId: string | null;
   private lastModel: string | null;
+  private lastPrompt: unknown;
 
   constructor({
     apiKey = process.env.RESPAN_API_KEY || process.env.KEYWORDSAI_API_KEY || null,
@@ -53,6 +54,7 @@ export class RespanAnthropicAgentsExporter {
     this.sessions = new Map();
     this.lastSessionId = null;
     this.lastModel = null;
+    this.lastPrompt = null;
   }
   setEndpoint(endpoint: string): void {
     this.endpoint = endpoint;
@@ -114,6 +116,9 @@ export class RespanAnthropicAgentsExporter {
     prompt: string | AsyncIterable<any>;
     options?: Record<string, unknown>;
   }): AsyncGenerator<unknown, void, unknown> {
+    if (typeof prompt === "string") {
+      this.lastPrompt = prompt;
+    }
     const instrumentedOptions = this.withOptions(options);
 
     for await (const message of query({
@@ -135,10 +140,15 @@ export class RespanAnthropicAgentsExporter {
   async trackMessage({
     message,
     sessionId,
+    prompt,
   }: {
     message: any;
     sessionId?: string;
+    prompt?: unknown;
   }): Promise<void> {
+    if (prompt !== undefined && prompt !== null) {
+      this.lastPrompt = prompt;
+    }
     if (!message || typeof message !== "object") {
       return;
     }
@@ -221,6 +231,7 @@ export class RespanAnthropicAgentsExporter {
   ): Promise<Record<string, unknown>> {
     const sessionId = this.extractSessionIdFromHookInput({ input });
     const prompt = input.prompt;
+    this.lastPrompt = prompt;
     const traceName = this.buildTraceNameFromPrompt({ prompt });
     const sessionState = this.ensureSessionState({ sessionId, traceName });
 
@@ -391,10 +402,6 @@ export class RespanAnthropicAgentsExporter {
     }
     const sessionState = this.ensureSessionState({ sessionId: resolvedSessionId });
 
-    const usage = (message?.usage && typeof message.usage === "object"
-      ? message.usage
-      : {}) as Record<string, unknown>;
-
     const model = (message?.model && String(message.model)) || null;
     if (model) {
       this.lastModel = model;
@@ -426,14 +433,10 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.GENERATION,
       startTime: sessionState.startedAt,
       timestamp: now,
-      inputValue: undefined,
+      inputValue: this.lastPrompt,
       outputValue: outputText,
       model,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-      promptTokens: this.coerceInteger({ value: usage.input_tokens }),
-      completionTokens: this.coerceInteger({ value: usage.output_tokens }),
-      promptCacheHitTokens: this.coerceInteger({ value: usage.cache_read_input_tokens }),
-      promptCacheCreationTokens: this.coerceInteger({ value: usage.cache_creation_input_tokens }),
     });
     await this.sendPayloads({ payloads: [payload] });
   }
@@ -470,7 +473,7 @@ export class RespanAnthropicAgentsExporter {
       logType: RespanLogType.AGENT,
       startTime: sessionState.startedAt,
       timestamp: now,
-      inputValue: undefined,
+      inputValue: this.lastPrompt,
       outputValue: resultOutput,
       model: this.lastModel,
       metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
