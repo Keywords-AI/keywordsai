@@ -24,6 +24,7 @@ try:
     from claude_agent_sdk import StreamEvent
 except ImportError:
     from claude_agent_sdk.types import StreamEvent
+from claude_agent_sdk.types import TextBlock, ToolUseBlock
 from respan_sdk.constants.llm_logging import (
     LOG_TYPE_AGENT,
     LOG_TYPE_GENERATION,
@@ -437,28 +438,28 @@ class RespanAnthropicAgentsExporter:
             trace_name=None,
         )
         now = utc_now()
-        usage = getattr(assistant_message, "usage", None) or {}
 
         model = getattr(assistant_message, "model", None)
         if model:
             self._last_model = model
 
-        content_blocks = getattr(assistant_message, "content", []) or []
-        text_parts = []
-        tool_calls = []
+        # SDK uses typed dataclasses (TextBlock, ToolUseBlock), not dicts.
+        content_blocks = getattr(assistant_message, "content", None) or []
+        text_parts: List[str] = []
+        tool_calls: List[Dict[str, Any]] = []
         for block in content_blocks:
-            block_type = getattr(block, "type", None)
-            if block_type == "text":
-                text_parts.append(getattr(block, "text", ""))
-            elif block_type == "tool_use":
+            if isinstance(block, TextBlock):
+                text_parts.append(block.text)
+            elif isinstance(block, ToolUseBlock):
                 tool_calls.append({
-                    "id": getattr(block, "id", None),
-                    "name": getattr(block, "name", None),
-                    "input": getattr(block, "input", None),
+                    "id": block.id,
+                    "name": block.name,
+                    "input": block.input,
                 })
 
         output_text = "\n".join(text_parts) if text_parts else None
 
+        # AssistantMessage has no usage field; tokens live on ResultMessage.
         payload = self._create_payload(
             session_state=session_state,
             span_unique_id=getattr(assistant_message, "id", None) or str(uuid.uuid4()),
@@ -471,10 +472,6 @@ class RespanAnthropicAgentsExporter:
             output_value=output_text,
             model=model,
             tool_calls=tool_calls if tool_calls else None,
-            prompt_tokens=coerce_int(usage.get("input_tokens")),
-            completion_tokens=coerce_int(usage.get("output_tokens")),
-            prompt_cache_hit_tokens=coerce_int(usage.get("cache_read_input_tokens")),
-            prompt_cache_creation_tokens=coerce_int(usage.get("cache_creation_input_tokens")),
             status_code=200,
         )
         self._send_payloads(payloads=[payload])
