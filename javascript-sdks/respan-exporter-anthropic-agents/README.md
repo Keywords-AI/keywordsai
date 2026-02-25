@@ -4,6 +4,12 @@
 
 Exporter for Anthropic Agent SDK telemetry to Respan.
 
+## Installation
+
+```bash
+npm install @respan/exporter-anthropic-agents
+```
+
 ## Quickstart
 
 ```typescript
@@ -22,3 +28,42 @@ for await (const message of exporter.query({
 }
 ```
 
+## Configuration
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `RESPAN_API_KEY` | Yes | Your Respan API key. Falls back to `KEYWORDSAI_API_KEY`. |
+| `RESPAN_BASE_URL` | No | Base URL for all Respan services. Defaults to `https://api.respan.ai`. Pass as `endpoint` constructor param with `/api/v1/traces/ingest` appended. |
+
+`RESPAN_BASE_URL` is the single base URL for all Respan services. To use it with the TypeScript exporter, pass it as the `endpoint` constructor param:
+
+```typescript
+const baseUrl = process.env.RESPAN_BASE_URL || "https://api.respan.ai";
+
+const exporter = new RespanAnthropicAgentsExporter({
+  endpoint: `${baseUrl}/api/v1/traces/ingest`,
+});
+```
+
+### Constructor Parameters
+
+```typescript
+const exporter = new RespanAnthropicAgentsExporter({
+  apiKey: "your_respan_key",                         // Overrides RESPAN_API_KEY
+  endpoint: "https://api.respan.ai/api/v1/traces/ingest", // Full ingest endpoint URL
+  timeoutMs: 15000,
+  maxRetries: 3,
+  baseDelaySeconds: 1,
+  maxDelaySeconds: 30,
+});
+```
+
+## Dev Guide
+
+### Running Tests
+
+```bash
+npm test
+```
