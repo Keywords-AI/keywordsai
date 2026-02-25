@@ -30,4 +30,3 @@ class ExporterSessionState(RespanBaseModel):
     started_at: datetime
     pending_tools: Dict[str, PendingToolState] = Field(default_factory=dict)
     is_root_emitted: bool = False
-    prompt: Any = None
