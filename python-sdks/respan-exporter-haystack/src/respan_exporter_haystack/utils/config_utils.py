@@ -1,11 +1,21 @@
 """Configuration and endpoint helper utilities."""
 
 import os
+from urllib.parse import urlparse
 from typing import Optional
 
 from respan_sdk.constants.api_constants import DEFAULT_RESPAN_API_BASE_URL
 
 DEFAULT_RESPAN_BASE_URL = DEFAULT_RESPAN_API_BASE_URL.removesuffix("/api")
+
+
+def resolve_platform_logs_url(base_url: str, platform_url: Optional[str] = None) -> str:
+    """Resolve the platform logs URL for trace links. Uses platform_url if set, else derives from base_url."""
+    if platform_url:
+        return platform_url.rstrip("/")
+    parsed = urlparse(base_url)
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    return f"{origin}/logs"
 
 
 def resolve_api_key(api_key: Optional[str] = None) -> Optional[str]:

@@ -45,6 +45,7 @@ class RespanConnector:
         api_key: Respan API key (defaults to RESPAN_API_KEY env var)
         base_url: Respan API base URL (defaults to RESPAN_BASE_URL env var)
         metadata: Additional metadata to attach to all traces/logs
+        platform_url: Optional URL for the logs UI (defaults derived from base_url)
     """
 
     def __init__(
@@ -57,6 +58,7 @@ class RespanConnector:
         max_retries: int = 3,
         base_delay: float = 1.0,
         max_delay: float = 30.0,
+        platform_url: Optional[str] = None,
     ):
         """Initialize the Respan connector."""
         self.name = name
@@ -67,6 +69,7 @@ class RespanConnector:
         self.max_retries = max_retries
         self.base_delay = base_delay
         self.max_delay = max_delay
+        self.platform_url = platform_url
         
         if not self.api_key:
             raise ValueError(
@@ -83,6 +86,7 @@ class RespanConnector:
             max_retries=self.max_retries,
             base_delay=self.base_delay,
             max_delay=self.max_delay,
+            platform_url=self.platform_url,
         )
         
         # Enable content tracing if in tracing mode
@@ -131,6 +135,7 @@ class RespanConnector:
             max_retries=self.max_retries,
             base_delay=self.base_delay,
             max_delay=self.max_delay,
+            platform_url=self.platform_url,
         )
 
     @classmethod

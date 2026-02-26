@@ -8,6 +8,7 @@ from haystack import logging
 from haystack.tracing import Span, Tracer
 
 from respan_exporter_haystack.logger import RespanLogger
+from respan_exporter_haystack.utils.config_utils import resolve_platform_logs_url
 from respan_exporter_haystack.utils.tracing_utils import format_span_for_api
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class RespanTracer(Tracer):
         max_retries: int = 3,
         base_delay: float = 1.0,
         max_delay: float = 30.0,
+        platform_url: Optional[str] = None,
     ):
         """
         Initialize the Respan tracer.
@@ -42,11 +44,13 @@ class RespanTracer(Tracer):
             max_retries: Maximum number of attempts for sending traces
             base_delay: Base delay in seconds between retries
             max_delay: Maximum delay in seconds between retries
+            platform_url: Optional URL for the logs UI (defaults derived from base_url)
         """
         self.name = name
         self.api_key = api_key
         self.base_url = base_url
         self.metadata = metadata or {}
+        self.platform_logs_base = resolve_platform_logs_url(base_url=base_url, platform_url=platform_url)
         
         # Initialize the logger for sending data
         self.kw_logger = RespanLogger(
@@ -189,7 +193,7 @@ class RespanTracer(Tracer):
                 # Extract trace info from response
                 if "trace_ids" in response and response["trace_ids"]:
                     trace_id = response["trace_ids"][0]
-                    self.trace_url = f"https://platform.respan.ai/logs?trace_id={trace_id}"
+                    self.trace_url = f"{self.platform_logs_base}?trace_id={trace_id}"
                     
             self.pipeline_finished = True
             self.completed_spans.clear()  # Free memory after sending
@@ -200,8 +204,7 @@ class RespanTracer(Tracer):
         """Get the URL to view this trace in Respan dashboard."""
         if self.trace_url:
             return self.trace_url
-        # Return a default URL pattern if not set yet
-        return f"https://platform.respan.ai/logs?trace_id={self.trace_id}"
+        return f"{self.platform_logs_base}?trace_id={self.trace_id}"
 
 
 class RespanSpan(Span):
