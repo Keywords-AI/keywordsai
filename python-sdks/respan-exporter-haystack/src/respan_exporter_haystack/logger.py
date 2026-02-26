@@ -41,7 +41,7 @@ class RespanLogger:
         self.base_delay = base_delay
         self.max_delay = max_delay
 
-    def send_trace(self, spans: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def send_trace(self, spans: list[dict[str, any]]) -> dict[str, any] | None:
         """
         Send a batch of spans to construct a trace in Respan.
         
