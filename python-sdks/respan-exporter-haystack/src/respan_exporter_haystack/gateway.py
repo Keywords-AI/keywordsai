@@ -20,8 +20,131 @@ from respan_exporter_haystack.utils.config_utils import (
 logger = logging.getLogger(__name__)
 
 
+class _BaseRespanGenerator(object):
+    """Base class for Respan generators containing shared logic."""
+    
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        prompt_id: Optional[str] = None,
+        generation_kwargs: Optional[Dict[str, Any]] = None,
+        timeout: float = 60.0,
+    ):
+        self.model = model
+        self.api_key = resolve_api_key(api_key=api_key)
+        self.base_url = resolve_base_url(base_url=base_url)
+        self.prompt_id = prompt_id
+        self.generation_kwargs = generation_kwargs or {}
+        self.timeout = timeout
+        
+        if not self.api_key:
+            raise ValueError(
+                "Respan API key is required. Set RESPAN_API_KEY environment variable "
+                "or pass api_key parameter."
+            )
+            
+        if not self.model and not self.prompt_id:
+            raise ValueError(
+                "Either 'model' or 'prompt_id' must be provided. "
+                "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
+            )
+        
+        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
+
+    def _build_payload(
+        self,
+        messages: Optional[List[Dict[str, Any]]] = None,
+        generation_kwargs: Optional[Dict[str, Any]] = None,
+        prompt_variables: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Build the request payload for the Respan API."""
+        kwargs = {**self.generation_kwargs, **(generation_kwargs or {})}
+        payload = {**kwargs}
+        
+        if messages is not None:
+            payload["messages"] = messages
+            
+        if self.model:
+            payload["model"] = self.model
+            
+        if self.prompt_id:
+            prompt_config = {
+                "prompt_id": self.prompt_id,
+                "override": True,
+            }
+            if prompt_variables:
+                prompt_config["variables"] = prompt_variables
+            payload["prompt"] = prompt_config
+            
+        return {k: v for k, v in payload.items() if v is not None}
+
+    def _execute_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute the HTTP request to the Respan API."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        
+        try:
+            logger.debug(f"Calling Respan gateway with model {self.model}")
+            response = requests.post(
+                url=self.endpoint,
+                headers=headers,
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+            
+        except requests.exceptions.HTTPError as e:
+            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        except requests.exceptions.Timeout:
+            error_msg = "Request to Respan timed out"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Error calling Respan gateway: {str(e)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+    def _extract_metadata(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract metadata from the API response."""
+        meta = []
+        usage = data.get("usage", {})
+        choices = data.get("choices", [])
+        
+        for i, choice in enumerate(choices):
+            meta.append({
+                "model": data.get("model", self.model),
+                "index": i,
+                "finish_reason": choice.get("finish_reason"),
+                "usage": usage,
+                "prompt_tokens": usage.get("prompt_tokens"),
+                "completion_tokens": usage.get("completion_tokens"),
+                "total_tokens": usage.get("total_tokens"),
+                "cost": data.get("cost"),
+            })
+        return meta
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize component to dictionary."""
+        return default_to_dict(
+            obj=self,
+            model=self.model,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            prompt_id=self.prompt_id,
+            generation_kwargs=self.generation_kwargs,
+            timeout=self.timeout,
+        )
+
+
 @component
-class RespanGenerator:
+class RespanGenerator(_BaseRespanGenerator):
     """
     A Haystack Generator component that routes LLM calls through Respan gateway.
     
@@ -68,27 +191,18 @@ class RespanGenerator:
         base_url: Optional[str] = None,
         prompt_id: Optional[str] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
+        timeout: float = 60.0,
     ):
         """Initialize the Respan gateway generator."""
-        self.model = model
-        self.api_key = resolve_api_key(api_key=api_key)
-        self.base_url = resolve_base_url(base_url=base_url)
-        self.prompt_id = prompt_id
-        self.generation_kwargs = generation_kwargs or {}
-        
-        if not self.api_key:
-            raise ValueError(
-                "Respan API key is required. Set RESPAN_API_KEY environment variable "
-                "or pass api_key parameter."
-            )
-        
-        if not self.model and not self.prompt_id:
-            raise ValueError(
-                "Either 'model' or 'prompt_id' must be provided. "
-                "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
-            )
-        
-        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
+        _BaseRespanGenerator.__init__(
+            self,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            prompt_id=prompt_id,
+            generation_kwargs=generation_kwargs,
+            timeout=timeout,
+        )
 
     @component.output_types(replies=List[str], meta=List[Dict[str, Any]])
     def run(
@@ -120,105 +234,26 @@ class RespanGenerator:
             elif messages is None:
                 raise ValueError("Either 'prompt' or 'messages' must be provided")
         
-        # Merge generation kwargs
-        kwargs = {**self.generation_kwargs, **(generation_kwargs or {})}
-        
-        # Build the request payload
-        payload = {
-            **kwargs,
-        }
-        
-        if messages is not None:
-            payload["messages"] = messages
-        
-        # Add model if provided (optional when using prompt_id)
-        if self.model:
-            payload["model"] = self.model
-        
-        # Add prompt management if prompt_id is set
-        if self.prompt_id:
-            prompt_config = {
-                "prompt_id": self.prompt_id,
-                "override": True,  # Use prompt config from platform
-            }
-            if prompt_variables:
-                prompt_config["variables"] = prompt_variables
-            payload["prompt"] = prompt_config
-        
-        # Remove None values
-        payload = {k: v for k, v in payload.items() if v is not None}
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        
-        try:
-            logger.debug(f"Calling Respan gateway with model {self.model}")
-            
-            response = requests.post(
-                url=self.endpoint,
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extract replies and metadata
-            choices = data.get("choices", [])
-            replies = [
-                extract_response_text(content=choice.get("message", {}).get("content"))
-                for choice in choices
-            ]
-            
-            # Build metadata
-            meta = []
-            usage = data.get("usage", {})
-            
-            for i, choice in enumerate(choices):
-                meta.append({
-                    "model": data.get("model", self.model),
-                    "index": i,
-                    "finish_reason": choice.get("finish_reason"),
-                    "usage": usage,
-                    "prompt_tokens": usage.get("prompt_tokens"),
-                    "completion_tokens": usage.get("completion_tokens"),
-                    "total_tokens": usage.get("total_tokens"),
-                    "cost": data.get("cost"),  # Respan provides cost
-                })
-            
-            logger.debug(f"Successfully generated {len(replies)} replies")
-            
-            return {
-                "replies": replies,
-                "meta": meta,
-            }
-            
-        except requests.exceptions.HTTPError as e:
-            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        except requests.exceptions.Timeout:
-            error_msg = "Request to Respan timed out"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        except Exception as e:
-            error_msg = f"Error calling Respan gateway: {str(e)}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize component to dictionary."""
-        return default_to_dict(
-            obj=self,
-            model=self.model,
-            api_key=self.api_key,
-            base_url=self.base_url,
-            prompt_id=self.prompt_id,
-            generation_kwargs=self.generation_kwargs,
+        payload = self._build_payload(
+            messages=messages,
+            generation_kwargs=generation_kwargs,
+            prompt_variables=prompt_variables,
         )
+        
+        data = self._execute_request(payload)
+        
+        choices = data.get("choices", [])
+        replies = [
+            extract_response_text(content=choice.get("message", {}).get("content"))
+            for choice in choices
+        ]
+        
+        logger.debug(f"Successfully generated {len(replies)} replies")
+        
+        return {
+            "replies": replies,
+            "meta": self._extract_metadata(data),
+        }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RespanGenerator":
@@ -227,7 +262,7 @@ class RespanGenerator:
 
 
 @component
-class RespanChatGenerator:
+class RespanChatGenerator(_BaseRespanGenerator):
     """
     Respan Chat Generator for Haystack pipelines.
     
@@ -260,27 +295,18 @@ class RespanChatGenerator:
         base_url: Optional[str] = None,
         prompt_id: Optional[str] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
+        timeout: float = 60.0,
     ):
         """Initialize the chat generator."""
-        self.model = model
-        self.api_key = resolve_api_key(api_key=api_key)
-        self.base_url = resolve_base_url(base_url=base_url)
-        self.prompt_id = prompt_id
-        self.generation_kwargs = generation_kwargs or {}
-        
-        if not self.api_key:
-            raise ValueError(
-                "Respan API key is required. Set RESPAN_API_KEY environment variable "
-                "or pass api_key parameter."
-            )
-            
-        if not self.model and not self.prompt_id:
-            raise ValueError(
-                "Either 'model' or 'prompt_id' must be provided. "
-                "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
-            )
-        
-        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
+        _BaseRespanGenerator.__init__(
+            self,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            prompt_id=prompt_id,
+            generation_kwargs=generation_kwargs,
+            timeout=timeout,
+        )
 
     @component.output_types(replies=List[ChatMessage], meta=List[Dict[str, Any]])
     def run(
@@ -313,103 +339,27 @@ class RespanChatGenerator:
                 for msg in messages
             ]
         
-        # Merge generation kwargs
-        kwargs = {**self.generation_kwargs, **(generation_kwargs or {})}
-        
-        # Build payload
-        payload = {
-            **kwargs,
-        }
-        
-        if messages_dict is not None:
-            payload["messages"] = messages_dict
-        
-        # Add model if provided (optional when using prompt_id)
-        if self.model:
-            payload["model"] = self.model
-            
-        # Add prompt management if prompt_id is set
-        if self.prompt_id:
-            prompt_config = {
-                "prompt_id": self.prompt_id,
-                "override": True,  # Use prompt config from platform
-            }
-            if prompt_variables:
-                prompt_config["variables"] = prompt_variables
-            payload["prompt"] = prompt_config
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        
-        try:
-            logger.debug(f"Calling Respan gateway with model {self.model}")
-            
-            response = requests.post(
-                url=self.endpoint,
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extract replies and convert back to ChatMessage
-            choices = data.get("choices", [])
-            replies = []
-            
-            for choice in choices:
-                msg_data = choice.get("message", {})
-                replies.append(to_chat_message(message_payload=msg_data))
-            
-            # Build metadata
-            meta = []
-            usage = data.get("usage", {})
-            
-            for i, choice in enumerate(choices):
-                meta.append({
-                    "model": data.get("model", self.model),
-                    "index": i,
-                    "finish_reason": choice.get("finish_reason"),
-                    "usage": usage,
-                    "prompt_tokens": usage.get("prompt_tokens"),
-                    "completion_tokens": usage.get("completion_tokens"),
-                    "total_tokens": usage.get("total_tokens"),
-                    "cost": data.get("cost"),
-                })
-            
-            logger.debug(f"Successfully generated {len(replies)} replies")
-            
-            return {
-                "replies": replies,
-                "meta": meta,
-            }
-            
-        except requests.exceptions.HTTPError as e:
-            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        except requests.exceptions.Timeout:
-            error_msg = "Request to Respan timed out"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        except Exception as e:
-            error_msg = f"Error calling Respan gateway: {str(e)}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize component to dictionary."""
-        return default_to_dict(
-            obj=self,
-            model=self.model,
-            api_key=self.api_key,
-            base_url=self.base_url,
-            prompt_id=self.prompt_id,
-            generation_kwargs=self.generation_kwargs,
+        payload = self._build_payload(
+            messages=messages_dict,
+            generation_kwargs=generation_kwargs,
+            prompt_variables=prompt_variables,
         )
+        
+        data = self._execute_request(payload)
+        
+        choices = data.get("choices", [])
+        replies = []
+        
+        for choice in choices:
+            msg_data = choice.get("message", {})
+            replies.append(to_chat_message(message_payload=msg_data))
+        
+        logger.debug(f"Successfully generated {len(replies)} replies")
+        
+        return {
+            "replies": replies,
+            "meta": self._extract_metadata(data),
+        }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "RespanChatGenerator":

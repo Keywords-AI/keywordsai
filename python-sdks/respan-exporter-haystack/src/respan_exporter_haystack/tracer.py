@@ -32,6 +32,7 @@ class RespanTracer(Tracer):
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         platform_url: Optional[str] = None,
+        timeout: float = 10.0,
     ):
         """
         Initialize the Respan tracer.
@@ -45,6 +46,7 @@ class RespanTracer(Tracer):
             base_delay: Base delay in seconds between retries
             max_delay: Maximum delay in seconds between retries
             platform_url: Optional URL for the logs UI (defaults derived from base_url)
+            timeout: Timeout in seconds for HTTP requests
         """
         self.name = name
         self.api_key = api_key
@@ -59,6 +61,7 @@ class RespanTracer(Tracer):
             max_retries=max_retries,
             base_delay=base_delay,
             max_delay=max_delay,
+            timeout=timeout,
         )
         
         # Trace state

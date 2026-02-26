@@ -29,6 +29,7 @@ class RespanLogger:
         max_retries: int = DEFAULT_MAX_RETRIES,
         base_delay: float = DEFAULT_BASE_DELAY,
         max_delay: float = DEFAULT_MAX_DELAY,
+        timeout: float = 10.0,
     ):
         """
         Initialize the logger.
@@ -39,6 +40,7 @@ class RespanLogger:
             max_retries: Maximum number of attempts for sending traces
             base_delay: Base delay in seconds between retries
             max_delay: Maximum delay in seconds between retries
+            timeout: Timeout in seconds for the HTTP request
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -46,6 +48,7 @@ class RespanLogger:
         self.max_retries = max_retries
         self.base_delay = base_delay
         self.max_delay = max_delay
+        self.timeout = timeout
 
     def send_trace(self, spans: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
@@ -75,7 +78,7 @@ class RespanLogger:
                 url=self.traces_endpoint,
                 headers=headers,
                 json=spans,
-                timeout=10,
+                timeout=self.timeout,
             )
 
             if response.status_code >= 500:

@@ -59,6 +59,7 @@ class RespanConnector:
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         platform_url: Optional[str] = None,
+        timeout: float = 10.0,
     ):
         """Initialize the Respan connector."""
         self.name = name
@@ -70,6 +71,7 @@ class RespanConnector:
         self.base_delay = base_delay
         self.max_delay = max_delay
         self.platform_url = platform_url
+        self.timeout = timeout
         
         if not self.api_key:
             raise ValueError(
@@ -87,6 +89,7 @@ class RespanConnector:
             base_delay=self.base_delay,
             max_delay=self.max_delay,
             platform_url=self.platform_url,
+            timeout=self.timeout,
         )
         
         # Enable content tracing if in tracing mode
@@ -136,6 +139,7 @@ class RespanConnector:
             base_delay=self.base_delay,
             max_delay=self.max_delay,
             platform_url=self.platform_url,
+            timeout=self.timeout,
         )
 
     @classmethod
