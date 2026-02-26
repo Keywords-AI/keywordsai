@@ -193,6 +193,22 @@ async def test_async_client_non_streaming_calls_export_success():
 # --- Streaming generator export ---
 
 
+def test_sync_streaming_unconsumed_does_not_export():
+    """Streaming export runs in generator finally; unconsumed stream → no export."""
+    chunks = [{"event": "message"}]
+    mock_client = MagicMock(spec=Client)
+    mock_client.chat_messages = MagicMock(return_value=iter(chunks))
+
+    with patch("respan_exporter_dify.exporter.export_dify_call") as export_mock:
+        wrapper = create_client(client=mock_client, api_key="respan-key")
+        req = MagicMock()
+        req.response_mode = ResponseMode.STREAMING
+        _ = wrapper.chat_messages(req, respan_params=None)
+        # Never iterate the stream
+
+    export_mock.assert_not_called()
+
+
 def test_sync_streaming_exports_collected_events():
     chunks = [{"event": "message"}, {"event": "message_end"}]
     mock_client = MagicMock(spec=Client)
@@ -211,6 +227,25 @@ def test_sync_streaming_exports_collected_events():
     assert call_kw["status"] == "success"
     assert call_kw["result"] == chunks
     assert call_kw["error_message"] is None
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_unconsumed_does_not_export():
+    """Streaming export runs in async generator finally; unconsumed stream → no export."""
+    async def async_iter_chunks():
+        yield {"event": "message"}
+
+    mock_client = AsyncMock(spec=AsyncClient)
+    mock_client.achat_messages = AsyncMock(return_value=async_iter_chunks())
+
+    with patch("respan_exporter_dify.exporter.export_dify_call") as export_mock:
+        wrapper = create_async_client(client=mock_client, api_key="respan-key")
+        req = MagicMock()
+        req.response_mode = ResponseMode.STREAMING
+        _ = await wrapper.achat_messages(req, respan_params=None)
+        # Never iterate the stream
+
+    export_mock.assert_not_called()
 
 
 @pytest.mark.asyncio

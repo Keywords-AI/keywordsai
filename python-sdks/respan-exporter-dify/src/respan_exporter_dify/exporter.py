@@ -64,6 +64,11 @@ class _BaseDifyClient:
 class RespanDifyClient(_BaseDifyClient):
     """
     Wrapper for Dify Python SDK (`dify-client-python`) that exports call logs to Respan.
+
+    **Streaming:** For streaming responses, export runs in the generator's ``finally``
+    block and therefore only when the stream is consumed (iterated to completion or
+    closed). If the caller never iterates the returned stream, no export is sent.
+    This is acceptable when callers always consume or explicitly close streams.
     """
 
     def __init__(
@@ -161,6 +166,12 @@ class RespanDifyClient(_BaseDifyClient):
 class RespanAsyncDifyClient(_BaseDifyClient):
     """
     Wrapper for Dify Python SDK (`dify-client-python`) AsyncClient that exports call logs to Respan.
+
+    **Streaming:** For streaming responses, export runs in the async generator's
+    ``finally`` block and therefore only when the stream is consumed (iterated to
+    completion or closed). If the caller never iterates the returned stream, no
+    export is sent. This is acceptable when callers always consume or explicitly
+    close streams.
     """
 
     def __init__(
