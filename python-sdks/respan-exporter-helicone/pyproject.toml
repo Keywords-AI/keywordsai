@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "respan_exporter_helicone", from = "src"}]
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.14"
+python = ">=3.10,<4.0"
 requests = "^2.32.5"
 helicone-helpers = "^1.0.0"
 wrapt = "^1.16.0"

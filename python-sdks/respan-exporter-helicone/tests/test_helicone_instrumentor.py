@@ -94,14 +94,8 @@ def test_helicone_instrumentor_patching(instrumentor, mock_requests_post):
     assert output_decoded == response_data["choices"]
 
 
-def test_helicone_metadata_header_mapping_is_case_insensitive(mock_requests_post):
-    instr = HeliconeInstrumentor()
-    instr.instrument(
-        api_key="test-api-key",
-        endpoint="https://test.endpoint/api",
-    )
-
-    instr._send_to_respan(
+def test_helicone_metadata_header_mapping_is_case_insensitive(instrumentor, mock_requests_post):
+    instrumentor._send_to_respan(
         provider="openai",
         request={"model": "gpt-4", "prompt": "hello"},
         response="world",

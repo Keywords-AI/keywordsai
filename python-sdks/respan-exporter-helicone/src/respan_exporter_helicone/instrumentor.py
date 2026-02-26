@@ -111,12 +111,11 @@ class HeliconeInstrumentor:
 
         def send_log_wrapper(
             wrapped: Any,
-            instance: Any,
+            _instance: Any,
             args: Tuple[Any, ...],
             kwargs: JsonDict,
         ) -> Any:
             """Wrapper for send_log that intercepts log events."""
-            del instance
             provider, request, response, options = self._resolve_send_log_args(
                 args=args,
                 kwargs=kwargs,
