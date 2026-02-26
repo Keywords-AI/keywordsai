@@ -180,31 +180,6 @@ class RespanTracer(Tracer):
         except Exception as e:
             logger.warning(f"Failed to send trace to Respan: {e}")
 
-    def _calculate_cost(self, model: str, prompt_tokens: int, completion_tokens: int) -> float:
-        """Calculate cost based on model pricing."""
-        # Pricing per 1M tokens (as of 2026)
-        pricing = {
-            "gpt-4o": {"prompt": 2.50, "completion": 10.00},
-            "gpt-4o-mini": {"prompt": 0.150, "completion": 0.600},
-            "gpt-4o-2024-11-20": {"prompt": 2.50, "completion": 10.00},
-            "gpt-4o-2024-08-06": {"prompt": 2.50, "completion": 10.00},
-            "gpt-4o-2024-05-13": {"prompt": 5.00, "completion": 15.00},
-            "gpt-4o-mini-2024-07-18": {"prompt": 0.150, "completion": 0.600},
-            "gpt-4-turbo": {"prompt": 10.00, "completion": 30.00},
-            "gpt-4": {"prompt": 30.00, "completion": 60.00},
-            "gpt-3.5-turbo": {"prompt": 0.50, "completion": 1.50},
-            "gpt-3.5-turbo-0125": {"prompt": 0.50, "completion": 1.50},
-        }
-        
-        # Get pricing for model (default to gpt-3.5-turbo if not found)
-        model_pricing = pricing.get(model, pricing["gpt-3.5-turbo"])
-        
-        # Calculate cost (pricing is per 1M tokens)
-        prompt_cost = (prompt_tokens / 1_000_000) * model_pricing["prompt"]
-        completion_cost = (completion_tokens / 1_000_000) * model_pricing["completion"]
-        
-        return prompt_cost + completion_cost
-    
     def get_trace_url(self) -> Optional[str]:
         """Get the URL to view this trace in Respan dashboard."""
         if self.trace_url:

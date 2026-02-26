@@ -1,9 +1,12 @@
 """Respan Logger for sending trace data to the API."""
 
+import time
+from typing import Any, Dict, List, Optional
+
 import requests
 from haystack import logging
 
-from respan_sdk.constants import RESPAN_DOGFOOD_HEADER, resolve_tracing_ingest_endpoint
+from respan_sdk.constants import resolve_tracing_ingest_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +44,7 @@ class RespanLogger:
         self.base_delay = base_delay
         self.max_delay = max_delay
 
-    def send_trace(self, spans: list[dict[str, any]]) -> dict[str, any] | None:
+    def send_trace(self, spans: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
         Send a batch of spans to construct a trace in Respan.
         
@@ -51,33 +54,43 @@ class RespanLogger:
         Returns:
             Response from the API if successful, None otherwise
         """
-        try:
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            }
-            
-            logger.debug(f"Sending {len(spans)} spans to Respan")
-            
-            response = requests.post(
-                url=self.traces_endpoint,
-                headers=headers,
-                json=spans,
-                timeout=10,
-            )
-            
-            if response.status_code in [200, 201]:
-                logger.debug("Successfully sent trace to Respan")
-                return response.json()
-            else:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                logger.debug(f"Sending {len(spans)} spans to Respan (attempt {attempt + 1})")
+                response = requests.post(
+                    url=self.traces_endpoint,
+                    headers=headers,
+                    json=spans,
+                    timeout=10,
+                )
+
+                if response.status_code in [200, 201]:
+                    logger.debug("Successfully sent trace to Respan")
+                    return response.json()
+                if response.status_code >= 500 and attempt < self.max_retries:
+                    delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+                    logger.debug(f"Retrying in {delay:.1f}s after {response.status_code}")
+                    time.sleep(delay)
+                    continue
                 logger.warning(
                     f"Failed to send trace to Respan: {response.status_code} - {response.text}"
                 )
                 return None
-                
-        except requests.exceptions.Timeout:
-            logger.warning("Request to Respan timed out")
-            return None
-        except Exception as e:
-            logger.warning(f"Error sending trace to Respan: {e}")
-            return None
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                if attempt < self.max_retries:
+                    delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+                    logger.debug(f"Retrying in {delay:.1f}s after {type(e).__name__}")
+                    time.sleep(delay)
+                else:
+                    logger.warning(f"Request to Respan failed after {self.max_retries + 1} attempts: {e}")
+                    return None
+            except Exception as e:
+                logger.warning(f"Error sending trace to Respan: {e}")
+                return None
+
+        return None
