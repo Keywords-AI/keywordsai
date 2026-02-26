@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 
+from respan_sdk.constants.llm_logging import LOG_TYPE_TOOL
 from respan_sdk.respan_types import RespanParams
 from respan_sdk.utils.export import send_payloads, validate_payload
 from respan_sdk.utils.serialization import safe_json_dumps
@@ -27,7 +28,7 @@ def build_payload(
     payload: Dict[str, Any] = {
         "span_workflow_name": params.span_workflow_name or "superagent",
         "span_name": params.span_name or f"superagent.{method_name}",
-        "log_type": params.log_type or "tool",
+        "log_type": params.log_type or LOG_TYPE_TOOL,
         "start_time": start_time.isoformat(),
         "timestamp": end_time.isoformat(),
         "latency": (end_time - start_time).total_seconds(),
