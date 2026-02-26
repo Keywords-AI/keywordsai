@@ -22,11 +22,7 @@ MESSAGE_ID_PATHS = (
     ("uuid",),
 )
 SESSION_ID_PATHS = (
-    ("session_id",),
-    ("sessionId",),
-    ("session_identifier",),
-    ("conversation_id",),
-    ("conversationId",),
+    ("conversation_id",),  # Dify API documented field (request and response)
 )
 MESSAGE_TYPE_PATHS = (
     ("event",),

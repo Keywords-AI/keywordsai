@@ -13,18 +13,15 @@ from respan_exporter_dify.utils import export_dify_call, now_utc
 logger = logging.getLogger(__name__)
 
 
-class RespanDifyClient:
-    """
-    Wrapper for Dify Python SDK (`dify-client-python`) that exports call logs to Respan.
-    """
-
+class _BaseDifyClient:
     def __init__(
         self,
+        client_cls: type,
         *,
         api_key: Optional[str] = None,
         endpoint: Optional[str] = None,
         timeout: int = 10,
-        client: Optional["Client"] = None,
+        client: Optional[Any] = None,
         dify_api_key: Optional[str] = None,
         dify_api_base: Optional[str] = None,
     ) -> None:
@@ -35,28 +32,11 @@ class RespanDifyClient:
         if client is not None:
             self._client = client
         elif dify_api_key is not None:
-            self._client = Client(api_key=dify_api_key, api_base=dify_api_base or "https://api.dify.ai/v1")
+            self._client = client_cls(api_key=dify_api_key, api_base=dify_api_base or "https://api.dify.ai/v1")
         else:
-            raise RuntimeError("Must provide a dify_client.Client or dify_api_key")
+            raise RuntimeError(f"Must provide a {client_cls.__name__} or dify_api_key")
 
-    def _call_and_export(
-        self,
-        *,
-        method_name: str,
-        respan_params: Optional[RespanParams] = None,
-        **kwargs: Any,
-    ) -> Any:
-        params = RespanParams.model_validate(respan_params) if respan_params else RespanParams()
-        method = getattr(self._client, method_name)
-
-        if params.disable_log is True:
-            return method(**kwargs)
-
-        req = kwargs.get("req")
-        is_stream = req and getattr(req, "response_mode", None) == ResponseMode.STREAMING
-
-        start_time = now_utc()
-
+    def _get_export_func(self, method_name: str, start_time: datetime, kwargs: Any, params: RespanParams):
         def _export(
             *,
             end_time: datetime,
@@ -77,6 +57,52 @@ class RespanDifyClient:
                 error_message=error_message,
                 params=params,
             )
+        return _export
+
+
+class RespanDifyClient(_BaseDifyClient):
+    """
+    Wrapper for Dify Python SDK (`dify-client-python`) that exports call logs to Respan.
+    """
+
+    def __init__(
+        self,
+        *,
+        api_key: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        timeout: int = 10,
+        client: Optional["Client"] = None,
+        dify_api_key: Optional[str] = None,
+        dify_api_base: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            client_cls=Client,
+            api_key=api_key,
+            endpoint=endpoint,
+            timeout=timeout,
+            client=client,
+            dify_api_key=dify_api_key,
+            dify_api_base=dify_api_base,
+        )
+
+    def _call_and_export(
+        self,
+        *,
+        method_name: str,
+        respan_params: Optional[RespanParams] = None,
+        **kwargs: Any,
+    ) -> Any:
+        params = RespanParams.model_validate(respan_params) if respan_params else RespanParams()
+        method = getattr(self._client, method_name)
+
+        if params.disable_log is True:
+            return method(**kwargs)
+
+        req = kwargs.get("req")
+        is_stream = req and getattr(req, "response_mode", None) == ResponseMode.STREAMING
+
+        start_time = now_utc()
+        _export = self._get_export_func(method_name, start_time, kwargs, params)
 
         try:
             result = method(**kwargs)
@@ -131,7 +157,7 @@ class RespanDifyClient:
         return self._call_and_export(method_name="run_workflows", respan_params=respan_params, req=req, **kwargs)
 
 
-class RespanAsyncDifyClient:
+class RespanAsyncDifyClient(_BaseDifyClient):
     """
     Wrapper for Dify Python SDK (`dify-client-python`) AsyncClient that exports call logs to Respan.
     """
@@ -146,16 +172,15 @@ class RespanAsyncDifyClient:
         dify_api_key: Optional[str] = None,
         dify_api_base: Optional[str] = None,
     ) -> None:
-        self.api_key = api_key or os.getenv("RESPAN_API_KEY")
-        self.endpoint = endpoint or os.getenv("RESPAN_ENDPOINT") or RESPAN_TRACING_INGEST_ENDPOINT
-        self.timeout = timeout
-
-        if client is not None:
-            self._client = client
-        elif dify_api_key is not None:
-            self._client = AsyncClient(api_key=dify_api_key, api_base=dify_api_base or "https://api.dify.ai/v1")
-        else:
-            raise RuntimeError("Must provide a dify_client.AsyncClient or dify_api_key")
+        super().__init__(
+            client_cls=AsyncClient,
+            api_key=api_key,
+            endpoint=endpoint,
+            timeout=timeout,
+            client=client,
+            dify_api_key=dify_api_key,
+            dify_api_base=dify_api_base,
+        )
 
     async def _call_and_export(
         self,
@@ -174,27 +199,7 @@ class RespanAsyncDifyClient:
         is_stream = req and getattr(req, "response_mode", None) == ResponseMode.STREAMING
 
         start_time = now_utc()
-
-        def _export(
-            *,
-            end_time: datetime,
-            status: str,
-            result: Any,
-            error_message: Optional[str],
-        ) -> None:
-            export_dify_call(
-                api_key=self.api_key,
-                endpoint=self.endpoint,
-                timeout=self.timeout,
-                method_name=method_name,
-                start_time=start_time,
-                end_time=end_time,
-                status=status,
-                kwargs=kwargs,
-                result=result,
-                error_message=error_message,
-                params=params,
-            )
+        _export = self._get_export_func(method_name, start_time, kwargs, params)
 
         try:
             result = await method(**kwargs)

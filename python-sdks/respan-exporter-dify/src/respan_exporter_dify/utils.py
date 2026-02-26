@@ -1,8 +1,9 @@
 import json
 import logging
+import threading
 from datetime import datetime
 from datetime import timezone
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import requests
 from respan_sdk.respan_types import RespanFullLogParams
@@ -147,13 +148,15 @@ def _extract_message_id(message: Any) -> Optional[str]:
     return None
 
 
-def _is_assistant_turn_message(message: Any) -> bool:
+def _is_assistant_message_with_usage(message: Any) -> bool:
+    """True if message is an AssistantMessage instance that carries usage (one complete assistant turn)."""
     class_name = _class_name(message)
     has_usage = _get_field(message, "usage") is not None
     return class_name == "AssistantMessage" and has_usage
 
 
 def _is_assistant_message(message: Any) -> bool:
+    """True if the message is from the assistant (by class name, role, or type), regardless of usage."""
     class_name = _class_name(message)
     if class_name == "AssistantMessage":
         return True
@@ -174,7 +177,7 @@ def _is_assistant_message(message: Any) -> bool:
 
 
 def _extract_message_usage(message: Any) -> Optional[Dict[str, Any]]:
-    if _is_assistant_turn_message(message):
+    if _is_assistant_message_with_usage(message):
         usage_value = _to_serializable(_get_field(message, "usage"))
         if isinstance(usage_value, dict):
             return usage_value
@@ -221,7 +224,7 @@ def _extract_response_content(*, message: Any, result: Any) -> Any:
     return result
 
 
-def _extract_messages(result: Any, kwargs: Dict[str, Any]) -> list[Any]:
+def _extract_messages(result: Any, kwargs: Dict[str, Any]) -> List[Any]:
     if isinstance(result, list):
         messages = list(result)
     elif isinstance(result, tuple):
@@ -262,20 +265,14 @@ def _method_name_from_kwargs(*, kwargs: Dict[str, Any]) -> str:
 
 
 def _usage_to_payload_fields(usage: Dict[str, Any]) -> Dict[str, Any]:
-    prompt_tokens = usage.get("prompt_tokens")
-    if prompt_tokens is None:
-        prompt_tokens = usage.get("input_tokens")
-    completion_tokens = usage.get("completion_tokens")
-    if completion_tokens is None:
-        completion_tokens = usage.get("output_tokens")
-    total_tokens = usage.get("total_tokens")
+    """Build payload fields from already-normalized usage (e.g. from _coerce_usage)."""
     out: Dict[str, Any] = {}
-    if prompt_tokens is not None:
-        out["prompt_tokens"] = prompt_tokens
-    if completion_tokens is not None:
-        out["completion_tokens"] = completion_tokens
-    if total_tokens is not None:
-        out["total_request_tokens"] = total_tokens
+    if usage.get("prompt_tokens") is not None:
+        out["prompt_tokens"] = usage["prompt_tokens"]
+    if usage.get("completion_tokens") is not None:
+        out["completion_tokens"] = usage["completion_tokens"]
+    if usage.get("total_tokens") is not None:
+        out["total_request_tokens"] = usage["total_tokens"]
     return out
 
 
@@ -334,8 +331,10 @@ def build_payload(
         payload["customer_identifier"] = params.customer_identifier
 
     if usage:
-        payload["usage"] = usage
-        payload.update(_usage_to_payload_fields(usage))
+        normalized_usage = _coerce_usage(usage)
+        if normalized_usage:
+            payload["usage"] = normalized_usage
+            payload.update(_usage_to_payload_fields(normalized_usage))
 
     metadata: Dict[str, Any] = {}
     if params.metadata:
@@ -361,29 +360,33 @@ def send_payloads(
     api_key: str,
     endpoint: str,
     timeout: int,
-    payloads: list[Dict[str, Any]],
+    payloads: List[Dict[str, Any]],
 ) -> None:
-    handler = RetryHandler(max_retries=3, retry_delay=1.0, backoff_multiplier=2.0, max_delay=30.0)
+    def _run() -> None:
+        handler = RetryHandler(max_retries=3, retry_delay=1.0, backoff_multiplier=2.0, max_delay=30.0)
 
-    def _post() -> None:
-        response = requests.post(
-            endpoint,
-            json=payloads,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            timeout=timeout,
-        )
-        if response.status_code >= 500:
-            raise RuntimeError(f"Respan ingest server error status_code={response.status_code}")
-        if response.status_code >= 300:
-            logger.warning("Respan ingest client error status_code=%s", response.status_code)
+        def _post() -> None:
+            response = requests.post(
+                endpoint,
+                json=payloads,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=timeout,
+            )
+            if response.status_code >= 500:
+                raise RuntimeError(f"Respan ingest server error status_code={response.status_code}")
+            if response.status_code >= 300:
+                logger.warning("Respan ingest client error status_code=%s", response.status_code)
 
-    try:
-        handler.execute(func=_post, context="respan dify ingest")
-    except Exception as exc:
-        logger.exception("Respan ingest failed after retries: %s", exc)
+        try:
+            handler.execute(func=_post, context="respan dify ingest")
+        except Exception as exc:
+            logger.exception("Respan ingest failed after retries: %s", exc)
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
 
 
 def _build_export_payloads(
@@ -396,17 +399,17 @@ def _build_export_payloads(
     result: Any,
     error_message: Optional[str],
     params: RespanParams,
-) -> list[Dict[str, Any]]:
+) -> List[Dict[str, Any]]:
     result_usage = _extract_usage(result)
     hook_input = kwargs.get("req") or kwargs
     messages = _extract_messages(result=result, kwargs={**kwargs, "method_name": method_name})
 
-    payloads: list[Dict[str, Any]] = []
+    payloads: List[Dict[str, Any]] = []
     seen_turn_ids: set[str] = set()
     for message in messages:
-        is_assistant_turn_message = _is_assistant_turn_message(message)
+        is_assistant_message_with_usage = _is_assistant_message_with_usage(message)
         message_id = _extract_message_id(message)
-        if is_assistant_turn_message and message_id:
+        if is_assistant_message_with_usage and message_id:
             if message_id in seen_turn_ids:
                 continue
             seen_turn_ids.add(message_id)
@@ -414,7 +417,7 @@ def _build_export_payloads(
         message_type = _extract_message_type(method_name=method_name, message=message)
         span_name = params.span_name or f"dify.{message_type}"
         message_usage = _extract_message_usage(message)
-        if message_usage is None and not is_assistant_turn_message:
+        if message_usage is None and not is_assistant_message_with_usage:
             message_usage = result_usage
         session_id = _extract_session_id(message=message, hook_input=hook_input)
         metadata_extra: Dict[str, Any] = {"message_type": message_type}
