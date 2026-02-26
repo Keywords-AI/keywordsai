@@ -157,9 +157,8 @@ class RespanTracer(Tracer):
                 self.completed_spans.append(formatted_span)
             
             # If this is the root span (no parent), send the entire trace
-            # We use a loose check on operation_name to be resilient to Haystack internal changes
             op_name = span_data.get("operation_name", "")
-            if span_data.get("parent_id") is None and ("pipeline" in op_name.lower() or "run" in op_name.lower()):
+            if span_data.get("parent_id") is None and op_name == "haystack.pipeline.run":
                 logger.debug(f"Root span complete - sending trace with {len(self.completed_spans)} spans")
                 self.send_trace()
         except Exception as e:
