@@ -194,6 +194,7 @@ class RespanGenerator(_BaseRespanGenerator):
         timeout: float = 60.0,
     ):
         """Initialize the Respan gateway generator."""
+        # Explicit base call: Haystack's @component changes MRO so super() does not resolve to _BaseRespanGenerator
         _BaseRespanGenerator.__init__(
             self,
             model=model,
@@ -298,6 +299,7 @@ class RespanChatGenerator(_BaseRespanGenerator):
         timeout: float = 60.0,
     ):
         """Initialize the chat generator."""
+        # Explicit base call: Haystack's @component changes MRO so super() does not resolve to _BaseRespanGenerator
         _BaseRespanGenerator.__init__(
             self,
             model=model,
