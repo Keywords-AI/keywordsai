@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test runner script for Keywords AI SDK
+Test runner script for Respan SDK
 
 This script provides a convenient way to run all tests or specific test suites.
 """
@@ -33,7 +33,7 @@ def run_tests(test_path=None, verbose=True, coverage=False):
     
     if coverage:
         cmd.extend([
-            "--cov=src/keywordsai",
+            "--cov=src/respan",
             "--cov-report=html",
             "--cov-report=term-missing"
         ])
@@ -77,7 +77,7 @@ def main():
         
         elif command == "real":
             # Run real API tests
-            return run_tests("tests/test_keywords_ai_api_integration.py")
+            return run_tests("tests/test_respan_api_integration.py")
         
         elif command == "coverage":
             # Run all tests with coverage
@@ -86,10 +86,10 @@ def main():
         elif command == "help":
             print("Available commands:")
             print("  unit        - Run base CRUD API unit tests")
-            print("  dataset     - Run Keywords AI dataset API tests")
-            print("  evaluator   - Run Keywords AI evaluator API tests")
+            print("  dataset     - Run Respan dataset API tests")
+            print("  evaluator   - Run Respan evaluator API tests")
             print("  integration - Run dataset workflow integration tests")
-            print("  real        - Run Keywords AI API integration tests")
+            print("  real        - Run Respan API integration tests")
             print("  coverage    - Run all tests with coverage report")
             print("  help        - Show this help message")
             return 0

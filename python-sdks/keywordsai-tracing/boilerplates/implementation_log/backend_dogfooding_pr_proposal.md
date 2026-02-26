@@ -1,7 +1,7 @@
 # SDK PR Proposal: Manual Span Collection & Batch Export
 
-**Repository:** `https://github.com/Keywords-AI/keywordsai`  
-**Path:** `python-sdks/keywordsai-tracing/`  
+**Repository:** `https://github.com/Repsan/respan`  
+**Path:** `python-sdks/respan-tracing/`  
 **Status:** 🚨 **CRITICAL - SDK Enhancement Required for Asynchronous Context Management**
 
 ---
@@ -70,19 +70,19 @@ We implemented using **context variables** to work around this:
 
 ```python
 # At app startup (settings.py)
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 from utils.telemetry.backend_exporter import BackendSpanExporter
 
 exporter = BackendSpanExporter()  # Uses context variables internally
 
-KeywordsAITelemetry(
-    app_name="keywordsai-backend",
+RespanTelemetry(
+    app_name="respan-backend",
     custom_exporter=exporter,  # ✅ Works
     enabled=True,
 )
 
 # Per-request (WorkflowExecutor)
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 from utils.telemetry import set_telemetry_context
 
 set_telemetry_context(org=org, auth=auth, exp_id=exp_id)  # Set context in ContextVar
@@ -123,7 +123,7 @@ The current workaround solves **per-request context** (which org/experiment a sp
 **New Context Manager Required:**
 
 ```python
-# In keywordsai_tracing/core/span_collector.py
+# In respan_tracing/core/span_collector.py
 
 from typing import Dict, Any, List, Optional
 from contextlib import contextmanager
@@ -191,14 +191,14 @@ class SpanCollector:
         result = self.exporter.export(self._local_queue)
         return result == SpanExportResult.SUCCESS
 
-# In keywordsai_tracing/core/client.py
-class KeywordsAIClient:
+# In respan_tracing/core/client.py
+class RespanClient:
     def get_span_collector(self, trace_id: str) -> SpanCollector:
         """
         Get context manager for local span collection.
         
         Example:
-            from keywordsai_tracing import get_client
+            from respan_tracing import get_client
             
             client = get_client()
             with client.get_span_collector("exp-123") as sc:
@@ -221,9 +221,9 @@ class KeywordsAIClient:
 **Add SDK Configuration:**
 
 ```python
-# In keywordsai_tracing/__init__.py
+# In respan_tracing/__init__.py
 
-class KeywordsAITelemetry:
+class RespanTelemetry:
     def __init__(
         self,
         app_name: str,
@@ -249,10 +249,10 @@ class KeywordsAITelemetry:
 
 ### 3. **Public Tracer API** ✅ **ALREADY IMPLEMENTED**
 
-**Already available in KeywordsAIClient:**
+**Already available in RespanClient:**
 
 ```python
-class KeywordsAIClient:
+class RespanClient:
     def get_tracer(self):
         """
         Get the OpenTelemetry tracer for creating custom spans.
@@ -265,7 +265,7 @@ class KeywordsAIClient:
 
 **Usage:**
 ```python
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 client = get_client()
 tracer = client.get_tracer()
@@ -285,7 +285,7 @@ with tracer.start_as_current_span("my_operation") as span:
 
 ```python
 # In WorkflowExecutionTask.process_single_item()
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 # Phase 1: Execute workflows (no tracing context)
 workflow_results = []

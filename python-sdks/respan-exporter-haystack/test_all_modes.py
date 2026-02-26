@@ -13,8 +13,7 @@ import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
 from haystack.components.generators import OpenAIGenerator
-from respan_exporter_haystack.connector import RespanConnector
-from respan_exporter_haystack.gateway import RespanGenerator
+from respan_exporter_haystack import RespanConnector, RespanGenerator
 
 
 def check_env():
@@ -37,12 +36,9 @@ def test_1_gateway_only():
     print("-"*80)
     
     pipeline = Pipeline()
-    pipeline.add_component(
-        name="prompt",
-        instance=PromptBuilder(template="Tell me a joke about {{topic}}."),
-    )
-    pipeline.add_component(name="llm", instance=RespanGenerator(model="gpt-4o-mini"))
-    pipeline.connect(sender="prompt", receiver="llm")
+    pipeline.add_component("prompt", PromptBuilder(template="Tell me a joke about {{topic}}."))
+    pipeline.add_component("llm", RespanGenerator(model="gpt-4o-mini"))
+    pipeline.connect("prompt", "llm")
     
     result = pipeline.run({"prompt": {"topic": "Python"}})
     
@@ -53,7 +49,7 @@ def test_1_gateway_only():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.respan.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see: Single log entry (NOT in traces view)")
     print("  Log type: Chat completion")
     return True
@@ -70,13 +66,10 @@ def test_2_gateway_with_prompt():
     PROMPT_ID = "1210b368ce2f4e5599d307bc591d9b7a"
     
     pipeline = Pipeline()
-    pipeline.add_component(
-        name="llm",
-        instance=RespanGenerator(
-            model="gpt-4o-mini",
-            prompt_id=PROMPT_ID,
-        ),
-    )
+    pipeline.add_component("llm", RespanGenerator(
+        model="gpt-4o-mini",
+        prompt_id=PROMPT_ID
+    ))
     
     result = pipeline.run({
         "llm": {
@@ -93,7 +86,7 @@ def test_2_gateway_with_prompt():
         print(f"\n[META] Model: {meta['model']}, Tokens: {meta['total_tokens']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.respan.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see: Log shows prompt_id in metadata")
     print("  Filter by: Prompt name (if set on platform)")
     return True
@@ -110,13 +103,10 @@ def test_3_trace_only():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component(name="tracer", instance=RespanConnector(name="Test 3: Trace Only"))
-    pipeline.add_component(
-        name="prompt",
-        instance=PromptBuilder(template="Tell me about {{topic}}."),
-    )
-    pipeline.add_component(name="llm", instance=OpenAIGenerator(model="gpt-4o-mini"))
-    pipeline.connect(sender="prompt", receiver="llm")
+    pipeline.add_component("tracer", RespanConnector("Test 3: Trace Only"))
+    pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
+    pipeline.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))
+    pipeline.connect("prompt", "llm")
     
     result = pipeline.run({"prompt": {"topic": "machine learning"}})
     
@@ -128,7 +118,7 @@ def test_3_trace_only():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.respan.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  View: Switch to 'Traces' tab")
     print("  What to see:")
     print("    - Test 3: Trace Only (root)")
@@ -148,16 +138,10 @@ def test_4_trace_with_gateway():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component(
-        name="tracer",
-        instance=RespanConnector(name="Test 4: Gateway + Trace"),
-    )
-    pipeline.add_component(
-        name="prompt",
-        instance=PromptBuilder(template="Explain {{topic}} in one sentence."),
-    )
-    pipeline.add_component(name="llm", instance=RespanGenerator(model="gpt-4o-mini"))
-    pipeline.connect(sender="prompt", receiver="llm")
+    pipeline.add_component("tracer", RespanConnector("Test 4: Gateway + Trace"))
+    pipeline.add_component("prompt", PromptBuilder(template="Explain {{topic}} in one sentence."))
+    pipeline.add_component("llm", RespanGenerator(model="gpt-4o-mini"))
+    pipeline.connect("prompt", "llm")
     
     result = pipeline.run({"prompt": {"topic": "neural networks"}})
     
@@ -169,7 +153,7 @@ def test_4_trace_with_gateway():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.respan.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see:")
     print("    1. LOGS TAB: Individual LLM call from gateway")
     print("    2. TRACES TAB: Full workflow trace with:")
@@ -191,14 +175,11 @@ def test_5_full_stack():
     os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
     
     pipeline = Pipeline()
-    pipeline.add_component(name="tracer", instance=RespanConnector(name="Test 5: Full Stack"))
-    pipeline.add_component(
-        name="llm",
-        instance=RespanGenerator(
-            model="gpt-4o-mini",
-            prompt_id=PROMPT_ID,
-        ),
-    )
+    pipeline.add_component("tracer", RespanConnector("Test 5: Full Stack"))
+    pipeline.add_component("llm", RespanGenerator(
+        model="gpt-4o-mini",
+        prompt_id=PROMPT_ID
+    ))
     
     result = pipeline.run({
         "llm": {
@@ -216,7 +197,7 @@ def test_5_full_stack():
         print(f"\n[TRACE URL] {result['tracer']['trace_url']}")
     
     print("\n[CHECK DASHBOARD]")
-    print("  URL: https://platform.respan.co/logs")
+    print("  URL: https://platform.respan.ai/logs")
     print("  What to see:")
     print("    1. LOGS TAB: LLM call with prompt_id metadata")
     print("    2. TRACES TAB: Trace with:")
@@ -276,8 +257,8 @@ def main():
     print("\n" + "="*80)
     print("DASHBOARD CHECK")
     print("="*80)
-    print("  Logs: https://platform.respan.co/logs")
-    print("  Traces: https://platform.respan.co/logs (switch to Traces tab)")
+    print("  Logs: https://platform.respan.ai/logs")
+    print("  Traces: https://platform.respan.ai/logs (switch to Traces tab)")
     print("\nExpected results:")
     print("  - 5 LLM logs (Tests 1, 2, 4, 5 + Test 3 direct)")
     print("  - 3 Traces (Tests 3, 4, 5)")

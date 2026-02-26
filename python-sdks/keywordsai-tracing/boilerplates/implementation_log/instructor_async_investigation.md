@@ -1,7 +1,7 @@
 # Instructor Async Client Investigation
 
 ## Issue
-User reported that this async setup doesn't work with KeywordsAI tracing:
+User reported that this async setup doesn't work with Respan tracing:
 ```python
 async_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 async_instructor_client = instructor.from_openai(async_client)
@@ -69,11 +69,11 @@ From the debug output, we can see:
 
 #### Method 1: Recommended (instructor.from_provider)
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task
 import instructor
 
-k_tl = KeywordsAITelemetry(app_name="async-app")
+k_tl = RespanTelemetry(app_name="async-app")
 client = instructor.from_provider("openai/gpt-4o-mini")
 
 @task(name="async_extraction")
@@ -86,12 +86,12 @@ async def extract_data(text: str) -> MyModel:
 
 #### Method 2: User's Approach (AsyncOpenAI + instructor.from_openai)
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task
 import instructor
 from openai import AsyncOpenAI
 
-k_tl = KeywordsAITelemetry(app_name="async-app")
+k_tl = RespanTelemetry(app_name="async-app")
 async_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 instructor_client = instructor.from_openai(async_client)
 
@@ -105,12 +105,12 @@ async def extract_data(text: str) -> MyModel:
 
 #### Method 3: Alternative (instructor.apatch)
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task
 import instructor
 from openai import AsyncOpenAI
 
-k_tl = KeywordsAITelemetry(app_name="async-app")
+k_tl = RespanTelemetry(app_name="async-app")
 async_openai = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 client = instructor.apatch(async_openai)  # Note: deprecated, use patch instead
 
@@ -138,14 +138,14 @@ If the user is experiencing problems, it might be due to:
 2. **Environment setup issues** - Missing API keys or incorrect configuration
 3. **Version compatibility** - Old versions of instructor or opentelemetry packages
 4. **Context propagation issues** - Not properly awaiting async functions
-5. **Missing KeywordsAI initialization** - Not calling `KeywordsAITelemetry()` before using instructor
+5. **Missing Respan initialization** - Not calling `RespanTelemetry()` before using instructor
 
 ### Recommendations
 
 1. **Use Method 1** (`instructor.from_provider`) - Most straightforward and recommended
 2. **Add proper decorators** - Always use `@task` or `@workflow` for proper tracing
 3. **Check environment** - Ensure all API keys are set correctly
-4. **Update packages** - Use latest versions of instructor and keywordsai-tracing
+4. **Update packages** - Use latest versions of instructor and respan-tracing
 5. **Test with our working examples** - Use the test files to verify setup
 
 ### Test Files Created
@@ -155,4 +155,4 @@ If the user is experiencing problems, it might be due to:
 - `instructor_advanced_test.py` - Advanced features with validation
 - `instructor_multi_provider_test.py` - Multi-provider comparison
 
-All tests pass successfully, confirming that KeywordsAI tracing works perfectly with all Instructor async patterns.
+All tests pass successfully, confirming that Respan tracing works perfectly with all Instructor async patterns.

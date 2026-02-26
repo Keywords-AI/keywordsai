@@ -1,17 +1,17 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 
 async function debugTimingOrder() {
   console.log("=== Testing proper initialization order ===");
   
-  // Initialize KeywordsAI tracing FIRST
-  console.log("1. Creating KeywordsAI instance...");
-  const keywordsai = new KeywordsAITelemetry({
+  // Initialize Respan tracing FIRST
+  console.log("1. Creating Respan instance...");
+  const respan = new RespanTelemetry({
     apiKey: "test-api-key",
     baseURL: "http://localhost:3000",
   });
   
-  console.log("2. Initializing KeywordsAI tracing...");
-  await keywordsai.initialize();
+  console.log("2. Initializing Respan tracing...");
+  await respan.initialize();
   
   // Wait a bit to ensure initialization is complete
   console.log("3. Waiting for instrumentation setup...");
@@ -48,7 +48,7 @@ async function debugTimingOrder() {
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   console.log("10. Shutting down...");
-  await keywordsai.shutdown();
+  await respan.shutdown();
   
   console.log("=== Test complete ===");
 }

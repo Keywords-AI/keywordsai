@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Example demonstrating the new KeywordsAI client API for trace operations.
+Example demonstrating the new Respan client API for trace operations.
 
-This example shows how to use the get_client() function and KeywordsAIClient
+This example shows how to use the get_client() function and RespanClient
 to interact with the current trace/span context.
 """
 
@@ -13,18 +13,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import the new client API
-from keywordsai_tracing import KeywordsAITelemetry, get_client, workflow, task
+from respan_tracing import RespanTelemetry, get_client, workflow, task
 from opentelemetry.trace import StatusCode
 
 # Initialize telemetry
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="client-example",
-    api_key=os.getenv("KEYWORDSAI_API_KEY", "test-key"),
-    base_url=os.getenv("KEYWORDSAI_BASE_URL", "https://api.keywordsai.co/api"),
+    api_key=os.getenv("RESPAN_API_KEY", "test-key"),
+    base_url=os.getenv("RESPAN_BASE_URL", "https://api.respan.ai/api"),
     is_enabled=True
 )
 
-print("🚀 KeywordsAI Client API Example")
+print("🚀 Respan Client API Example")
 print("=" * 50)
 
 
@@ -44,9 +44,9 @@ def data_processing_workflow(data):
     print(f"🔍 Current trace ID: {trace_id}")
     print(f"🔍 Current span ID: {span_id}")
     
-    # Update the current span with KeywordsAI parameters
+    # Update the current span with Respan parameters
     client.update_current_span(
-        keywordsai_params={
+        respan_params={
             "trace_group_identifier": "data-processing-group",
             "metadata": {
                 "data_size": len(str(data)),
@@ -199,7 +199,7 @@ def main():
     print("  • add_event() - Span events for tracking")
     print("  • record_exception() - Automatic error recording")
     print("  • Context value get/set operations")
-    print("  • Automatic KeywordsAI parameter handling")
+    print("  • Automatic Respan parameter handling")
     
     # Flush any remaining spans
     telemetry.flush()

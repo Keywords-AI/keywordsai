@@ -9,23 +9,23 @@
  * - Use transportable spans pattern
  */
 
-import { KeywordsAITelemetry, getClient } from "../src/index.js";
+import { RespanTelemetry, getClient } from "../src/index.js";
 
-// Initialize KeywordsAI
-const keywordsAi = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+// Initialize Respan
+const respan = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "span-buffer-example",
   logLevel: "info",
 });
 
-await keywordsAi.initialize();
+await respan.initialize();
 
 // Example 1: Basic span buffering
 console.log("\n=== Example 1: Basic Span Buffering ===\n");
 
 const example1 = async () => {
-  const manager = keywordsAi.getSpanBufferManager();
+  const manager = respan.getSpanBufferManager();
   const buffer = manager.createBuffer("trace-example-1");
 
   // Create multiple spans
@@ -63,7 +63,7 @@ await example1();
 console.log("\n=== Example 2: Conditional Processing ===\n");
 
 const example2 = async () => {
-  const manager = keywordsAi.getSpanBufferManager();
+  const manager = respan.getSpanBufferManager();
 
   // Simulate workflow execution
   const workflowResults = [
@@ -109,7 +109,7 @@ await example2();
 console.log("\n=== Example 3: Transportable Spans ===\n");
 
 const collectWorkflowSpans = (experimentId: string) => {
-  const manager = keywordsAi.getSpanBufferManager();
+  const manager = respan.getSpanBufferManager();
   const buffer = manager.createBuffer(`experiment-${experimentId}`);
 
   // Simulate multiple workflow runs
@@ -127,7 +127,7 @@ const collectWorkflowSpans = (experimentId: string) => {
 };
 
 const processBasedOnExperiment = async (experimentId: string, spans: any[]) => {
-  const manager = keywordsAi.getSpanBufferManager();
+  const manager = respan.getSpanBufferManager();
 
   console.log(`Processing experiment ${experimentId} with ${spans.length} spans`);
 
@@ -158,7 +158,7 @@ const ingestWorkflowOutput = async (
   orgId: string,
   experimentId: string
 ) => {
-  const manager = keywordsAi.getSpanBufferManager();
+  const manager = respan.getSpanBufferManager();
   const buffer = manager.createBuffer(traceId);
 
   // Create parent span for workflow
@@ -224,7 +224,7 @@ await ingestWorkflowOutput(
 console.log("\n=== All examples completed ===\n");
 
 // Shutdown
-await keywordsAi.shutdown();
+await respan.shutdown();
 console.log("SDK shut down");
 
 

@@ -1,8 +1,8 @@
 """
-Simple integration test for KeywordsAI tracing with Instructor.
+Simple integration test for Respan tracing with Instructor.
 
 This test demonstrates the basic setup and integration between:
-- KeywordsAI tracing SDK
+- Respan tracing SDK
 - Instructor library for structured outputs
 - OpenAI API with automatic instrumentation
 
@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 import os
 from pydantic import BaseModel, Field
 import instructor
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task, workflow
 
 # Load environment variables
 load_dotenv(".env", override=True)
@@ -22,7 +22,7 @@ load_dotenv(".env", override=True)
 # Verify environment setup
 def check_environment():
     """Check that all required environment variables are set."""
-    required_vars = ["KEYWORDSAI_API_KEY", "OPENAI_API_KEY"]
+    required_vars = ["RESPAN_API_KEY", "OPENAI_API_KEY"]
     missing_vars = []
     
     for var in required_vars:
@@ -37,10 +37,10 @@ def check_environment():
     print("✅ Environment variables configured correctly")
     return True
 
-# Initialize KeywordsAI Telemetry
-print("🔧 Initializing KeywordsAI Telemetry...")
-k_tl = KeywordsAITelemetry(app_name="instructor-integration-test")
-print("✅ KeywordsAI Telemetry initialized")
+# Initialize Respan Telemetry
+print("🔧 Initializing Respan Telemetry...")
+k_tl = RespanTelemetry(app_name="instructor-integration-test")
+print("✅ Respan Telemetry initialized")
 
 # Define a simple model for testing
 class QuickResponse(BaseModel):
@@ -96,7 +96,7 @@ def run_integration_test():
 
 def main():
     """Main integration test function."""
-    print("🚀 KeywordsAI + Instructor Integration Test")
+    print("🚀 Respan + Instructor Integration Test")
     print("=" * 50)
     
     # Check environment
@@ -118,12 +118,12 @@ def main():
             print("   ✅ Token usage and timing")
             print("   ✅ Workflow execution trace")
             print("\n🎯 Next steps:")
-            print("   1. Check your KeywordsAI dashboard for the trace")
+            print("   1. Check your Respan dashboard for the trace")
             print("   2. Run the other instructor tests:")
             print("      - instructor_basic_test.py")
             print("      - instructor_advanced_test.py") 
             print("      - instructor_multi_provider_test.py")
-            print("\n🌟 Integration successful! KeywordsAI + Instructor is working.")
+            print("\n🌟 Integration successful! Respan + Instructor is working.")
         else:
             print("❌ Integration test failed")
         
@@ -132,7 +132,7 @@ def main():
     except Exception as e:
         print(f"❌ Integration test failed with error: {e}")
         print("\n🔍 Troubleshooting tips:")
-        print("   1. Check your .env file has KEYWORDSAI_API_KEY and OPENAI_API_KEY")
+        print("   1. Check your .env file has RESPAN_API_KEY and OPENAI_API_KEY")
         print("   2. Verify your API keys are valid and have sufficient credits")
         print("   3. Check your internet connection")
         print("   4. Ensure the virtual environment is activated")

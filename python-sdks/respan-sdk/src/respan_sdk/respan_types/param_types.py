@@ -50,6 +50,12 @@ class PromptParam(RespanBaseModel):
     version: Optional[Union[int, Literal["latest"]]] = None
     variables: Optional[dict] = None
     echo: Optional[bool] = True
+
+    # v2 fields (set schema_version=2 to use v2 prompt processing)
+    schema_version: Optional[int] = None
+    patch: Optional[dict] = None
+
+    # v1 fields (preserved for back-compat, ignored when schema_version=2)
     override: Optional[bool] = (
         False  # Allow prompt to override other params in the request body. (e.g. model defined in the prompt will override the model defined in the request body)
     )
@@ -199,7 +205,7 @@ class RespanAPIControlParams(RespanBaseModel):
 @deprecated("Use log_types.RespanLogParams instead")
 class RespanParams(RespanBaseModel, PreprocessLogDataMixin):
     """
-    Internal Keywords AI parameters class that includes all fields used by the backend.
+    Internal Respan parameters class that includes all fields used by the backend.
     This includes both public-facing fields and internal/backend-only fields.
     """
 
@@ -563,7 +569,7 @@ class RespanTextLogParams(
     RespanParams, LiteLLMCompletionParams, BasicEmbeddingParams
 ):
     """
-    A type definition of the input parameters for creating a Keywords AI RequestLog object.
+    A type definition of the input parameters for creating a Respan RequestLog object.
     This is the INTERNAL type. Only used in respan backend
     """
 

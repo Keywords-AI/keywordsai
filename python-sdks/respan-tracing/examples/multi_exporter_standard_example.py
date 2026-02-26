@@ -15,8 +15,8 @@ from typing import Sequence
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.exporters import KeywordsAISpanExporter
+from respan_tracing import RespanTelemetry
+from respan_tracing.exporters import RespanSpanExporter
 
 
 class FileExporter(SpanExporter):
@@ -71,7 +71,7 @@ def main():
     
     # Step 1: Initialize telemetry WITHOUT exporters
     print("\n📦 Initializing telemetry...")
-    kai = KeywordsAITelemetry(
+    kai = RespanTelemetry(
         app_name="multi-exporter-example",
         api_key="test-key-123",
         log_level="DEBUG"
@@ -80,8 +80,8 @@ def main():
     # Step 2: Add production exporter (all spans)
     print("\n🌐 Adding production exporter (all spans)...")
     kai.add_processor(
-        exporter=KeywordsAISpanExporter(
-            endpoint="https://api.keywordsai.co/api",
+        exporter=RespanSpanExporter(
+            endpoint="https://api.respan.ai/api",
             api_key="test-key-123"
         ),
         name="production"

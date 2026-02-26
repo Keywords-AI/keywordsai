@@ -4,12 +4,12 @@ import { startTracing } from "../src/utils/tracing.js";
 // Initialize tracing with debug logging to see the filtering in action
 await startTracing({
   appName: "noise-filtering-demo",
-  apiKey: process.env.KEYWORDSAI_API_KEY || "demo-key",
-  baseURL: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+  apiKey: process.env.RESPAN_API_KEY || "demo-key",
+  baseURL: process.env.RESPAN_BASE_URL || "https://api.respan.ai",
   logLevel: "debug", // Enable debug logs to see filtering
 });
 
-console.log("🎯 KeywordsAI Noise Filtering Demo");
+console.log("🎯 Respan Noise Filtering Demo");
 console.log("==================================");
 console.log("This demo shows how the SDK filters out auto-instrumentation noise");
 console.log("and only sends spans from your explicit decorators.\n");
@@ -126,7 +126,7 @@ try {
   console.log("\n" + "=".repeat(50));
   console.log("🎯 FILTERING RESULTS");
   console.log("=".repeat(50));
-  console.log("✅ Only the following spans should be sent to KeywordsAI:");
+  console.log("✅ Only the following spans should be sent to Respan:");
   console.log("   • mainWorkflow.workflow (root span)");
   console.log("   • searchAgent.agent (root span)");  
   console.log("   • webSearch.tool (root span)");

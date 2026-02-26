@@ -12,16 +12,16 @@ import { SpanStatusCode } from "@opentelemetry/api";
 
 // Initialize tracing
 startTracing({
-  appName: "advanced-keywordsai-example",
-  apiKey: process.env.KEYWORDSAI_API_KEY || "test-key",
-  baseURL: process.env.KEYWORDSAI_BASE_URL || "https://api.keywordsai.co",
+  appName: "advanced-respan-example",
+  apiKey: process.env.RESPAN_API_KEY || "test-key",
+  baseURL: process.env.RESPAN_BASE_URL || "https://api.respan.ai",
   traceContent: true,
   logLevel: "info"
 });
 
-// Example 1: Advanced span updating with proper KeywordsAI parameters
+// Example 1: Advanced span updating with proper Respan parameters
 async function advancedLLMCall() {
-  console.log("\n=== Example 1: Advanced LLM Call with KeywordsAI Parameters ===");
+  console.log("\n=== Example 1: Advanced LLM Call with Respan Parameters ===");
   
   return withAgent({
     name: "smartAgent",
@@ -31,9 +31,9 @@ async function advancedLLMCall() {
       requestId: "req-789"
     }
   }, async () => {
-    // Update span with comprehensive KeywordsAI parameters
+    // Update span with comprehensive Respan parameters
     updateCurrentSpan({
-      keywordsaiParams: {
+      respanParams: {
         // Model configuration
         model: "gpt-4",
         provider: "openai",
@@ -102,7 +102,7 @@ async function advancedLLMCall() {
 
     // Update with completion information
     updateCurrentSpan({
-      keywordsaiParams: {
+      respanParams: {
         completion_tokens: 245,
         prompt_tokens: 150,
         total_tokens: 395,
@@ -141,7 +141,7 @@ async function errorHandlingExample() {
     try {
       // Update span with initial parameters
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           custom_identifier: "risky-op-001",
           metadata: {
             risk_level: "high",
@@ -165,7 +165,7 @@ async function errorHandlingExample() {
         
         // Update span with error information
         updateCurrentSpan({
-          keywordsaiParams: {
+          respanParams: {
             error_bit: 1,
             error_message: error.message,
             status: "failed"
@@ -183,7 +183,7 @@ async function errorHandlingExample() {
 
       // Success path
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           status: "success"
         },
         status: SpanStatusCode.OK,
@@ -224,7 +224,7 @@ async function multiStepWorkflow() {
       name: "dataIngestion"
     }, async () => {
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           custom_identifier: "ingestion-step",
           metadata: {
             step: "ingestion",
@@ -256,7 +256,7 @@ async function multiStepWorkflow() {
       name: "dataProcessing"
     }, async () => {
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           custom_identifier: "processing-step",
           metadata: {
             step: "processing",
@@ -286,7 +286,7 @@ async function multiStepWorkflow() {
 
     // Update workflow span with final results
     updateCurrentSpan({
-      keywordsaiParams: {
+      respanParams: {
         metadata: {
           workflow_status: "completed",
           total_records: ingestionResult.records,
@@ -319,9 +319,9 @@ async function manualSpanExample() {
   return withManualSpan(
     "customDatabaseOperation",
     async (span) => {
-      // Update the manual span with KeywordsAI parameters
+      // Update the manual span with Respan parameters
       updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           custom_identifier: "db-op-001",
           metadata: {
             operation_type: "database_query",
@@ -373,7 +373,7 @@ async function manualSpanExample() {
 
 // Main execution function
 async function main() {
-  console.log("Starting Advanced KeywordsAI Tracing Examples...");
+  console.log("Starting Advanced Respan Tracing Examples...");
 
   try {
     // Run all examples
@@ -394,7 +394,7 @@ async function main() {
     console.log("Manual span result:", result4);
 
     console.log("\n✅ All examples completed successfully!");
-    console.log("Check your KeywordsAI dashboard for detailed traces with proper attributes and metadata.");
+    console.log("Check your Respan dashboard for detailed traces with proper attributes and metadata.");
 
   } catch (error) {
     console.error("❌ Example execution failed:", error);

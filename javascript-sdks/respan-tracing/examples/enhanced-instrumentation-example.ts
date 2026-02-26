@@ -1,15 +1,15 @@
-import { KeywordsAITelemetry } from "../src/main.js";
+import { RespanTelemetry } from "../src/main.js";
 
 async function demonstrateEnhancedInstrumentation() {
   console.log("=== Enhanced Instrumentation Management Demo ===\n");
 
   // Example 1: Automatic Discovery (no warnings for missing packages)
   console.log("🔍 Example 1: Automatic Discovery (Silent Mode)");
-  console.log("When no instrumentModules are specified, KeywordsAI automatically tries");
+  console.log("When no instrumentModules are specified, Respan automatically tries");
   console.log("to load all supported instrumentations without showing warnings for missing packages.\n");
   
-  const autoDiscoveryClient = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key",
+  const autoDiscoveryClient = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key",
     appName: "auto-discovery-demo",
     disabledInstrumentations: ['bedrock', 'chromaDB'], // Disable some we don't want
     logLevel: 'info'
@@ -20,11 +20,11 @@ async function demonstrateEnhancedInstrumentation() {
 
   // Example 2: Explicit Module Specification (with warnings)
   console.log("⚠️  Example 2: Explicit Modules (Show Warnings)");
-  console.log("When you explicitly specify modules, KeywordsAI will show warnings");
+  console.log("When you explicitly specify modules, Respan will show warnings");
   console.log("for any that fail to load since you explicitly requested them.\n");
 
-  const explicitClient = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key",
+  const explicitClient = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key",
     appName: "explicit-modules-demo",
     instrumentModules: {
       // These would normally be real imported modules:
@@ -40,7 +40,7 @@ async function demonstrateEnhancedInstrumentation() {
 
   // Example 3: Generic Custom Module Handling
   console.log("🎯 Example 3: Custom Module Support");
-  console.log("KeywordsAI now tries to handle ANY module you provide, even if it's");
+  console.log("Respan now tries to handle ANY module you provide, even if it's");
   console.log("not in our pre-defined list. It will:");
   console.log("1. Try calling manuallyInstrument() if the method exists");
   console.log("2. Otherwise treat it as an instrumentation instance");
@@ -53,8 +53,8 @@ async function demonstrateEnhancedInstrumentation() {
     }
   }
 
-  const customModuleClient = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key",
+  const customModuleClient = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key",
     appName: "custom-module-demo", 
     instrumentModules: {
       openAI: null, // Pre-defined module (would be OpenAI if imported)

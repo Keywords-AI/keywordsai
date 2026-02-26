@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Partial Update Example for Keywords AI SDK
+Partial Update Example for Respan SDK
 
 This example demonstrates the new partial update functionality that prevents
 unintended overwrites of existing values with default values.
@@ -17,14 +17,14 @@ existing values for fields you don't want to change.
 
 import os
 import asyncio
-from keywordsai.prompts.api import PromptAPI
+from respan.prompts.api import PromptAPI
 
 
 async def main():
     # Initialize the API client
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
+    api_key = os.getenv("RESPAN_API_KEY")
     if not api_key:
-        print("❌ Please set KEYWORDSAI_API_KEY environment variable")
+        print("❌ Please set RESPAN_API_KEY environment variable")
         return
     
     client = PromptAPI(api_key=api_key)

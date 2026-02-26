@@ -1,6 +1,6 @@
-# Keywords AI SDK Tests - Real API Integration Focus
+# Respan SDK Tests - Real API Integration Focus
 
-This directory contains **real-world integration tests** that validate the SDK works with actual Keywords AI API servers. We've removed heavy mocking in favor of tests that provide real confidence.
+This directory contains **real-world integration tests** that validate the SDK works with actual Respan API servers. We've removed heavy mocking in favor of tests that provide real confidence.
 
 ## 🎯 **Testing Philosophy**
 
@@ -12,7 +12,7 @@ For an API SDK, the most valuable tests are those that validate the SDK works wi
 
 ### ✅ **Real API Integration Tests (Primary)**
 - `test_real_world_dataset_workflow.py` - **Your exact use case**: 2025-08-06 prod logs workflow
-- `test_keywords_ai_api_integration.py` - Comprehensive API integration tests
+- `test_respan_api_integration.py` - Comprehensive API integration tests
 - `test_dataset_api_real.py` - Dataset CRUD operations with real API
 - `test_evaluator_api_real.py` - Evaluator operations with real API
 
@@ -37,7 +37,7 @@ python tests/test_real_world_dataset_workflow.py
 python -m pytest tests/test_real_world_dataset_workflow.py -v -s
 
 # All real API integration tests
-python -m pytest tests/test_keywords_ai_api_integration.py -v -s
+python -m pytest tests/test_respan_api_integration.py -v -s
 python -m pytest tests/test_dataset_api_real.py -v -s
 python -m pytest tests/test_evaluator_api_real.py -v -s
 ```
@@ -65,8 +65,8 @@ python tests/test_runner.py             # All tests
 
 Required environment variables in `.env`:
 ```bash
-KEYWORDSAI_API_KEY=your_api_key_here
-KEYWORDSAI_BASE_URL=http://localhost:8000/api
+RESPAN_API_KEY=your_api_key_here
+RESPAN_BASE_URL=http://localhost:8000/api
 ```
 
 ## 💡 **Real-World Test Case**
@@ -132,4 +132,4 @@ These are **exactly the kinds of issues** that mocked tests would never catch, b
 3. **Run full workflow test** - Validate your exact use case works end-to-end
 4. **Expand real API coverage** - Add more real-world scenarios
 
-This testing approach gives you **real confidence** that your SDK works with the actual Keywords AI service! 🎯
+This testing approach gives you **real confidence** that your SDK works with the actual Respan service! 🎯

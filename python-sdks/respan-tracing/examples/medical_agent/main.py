@@ -9,7 +9,7 @@ from Utils.Agents import (
     MultidisciplinaryTeam,
 )
 import json, os
-from keywordsai_tracing.main import KeywordsAITelemetry
+from respan_tracing.main import RespanTelemetry
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent
@@ -22,14 +22,14 @@ MEDICAL_REPORT_PATH = (
 
 # Loading API key from a dotenv file.
 load_dotenv(dotenv_path=".env", override=True)
-# Initialize KeywordsAI with proper configuration
-k_tl = KeywordsAITelemetry(
-    api_key=os.getenv("KEYWORDSAI_API_KEY"),
-    base_url=os.getenv("KEYWORDSAI_BASE_URL"),
+# Initialize Respan with proper configuration
+k_tl = RespanTelemetry(
+    api_key=os.getenv("RESPAN_API_KEY"),
+    base_url=os.getenv("RESPAN_BASE_URL"),
     log_level="DEBUG",
 )
 
-from keywordsai_tracing.decorators import workflow, task, tool
+from respan_tracing.decorators import workflow, task, tool
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1,10 +1,10 @@
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 import OpenAI from 'openai';
 
 // Initialize the SDK
-const keywordsAi = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY,
-    baseURL: process.env.KEYWORDSAI_BASE_URL,
+const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY,
+    baseURL: process.env.RESPAN_BASE_URL,
     appName: 'basic-example',
     disableBatch: true, // For development
     logLevel: 'info'
@@ -13,7 +13,7 @@ const keywordsAi = new KeywordsAITelemetry({
 // Enable OpenAI instrumentation (only if installed)
 async function enableInstrumentations() {
     try {
-        await keywordsAi.enableInstrumentation('openai');
+        await respan.enableInstrumentation('openai');
         console.log('OpenAI instrumentation enabled');
     } catch (error) {
         console.log('OpenAI instrumentation not available:', error.message);
@@ -24,7 +24,7 @@ const openai = new OpenAI();
 
 // Basic task example
 const generateResponse = async (prompt: string) => {
-    return await keywordsAi.withTask(
+    return await respan.withTask(
         { name: 'generate_response', version: 1 },
         async () => {
             const completion = await openai.chat.completions.create({
@@ -38,7 +38,7 @@ const generateResponse = async (prompt: string) => {
 
 // Workflow example
 const chatWorkflow = async (userMessage: string) => {
-    return await keywordsAi.withWorkflow(
+    return await respan.withWorkflow(
         { 
             name: 'chat_workflow', 
             version: 1,
@@ -49,7 +49,7 @@ const chatWorkflow = async (userMessage: string) => {
             const response = await generateResponse(userMessage);
             
             // Log the interaction (non-LLM task)
-            await keywordsAi.withTask(
+            await respan.withTask(
                 { name: 'log_interaction' },
                 async () => {
                     console.log(`User: ${userMessage}`);
@@ -65,14 +65,14 @@ const chatWorkflow = async (userMessage: string) => {
 
 // Agent example with tools
 const assistantAgent = async (query: string) => {
-    return await keywordsAi.withAgent(
+    return await respan.withAgent(
         { 
             name: 'assistant_agent',
             associationProperties: { 'agent_type': 'general' }
         },
         async () => {
             // Use a tool to analyze the query
-            const analysis = await keywordsAi.withTool(
+            const analysis = await respan.withTool(
                 { name: 'query_analyzer' },
                 async () => {
                     // Simple analysis tool
@@ -85,7 +85,7 @@ const assistantAgent = async (query: string) => {
             );
             
             // Generate response based on analysis
-            const response = await keywordsAi.withTool(
+            const response = await respan.withTool(
                 { name: 'response_generator' },
                 async () => {
                     const systemPrompt = analysis.intent === 'question' 
@@ -132,11 +132,11 @@ async function main() {
         console.log('\n=== All examples completed ===');
         
         // Shutdown tracing
-        await keywordsAi.shutdown();
+        await respan.shutdown();
         
     } catch (error) {
         console.error('Error:', error);
-        await keywordsAi.shutdown();
+        await respan.shutdown();
     }
 }
 
@@ -145,4 +145,4 @@ if (require.main === module) {
     main();
 }
 
-export { keywordsAi, generateResponse, chatWorkflow, assistantAgent }; 
+export { respan, generateResponse, chatWorkflow, assistantAgent }; 

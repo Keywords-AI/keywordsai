@@ -1,7 +1,7 @@
 # Multi-Exporter Implementation Log
 
 ## Overview
-Implementation of multi-exporter functionality for KeywordsAI tracing library, allowing spans to be routed to different exporters based on decorator parameters.
+Implementation of multi-exporter functionality for Respan tracing library, allowing spans to be routed to different exporters based on decorator parameters.
 
 **Status**: ✅ **COMPLETED & REFACTORED**  
 **Date**: November 2024  
@@ -30,12 +30,12 @@ After research, we found that **OpenTelemetry natively supports multiple process
 ### Core Components
 
 ```
-src/keywordsai_tracing/
+src/respan_tracing/
 ├── processors/
-│   └── base.py           # FilteringSpanProcessor, KeywordsAISpanProcessor, 
+│   └── base.py           # FilteringSpanProcessor, RespanSpanProcessor, 
 │                         # BufferingSpanProcessor, SpanBuffer
 ├── exporters/
-│   └── keywordsai.py     # KeywordsAISpanExporter
+│   └── respan.py     # RespanSpanExporter
 ├── utils/
 │   └── imports.py        # import_from_string utility
 └── core/
@@ -82,11 +82,11 @@ src/keywordsai_tracing/
 ### Step 1: Initialize Telemetry
 
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.exporters import KeywordsAISpanExporter
+from respan_tracing import RespanTelemetry
+from respan_tracing.exporters import RespanSpanExporter
 
 # Initialize WITHOUT exporters
-kai = KeywordsAITelemetry(
+kai = RespanTelemetry(
     app_name="my-app",
     api_key="your-key"
 )
@@ -97,8 +97,8 @@ kai = KeywordsAITelemetry(
 ```python
 # Processor 1: Production exporter (ALL spans)
 kai.add_processor(
-    exporter=KeywordsAISpanExporter(
-        endpoint="https://api.keywordsai.co/api",
+    exporter=RespanSpanExporter(
+        endpoint="https://api.respan.ai/api",
         api_key="prod-key"
     ),
     name="production"
@@ -176,7 +176,7 @@ kai.add_processor(
 
 ### 1. FilteringSpanProcessor (Standard OTEL Pattern)
 
-**File**: `src/keywordsai_tracing/processors/base.py`
+**File**: `src/respan_tracing/processors/base.py`
 
 ```python
 class FilteringSpanProcessor(SpanProcessor):
@@ -200,8 +200,8 @@ class FilteringSpanProcessor(SpanProcessor):
         else:
             base_processor = SimpleSpanProcessor(exporter)
         
-        # Wrap with KeywordsAI processor for metadata injection
-        self.processor = KeywordsAISpanProcessor(base_processor, span_postprocess_callback)
+        # Wrap with Respan processor for metadata injection
+        self.processor = RespanSpanProcessor(base_processor, span_postprocess_callback)
     
     def on_end(self, span: ReadableSpan):
         """Only export if filter matches"""
@@ -211,7 +211,7 @@ class FilteringSpanProcessor(SpanProcessor):
 
 ### 2. Tracer add_processor() Method
 
-**File**: `src/keywordsai_tracing/core/tracer.py`
+**File**: `src/respan_tracing/core/tracer.py`
 
 ```python
 def add_processor(
@@ -242,7 +242,7 @@ def add_processor(
 
 ### 3. Decorator Sets Span Attributes (Not Context Variables!)
 
-**File**: `src/keywordsai_tracing/decorators/base.py`
+**File**: `src/respan_tracing/decorators/base.py`
 
 ```python
 def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None, processor: Optional[str] = None):
@@ -319,7 +319,7 @@ def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None,
 - [x] Removed exporter_constants.py (not needed)
 - [x] Updated tracer to use `add_processor()` API
 - [x] Simplified decorators to use span attributes
-- [x] Updated KeywordsAITelemetry with `add_processor()` method
+- [x] Updated RespanTelemetry with `add_processor()` method
 
 ### Phase 4: Documentation & Testing ✅
 - [x] Created comprehensive example (`multi_exporter_standard_example.py`)

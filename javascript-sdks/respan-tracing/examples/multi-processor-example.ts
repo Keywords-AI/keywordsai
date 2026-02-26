@@ -8,7 +8,7 @@
  * - Send spans to multiple destinations
  */
 
-import { KeywordsAITelemetry } from "../src/index.js";
+import { RespanTelemetry } from "../src/index.js";
 import {
   SpanExporter,
   SpanExportResult,
@@ -97,30 +97,30 @@ class ConsoleExporter implements SpanExporter {
   }
 }
 
-// Initialize KeywordsAI with default processor
-const keywordsAi = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+// Initialize Respan with default processor
+const respan = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "multi-processor-example",
   logLevel: "info",
 });
 
-await keywordsAi.initialize();
+await respan.initialize();
 
 // Add debug processor - only receives spans with processors="debug"
-keywordsAi.addProcessor({
+respan.addProcessor({
   exporter: new FileExporter("./debug-spans.jsonl"),
   name: "debug",
 });
 
 // Add analytics processor - only receives spans with processors="analytics"
-keywordsAi.addProcessor({
+respan.addProcessor({
   exporter: new ConsoleExporter("Analytics"),
   name: "analytics",
 });
 
 // Add slow span processor - uses custom filter
-keywordsAi.addProcessor({
+respan.addProcessor({
   exporter: new ConsoleExporter("SlowSpans"),
   name: "slow",
   filter: (span) => {
@@ -132,9 +132,9 @@ keywordsAi.addProcessor({
 
 // Example workflows demonstrating processor routing
 
-// This goes to default KeywordsAI processor only
+// This goes to default Respan processor only
 const normalTask = async () => {
-  return await keywordsAi.withTask({ name: "normal_task" }, async () => {
+  return await respan.withTask({ name: "normal_task" }, async () => {
     console.log("Executing normal task (default processor)");
     await new Promise((resolve) => setTimeout(resolve, 50));
     return "normal result";
@@ -143,7 +143,7 @@ const normalTask = async () => {
 
 // This goes to debug processor only
 const debugTask = async () => {
-  return await keywordsAi.withTask(
+  return await respan.withTask(
     {
       name: "debug_task",
       processors: "debug", // Route to debug processor
@@ -158,7 +158,7 @@ const debugTask = async () => {
 
 // This goes to both debug and analytics processors
 const multiTask = async () => {
-  return await keywordsAi.withTask(
+  return await respan.withTask(
     {
       name: "multi_task",
       processors: ["debug", "analytics"], // Route to multiple processors
@@ -173,7 +173,7 @@ const multiTask = async () => {
 
 // This is slow and goes to slow processor (via filter)
 const slowTask = async () => {
-  return await keywordsAi.withTask(
+  return await respan.withTask(
     {
       name: "slow_task",
       processors: "slow", // Route to slow processor
@@ -188,7 +188,7 @@ const slowTask = async () => {
 
 // Main workflow that combines all tasks
 const mainWorkflow = async () => {
-  return await keywordsAi.withWorkflow(
+  return await respan.withWorkflow(
     {
       name: "multi_processor_demo",
       version: 1,
@@ -231,7 +231,7 @@ mainWorkflow()
   })
   .finally(async () => {
     // Shutdown and flush
-    await keywordsAi.shutdown();
+    await respan.shutdown();
     console.log("\n SDK shut down");
     console.log("Check debug-spans.jsonl for debug spans");
   });

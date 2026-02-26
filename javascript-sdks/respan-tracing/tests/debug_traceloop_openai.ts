@@ -1,17 +1,17 @@
-import { KeywordsAITelemetry } from "../src/main";
+import { RespanTelemetry } from "../src/main";
 import { trace } from "@opentelemetry/api";
 
 async function debugTraceloopOpenAI() {
   console.log("=== Testing Traceloop OpenAI instrumentation ===");
   
-  console.log("1. Creating KeywordsAI instance...");
-  const keywordsai = new KeywordsAITelemetry({
+  console.log("1. Creating Respan instance...");
+  const respan = new RespanTelemetry({
     apiKey: "test-api-key",
-    baseURL: "https://api.keywordsai.co",
+    baseURL: "https://api.respan.ai",
   });
 
-  console.log("2. Initializing KeywordsAI tracing...");
-  await keywordsai.initialize();
+  console.log("2. Initializing Respan tracing...");
+  await respan.initialize();
 
   console.log("3. Waiting for instrumentation setup...");
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -51,7 +51,7 @@ async function debugTraceloopOpenAI() {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   console.log("11. Shutting down...");
-  await keywordsai.shutdown();
+  await respan.shutdown();
   
   console.log("=== Test complete ===");
 }

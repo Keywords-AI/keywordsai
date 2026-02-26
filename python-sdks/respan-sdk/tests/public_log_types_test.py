@@ -2,12 +2,12 @@
 Test the new public log types to ensure they work correctly with LLM parameter mapping.
 """
 import pytest
-from keywordsai_sdk.keywordsai_types.log_types import KeywordsAILogParams, KeywordsAITextLogParams
-from keywordsai_sdk.utils.pre_processing import validate_and_separate_log_and_llm_params
+from respan_sdk.respan_types.log_types import RespanLogParams, RespanTextLogParams
+from respan_sdk.utils.pre_processing import validate_and_separate_log_and_llm_params
 
 
-def test_keywordsai_log_params_basic():
-    """Test basic KeywordsAILogParams functionality."""
+def test_respan_log_params_basic():
+    """Test basic RespanLogParams functionality."""
     params = {
         "custom_identifier": "test_123",
         "environment": "test",
@@ -15,7 +15,7 @@ def test_keywordsai_log_params_basic():
         "cache_enabled": True,
     }
     
-    log_params = KeywordsAILogParams(**params)
+    log_params = RespanLogParams(**params)
     assert log_params.custom_identifier == "test_123"
     assert log_params.environment == "test"
     assert log_params.metadata == {"key": "value"}
@@ -34,14 +34,14 @@ def test_messages_to_prompt_messages_mapping():
         "custom_identifier": "test_mapping",
     }
     
-    log_params = KeywordsAILogParams(**params)
+    log_params = RespanLogParams(**params)
     
     # The _preprocess_data_for_public method should map messages -> prompt_messages
     assert log_params.prompt_messages == messages
     
 
-def test_keywordsai_text_log_params():
-    """Test KeywordsAITextLogParams which combines public log params with LLM params."""
+def test_respan_text_log_params():
+    """Test RespanTextLogParams which combines public log params with LLM params."""
     params = {
         "model": "gpt-3.5-turbo",
         "messages": [{"role": "user", "content": "Hello"}],
@@ -50,7 +50,7 @@ def test_keywordsai_text_log_params():
         "environment": "production",
     }
     
-    text_log_params = KeywordsAITextLogParams(**params)
+    text_log_params = RespanTextLogParams(**params)
     assert text_log_params.model == "gpt-3.5-turbo"
     assert text_log_params.temperature == 0.7
     assert text_log_params.custom_identifier == "test_text_log"
@@ -93,15 +93,15 @@ def test_public_vs_internal_separation():
         "cache_hit", "cache_bit", "prompt_message_count"
     ]
     
-    log_params_fields = set(KeywordsAILogParams.__annotations__.keys())
+    log_params_fields = set(RespanLogParams.__annotations__.keys())
     
     # Check that public fields are present
     for field in public_fields:
-        assert field in log_params_fields, f"Public field '{field}' missing from KeywordsAILogParams"
+        assert field in log_params_fields, f"Public field '{field}' missing from RespanLogParams"
     
     # Check that internal-only fields are NOT present
     for field in internal_only_fields:
-        assert field not in log_params_fields, f"Internal field '{field}' should not be in KeywordsAILogParams"
+        assert field not in log_params_fields, f"Internal field '{field}' should not be in RespanLogParams"
 
 
 if __name__ == "__main__":

@@ -1,18 +1,18 @@
-# KeywordsAI Traceloop to OpenTelemetry Migration Summary
+# Respan Traceloop to OpenTelemetry Migration Summary
 
 ## 🎯 Mission Accomplished
 
-Successfully migrated the KeywordsAI tracing SDK from Traceloop dependency to direct OpenTelemetry implementation while maintaining 100% API compatibility.
+Successfully migrated the Respan tracing SDK from Traceloop dependency to direct OpenTelemetry implementation while maintaining 100% API compatibility.
 
 ## 📋 What Was Implemented
 
 ### 1. Core OpenTelemetry Infrastructure
-- **`src/keywordsai_tracing/core/tracer.py`**: Thread-safe singleton tracer with proper initialization
-- **`src/keywordsai_tracing/core/processor.py`**: Custom span processor for KeywordsAI metadata injection
-- **`src/keywordsai_tracing/core/exporter.py`**: OTLP exporter with KeywordsAI authentication
+- **`src/respan_tracing/core/tracer.py`**: Thread-safe singleton tracer with proper initialization
+- **`src/respan_tracing/core/processor.py`**: Custom span processor for Respan metadata injection
+- **`src/respan_tracing/core/exporter.py`**: OTLP exporter with Respan authentication
 
 ### 2. Enhanced Decorators
-- **`src/keywordsai_tracing/decorators/base.py`**: Unified decorator implementation supporting:
+- **`src/respan_tracing/decorators/base.py`**: Unified decorator implementation supporting:
   - Synchronous and asynchronous functions
   - Generator and async generator functions
   - Proper span lifecycle management
@@ -20,17 +20,17 @@ Successfully migrated the KeywordsAI tracing SDK from Traceloop dependency to di
   - Error handling and exception recording
 
 ### 3. Updated Context Management
-- **`src/keywordsai_tracing/contexts/span.py`**: Efficient context manager for span attributes
+- **`src/respan_tracing/contexts/span.py`**: Efficient context manager for span attributes
 - Proper token-based context attachment/detachment
 - Support for trace group identifiers and content tracing flags
 
 ### 4. Instrumentation Management
-- **`src/keywordsai_tracing/utils/instrumentation.py`**: Dynamic library detection and instrumentation
+- **`src/respan_tracing/utils/instrumentation.py`**: Dynamic library detection and instrumentation
 - Support for 20+ AI/ML libraries (OpenAI, Anthropic, LangChain, etc.)
 - Configurable instrument inclusion/exclusion
 
 ### 5. Main Telemetry Class
-- **`src/keywordsai_tracing/main.py`**: Complete rewrite of `KeywordsAITelemetry`
+- **`src/respan_tracing/main.py`**: Complete rewrite of `RespanTelemetry`
 - Direct OpenTelemetry integration
 - Improved configuration options
 - Better error handling and logging
@@ -39,7 +39,7 @@ Successfully migrated the KeywordsAI tracing SDK from Traceloop dependency to di
 
 ### Thread Safety
 ```python
-class KeywordsAITracer:
+class RespanTracer:
     _instance = None
     _lock = Lock()
     
@@ -72,7 +72,7 @@ def _create_entity_method_decorator(name, version, span_kind):
 ### Context Management
 ```python
 @contextmanager
-def keywordsai_span_attributes(**kwargs):
+def respan_span_attributes(**kwargs):
     """Efficient context value management"""
     tokens = []
     for key, value in context_values.items():
@@ -100,16 +100,16 @@ def keywordsai_span_attributes(**kwargs):
 ### API Remains Identical
 ```python
 # Before (with Traceloop)
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task
-k_tl = KeywordsAITelemetry()
+from respan_tracing import RespanTelemetry, workflow, task
+k_tl = RespanTelemetry()
 
 @workflow(name="my_workflow")
 def my_workflow():
     pass
 
 # After (with OpenTelemetry) - SAME CODE!
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task
-k_tl = KeywordsAITelemetry()
+from respan_tracing import RespanTelemetry, workflow, task
+k_tl = RespanTelemetry()
 
 @workflow(name="my_workflow")
 def my_workflow():
@@ -140,13 +140,13 @@ All tests pass successfully:
 ## 📁 Files Modified/Created
 
 ### Core Implementation
-- `src/keywordsai_tracing/core/tracer.py` (NEW)
-- `src/keywordsai_tracing/core/processor.py` (NEW)
-- `src/keywordsai_tracing/core/exporter.py` (NEW)
-- `src/keywordsai_tracing/decorators/base.py` (REWRITTEN)
-- `src/keywordsai_tracing/contexts/span.py` (UPDATED)
-- `src/keywordsai_tracing/main.py` (REWRITTEN)
-- `src/keywordsai_tracing/__init__.py` (UPDATED)
+- `src/respan_tracing/core/tracer.py` (NEW)
+- `src/respan_tracing/core/processor.py` (NEW)
+- `src/respan_tracing/core/exporter.py` (NEW)
+- `src/respan_tracing/decorators/base.py` (REWRITTEN)
+- `src/respan_tracing/contexts/span.py` (UPDATED)
+- `src/respan_tracing/main.py` (REWRITTEN)
+- `src/respan_tracing/__init__.py` (UPDATED)
 
 ### Testing & Documentation
 - `test_new_implementation.py` (NEW)
@@ -186,7 +186,7 @@ python test_new_implementation.py
 python example_usage.py
 
 # Check imports work
-python -c "from keywordsai_tracing import KeywordsAITelemetry, workflow, task; print('✅ Import successful')"
+python -c "from respan_tracing import RespanTelemetry, workflow, task; print('✅ Import successful')"
 ```
 
 ## 📞 Support
@@ -202,4 +202,4 @@ The new implementation maintains the same API surface, so existing code should w
 
 **Migration Status: ✅ COMPLETE**
 
-The KeywordsAI tracing SDK now uses direct OpenTelemetry implementation, providing better performance, maintainability, and future compatibility while preserving the familiar API that users love. 
+The Respan tracing SDK now uses direct OpenTelemetry implementation, providing better performance, maintainability, and future compatibility while preserving the familiar API that users love. 

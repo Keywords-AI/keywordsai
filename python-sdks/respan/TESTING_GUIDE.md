@@ -1,4 +1,4 @@
-# Keywords AI SDK Testing Guide
+# Respan SDK Testing Guide
 
 ## Why We Use Both Mock and Real API Tests
 
@@ -24,7 +24,7 @@
 
 ### Real API Tests (Integration Tests) - `tests/test_real_api.py`
 
-**Purpose**: Test the SDK against the actual Keywords AI API
+**Purpose**: Test the SDK against the actual Respan API
 
 **Advantages**:
 - 🌐 **Real-world validation**: Tests against actual API
@@ -51,26 +51,26 @@
 
 2. **For real API tests**, ensure your `.env` file has:
    ```bash
-   KEYWORDSAI_API_KEY=your_api_key_here
-   KEYWORDSAI_BASE_URL=http://localhost:8000/api  # or your server URL
+   RESPAN_API_KEY=your_api_key_here
+   RESPAN_BASE_URL=http://localhost:8000/api  # or your server URL
    ```
 
 ### Mock Tests (Always Available)
 
 ```bash
 # Run all mock tests
-python -m pytest tests/ -k "not test_keywords_ai_api_integration" -v
+python -m pytest tests/ -k "not test_respan_api_integration" -v
 
 # Run specific mock test suites
 python -m pytest tests/test_base_crud_api.py -v                    # Base CRUD API tests
-python -m pytest tests/test_dataset_api.py -v                     # Keywords AI Dataset API tests  
-python -m pytest tests/test_evaluator_api.py -v                   # Keywords AI Evaluator API tests
+python -m pytest tests/test_dataset_api.py -v                     # Respan Dataset API tests  
+python -m pytest tests/test_evaluator_api.py -v                   # Respan Evaluator API tests
 python -m pytest tests/test_dataset_workflow_integration.py -v    # Dataset workflow integration tests
 
 # Using the test runner
 python tests/test_runner.py unit        # Base CRUD API tests
-python tests/test_runner.py dataset     # Keywords AI Dataset API tests
-python tests/test_runner.py evaluator   # Keywords AI Evaluator API tests
+python tests/test_runner.py dataset     # Respan Dataset API tests
+python tests/test_runner.py evaluator   # Respan Evaluator API tests
 python tests/test_runner.py integration # Dataset workflow integration tests
 ```
 
@@ -81,7 +81,7 @@ python tests/test_runner.py integration # Dataset workflow integration tests
 python tests/test_api_connectivity_check.py
 
 # If server is running, run real API tests
-python -m pytest tests/test_keywords_ai_api_integration.py -v -s
+python -m pytest tests/test_respan_api_integration.py -v -s
 
 # Or using test runner
 python tests/test_runner.py real
@@ -100,8 +100,8 @@ python tests/test_runner.py coverage
 | Test Suite | Mock Tests | Real Tests | Total |
 |------------|------------|------------|-------|
 | Base CRUD API | 14 | 0 | 14 |
-| Keywords AI Dataset API | 18 | 4 | 22 |
-| Keywords AI Evaluator API | 11 | 3 | 14 |
+| Respan Dataset API | 18 | 4 | 22 |
+| Respan Evaluator API | 11 | 3 | 14 |
 | Dataset Workflow Integration | 9 | 3 | 12 |
 | **Total** | **52** | **10** | **62** |
 
@@ -112,13 +112,13 @@ python tests/test_runner.py coverage
    - CRUD operations interface
    - Client initialization
 
-2. **Keywords AI Dataset API Tests** (`test_dataset_api.py`)
+2. **Respan Dataset API Tests** (`test_dataset_api.py`)
    - Dataset CRUD operations
    - Log management
    - Evaluation functionality
    - Complete workflow simulation
 
-3. **Keywords AI Evaluator API Tests** (`test_evaluator_api.py`)
+3. **Respan Evaluator API Tests** (`test_evaluator_api.py`)
    - Evaluator listing and retrieval
    - Filtering and pagination
    - Error handling
@@ -149,7 +149,7 @@ python tests/test_runner.py coverage
 
 For real API tests to work, you need:
 
-1. **Running Keywords AI server** on the configured URL
+1. **Running Respan server** on the configured URL
 2. **Valid API key** with appropriate permissions
 3. **Network connectivity** to the server
 

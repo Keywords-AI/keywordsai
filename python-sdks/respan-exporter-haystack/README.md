@@ -39,7 +39,7 @@ pip install respan-exporter-haystack
 
 ### 1. Get API Keys
 
-- [Respan API Key](https://platform.respan.co/)
+- [Respan API Key](https://platform.respan.ai/)
 - OpenAI API Key (for examples)
 
 ### 2. Set Environment Variables
@@ -62,22 +62,16 @@ export HAYSTACK_CONTENT_TRACING_ENABLED="true"  # For tracing mode
 import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
-from respan_exporter_haystack.gateway import RespanGenerator
+from respan_exporter_haystack import RespanGenerator
 
 # Create pipeline
 pipeline = Pipeline()
-pipeline.add_component(
-    name="prompt",
-    instance=PromptBuilder(template="Tell me about {{topic}}."),
-)
-pipeline.add_component(
-    name="llm",
-    instance=RespanGenerator(
+pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
+pipeline.add_component("llm", RespanGenerator(
     model="gpt-4o-mini",
     api_key=os.getenv("RESPAN_API_KEY")
-),
-)
-pipeline.connect(sender="prompt", receiver="llm")
+))
+pipeline.connect("prompt", "llm")
 
 # Run
 result = pipeline.run({"prompt": {"topic": "machine learning"}})
@@ -97,20 +91,17 @@ print(result["llm"]["replies"][0])
 ```python
 import os
 from haystack import Pipeline
-from respan_exporter_haystack.gateway import RespanGenerator
+from respan_exporter_haystack import RespanGenerator
 
-# Create prompt on platform: https://platform.respan.co/platform/prompts
+# Create prompt on platform: https://platform.respan.ai/platform/prompts
 # Get your prompt_id from the platform
 
 # Create pipeline with platform prompt (model config comes from platform)
 pipeline = Pipeline()
-pipeline.add_component(
-    name="llm",
-    instance=RespanGenerator(
+pipeline.add_component("llm", RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",  # Your prompt ID
     api_key=os.getenv("RESPAN_API_KEY")
-),
-)
+))
 
 # Run with prompt variables
 result = pipeline.run({
@@ -146,19 +137,16 @@ import os
 from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
 from haystack.components.generators import OpenAIGenerator
-from respan_exporter_haystack.connector import RespanConnector
+from respan_exporter_haystack import RespanConnector
 
 os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
 
 # Create pipeline with tracing
 pipeline = Pipeline()
-pipeline.add_component(name="tracer", instance=RespanConnector(name="My Workflow"))
-pipeline.add_component(
-    name="prompt",
-    instance=PromptBuilder(template="Tell me about {{topic}}."),
-)
-pipeline.add_component(name="llm", instance=OpenAIGenerator(model="gpt-4o-mini"))
-pipeline.connect(sender="prompt", receiver="llm")
+pipeline.add_component("tracer", RespanConnector("My Workflow"))
+pipeline.add_component("prompt", PromptBuilder(template="Tell me about {{topic}}."))
+pipeline.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))
+pipeline.connect("prompt", "llm")
 
 # Run
 result = pipeline.run({"prompt": {"topic": "artificial intelligence"}})
@@ -183,24 +171,17 @@ print(f"\nTrace URL: {result['tracer']['trace_url']}")
 ```python
 import os
 from haystack import Pipeline
-from respan_exporter_haystack.connector import RespanConnector
-from respan_exporter_haystack.gateway import RespanGenerator
+from respan_exporter_haystack import RespanConnector, RespanGenerator
 
 os.environ["HAYSTACK_CONTENT_TRACING_ENABLED"] = "true"
 
 # Create pipeline with gateway, prompt management, and tracing
 pipeline = Pipeline()
-pipeline.add_component(
-    name="tracer",
-    instance=RespanConnector(name="Full Stack: Gateway + Prompt + Tracing"),
-)
-pipeline.add_component(
-    name="llm",
-    instance=RespanGenerator(
+pipeline.add_component("tracer", RespanConnector("Full Stack: Gateway + Prompt + Tracing"))
+pipeline.add_component("llm", RespanGenerator(
     prompt_id="1210b368ce2f4e5599d307bc591d9b7a",  # Platform-managed prompt
     api_key=os.getenv("RESPAN_API_KEY")
-),
-)
+))
 
 # Run with prompt variables
 result = pipeline.run({
@@ -252,7 +233,7 @@ For LLM spans, additionally:
 
 All logs and traces appear in your Respan dashboard:
 
-**Dashboard:** https://platform.respan.co/logs
+**Dashboard:** https://platform.respan.ai/logs
 
 - **Logs view:** Individual LLM calls
 - **Traces view:** Full pipeline workflows with tree visualization
@@ -268,7 +249,7 @@ Gateway component for LLM calls.
 ```python
 RespanGenerator(
     model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini") - optional if using prompt_id
-    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY)
+    api_key: Optional[str] = None,       # Respan API key (defaults to RESPAN_API_KEY env var)
     base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
     prompt_id: Optional[str] = None,     # Platform prompt ID for prompt management
     generation_kwargs: Optional[Dict] = None
@@ -288,8 +269,8 @@ Tracing component for workflow monitoring.
 ```python
 RespanConnector(
     name: str,                           # Pipeline name for dashboard
-    api_key: Optional[str] = None,       # API key (defaults to RESPAN_API_KEY)
-    base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai/api)
+    api_key: Optional[str] = None,       # Respan API key (defaults to RESPAN_API_KEY env var)
+    base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
     metadata: Optional[Dict] = None      # Custom metadata for all spans
 )
 ```
@@ -337,7 +318,7 @@ python examples/combined_example.py
 
 - **Documentation:** https://docs.respan.ai/
 - **Dashboard:** https://platform.respan.ai/
-- **Issues:** [GitHub Issues](https://github.com/respan-ai/respan-sdks/issues)
+- **Issues:** [GitHub Issues](https://github.com/Repsan/respan/issues)
 
 ---
 

@@ -1,16 +1,16 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 import { trace, context } from '@opentelemetry/api';
 
 async function debugSpanCreation() {
   console.log('=== Span Creation Debug ===');
   
-  const keywordsAI = new KeywordsAITelemetry({
+  const respan = new RespanTelemetry({
     apiKey: 'test-key',
     baseURL: 'http://localhost:3000/api/otel/v1/traces'
   });
 
-  await keywordsAI.initialize();
-  console.log('KeywordsAI initialized');
+  await respan.initialize();
+  console.log('Respan initialized');
 
   // Get the tracer
   const tracer = trace.getTracer('test-tracer');
@@ -59,8 +59,8 @@ async function debugSpanCreation() {
   console.log('Waiting for traces to be sent...');
   await new Promise(resolve => setTimeout(resolve, 2000));
 
-  await keywordsAI.shutdown();
-  console.log('KeywordsAI shutdown complete');
+  await respan.shutdown();
+  console.log('Respan shutdown complete');
 }
 
 debugSpanCreation().catch(console.error); 

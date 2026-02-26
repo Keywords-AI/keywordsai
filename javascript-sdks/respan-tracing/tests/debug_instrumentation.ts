@@ -1,16 +1,16 @@
-import { KeywordsAITelemetry } from '../src/main';
+import { RespanTelemetry } from '../src/main';
 
 async function debugInstrumentation() {
   console.log('=== Instrumentation Debug ===');
   
-  // Initialize KeywordsAI
-  const keywordsAI = new KeywordsAITelemetry({
-    keywordsaiApiKey: 'test-key',
-    keywordsaiBaseUrl: 'http://localhost:8000',
+  // Initialize Respan
+  const respan = new RespanTelemetry({
+    respanApiKey: 'test-key',
+    respanBaseUrl: 'http://localhost:8000',
   });
   
-  await keywordsAI.initialize();
-  console.log('KeywordsAI initialized');
+  await respan.initialize();
+  console.log('Respan initialized');
   
   // Import OpenAI after initialization
   const { default: OpenAI } = await import('openai');
@@ -41,8 +41,8 @@ async function debugInstrumentation() {
   console.log('Has __original property:', '__original' in createMethod);
   console.log('Has __wrapped property:', '__wrapped' in createMethod);
   
-  await keywordsAI.shutdown();
-  console.log('\nKeywordsAI shutdown complete');
+  await respan.shutdown();
+  console.log('\nRespan shutdown complete');
 }
 
 debugInstrumentation().catch(console.error); 

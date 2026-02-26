@@ -1,5 +1,5 @@
 """
-Keywords AI Prompt API Workflow Example
+Respan Prompt API Workflow Example
 
 This example demonstrates how to use the PromptAPI to:
 1. Create a new prompt
@@ -19,8 +19,8 @@ load_dotenv(override=True)
 import asyncio
 import os
 from datetime import datetime, timezone
-from keywordsai.prompts.api import PromptAPI
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+from respan.prompts.api import PromptAPI
+from respan_sdk.respan_types.prompt_types import Prompt, PromptVersion
 
 
 async def prompt_workflow_example():
@@ -31,17 +31,17 @@ async def prompt_workflow_example():
     """
 
     # Initialize the API client using dotenv
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL")
     
     if not api_key or not base_url:
         print("❌ Missing environment variables!")
-        print("Please set KEYWORDSAI_API_KEY and KEYWORDSAI_BASE_URL in your .env file")
+        print("Please set RESPAN_API_KEY and RESPAN_BASE_URL in your .env file")
         return
 
     client = PromptAPI(api_key=api_key, base_url=base_url)
 
-    print("🚀 Keywords AI Prompt API Workflow Example")
+    print("🚀 Respan Prompt API Workflow Example")
     print("=" * 50)
     print(f"🔑 API Key: {api_key[:10]}...{api_key[-4:] if len(api_key) > 14 else api_key}")
     print(f"🌐 Base URL: {base_url}")
@@ -259,7 +259,7 @@ async def prompt_workflow_example():
         print("💡 Make sure you have:")
         print("   - Valid API key")
         print("   - Correct base URL")
-        print("   - Keywords AI server running (if using local)")
+        print("   - Respan server running (if using local)")
 
 
 def sync_prompt_example():
@@ -270,12 +270,12 @@ def sync_prompt_example():
     print("=" * 40)
 
     # Initialize client using dotenv
-    api_key = os.getenv("KEYWORDSAI_API_KEY")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL")
+    api_key = os.getenv("RESPAN_API_KEY")
+    base_url = os.getenv("RESPAN_BASE_URL")
     
     if not api_key or not base_url:
         print("❌ Missing environment variables!")
-        print("Please set KEYWORDSAI_API_KEY and KEYWORDSAI_BASE_URL in your .env file")
+        print("Please set RESPAN_API_KEY and RESPAN_BASE_URL in your .env file")
         return
         
     client = PromptAPI(api_key=api_key, base_url=base_url)
@@ -322,10 +322,10 @@ def sync_prompt_example():
 
 
 if __name__ == "__main__":
-    print("Keywords AI Prompt API Examples")
+    print("Respan Prompt API Examples")
     print("================================")
     print()
-    print("This example demonstrates the Keywords AI Prompt API.")
+    print("This example demonstrates the Respan Prompt API.")
     print("Please update the API key and base URL before running.")
     print()
 
@@ -339,14 +339,14 @@ if __name__ == "__main__":
 
     print("\n🎉 All examples completed!")
     print("\nFor more information, check out:")
-    print("- Keywords AI Documentation: https://docs.keywordsai.co")
-    print("- API Reference: https://docs.keywordsai.co/api")
-    print("- Testing Guide: https://github.com/Keywords-AI/keywordsai/blob/main/python-sdks/keywordsai/TESTING_STRATEGY.md")
+    print("- Respan Documentation: https://docs.respan.ai")
+    print("- API Reference: https://docs.respan.ai/api")
+    print("- Testing Guide: https://github.com/Repsan/respan/blob/main/python-sdks/respan/TESTING_STRATEGY.md")
 
 
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt
+from respan_sdk.respan_types.prompt_types import Prompt
 
-prompt_api = PromptAPI(api_key=os.getenv("KEYWORDSAI_API_KEY"), base_url=os.getenv("KEYWORDSAI_BASE_URL"))
+prompt_api = PromptAPI(api_key=os.getenv("RESPAN_API_KEY"), base_url=os.getenv("RESPAN_BASE_URL"))
 
 prompt_api.create(
     create_data=Prompt(

@@ -1,7 +1,7 @@
-"""Keywords AI Instrumentation for Langfuse.
+"""Respan Instrumentation for Langfuse.
 
 This package provides OTEL-compliant automatic instrumentation for Langfuse 
-to send traces to Keywords AI.
+to send traces to Respan.
 
 Usage:
     # IMPORTANT: Instrument BEFORE importing Langfuse
@@ -14,7 +14,7 @@ Usage:
     
     @observe()
     def my_function():
-        return "Traced to Keywords AI!"
+        return "Traced to Respan!"
 
 Auto-instrumentation:
     Set RESPAN_API_KEY environment variable, then:

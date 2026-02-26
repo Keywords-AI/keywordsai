@@ -26,7 +26,7 @@ Enhanced the JavaScript SDK to achieve feature parity with the Python Tracing SD
 
 **Capabilities**:
 ```typescript
-import { getClient } from '@keywordsai/tracing';
+import { getClient } from '@respan/tracing';
 
 const client = getClient();
 
@@ -34,9 +34,9 @@ const client = getClient();
 const traceId = client.getCurrentTraceId();
 const spanId = client.getCurrentSpanId();
 
-// Update spans with KeywordsAI parameters
+// Update spans with Respan parameters
 client.updateCurrentSpan({
-  keywordsaiParams: {
+  respanParams: {
     customerIdentifier: 'user-123',
     traceGroupIdentifier: 'experiment-456',
     metadata: { version: '1.0', environment: 'production' }
@@ -61,7 +61,7 @@ await client.flush();
 
 **Test Results**: ✅ 8/8 tests passed
 - ✅ Get trace and span IDs
-- ✅ Update span with KeywordsAI params
+- ✅ Update span with Respan params
 - ✅ Add events
 - ✅ Record exceptions
 - ✅ Check recording status
@@ -77,9 +77,9 @@ await client.flush();
 
 **Capabilities**:
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 const manager = kai.getSpanBufferManager();
 
 // Create buffer (no auto-export)
@@ -120,9 +120,9 @@ if (shouldExport) {
 
 **Capabilities**:
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 
 // Add processors for routing
 kai.addProcessor({
@@ -152,7 +152,7 @@ await kai.withTask(
 **Test Results**: ✅ 7/7 tests passed - Processors correctly receive routed spans
 
 **Backward Compatibility**: ✅ Default processor automatically set up
-- Spans without `processors` attribute → Default KeywordsAI processor
+- Spans without `processors` attribute → Default Respan processor
 - Spans with `processors: "name"` → Routed to named processor(s)
 - No breaking changes - existing code works without modification
 
@@ -162,7 +162,7 @@ await kai.withTask(
 
 **Resource Attributes**:
 ```typescript
-const kai = new KeywordsAITelemetry({
+const kai = new RespanTelemetry({
   apiKey: 'your-key',
   resourceAttributes: {
     environment: 'production',
@@ -174,7 +174,7 @@ const kai = new KeywordsAITelemetry({
 
 **Span Postprocessing Callback**:
 ```typescript
-const kai = new KeywordsAITelemetry({
+const kai = new RespanTelemetry({
   apiKey: 'your-key',
   spanPostprocessCallback: (span) => {
     console.log('Processing span:', span.name);
@@ -222,7 +222,7 @@ node --loader ts-node/esm tests/test_client_api.ts
 
 **Results**: ✅ 8/8 passed (100%)
 - Test 1: Get Trace and Span IDs ✅
-- Test 2: Update Span with KeywordsAI Parameters ✅
+- Test 2: Update Span with Respan Parameters ✅
 - Test 3: Add Events to Span ✅
 - Test 4: Record Exceptions ✅
 - Test 5: Check Recording Status ✅
@@ -267,10 +267,10 @@ node --loader ts-node/esm tests/test_multi_processor.ts
 
 ### Example 1: Span Management
 ```typescript
-import { KeywordsAITelemetry, getClient } from '@keywordsai/tracing';
+import { RespanTelemetry, getClient } from '@respan/tracing';
 import OpenAI from 'openai';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 await kai.initialize();
 
 const openai = new OpenAI();
@@ -282,9 +282,9 @@ await kai.withTask({ name: 'process_data' }, async () => {
   const traceId = client.getCurrentTraceId();
   console.log(`Trace ID: ${traceId}`);
   
-  // Update with KeywordsAI params
+  // Update with Respan params
   client.updateCurrentSpan({
-    keywordsaiParams: {
+    respanParams: {
       customerIdentifier: 'user-123',
       traceGroupIdentifier: 'data-pipeline'
     }
@@ -309,9 +309,9 @@ await kai.withTask({ name: 'process_data' }, async () => {
 
 ### Example 2: Span Buffering
 ```typescript
-import { KeywordsAITelemetry } from '@keywordsai/tracing';
+import { RespanTelemetry } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 const manager = kai.getSpanBufferManager();
 
 // Phase 1: Collect spans during execution
@@ -331,7 +331,7 @@ const isPremiumUser = true; // Your business logic
 
 if (allSuccessful && isPremiumUser) {
   await manager.processSpans(spans);
-  console.log('Spans exported to KeywordsAI');
+  console.log('Spans exported to Respan');
 } else {
   buffer.clearSpans();
   console.log('Spans discarded');
@@ -367,7 +367,7 @@ if (allSuccessful && isPremiumUser) {
 | Get buffered spans | ✅ | ✅ | Complete & Tested |
 | Process spans manually | ✅ | ✅ | Complete & Tested |
 | Transportable spans | ✅ | ✅ | Complete & Tested |
-| **KeywordsAI Parameters** |
+| **Respan Parameters** |
 | customer_identifier | ✅ | ✅ | Complete & Tested |
 | trace_group_identifier | ✅ | ✅ | Complete & Tested |
 | Custom metadata | ✅ | ✅ | Complete & Tested |
@@ -414,7 +414,7 @@ if (allSuccessful && isPremiumUser) {
 2. **README Update** (1-2 hours)
    - Document `getClient()` API
    - Document span buffering
-   - Document KeywordsAI parameters
+   - Document Respan parameters
    - Add examples
 
 ### Short Term (Important)
@@ -457,15 +457,15 @@ Existing code will continue to work without modifications.
 
 ```typescript
 // Before (still works)
-const kai = new KeywordsAITelemetry({ apiKey: 'your-key' });
+const kai = new RespanTelemetry({ apiKey: 'your-key' });
 await kai.withTask({ name: 'task' }, async () => {
   // Task logic
 });
 
 // After (with new features - optional)
-import { KeywordsAITelemetry, getClient } from '@keywordsai/tracing';
+import { RespanTelemetry, getClient } from '@respan/tracing';
 
-const kai = new KeywordsAITelemetry({
+const kai = new RespanTelemetry({
   apiKey: 'your-key',
   resourceAttributes: { environment: 'production' }
 });
@@ -473,7 +473,7 @@ const kai = new KeywordsAITelemetry({
 await kai.withTask({ name: 'task' }, async () => {
   const client = getClient();
   client.updateCurrentSpan({
-    keywordsaiParams: { customerIdentifier: 'user-123' }
+    respanParams: { customerIdentifier: 'user-123' }
   });
   client.addEvent('processing_started');
 });
@@ -503,10 +503,10 @@ await kai.withTask({ name: 'task' }, async () => {
 ## Environment Variables
 
 Supported environment variables:
-- `KEYWORDSAI_API_KEY` - API key
-- `KEYWORDSAI_BASE_URL` - Base URL (default: https://api.keywordsai.co)
-- `KEYWORDSAI_APP_NAME` - Application name
-- `KEYWORDSAI_TRACE_CONTENT` - Enable/disable content tracing (default: true)
+- `RESPAN_API_KEY` - API key
+- `RESPAN_BASE_URL` - Base URL (default: https://api.respan.ai)
+- `RESPAN_APP_NAME` - Application name
+- `RESPAN_TRACE_CONTENT` - Enable/disable content tracing (default: true)
 
 ---
 
@@ -581,7 +581,7 @@ npm run build
 
 **Date**: December 22, 2025  
 **Error**: `fetch failed` with cause `Error: write EPIPE`  
-**Component**: `@keywordsai/exporter-vercel`
+**Component**: `@respan/exporter-vercel`
 
 #### What is EPIPE?
 
@@ -589,7 +589,7 @@ npm run build
 
 **Error Example**:
 ```
-[KeywordsAIExporter] Error sending to Keywords TypeError: fetch failed
+[RespanExporter] Error sending to Respan TypeError: fetch failed
   cause: Error: write EPIPE
     errno: -32
     code: 'EPIPE'
@@ -602,7 +602,7 @@ npm run build
 
 1. **Server Not Running** (Most Common)
    - The endpoint `http://localhost:8000/api/integrations/v1/traces/ingest` is not accessible
-   - Keywords AI development server is not running
+   - Respan development server is not running
    - **Solution**: Start the server or use production URL
 
 2. **Request Too Large**
@@ -621,7 +621,7 @@ npm run build
 
 5. **Invalid API Key**
    - Server rejects and closes connection
-   - **Solution**: Verify `KEYWORDSAI_API_KEY_TEST` is valid
+   - **Solution**: Verify `RESPAN_API_KEY_TEST` is valid
 
 #### Quick Fixes
 
@@ -637,19 +637,19 @@ curl http://localhost:8000
 **Fix 2: Use Production URL**
 ```typescript
 // Instead of localhost
-new KeywordsAIExporter({
+new RespanExporter({
   debug: true,
-  url: "https://api.keywordsai.co/api/integrations/v1/traces/ingest",
-  apiKey: process.env.KEYWORDSAI_API_KEY,
+  url: "https://api.respan.ai/api/integrations/v1/traces/ingest",
+  apiKey: process.env.RESPAN_API_KEY,
 })
 ```
 
 **Fix 3: Reduce Batch Size**
 ```typescript
-new KeywordsAIExporter({
+new RespanExporter({
   debug: true,
   url: "http://localhost:8000/api/integrations/v1/traces/ingest",
-  apiKey: process.env.KEYWORDSAI_API_KEY_TEST,
+  apiKey: process.env.RESPAN_API_KEY_TEST,
   maxQueueSize: 100,
   maxExportBatchSize: 30,  // Smaller batches
 })
@@ -679,7 +679,7 @@ try {
 
 2. **Verify environment variables**:
    ```bash
-   echo $KEYWORDSAI_API_KEY_TEST
+   echo $RESPAN_API_KEY_TEST
    ```
 
 3. **Test with minimal payload**:
@@ -688,7 +688,7 @@ try {
      method: 'POST',
      headers: {
        'Content-Type': 'application/json',
-       'Authorization': `Bearer ${process.env.KEYWORDSAI_API_KEY_TEST}`,
+       'Authorization': `Bearer ${process.env.RESPAN_API_KEY_TEST}`,
      },
      body: JSON.stringify({ test: 'minimal' })
    });

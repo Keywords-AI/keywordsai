@@ -1,4 +1,4 @@
-# KeywordsAI OpenTelemetry Implementation Guide
+# Respan OpenTelemetry Implementation Guide
 
 This document explains the new direct OpenTelemetry implementation that replaces the Traceloop SDK dependency.
 
@@ -11,11 +11,11 @@ The new implementation provides the same functionality as Traceloop but with dir
 ### Core Components
 
 ```
-src/keywordsai_tracing/
+src/respan_tracing/
 ├── core/                    # Core OpenTelemetry implementation
 │   ├── tracer.py           # Main tracer class (replaces Traceloop)
 │   ├── processor.py        # Custom span processor for metadata
-│   └── exporter.py         # KeywordsAI-specific OTLP exporter
+│   └── exporter.py         # Respan-specific OTLP exporter
 ├── decorators/             # Function/class decorators
 │   ├── base.py            # Base decorator implementation
 │   └── __init__.py        # Workflow, task, agent, tool decorators
@@ -25,26 +25,26 @@ src/keywordsai_tracing/
 │   ├── notebook.py       # Notebook detection
 │   └── instrumentation.py # Library instrumentation
 ├── instruments.py         # Instrumentation enum
-└── main.py               # Main KeywordsAITelemetry class
+└── main.py               # Main RespanTelemetry class
 ```
 
 ## 🔄 Migration from Traceloop
 
 ### Before (with Traceloop)
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 from traceloop.sdk import Traceloop
 
 # Traceloop was initialized internally
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 ```
 
 ### After (Direct OpenTelemetry)
 ```python
-from keywordsai_tracing import KeywordsAITelemetry
+from respan_tracing import RespanTelemetry
 
 # Same interface, but now uses direct OpenTelemetry
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 ```
 
 **No code changes required!** The API remains the same.
@@ -58,7 +58,7 @@ k_tl = KeywordsAITelemetry()
 
 ### Our Implementation
 ```python
-class KeywordsAITracer:
+class RespanTracer:
     _instance = None
     _lock = Lock()
     
@@ -87,28 +87,28 @@ class KeywordsAITracer:
 ```python
 def _setup_span(entity_name: str, span_kind: str, version: Optional[int] = None):
     """Setup OpenTelemetry span and context"""
-    tracer = KeywordsAITracer().get_tracer()
+    tracer = RespanTracer().get_tracer()
     span = tracer.start_span(f"{entity_name}.{span_kind}")
     
-    # Set KeywordsAI-specific attributes
+    # Set Respan-specific attributes
     span.set_attribute(SpanAttributes.TRACELOOP_SPAN_KIND, tlp_span_kind.value)
     span.set_attribute(SpanAttributes.TRACELOOP_ENTITY_NAME, entity_name)
 ```
 
 ### 2. Metadata Injection
 ```python
-class KeywordsAISpanProcessor:
+class RespanSpanProcessor:
     def on_start(self, span, parent_context):
-        """Add KeywordsAI metadata to spans"""
+        """Add Respan metadata to spans"""
         # Add workflow name, entity path, trace group ID, etc.
-        workflow_name = context_api.get_value("keywordsai_workflow_name")
+        workflow_name = context_api.get_value("respan_workflow_name")
         if workflow_name:
             span.set_attribute(SpanAttributes.TRACELOOP_WORKFLOW_NAME, workflow_name)
 ```
 
-### 3. Export to KeywordsAI
+### 3. Export to Respan
 ```python
-class KeywordsAISpanExporter:
+class RespanSpanExporter:
     def __init__(self, endpoint, api_key, headers):
         # Build proper OTLP endpoint
         traces_endpoint = self._build_traces_endpoint(endpoint)
@@ -200,19 +200,19 @@ def _create_entity_method_decorator(name, version, span_kind):
 
 ### Environment Variables
 ```bash
-KEYWORDSAI_API_KEY=your-api-key
-KEYWORDSAI_BASE_URL=https://api.keywordsai.co/api
-KEYWORDSAI_DISABLE_BATCH=false
+RESPAN_API_KEY=your-api-key
+RESPAN_BASE_URL=https://api.respan.ai/api
+RESPAN_DISABLE_BATCH=false
 ```
 
 ### Programmatic Configuration
 ```python
-from keywordsai_tracing import KeywordsAITelemetry, Instruments
+from respan_tracing import RespanTelemetry, Instruments
 
-telemetry = KeywordsAITelemetry(
+telemetry = RespanTelemetry(
     app_name="my-app",
     api_key="your-key",
-    base_url="https://api.keywordsai.co/api",
+    base_url="https://api.respan.ai/api",
     disable_batch=False,
     instruments={Instruments.OPENAI, Instruments.ANTHROPIC},
     block_instruments={Instruments.REDIS, Instruments.REQUESTS},
@@ -239,7 +239,7 @@ else:
 ### 3. Efficient Context Management
 ```python
 @contextmanager
-def keywordsai_span_attributes(**kwargs):
+def respan_span_attributes(**kwargs):
     """Efficient context value management"""
     tokens = []
     for key, value in context_values.items():
@@ -277,7 +277,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Now you'll see detailed OpenTelemetry logs
-telemetry = KeywordsAITelemetry()
+telemetry = RespanTelemetry()
 ```
 
 ### Verify Spans are Created
@@ -307,15 +307,15 @@ The new implementation maintains 100% API compatibility:
 
 ```python
 # All existing code continues to work unchanged
-from keywordsai_tracing import KeywordsAITelemetry, workflow, task
-from keywordsai_tracing.contexts.span import keywordsai_span_attributes
+from respan_tracing import RespanTelemetry, workflow, task
+from respan_tracing.contexts.span import respan_span_attributes
 
-k_tl = KeywordsAITelemetry()
+k_tl = RespanTelemetry()
 
 @workflow(name="my_workflow")
 def my_workflow():
-    with keywordsai_span_attributes(
-        keywordsai_params={"trace_group_identifier": "test"}
+    with respan_span_attributes(
+        respan_params={"trace_group_identifier": "test"}
     ):
         # Your existing code here
         pass
@@ -329,4 +329,4 @@ def my_workflow():
 4. **Update documentation** to reflect the new implementation
 5. **Consider additional OpenTelemetry features** now available
 
-The new implementation provides a solid foundation for future enhancements while maintaining the familiar KeywordsAI API. 
+The new implementation provides a solid foundation for future enhancements while maintaining the familiar Respan API. 

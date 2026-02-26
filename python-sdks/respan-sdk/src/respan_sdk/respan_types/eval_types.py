@@ -48,7 +48,7 @@ FieldInputType = Literal[
 
 
 class EvalInputs(TypedDict, total=False):
-    # Default inputs, automatically populated by Keywords AI
+    # Default inputs, automatically populated by Respan
     llm_input: str = (
         ""  # Reserved key, automatically populated by the `messages` parameter
     )

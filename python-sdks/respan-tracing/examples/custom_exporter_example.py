@@ -1,5 +1,5 @@
 """
-Example: Using Custom Exporter with KeywordsAI Telemetry
+Example: Using Custom Exporter with Respan Telemetry
 
 This example demonstrates how to create and use a custom exporter
 instead of the default HTTP OTLP exporter. This is useful for:
@@ -10,14 +10,14 @@ instead of the default HTTP OTLP exporter. This is useful for:
 """
 
 import json
-from keywordsai_tracing import KeywordsAITelemetry, Instruments
+from respan_tracing import RespanTelemetry, Instruments
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 
 class CustomFileExporter(SpanExporter):
     """
     Custom exporter that writes spans to a JSON file
-    instead of sending them to KeywordsAI API
+    instead of sending them to Respan API
     """
     
     def __init__(self, filename: str = "spans.jsonl"):
@@ -118,7 +118,7 @@ def example_file_exporter():
     file_exporter = CustomFileExporter("my_traces.jsonl")
     
     # Initialize telemetry with custom exporter
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="file-export-example",
         custom_exporter=file_exporter,
         block_instruments={Instruments.THREADING},  # Simplify for example  # Simplify for example
@@ -153,7 +153,7 @@ def example_console_exporter():
     
     # Initialize telemetry with custom exporter
     # Note: is_batching_enabled=False ensures immediate export for demonstration
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="console-export-example",
         custom_exporter=console_exporter,
         is_batching_enabled=False,  # Export immediately for demo
@@ -202,7 +202,7 @@ def example_custom_backend():
             return True
     
     # Initialize with custom backend exporter
-    telemetry = KeywordsAITelemetry(
+    telemetry = RespanTelemetry(
         app_name="custom-backend-example",
         custom_exporter=CustomBackendExporter(),
         block_instruments={Instruments.THREADING},  # Simplify for example

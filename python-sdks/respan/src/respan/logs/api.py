@@ -1,5 +1,5 @@
 """
-Keywords AI Logs APIs
+Respan Logs APIs
 
 This module provides functionality for managing logs, including:
 - Creating logs 
@@ -25,9 +25,9 @@ from respan.constants.log_constants import (
 
 class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
     """
-    Unified Log API client for Keywords AI with both sync and async methods.
+    Unified Log API client for Respan with both sync and async methods.
 
-    This class provides functionality for managing logs in Keywords AI,
+    This class provides functionality for managing logs in Respan,
     including creating logs, retrieving individual logs, and listing logs
     with filtering and pagination.
 
@@ -38,9 +38,9 @@ class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
         - Full log details in responses
 
     Args:
-        api_key (str): Your Keywords AI API key. Required for authentication.
-        base_url (str, optional): Base URL for the Keywords AI API.
-            Defaults to the standard Keywords AI API endpoint.
+        api_key (str): Your Respan API key. Required for authentication.
+        base_url (str, optional): Base URL for the Respan API.
+            Defaults to the standard Respan API endpoint.
 
     Example (Synchronous):
         >>> from respan.logs.api import LogAPI
@@ -93,7 +93,7 @@ class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
         Initialize the Log API client.
 
         Args:
-            api_key (str, optional): Your Keywords AI API key for authentication.
+            api_key (str, optional): Your Respan API key for authentication.
                 If not provided, reads from RESPAN_API_KEY environment variable.
             base_url (str, optional): Custom base URL for the API. If not provided,
                 reads from RESPAN_BASE_URL environment variable or uses default.
@@ -105,7 +105,7 @@ class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
         """
         Create a new log with specified parameters (asynchronous).
 
-        This method creates a new log entry in Keywords AI with the provided data.
+        This method creates a new log entry in Respan with the provided data.
         The log can include various parameters like model, input/output, status,
         and metadata.
 
@@ -343,7 +343,7 @@ def create_log_client(api_key: str = None, base_url: str = None) -> LogAPI:
     Create a log API client
 
     Args:
-        api_key: Keywords AI API key (optional, reads from RESPAN_API_KEY env var if not provided)
+        api_key: Respan API key (optional, reads from RESPAN_API_KEY env var if not provided)
         base_url: Base URL for the API (optional, reads from RESPAN_BASE_URL env var or uses default)
 
     Returns:

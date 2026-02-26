@@ -2,7 +2,7 @@
 """
 Real World Dataset Workflow Integration Test
 
-This comprehensive test demonstrates a complete dataset workflow in Keywords AI,
+This comprehensive test demonstrates a complete dataset workflow in Respan,
 simulating how a real user would interact with the SDK to analyze production logs.
 
 🎯 WORKFLOW OVERVIEW:
@@ -52,8 +52,8 @@ This test walks through a typical data scientist/ML engineer workflow:
 
 🌍 ENVIRONMENT SETUP:
 Required environment variables:
-- KEYWORDSAI_API_KEY: Your Keywords AI API key
-- KEYWORDSAI_BASE_URL: API endpoint (defaults to localhost:8000 for development)
+- RESPAN_API_KEY: Your Respan API key
+- RESPAN_BASE_URL: API endpoint (defaults to localhost:8000 for development)
 - AUTO_CLEANUP_ON_ERROR: Set to "true" to auto-delete datasets on errors
 
 📖 USAGE EXAMPLES:
@@ -77,9 +77,9 @@ This test serves as both a validation tool and a comprehensive tutorial showing:
 - Real-world SDK usage patterns
 
 🔗 RELATED DOCUMENTATION:
-- Dataset API: src/keywordsai/datasets/api.py
-- Evaluator API: src/keywordsai/evaluators/api.py
-- Type definitions: src/keywordsai/types/
+- Dataset API: src/respan/datasets/api.py
+- Evaluator API: src/respan/evaluators/api.py
+- Type definitions: src/respan/types/
 """
 
 import asyncio
@@ -91,10 +91,10 @@ import pytest
 
 load_dotenv(override=True)
 
-from keywordsai.datasets.api import DatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI
-from keywordsai.logs.api import LogAPI
-from keywordsai_sdk.keywordsai_types.dataset_types import (
+from respan.datasets.api import DatasetAPI
+from respan.evaluators.api import EvaluatorAPI
+from respan.logs.api import LogAPI
+from respan_sdk.respan_types.dataset_types import (
     DatasetCreate,
     DatasetUpdate,
     LogManagementRequest,
@@ -106,7 +106,7 @@ class TestRealWorldDatasetWorkflow:
     Real world dataset workflow integration test class.
     
     This class contains comprehensive integration tests that demonstrate real-world
-    usage patterns of the Keywords AI SDK. The tests are designed to be both
+    usage patterns of the Respan SDK. The tests are designed to be both
     functional tests and educational examples.
     
     The tests simulate actual user workflows, including:
@@ -126,7 +126,7 @@ class TestRealWorldDatasetWorkflow:
         Comprehensive dataset workflow integration test.
         
         This test demonstrates a complete end-to-end workflow for dataset management
-        and evaluation in Keywords AI. It simulates a real user scenario where:
+        and evaluation in Respan. It simulates a real user scenario where:
         
         1. A data scientist wants to analyze production API logs
         2. They create a dataset to collect recent successful calls
@@ -154,13 +154,13 @@ class TestRealWorldDatasetWorkflow:
         
         # 🔧 SETUP: Initialize API clients (read from .env automatically)
         # Skip test if API key is not configured (common in CI/CD without secrets)
-        if not os.getenv("KEYWORDSAI_API_KEY"):
-            pytest.skip("KEYWORDSAI_API_KEY not found in environment")
+        if not os.getenv("RESPAN_API_KEY"):
+            pytest.skip("RESPAN_API_KEY not found in environment")
         
         print(f"\n🚀 Real World Dataset Workflow Test")
         print(f"📅 Test Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
         print(f"🎯 Goal: Analyze prod logs from past 2 days with success status")
-        print(f"🔗 API: {os.getenv('KEYWORDSAI_BASE_URL', 'default')}")
+        print(f"🔗 API: {os.getenv('RESPAN_BASE_URL', 'default')}")
         print("=" * 60)
         
         # Initialize SDK clients for dataset, evaluator, and log operations (automatically read from .env)
@@ -520,11 +520,11 @@ class TestRealWorldDatasetWorkflow:
             print(f"🎯 Your dataset '{final_dataset.name}' is ready for use")
             print(f"🆔 IMPORTANT: Save this Dataset ID for future operations: {final_dataset.id}")
             print(f"💡 You can now:")
-            print(f"   - Browse the dataset in the Keywords AI UI")
+            print(f"   - Browse the dataset in the Respan UI")
             print(f"   - Use the Dataset ID ({final_dataset.id}) in other API calls")
             print(f"   - Run additional evaluations on this dataset")
             print(f"   - Delete the dataset manually when no longer needed")
-            print(f"🔗 Access your dataset: [Keywords AI Dashboard] -> Datasets -> {final_dataset.name}")
+            print(f"🔗 Access your dataset: [Respan Dashboard] -> Datasets -> {final_dataset.name}")
             
             # Note: We intentionally do NOT delete the dataset here
             # The user wants to review it in the UI first

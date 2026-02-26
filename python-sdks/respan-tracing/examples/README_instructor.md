@@ -1,16 +1,16 @@
-# Instructor + KeywordsAI Tracing Examples
+# Instructor + Respan Tracing Examples
 
 ## Quick Start: Async Instructor Example
 
 **File:** `async_instructor_example.py`
 
-This example shows how incredibly simple it is to add KeywordsAI tracing to your async Instructor workflows.
+This example shows how incredibly simple it is to add Respan tracing to your async Instructor workflows.
 
 ### Setup (3 lines!)
 
 ```python
 # 1️⃣ Initialize tracing
-k_tl = KeywordsAITelemetry(app_name="your-app")
+k_tl = RespanTelemetry(app_name="your-app")
 
 # 2️⃣ Your existing async Instructor setup
 async_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -27,7 +27,7 @@ async def extract_user(text: str) -> User:
 ```bash
 # Make sure you have the required environment variables
 export OPENAI_API_KEY="your-openai-key"
-export KEYWORDSAI_API_KEY="your-keywordsai-key"
+export RESPAN_API_KEY="your-respan-key"
 
 # Run the example
 python examples/async_instructor_example.py
@@ -44,13 +44,13 @@ python examples/async_instructor_example.py
 ### Expected Output
 
 ```
-🚀 Running async Instructor extraction with KeywordsAI tracing...
+🚀 Running async Instructor extraction with Respan tracing...
 ✅ Extracted: Alex Johnson
 ✅ Age: 32
 ✅ Email: alex.johnson@google.com
 ✅ Role: Senior Software Engineer
 
-📊 Check your KeywordsAI dashboard to see:
+📊 Check your Respan dashboard to see:
    - Complete async workflow trace
    - OpenAI API call details
    - Structured output validation
@@ -65,7 +65,7 @@ For comprehensive testing and advanced features, check out:
 
 ## Key Takeaway
 
-**Your async Instructor code works perfectly with KeywordsAI tracing!**
+**Your async Instructor code works perfectly with Respan tracing!**
 
 ```python
 # This pattern works out of the box:
@@ -73,4 +73,4 @@ async_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 async_instructor_client = instructor.from_openai(async_client)
 ```
 
-Just add `KeywordsAITelemetry()` initialization and `@task` decorators, and you're done!
+Just add `RespanTelemetry()` initialization and `@task` decorators, and you're done!

@@ -1,7 +1,7 @@
 """
-Multi-provider test demonstrating KeywordsAI tracing with Instructor across different LLM providers.
+Multi-provider test demonstrating Respan tracing with Instructor across different LLM providers.
 
-This test shows how KeywordsAI tracing works with:
+This test shows how Respan tracing works with:
 - OpenAI GPT models
 - Anthropic Claude models
 - Different model capabilities and structured outputs
@@ -13,14 +13,14 @@ import os
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 import instructor
-from keywordsai_tracing import KeywordsAITelemetry
-from keywordsai_tracing.decorators import task, workflow
+from respan_tracing import RespanTelemetry
+from respan_tracing.decorators import task, workflow
 
 # Load environment variables
 load_dotenv(".env", override=True)
 
-# Initialize KeywordsAI Telemetry
-k_tl = KeywordsAITelemetry(app_name="instructor-multi-provider-test")
+# Initialize Respan Telemetry
+k_tl = RespanTelemetry(app_name="instructor-multi-provider-test")
 
 # Define shared Pydantic models
 class Sentiment(str, Literal["positive", "negative", "neutral"]):
@@ -290,7 +290,7 @@ def compare_provider_results(results: dict):
 @workflow(name="instructor_multi_provider_demo")
 def main():
     """Main workflow demonstrating Instructor with multiple providers."""
-    print("🚀 Starting Multi-Provider Instructor + KeywordsAI Tracing Demo")
+    print("🚀 Starting Multi-Provider Instructor + Respan Tracing Demo")
     print("=" * 65)
     
     # Check provider availability
@@ -319,7 +319,7 @@ def main():
     print("   ✅ Provider-specific parameter handling")
     print("   ✅ Cross-provider result comparison")
     print("   ✅ Unified tracing across providers")
-    print("\n📈 Check your KeywordsAI dashboard for:")
+    print("\n📈 Check your Respan dashboard for:")
     print("   - Separate traces for each provider")
     print("   - Token usage comparison")
     print("   - Response time differences")

@@ -37,7 +37,7 @@ from .chat_completion_types import ProviderCredentialType
 
 class RespanLogParams(PreprocessLogDataMixin, RespanBaseModel):
     """
-    Public-facing logging parameters for Keywords AI.
+    Public-facing logging parameters for Respan.
     These are the parameters that users can control when logging requests, used in creation method in the SDK
     """
 
@@ -215,7 +215,7 @@ class RespanLogParams(PreprocessLogDataMixin, RespanBaseModel):
     respan_params: Optional[dict] = None
     # region: deprecated
     model_name_map: Optional[Dict[str, str]] = (
-        None  #  Map an available model on Keywords AI to a custom name at inference time
+        None  #  Map an available model on Respan to a custom name at inference time
     )
     # endregion: deprecated
     # endregion: respan proxy options
@@ -266,7 +266,7 @@ class RespanLogParams(PreprocessLogDataMixin, RespanBaseModel):
 
 class RespanFullLogParams(RespanLogParams):
     """
-    Full logging parameters for Keywords AI that includes all fields to be logged to the database
+    Full logging parameters for Respan that includes all fields to be logged to the database
     NONE of these fields can be set by the user (there will be no effect if they are set)
     This is used for parsing the retrieved logs in the list/detail endpoints in the SDK
     """

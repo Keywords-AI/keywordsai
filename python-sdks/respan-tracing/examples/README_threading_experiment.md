@@ -57,8 +57,8 @@ python -m examples.threading_context_experiment
 
 2. **Environment Variables** (optional):
    ```bash
-   export KEYWORDSAI_API_KEY="your-api-key"
-   export KEYWORDSAI_BASE_URL="https://api.keywordsai.co/api"
+   export RESPAN_API_KEY="your-api-key"
+   export RESPAN_BASE_URL="https://api.respan.ai/api"
    ```
    
    If not set, the experiment will use test values.
@@ -133,7 +133,7 @@ Expected final counter: 50
 
 ## Practical Implications
 
-1. **For KeywordsAI Users**: The `get_client()` function works within each thread, but traces won't be connected across threads without manual propagation.
+1. **For Respan Users**: The `get_client()` function works within each thread, but traces won't be connected across threads without manual propagation.
 
 2. **For Multi-threaded Applications**: You need to explicitly propagate context when creating new threads if you want connected traces.
 
@@ -141,8 +141,8 @@ Expected final counter: 50
 
 ## Related Code
 
-- `src/keywordsai_tracing/core/client.py` - Client implementation
-- `src/keywordsai_tracing/main.py` - Main telemetry class
+- `src/respan_tracing/core/client.py` - Client implementation
+- `src/respan_tracing/main.py` - Main telemetry class
 - `examples/client_usage_example.py` - Basic client usage
 
 ## Troubleshooting
@@ -151,7 +151,7 @@ If the experiment fails to run:
 
 1. **Check Python Path**: Ensure the `src` directory is in your Python path
 2. **Install Dependencies**: Run `pip install -r requirements.txt`
-3. **Check Imports**: Verify all KeywordsAI modules can be imported
+3. **Check Imports**: Verify all Respan modules can be imported
 4. **Environment**: Make sure you're in the correct directory
 
 For questions or issues, refer to the main project documentation. 

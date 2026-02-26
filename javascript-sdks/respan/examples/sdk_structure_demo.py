@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keywords AI SDK Structure Demo
+Respan SDK Structure Demo
 
 This example shows the SDK structure and how to initialize clients
 without making actual API calls.
@@ -14,18 +14,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from keywordsai.datasets.api import DatasetAPI, SyncDatasetAPI
-from keywordsai.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
-from keywordsai.prompts.api import PromptAPI, SyncPromptAPI
-from keywordsai_sdk.keywordsai_types.dataset_types import DatasetCreate, DatasetUpdate, LogManagementRequest
-from keywordsai.types.evaluator_types import Evaluator, EvaluatorList
-from keywordsai_sdk.keywordsai_types.prompt_types import Prompt, PromptVersion
+from respan.datasets.api import DatasetAPI, SyncDatasetAPI
+from respan.evaluators.api import EvaluatorAPI, SyncEvaluatorAPI
+from respan.prompts.api import PromptAPI, SyncPromptAPI
+from respan_sdk.respan_types.dataset_types import DatasetCreate, DatasetUpdate, LogManagementRequest
+from respan.types.evaluator_types import Evaluator, EvaluatorList
+from respan_sdk.respan_types.prompt_types import Prompt, PromptVersion
 
 
 def main():
     """Demo SDK structure and initialization"""
     
-    print("🏗️  Keywords AI SDK Structure Demo")
+    print("🏗️  Respan SDK Structure Demo")
     print("=" * 50)
     
     # 1. Show SDK structure
@@ -40,8 +40,8 @@ def main():
     
     # 2. Show initialization
     print("🔧 Client Initialization:")
-    api_key = os.getenv("KEYWORDSAI_API_KEY", "your-api-key-here")
-    base_url = os.getenv("KEYWORDSAI_BASE_URL", "http://localhost:8000")
+    api_key = os.getenv("RESPAN_API_KEY", "your-api-key-here")
+    base_url = os.getenv("RESPAN_BASE_URL", "http://localhost:8000")
     
     print(f"   🔑 API Key: {api_key[:10]}..." if len(api_key) > 10 else f"   🔑 API Key: {api_key}")
     print(f"   🌐 Base URL: {base_url}")
@@ -143,7 +143,7 @@ def main():
     print("✅ SDK structure demo complete!")
     print()
     print("🚀 Next Steps:")
-    print("   • Set up your .env file with KEYWORDSAI_API_KEY")
+    print("   • Set up your .env file with RESPAN_API_KEY")
     print("   • Run: python examples/simple_evaluator_example.py")
     print("   • Run: python examples/dataset_workflow_example.py")
     print("   • Check: examples/README.md for more details")

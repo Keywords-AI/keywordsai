@@ -1,10 +1,10 @@
-# Keywords AI SDK Testing Strategy
+# Respan SDK Testing Strategy
 
 ## Testing Philosophy
 
 For an API SDK, **integration tests against real API are more valuable than mocked unit tests** because:
 
-1. **Real Value**: Ensuring SDK works with actual Keywords AI server
+1. **Real Value**: Ensuring SDK works with actual Respan server
 2. **Schema Validation**: Catching API changes that break SDK
 3. **Real Error Handling**: Testing actual HTTP errors, not simulated ones
 4. **Authentication**: Validating real auth flows
@@ -13,7 +13,7 @@ For an API SDK, **integration tests against real API are more valuable than mock
 ## Recommended Test Structure
 
 ### 🎯 **Primary: Integration Tests (80%)**
-Test against real Keywords AI API instance:
+Test against real Respan API instance:
 
 ```python
 # Real API integration test
@@ -42,7 +42,7 @@ Only for SDK-specific logic that doesn't require API:
 ```python
 # Unit test for SDK logic
 def test_url_construction():
-    client = KeywordsAIClient(api_key="test", base_url="http://localhost")
+    client = RespanClient(api_key="test", base_url="http://localhost")
     url = client._build_url("datasets", "123")
     assert url == "http://localhost/api/datasets/123"
 ```
@@ -69,37 +69,37 @@ async def test_get_dataset_mocked(mock_get):
 
 ### **Local Development**
 ```bash
-# Run against local Keywords AI instance
-KEYWORDSAI_API_KEY=your_local_key
-KEYWORDSAI_BASE_URL=http://localhost:8000
-python -m pytest tests/test_keywords_ai_api_integration.py -v
+# Run against local Respan instance
+RESPAN_API_KEY=your_local_key
+RESPAN_BASE_URL=http://localhost:8000
+python -m pytest tests/test_respan_api_integration.py -v
 ```
 
 ### **CI/CD Pipeline**
 ```yaml
 # GitHub Actions / CI
-- name: Start Keywords AI Test Instance
-  run: docker run -d keywordsai/server:test
+- name: Start Respan Test Instance
+  run: docker run -d respan/server:test
 
 - name: Run SDK Integration Tests  
   env:
-    KEYWORDSAI_API_KEY: ${{ secrets.TEST_API_KEY }}
-    KEYWORDSAI_BASE_URL: http://localhost:8000
-  run: python -m pytest tests/test_keywords_ai_api_integration.py
+    RESPAN_API_KEY: ${{ secrets.TEST_API_KEY }}
+    RESPAN_BASE_URL: http://localhost:8000
+  run: python -m pytest tests/test_respan_api_integration.py
 ```
 
 ### **Production Validation**
 ```bash
 # Optional: Test against prod (read-only operations)
-KEYWORDSAI_API_KEY=prod_readonly_key
-KEYWORDSAI_BASE_URL=https://api.keywordsai.co
+RESPAN_API_KEY=prod_readonly_key
+RESPAN_BASE_URL=https://api.respan.ai
 python -m pytest tests/test_evaluator_api.py -v  # Only read operations
 ```
 
 ## Current Test Suite Recommendations
 
 ### **Keep Integration Tests** ✅
-- `tests/test_keywords_ai_api_integration.py` - **This is your most valuable test**
+- `tests/test_respan_api_integration.py` - **This is your most valuable test**
 - Real API calls with cleanup
 - Tests actual workflows
 
@@ -165,9 +165,9 @@ tests/
 
 ## Conclusion
 
-For the Keywords AI SDK:
+For the Respan SDK:
 - **Primary focus**: Integration tests against real API
 - **Secondary**: Unit tests for SDK-specific logic  
 - **Minimize**: Complex mocking of API responses
 
-This approach gives you **real confidence** that your SDK works with the actual Keywords AI service, which is the primary value of an API SDK.
+This approach gives you **real confidence** that your SDK works with the actual Respan service, which is the primary value of an API SDK.

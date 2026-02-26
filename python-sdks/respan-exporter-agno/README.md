@@ -7,7 +7,7 @@ Respan exporter for Agno traces.
 ## Installation
 
 ```bash
-pip install keywordsai-exporter-agno
+pip install respan-exporter-agno
 ```
 
 ## Usage
@@ -16,9 +16,9 @@ pip install keywordsai-exporter-agno
 import os
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
-from keywordsai_exporter_agno import KeywordsAIAgnoInstrumentor
+from respan_exporter_agno import RespanAgnoInstrumentor
 
-KeywordsAIAgnoInstrumentor().instrument(api_key="your-keywordsai-api-key")
+RespanAgnoInstrumentor().instrument(api_key="your-respan-api-key")
 
 agent = Agent(
     name="Example Agent",
@@ -35,16 +35,16 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 
 gateway_base_url = os.getenv(
-    "KEYWORDSAI_GATEWAY_BASE_URL",
-    "https://api.keywordsai.co/api",
+    "RESPAN_GATEWAY_BASE_URL",
+    "https://api.respan.ai/api",
 )
 agent = Agent(
     name="Gateway Agent",
     model=OpenAIChat(
         id="gpt-4o-mini",
-        api_key=os.getenv("KEYWORDSAI_API_KEY"),
+        api_key=os.getenv("RESPAN_API_KEY"),
         base_url=gateway_base_url,
     ),
 )
-agent.run("hello from KeywordsAI gateway")
+agent.run("hello from Respan gateway")
 ```

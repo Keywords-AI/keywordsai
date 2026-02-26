@@ -1,10 +1,10 @@
-import { KeywordsAITelemetry } from "../src/main.js";
+import { RespanTelemetry } from "../src/main.js";
 
 async function demonstrateExplicitModules() {
   console.log("=== Explicit Module Demo (Shows Warnings) ===\n");
 
   console.log("This example demonstrates the difference in warning behavior:");
-  console.log("When you explicitly provide instrumentModules, KeywordsAI will warn");
+  console.log("When you explicitly provide instrumentModules, Respan will warn");
   console.log("about modules that fail to initialize since you specifically requested them.\n");
 
   // Mock a custom instrumentation class for demonstration
@@ -16,8 +16,8 @@ async function demonstrateExplicitModules() {
     }
   }
 
-  const explicitClient = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "your-api-key",
+  const explicitClient = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "your-api-key",
     appName: "explicit-modules-demo",
     // Explicitly provide some modules (mix of null and custom)
     instrumentModules: {

@@ -1,9 +1,9 @@
 import OpenAI from "openai";
-import { KeywordsAITelemetry } from "../src/main.js";
+import { RespanTelemetry } from "../src/main.js";
 
 // Declare global type
 declare global {
-  var keywordsai: KeywordsAITelemetry | undefined;
+  var respan: RespanTelemetry | undefined;
 }
 
 const openai = new OpenAI({
@@ -16,14 +16,14 @@ export interface ChatMessage {
 }
 
 export async function generateChatCompletion(messages: ChatMessage[]) {
-  // Access keywordsai from global object after instrumentation is initialized
-  const keywordsai = global.keywordsai;
+  // Access respan from global object after instrumentation is initialized
+  const respan = global.respan;
   
-  if (!keywordsai) {
-    throw new Error("KeywordsAI not initialized. Make sure instrumentation is set up correctly.");
+  if (!respan) {
+    throw new Error("Respan not initialized. Make sure instrumentation is set up correctly.");
   }
 
-  return await keywordsai.withWorkflow(
+  return await respan.withWorkflow(
     {
       name: "generateChatCompletion",
     },
@@ -52,13 +52,13 @@ export async function generateChatCompletion(messages: ChatMessage[]) {
 
 // Test function that simulates OpenAI responses for testing
 async function mockGenerateChatCompletion(messages: ChatMessage[]) {
-  const keywordsai = global.keywordsai;
+  const respan = global.respan;
   
-  if (!keywordsai) {
-    throw new Error("KeywordsAI not initialized. Make sure instrumentation is set up correctly.");
+  if (!respan) {
+    throw new Error("Respan not initialized. Make sure instrumentation is set up correctly.");
   }
 
-  return await keywordsai.withWorkflow(
+  return await respan.withWorkflow(
     {
       name: "generateChatCompletion",
     },
@@ -86,13 +86,13 @@ async function mockGenerateChatCompletion(messages: ChatMessage[]) {
 }
 
 async function runOpenAIIntegrationTest() {
-  console.log("🚀 Starting OpenAI Integration Test with KeywordsAI\n");
+  console.log("🚀 Starting OpenAI Integration Test with Respan\n");
 
-  // Step 1: Initialize KeywordsAI with OpenAI instrumentation
-  console.log("📦 Step 1: Initializing KeywordsAI with OpenAI instrumentation...");
+  // Step 1: Initialize Respan with OpenAI instrumentation
+  console.log("📦 Step 1: Initializing Respan with OpenAI instrumentation...");
   
-  const keywordsai = new KeywordsAITelemetry({
-    apiKey: process.env.KEYWORDSAI_API_KEY || "test-api-key",
+  const respan = new RespanTelemetry({
+    apiKey: process.env.RESPAN_API_KEY || "test-api-key",
     appName: "openai-integration-test",
     // Manually provide OpenAI module for instrumentation
     instrumentModules: {
@@ -102,16 +102,16 @@ async function runOpenAIIntegrationTest() {
   });
 
   try {
-    await keywordsai.initialize();
-    console.log("✅ KeywordsAI initialized successfully\n");
+    await respan.initialize();
+    console.log("✅ Respan initialized successfully\n");
   } catch (error) {
-    console.error("❌ Failed to initialize KeywordsAI:", error);
+    console.error("❌ Failed to initialize Respan:", error);
     return;
   }
 
   // Step 2: Set global instance
-  console.log("🌍 Step 2: Setting up global KeywordsAI instance...");
-  global.keywordsai = keywordsai;
+  console.log("🌍 Step 2: Setting up global Respan instance...");
+  global.respan = respan;
   console.log("✅ Global instance set\n");
 
   // Step 3: Test the integration with mock data
@@ -172,13 +172,13 @@ async function runOpenAIIntegrationTest() {
   
   try {
     // Temporarily clear global instance to test error handling
-    const originalInstance = global.keywordsai;
-    global.keywordsai = undefined;
+    const originalInstance = global.respan;
+    global.respan = undefined;
     
     await mockGenerateChatCompletion([{ role: "user", content: "This should fail" }]);
     
     // Restore instance
-    global.keywordsai = originalInstance;
+    global.respan = originalInstance;
     
   } catch (error) {
     console.log("✅ Error handling working correctly:", error.message);
@@ -188,13 +188,13 @@ async function runOpenAIIntegrationTest() {
   console.log("\n📊 Step 6: Testing instrumentation features...");
   
   try {
-    await keywordsai.withWorkflow(
+    await respan.withWorkflow(
       { name: "test-workflow-with-metadata" },
       async () => {
         console.log("🔍 Running workflow with custom metadata...");
         
         // You can add custom span attributes here
-        await keywordsai.withTask(
+        await respan.withTask(
           { name: "data-processing-task" },
           async () => {
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -213,15 +213,15 @@ async function runOpenAIIntegrationTest() {
   // Step 7: Cleanup
   console.log("\n🧹 Step 7: Cleanup...");
   try {
-    await keywordsai.shutdown();
-    console.log("✅ KeywordsAI shutdown completed");
+    await respan.shutdown();
+    console.log("✅ Respan shutdown completed");
   } catch (error) {
     console.error("⚠️  Shutdown warning:", error);
   }
 
   console.log("\n🎉 OpenAI Integration Test Complete!");
   console.log("\n📋 Summary:");
-  console.log("• ✅ KeywordsAI initialization");
+  console.log("• ✅ Respan initialization");
   console.log("• ✅ Global instance setup");
   console.log("• ✅ OpenAI instrumentation");
   console.log("• ✅ Workflow tracing");

@@ -6,13 +6,13 @@ The `SpanCollector` feature has been successfully implemented to enable batch sp
 
 ### 🎯 What Was Implemented
 
-#### 1. **LocalQueueSpanProcessor** (`src/keywordsai_tracing/core/span_collector.py`)
+#### 1. **LocalQueueSpanProcessor** (`src/respan_tracing/core/span_collector.py`)
 - Context-aware span processor that routes spans based on active SpanCollector
 - Uses Python's `contextvars` for thread-safe context management
 - Falls back to original processor when no collector is active
 - **Key Insight**: Uses a context variable to track the active collector, allowing selective routing without affecting other spans
 
-#### 2. **SpanCollector Context Manager** (`src/keywordsai_tracing/core/span_collector.py`)
+#### 2. **SpanCollector Context Manager** (`src/respan_tracing/core/span_collector.py`)
 - Collects spans in a local queue instead of auto-exporting
 - Provides manual export control via `export_spans()` method
 - Automatic cleanup when context exits
@@ -23,17 +23,17 @@ The `SpanCollector` feature has been successfully implemented to enable batch sp
   - `get_span_count()` - Get number of collected spans
   - `clear_spans()` - Discard collected spans without exporting
 
-#### 3. **Client Integration** (`src/keywordsai_tracing/core/client.py`)
-- Added `get_span_collector(trace_id)` method to `KeywordsAIClient`
+#### 3. **Client Integration** (`src/respan_tracing/core/client.py`)
+- Added `get_span_collector(trace_id)` method to `RespanClient`
 - Returns a `SpanCollector` context manager for the specified trace
 - Full documentation and examples in docstrings
 
-#### 4. **Tracer Integration** (`src/keywordsai_tracing/core/tracer.py`)
+#### 4. **Tracer Integration** (`src/respan_tracing/core/tracer.py`)
 - `LocalQueueSpanProcessor` wraps the existing processor chain
 - Exporter reference stored for SpanCollector access
 - No breaking changes to existing functionality
 
-#### 5. **Public API** (`src/keywordsai_tracing/__init__.py`)
+#### 5. **Public API** (`src/respan_tracing/__init__.py`)
 - Exported `SpanCollector` class for direct import
 - Maintains backward compatibility with existing code
 
@@ -59,7 +59,7 @@ The `SpanCollector` feature has been successfully implemented to enable batch sp
 #### Basic Batch Collection
 
 ```python
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 client = get_client()
 
@@ -125,7 +125,7 @@ Test coverage includes:
 - Context variable management
 - SpanCollector context manager behavior
 - Batch export functionality
-- Integration with KeywordsAIClient
+- Integration with RespanClient
 - Isolation and thread-safety
 
 Run tests:
@@ -136,15 +136,15 @@ Run tests:
 ### 📁 Files Modified/Created
 
 **New Files**:
-- `src/keywordsai_tracing/core/span_collector.py` - Core implementation
+- `src/respan_tracing/core/span_collector.py` - Core implementation
 - `tests/test_span_collector.py` - Unit and integration tests
 - `examples/span_collector_example.py` - Usage examples
 
 **Modified Files**:
-- `src/keywordsai_tracing/core/client.py` - Added `get_span_collector()` method
-- `src/keywordsai_tracing/core/tracer.py` - Integrated LocalQueueSpanProcessor
-- `src/keywordsai_tracing/__init__.py` - Exported SpanCollector
-- `src/keywordsai_tracing/core/__init__.py` - Exported SpanCollector and LocalQueueSpanProcessor
+- `src/respan_tracing/core/client.py` - Added `get_span_collector()` method
+- `src/respan_tracing/core/tracer.py` - Integrated LocalQueueSpanProcessor
+- `src/respan_tracing/__init__.py` - Exported SpanCollector
+- `src/respan_tracing/core/__init__.py` - Exported SpanCollector and LocalQueueSpanProcessor
 
 ### 🎁 Benefits for Backend Workflow System
 
@@ -162,7 +162,7 @@ This implementation directly addresses the requirements in the backend dogfoodin
 
 ```python
 # In WorkflowExecutionTask
-from keywordsai_tracing import get_client
+from respan_tracing import get_client
 
 def ingest_workflow_output(workflow_result, trace_id, org, exp_id):
     client = get_client()

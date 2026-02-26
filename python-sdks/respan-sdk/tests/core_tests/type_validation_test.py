@@ -1,6 +1,6 @@
-from keywordsai_sdk.keywordsai_types._internal_types import BasicTranscriptionParams, LiteLLMCompletionParams
-from keywordsai_sdk.keywordsai_types.param_types import KeywordsAITextLogParams
-from keywordsai_sdk.keywordsai_types.eval_types import EvalParams
+from respan_sdk.respan_types._internal_types import BasicTranscriptionParams, LiteLLMCompletionParams
+from respan_sdk.respan_types.param_types import RespanTextLogParams
+from respan_sdk.respan_types.eval_types import EvalParams
 from pydantic import ValidationError
 
 NEW_SESSION_IDENTIFIER = 1234
@@ -30,17 +30,17 @@ class TypeValidationData:
 
 # Method 1: Convert to dict first
 to_validate = TypeValidationData()
-params = KeywordsAITextLogParams.model_validate(to_validate)
+params = RespanTextLogParams.model_validate(to_validate)
 assert params.session_identifier == NEW_SESSION_IDENTIFIER
 
 
 # Method 2: Use from_orm (deprecated but might work with older Pydantic)
 # to_validate = TypeValidationData()
-# params = KeywordsAITextLogParams.from_orm(to_validate)
+# params = RespanTextLogParams.from_orm(to_validate)
 # print(params)
 
 
-params = KeywordsAITextLogParams.model_validate(to_validate)
+params = RespanTextLogParams.model_validate(to_validate)
 print(params.model_dump_json(indent=2))
 
 

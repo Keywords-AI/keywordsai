@@ -1,230 +1,118 @@
+import logging
+import random
+import threading
+import time
+from typing import Any, Dict, List, Optional, Union
 
+import httpx
+from agents.tracing.processor_interface import TracingProcessor
 from agents.tracing.processors import BatchTraceProcessor, BackendSpanExporter
-from agents.tracing.traces import Trace
-from agents.tracing.spans import SpanImpl, Span
 from agents.tracing.span_data import (
-    ResponseSpanData,
+    AgentSpanData,
+    CustomSpanData,
     FunctionSpanData,
     GenerationSpanData,
-    HandoffSpanData,
-    CustomSpanData,
-    AgentSpanData,
     GuardrailSpanData,
+    HandoffSpanData,
+    ResponseSpanData,
 )
-import httpx
-AGENTS_AVAILABLE = True
-from typing import Any, Dict, Optional, Union
+from agents.tracing.spans import Span, SpanImpl
+from agents.tracing.traces import Trace
+from respan_sdk.constants.llm_logging import (
+    LOG_TYPE_AGENT,
+    LOG_TYPE_CUSTOM,
+    LOG_TYPE_GENERATION,
+    LOG_TYPE_GUARDRAIL,
+    LOG_TYPE_HANDOFF,
+    LOG_TYPE_RESPONSE,
+    LOG_TYPE_TOOL,
+)
 from respan_sdk.respan_types.param_types import RespanTextLogParams
-from respan_sdk.respan_types._internal_types import Message
-from openai.types.responses.response_output_item import (
-    ResponseOutputMessage,
-    ResponseFunctionToolCall,
-    ResponseFunctionWebSearch,
-    ResponseFileSearchToolCall,
-)
-from openai.types.responses.response_input_item_param import (
-    ResponseFunctionToolCallParam,
-)
-import random
-import time
-import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _serialize(obj):
+    """Recursively convert *obj* to plain JSON-serializable Python types.
+
+    Pydantic v2 defers serializer construction for models with forward
+    references (``MockValSer``).  The deferred rebuild uses
+    ``sys._getframe(5)`` which fails in shallow call stacks (Celery
+    workers, asyncio callbacks).  By never storing foreign Pydantic
+    model instances on ``RespanTextLogParams``, we sidestep the issue
+    entirely — ``data.model_dump()`` only ever sees plain types.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize(item) for item in obj]
+    if hasattr(obj, "model_dump"):
+        try:
+            return obj.model_dump(mode="json")
+        except Exception:
+            # MockValSer or other serializer failure — extract public attrs
+            return {
+                k: _serialize(v)
+                for k, v in vars(obj).items()
+                if not k.startswith("_")
+            }
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    return str(obj)
 
 
 # Internal helper functions for converting span data to Respan log format
 def _response_data_to_respan_log(
     data: RespanTextLogParams, span_data: ResponseSpanData
-) -> RespanTextLogParams:
-    """
-    Convert ResponseSpanData to Respan log format.
+) -> None:
+    """Convert ResponseSpanData — pass raw usage through, BE parses."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_RESPONSE
+    data.input = _serialize(span_data.input)
 
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The ResponseSpanData to convert
-
-    Returns:
-        Dictionary with ResponseSpanData fields mapped to Respan log format
-    """
-    data.span_name = span_data.type # response
-    data.log_type = "text" # The corresponding respan log type
-    try:
-        # Extract prompt messages from input if available
-        if span_data.input:
-            if isinstance(span_data.input, list):
-                # Handle list of messages
-                for item in span_data.input:
-                    try:
-                        data.prompt_messages = data.prompt_messages or []
-                        data.prompt_messages.append(Message.model_validate(dict(item)))
-                    except Exception as e:
-                        if isinstance(item, dict):
-                            item_type = item.get("type")
-                            if item_type == "function_call" or item_type == "function_call_output":
-                                data.tool_calls = data.tool_calls or []
-                                data.tool_calls.append(item)
-                            elif item_type == "user":
-                                data.output = "" + str(item)
-                        elif isinstance(item, ResponseFunctionToolCallParam):
-                            data.tools = data.tools or []
-                            data.tools.append(item.model_dump())
-                        elif isinstance(item, ResponseFileSearchToolCall):
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item.model_dump())
-                        else:
-                            logger.warning(f"Failed to convert item to Message: {e}, type: {item}")
-                            data.output = "" + str(item)
-            elif isinstance(span_data.input, str):
-                # Handle string input (convert to a single user message)
-                data.input = span_data.input
-
-        # If response object exists, extract additional data
-        if span_data.response:
-            response = span_data.response
-            # Extract usage information if available
-            if hasattr(response, "usage") and response.usage:
-                usage = span_data.response.usage
-                data.prompt_tokens = usage.input_tokens
-                data.completion_tokens = usage.output_tokens
-                data.total_request_tokens = usage.total_tokens
-
-
-            # Extract model information if available
-            if hasattr(response, "model"):
-                data.model = response.model
-
-            # Extract completion message from response
-            if hasattr(response, "output") and response.output:
-                response_items = response.output
-                for item in response_items:
-                    if isinstance(item, dict):
-                        item_type = item.get("type")
-                        if item_type == "file_search_call":
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item)
-                        elif item_type == "web_search_call":
-                            data.tool_calls = data.tool_calls or []
-                            data.tool_calls.append(item)
-                        else:
-                            data.output = "" + str(item)
-                    elif isinstance(item, ResponseOutputMessage):
-                        data.completion_messages = data.completion_messages or []
-                        data.completion_messages.append(
-                            Message.model_validate(item.model_dump())
-                        )
-                        if data.completion_messages and not data.completion_message:
-                            data.completion_message = data.completion_messages[0]
-                    elif isinstance(item, ResponseFunctionToolCall):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    elif isinstance(item, ResponseFunctionWebSearch):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    elif isinstance(item, ResponseFileSearchToolCall):
-                        data.tool_calls = data.tool_calls or []
-                        data.tool_calls.append(item.model_dump())
-                    else:
-                        data.output = "" + str(item.model_dump())
-
-            # Add full response for logging
-            data.full_response = response.model_dump(mode="json")
-    except Exception as e:
-        logger.error(f"Error converting response data to Respan log: {e}")
+    if span_data.response:
+        if hasattr(span_data.response, "model"):
+            data.model = span_data.response.model
+        if hasattr(span_data.response, "usage") and span_data.response.usage:
+            data.usage = _serialize(span_data.response.usage)
+        if hasattr(span_data.response, "output"):
+            data.output = _serialize(span_data.response.output)
 
 
 def _function_data_to_respan_log(
     data: RespanTextLogParams, span_data: FunctionSpanData
-) -> RespanTextLogParams:
-    """
-    Convert FunctionSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The FunctionSpanData to convert
-
-    Returns:
-        Dictionary with FunctionSpanData fields mapped to Respan log format
-    """
-    try:
-        data.span_name = span_data.name
-        data.log_type = "function" # The corresponding respan log type
-        data.input = span_data.input
-        data.output = span_data.output
-        data.span_tools = [span_data.name]
-
-        # Try to extract tool calls if the input is in a format that might contain them
-        if span_data.input:
-            data.log_type = "tool"
-            data.input = span_data.input
-    except Exception as e:
-        logger.error(f"Error converting function data to Respan log: {e}")
+) -> None:
+    """Convert FunctionSpanData to Respan log format."""
+    data.span_name = span_data.name
+    data.log_type = LOG_TYPE_TOOL
+    data.input = _serialize(span_data.input)
+    data.output = _serialize(span_data.output)
+    data.span_tools = [span_data.name]
 
 
 def _generation_data_to_respan_log(
     data: RespanTextLogParams, span_data: GenerationSpanData
-) -> RespanTextLogParams:
-    """
-    Convert GenerationSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The GenerationSpanData to convert
-
-    Returns:
-        Dictionary with GenerationSpanData fields mapped to Respan log format
-    """
-    data.span_name = span_data.type # generation
-    data.log_type = "generation"
+) -> None:
+    """Convert GenerationSpanData — pass raw usage through, BE parses."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_GENERATION
     data.model = span_data.model
-
-    try:
-        # Extract prompt messages from input if available
-        if span_data.input:
-            # Try to extract messages from input
-            data.input = str(span_data.input)
-
-        # Extract completion message from output if available
-        if span_data.output:
-            # Try to extract completion from output
-            data.output = str(span_data.output)
-
-        # Add model configuration if available
-        if span_data.model_config:
-            # Extract common LLM parameters from model_config
-            for param in [
-                "temperature",
-                "max_tokens",
-                "top_p",
-                "frequency_penalty",
-                "presence_penalty",
-            ]:
-                if param in span_data.model_config:
-                    data[param] = span_data.model_config[param]
-
-        # Add usage information if available
-        if span_data.usage:
-            data.prompt_tokens = span_data.usage.get("prompt_tokens")
-            data.completion_tokens = span_data.usage.get("completion_tokens")
-            data.total_request_tokens = span_data.usage.get("total_tokens")
-    except Exception as e:
-        logger.error(f"Error converting generation data to Respan log: {e}")
+    data.input = _serialize(span_data.input)
+    data.output = _serialize(span_data.output)
+    if span_data.usage:
+        data.usage = span_data.usage
 
 
 def _handoff_data_to_respan_log(
     data: RespanTextLogParams, span_data: HandoffSpanData
-) -> RespanTextLogParams:
-    """
-    Convert HandoffSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The HandoffSpanData to convert
-
-    Returns:
-        Dictionary with HandoffSpanData fields mapped to Respan log format
-    """
-    data.span_name = span_data.type # handoff
-    data.log_type = "handoff" # The corresponding respan log type
+) -> None:
+    """Convert HandoffSpanData to Respan log format."""
+    data.span_name = span_data.type
+    data.log_type = LOG_TYPE_HANDOFF
     data.span_handoffs = [f"{span_data.from_agent} -> {span_data.to_agent}"]
     data.metadata = {
         "from_agent": span_data.from_agent,
@@ -234,105 +122,191 @@ def _handoff_data_to_respan_log(
 
 def _custom_data_to_respan_log(
     data: RespanTextLogParams, span_data: CustomSpanData
-) -> RespanTextLogParams:
-    """
-    Convert CustomSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The CustomSpanData to convert
-
-    Returns:
-        Dictionary with CustomSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert CustomSpanData to Respan log format."""
     data.span_name = span_data.name
-    data.log_type = "custom" # The corresponding respan log type
+    data.log_type = LOG_TYPE_CUSTOM
     data.metadata = span_data.data
 
-    # If the custom data contains specific fields that map to Respan fields, extract them
     for key in ["input", "output", "model", "prompt_tokens", "completion_tokens"]:
         if key in span_data.data:
-            data[key] = span_data.data[key]
-
-    return data
+            setattr(data, key, span_data.data[key])
 
 
 def _agent_data_to_respan_log(
     data: RespanTextLogParams, span_data: AgentSpanData
-) -> RespanTextLogParams:
-    """
-    Convert AgentSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The AgentSpanData to convert
-
-    Returns:
-        Dictionary with AgentSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert AgentSpanData to Respan log format."""
     data.span_name = span_data.name
-    data.log_type = "agent" # The corresponding respan log type
+    data.log_type = LOG_TYPE_AGENT
     data.span_workflow_name = span_data.name
 
-    # Add tools if available
     if span_data.tools:
         data.span_tools = span_data.tools
-
-    # Add handoffs if available
     if span_data.handoffs:
         data.span_handoffs = span_data.handoffs
 
-    # Add metadata with agent information
     data.metadata = {
         "output_type": span_data.output_type,
         "agent_name": span_data.name,
     }
 
-    # Add agent name to metadata
-    data.metadata["agent_name"] = span_data.name
-
-    # Add tools to metadata if available
-    if span_data.tools:
-        data.span_tools = span_data.tools
-
-    # Add handoffs to metadata if available
-    if span_data.handoffs:
-        data.span_handoffs = span_data.handoffs
-
-    # Set metadata in log data
-    data.metadata = data.metadata
-
-    return data
-
 
 def _guardrail_data_to_respan_log(
     data: RespanTextLogParams, span_data: GuardrailSpanData
-) -> RespanTextLogParams:
-    """
-    Convert GuardrailSpanData to Respan log format.
-
-    Args:
-        data: Base data dictionary with trace and span information
-        span_data: The GuardrailSpanData to convert
-
-    Returns:
-        Dictionary with GuardrailSpanData fields mapped to Respan log format
-    """
+) -> None:
+    """Convert GuardrailSpanData to Respan log format."""
     data.span_name = f"guardrail:{span_data.name}"
-    data.log_type = "guardrail" # The corresponding respan log type
+    data.log_type = LOG_TYPE_GUARDRAIL
     data.has_warnings = span_data.triggered
     if span_data.triggered:
-        data.warnings_dict = data.warnings_dict or {}
-        data.warnings_dict =  {
+        data.warnings_dict = {
             f"guardrail:{span_data.name}": "guardrail triggered"
         }
 
-    return data
+
+# ---------------------------------------------------------------------------
+# Public conversion function — used by both RespanSpanExporter and
+# LocalSpanCollector so conversion logic is defined once.
+# ---------------------------------------------------------------------------
+
+def convert_to_respan_log(
+    item: Union[Trace, Span[Any]],
+) -> Optional[Dict[str, Any]]:
+    """Convert an OpenAI Agents SDK Trace or Span to a Respan log dict.
+
+    Handles all 7 span data types (response, function, generation, handoff,
+    custom, agent, guardrail) plus root Trace objects.
+
+    Args:
+        item: A Trace or Span object from the OpenAI Agents SDK.
+
+    Returns:
+        A JSON-serializable dict matching ``RespanTextLogParams``, or ``None``
+        if the item type is unrecognised.
+    """
+    if isinstance(item, Trace):
+        return RespanTextLogParams(
+            trace_unique_id=item.trace_id,
+            span_unique_id=item.trace_id,
+            span_name=item.name,
+            log_type=LOG_TYPE_AGENT,
+        ).model_dump(mode="json")
+
+    if isinstance(item, SpanImpl):
+        parent_id = item.parent_id or item.trace_id
+        data = RespanTextLogParams(
+            trace_unique_id=item.trace_id,
+            span_unique_id=item.span_id,
+            span_parent_id=parent_id,
+            start_time=item.started_at,
+            timestamp=item.ended_at,
+            error_bit=1 if item.error else 0,
+            status_code=400 if item.error else 200,
+            error_message=str(item.error) if item.error else None,
+        )
+        data.latency = (data.timestamp - data.start_time).total_seconds()
+        try:
+            if isinstance(item.span_data, ResponseSpanData):
+                _response_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, FunctionSpanData):
+                _function_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, GenerationSpanData):
+                _generation_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, HandoffSpanData):
+                _handoff_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, CustomSpanData):
+                _custom_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, AgentSpanData):
+                _agent_data_to_respan_log(data, item.span_data)
+            elif isinstance(item.span_data, GuardrailSpanData):
+                _guardrail_data_to_respan_log(data, item.span_data)
+            else:
+                logger.warning(f"Unknown span data type: {item.span_data}")
+                return None
+            return data.model_dump(mode="json")
+        except Exception as e:
+            logger.error(
+                f"Error converting span data of {item.span_data} to Respan log: {e}"
+            )
+            return None
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# LocalSpanCollector — in-process span collection for self-hosted use
+# ---------------------------------------------------------------------------
+
+class LocalSpanCollector(TracingProcessor):
+    """Thread-safe, in-process span collector for self-hosted deployments.
+
+    Instead of sending spans over HTTP, this processor converts them using
+    the same ``convert_to_respan_log`` logic and stores them in memory keyed
+    by ``trace_id``.  After an agent run completes, call
+    ``pop_trace(trace_id)`` to retrieve (and remove) the spans for that run.
+
+    Register globally once at application startup::
+
+        from agents import set_trace_processors
+        collector = LocalSpanCollector()
+        set_trace_processors([collector])
+
+    Then after each ``Runner.run_streamed()``::
+
+        spans = collector.pop_trace(trace_id)
+        for span_data in spans:
+            log_request(...)
+    """
+
+    def __init__(self) -> None:
+        self._traces: Dict[str, List[Dict[str, Any]]] = {}
+        self._lock = threading.Lock()
+
+    # -- TracingProcessor interface -----------------------------------------
+
+    def on_trace_start(self, trace: Trace) -> None:
+        pass
+
+    def on_trace_end(self, trace: Trace) -> None:
+        data = convert_to_respan_log(trace)
+        if data:
+            with self._lock:
+                self._traces.setdefault(trace.trace_id, []).insert(0, data)
+
+    def on_span_start(self, span: Span[Any]) -> None:
+        pass
+
+    def on_span_end(self, span: Span[Any]) -> None:
+        data = convert_to_respan_log(span)
+        if data:
+            trace_id = span.trace_id if hasattr(span, "trace_id") else None
+            if trace_id:
+                with self._lock:
+                    self._traces.setdefault(trace_id, []).append(data)
+
+    def shutdown(self) -> None:
+        with self._lock:
+            self._traces.clear()
+
+    def force_flush(self) -> None:
+        pass  # All conversion is synchronous — nothing to flush.
+
+    # -- Public API ---------------------------------------------------------
+
+    def pop_trace(self, trace_id: str) -> List[Dict[str, Any]]:
+        """Retrieve and remove all collected spans for a trace.
+
+        Returns an empty list if no spans were collected for *trace_id*.
+        Thread-safe — safe to call from any request thread.
+        """
+        with self._lock:
+            return self._traces.pop(trace_id, [])
 
 
 class RespanSpanExporter(BackendSpanExporter):
     """
-    Custom exporter for Keywords AI that handles all span types and allows for dynamic endpoint configuration.
+    Custom exporter for Respan that handles all span types and allows for dynamic endpoint configuration.
     """
 
     def __init__(
@@ -346,7 +320,7 @@ class RespanSpanExporter(BackendSpanExporter):
         max_delay: float = 30.0,
     ):
         """
-        Initialize the Keywords AI exporter.
+        Initialize the Respan exporter.
 
         Args:
             api_key: The API key for authentication. Defaults to os.environ["OPENAI_API_KEY"] if not provided.
@@ -375,79 +349,20 @@ class RespanSpanExporter(BackendSpanExporter):
             endpoint: The new endpoint URL to use for exporting spans.
         """
         self.endpoint = endpoint
-        logger.info(f"Keywords AI exporter endpoint changed to: {endpoint}")
+        logger.info(f"Respan exporter endpoint changed to: {endpoint}")
 
     def _respan_export(
         self, item: Union[Trace, Span[Any]]
     ) -> Optional[Dict[str, Any]]:
+        """Process different span types and extract all JSON serializable attributes.
+
+        Delegates to the module-level ``convert_to_respan_log`` function.
         """
-        Process different span types and extract all JSON serializable attributes.
-
-        Args:
-            item: A Trace or Span object to export.
-
-        Returns:
-            A dictionary with all the JSON serializable attributes of the span,
-            or None if the item cannot be exported.
-        """
-        # First try the native export method
-        if isinstance(item, Trace):
-            # This one is going to be the root trace. The span id will be the trace id
-            return RespanTextLogParams(
-                trace_unique_id=item.trace_id,
-                span_unique_id=item.trace_id,
-                span_name=item.name,
-                log_type="agent"
-            ).model_dump(mode="json")
-        elif isinstance(item, SpanImpl):
-            # Get the span ID - it could be named span_id or id depending on the implementation
-            parent_id = item.parent_id
-            if not parent_id:
-                parent_id = item.trace_id
-
-            # Create the base data dictionary with common fields
-            data = RespanTextLogParams(
-                trace_unique_id=item.trace_id,
-                span_unique_id=item.span_id,
-                span_parent_id=parent_id,
-                start_time=item.started_at,
-                timestamp=item.ended_at,
-                error_bit=1 if item.error else 0,
-                status_code=400 if item.error else 200,
-                error_message=str(item.error) if item.error else None,
-            )
-            data.latency = (data.timestamp - data.start_time).total_seconds()
-            # Process the span data based on its type
-            try:
-                if isinstance(item.span_data, ResponseSpanData):
-                    _response_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, FunctionSpanData):
-                    _function_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, GenerationSpanData):
-                    _generation_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, HandoffSpanData):
-                    _handoff_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, CustomSpanData):
-                    _custom_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, AgentSpanData):
-                    _agent_data_to_respan_log(data, item.span_data)
-                elif isinstance(item.span_data, GuardrailSpanData):
-                    _guardrail_data_to_respan_log(data, item.span_data)
-                else:
-                    logger.warning(f"Unknown span data type: {item.span_data}")
-                    return None
-                return data.model_dump(mode="json")
-            except Exception as e:
-                logger.error(
-                    f"Error converting span data of {item.span_data} to Respan log: {e}"
-                )
-                return None
-        else:
-            return None
+        return convert_to_respan_log(item)
 
     def export(self, items: list[Union[Trace, Span[Any]]]) -> None:
         """
-        Export traces and spans to the Keywords AI backend.
+        Export traces and spans to the Respan backend.
 
         Args:
             items: List of Trace or Span objects to export.
@@ -487,13 +402,13 @@ class RespanSpanExporter(BackendSpanExporter):
 
                 # If the response is successful, break out of the loop
                 if response.status_code < 300:
-                    logger.debug(f"Exported {len(data)} items to Keywords AI")
+                    logger.debug(f"Exported {len(data)} items to Respan")
                     return
 
                 # If the response is a client error (4xx), we won't retry
                 if 400 <= response.status_code < 500:
                     logger.error(
-                        f"Keywords AI client error {response.status_code}: {response.text}"
+                        f"Respan client error {response.status_code}: {response.text}"
                     )
                     return
 
@@ -516,7 +431,7 @@ class RespanSpanExporter(BackendSpanExporter):
 
 class RespanTraceProcessor(BatchTraceProcessor):
     """
-    A processor that uses RespanSpanExporter to send traces and spans to Keywords AI.
+    A processor that uses RespanSpanExporter to send traces and spans to Respan.
     """
 
     def __init__(
@@ -534,7 +449,7 @@ class RespanTraceProcessor(BatchTraceProcessor):
         export_trigger_ratio: float = 0.7,
     ):
         """
-        Initialize the Keywords AI processor.
+        Initialize the Respan processor.
 
         Args:
             api_key: The API key for authentication.
@@ -571,7 +486,7 @@ class RespanTraceProcessor(BatchTraceProcessor):
         )
 
         # Store the exporter for easy access
-        self._keywords_exporter = exporter
+        self._respan_exporter = exporter
 
     def set_endpoint(self, endpoint: str) -> None:
         """
@@ -580,4 +495,4 @@ class RespanTraceProcessor(BatchTraceProcessor):
         Args:
             endpoint: The new endpoint URL to use for exporting spans.
         """
-        self._keywords_exporter.set_endpoint(endpoint)
+        self._respan_exporter.set_endpoint(endpoint)

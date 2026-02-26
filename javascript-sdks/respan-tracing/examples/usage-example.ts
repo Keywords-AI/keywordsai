@@ -19,7 +19,7 @@ import {
 startTracing({
   appName: "my-ai-app",
   apiKey: "your-api-key",
-  baseURL: "https://api.keywordsai.co",
+  baseURL: "https://api.respan.ai",
   traceContent: true,
   logLevel: "info",
 });
@@ -230,7 +230,7 @@ if (require.main === module) {
   main()
     .then(() => {
       console.log(
-        "\nExample completed. Check your KeywordsAI dashboard for traces!"
+        "\nExample completed. Check your Respan dashboard for traces!"
       );
       process.exit(0);
     })

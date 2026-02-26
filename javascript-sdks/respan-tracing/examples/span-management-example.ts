@@ -3,23 +3,23 @@
  * 
  * This example shows how to:
  * - Get current trace and span IDs
- * - Update spans with KeywordsAI parameters
+ * - Update spans with Respan parameters
  * - Add events to track progress
  * - Record exceptions
  */
 
-import { KeywordsAITelemetry, getClient } from "../src/index.js";
+import { RespanTelemetry, getClient } from "../src/index.js";
 import OpenAI from "openai";
 
-// Initialize KeywordsAI
-const keywordsAi = new KeywordsAITelemetry({
-  apiKey: process.env.KEYWORDSAI_API_KEY,
-  baseURL: process.env.KEYWORDSAI_BASE_URL,
+// Initialize Respan
+const respan = new RespanTelemetry({
+  apiKey: process.env.RESPAN_API_KEY,
+  baseURL: process.env.RESPAN_BASE_URL,
   appName: "span-management-example",
   logLevel: "info",
 });
 
-await keywordsAi.initialize();
+await respan.initialize();
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -28,7 +28,7 @@ const openai = new OpenAI({
 
 // Example workflow that uses span management
 const processUserRequest = async (userId: string, query: string) => {
-  return await keywordsAi.withWorkflow(
+  return await respan.withWorkflow(
     { name: "process_user_request", version: 1 },
     async () => {
       // Get the client for span management
@@ -41,9 +41,9 @@ const processUserRequest = async (userId: string, query: string) => {
       console.log(`Processing request in trace: ${traceId}`);
       console.log(`Current span: ${spanId}`);
 
-      // Update span with KeywordsAI parameters
+      // Update span with Respan parameters
       client.updateCurrentSpan({
-        keywordsaiParams: {
+        respanParams: {
           customerIdentifier: userId,
           traceGroupIdentifier: "user-queries",
           metadata: {
@@ -162,7 +162,7 @@ const main = async () => {
     console.error("Unexpected error:", error);
   } finally {
     // Flush and shutdown
-    await keywordsAi.shutdown();
+    await respan.shutdown();
     console.log("SDK shut down");
   }
 };

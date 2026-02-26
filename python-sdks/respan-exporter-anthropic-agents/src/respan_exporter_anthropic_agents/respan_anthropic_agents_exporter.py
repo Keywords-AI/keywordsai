@@ -1,0 +1,763 @@
+"""Respan exporter for Anthropic Agent SDK hooks and message streams."""
+
+import asyncio
+import json
+import logging
+import os
+import urllib.error
+import urllib.request
+import uuid
+from datetime import datetime
+from typing import Any, AsyncGenerator, AsyncIterable, Dict, List, Optional, Union
+
+from claude_agent_sdk import (
+    AssistantMessage,
+    ClaudeAgentOptions,
+    HookMatcher,
+    ResultMessage,
+    SystemMessage,
+    UserMessage,
+    query,
+)
+# StreamEvent may be in __init__ or only in types across claude-agent-sdk versions
+try:
+    from claude_agent_sdk import StreamEvent
+except ImportError:
+    from claude_agent_sdk.types import StreamEvent
+from claude_agent_sdk.types import TextBlock, ToolUseBlock
+from respan_sdk.constants.llm_logging import (
+    LOG_TYPE_AGENT,
+    LOG_TYPE_GENERATION,
+    LOG_TYPE_TASK,
+    LOG_TYPE_TOOL,
+)
+from respan_sdk.respan_types.exporter_session_types import (
+    ExporterSessionState,
+    PendingToolState,
+)
+from respan_sdk.respan_types.param_types import RespanTextLogParams
+from respan_sdk.utils import RetryHandler
+from respan_exporter_anthropic_agents.utils import (
+    build_trace_name_from_prompt,
+    coerce_int,
+    extract_session_id_from_system_message,
+    resolve_export_endpoint,
+    serialize_metadata,
+    serialize_tool_calls,
+    serialize_value,
+    utc_now,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class RespanAnthropicAgentsExporter:
+    """Exporter that converts Anthropic Agent SDK events into Respan trace logs.
+
+    Not thread-safe: each instance should be used from a single async context.
+    Do not share a single exporter across threads or concurrent event loops.
+    """
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        base_url: Optional[str] = None,
+        timeout_seconds: int = 15,
+        max_retries: int = 3,
+        base_delay_seconds: float = 1.0,
+        max_delay_seconds: float = 30.0,
+    ) -> None:
+        self.api_key = (
+            api_key
+            or os.getenv("RESPAN_API_KEY")
+            or None
+        )
+        self.endpoint = endpoint or self._build_endpoint(base_url=base_url)
+        self.timeout_seconds = timeout_seconds
+        self.max_retries = max_retries
+        self.base_delay_seconds = base_delay_seconds
+        self.max_delay_seconds = max_delay_seconds
+
+        self._retry_handler = RetryHandler(
+            max_retries=max_retries,
+            retry_delay=base_delay_seconds,
+            backoff_multiplier=2.0,
+            max_delay=max_delay_seconds,
+        )
+        self._sessions: Dict[str, ExporterSessionState] = {}
+        self._last_session_id: Optional[str] = None
+        self._last_model: Optional[str] = None
+        self._last_prompt: Any = None
+
+    def _build_endpoint(self, base_url: Optional[str] = None) -> str:
+        """Build ingest endpoint URL from base URL."""
+        resolved_base_url = (
+            base_url
+            or os.getenv("RESPAN_BASE_URL")
+        )
+        return resolve_export_endpoint(base_url=resolved_base_url)
+
+    def set_endpoint(self, endpoint: str) -> None:
+        """Dynamically override the ingest endpoint."""
+        self.endpoint = endpoint
+
+    def create_hooks(
+        self,
+        existing_hooks: Optional[Dict[str, List[HookMatcher]]] = None,
+    ) -> Dict[str, List[HookMatcher]]:
+        """Return a hook map that includes Respan instrumentation hooks."""
+        merged_hooks = dict(existing_hooks or {})
+        self._append_hook(
+            hooks=merged_hooks,
+            event_name="UserPromptSubmit",
+            matcher=None,
+            callback=self._on_user_prompt_submit,
+        )
+        self._append_hook(
+            hooks=merged_hooks,
+            event_name="PreToolUse",
+            matcher=None,
+            callback=self._on_pre_tool_use,
+        )
+        self._append_hook(
+            hooks=merged_hooks,
+            event_name="PostToolUse",
+            matcher=None,
+            callback=self._on_post_tool_use,
+        )
+        self._append_hook(
+            hooks=merged_hooks,
+            event_name="SubagentStop",
+            matcher=None,
+            callback=self._on_subagent_stop,
+        )
+        self._append_hook(
+            hooks=merged_hooks,
+            event_name="Stop",
+            matcher=None,
+            callback=self._on_stop,
+        )
+        return merged_hooks
+
+    def with_options(
+        self,
+        options: Optional[ClaudeAgentOptions] = None,
+    ) -> ClaudeAgentOptions:
+        """Attach Respan hooks to SDK options."""
+        instrumented_options = options or ClaudeAgentOptions()
+        existing_hooks = instrumented_options.hooks or {}
+        instrumented_options.hooks = self.create_hooks(existing_hooks=existing_hooks)
+        return instrumented_options
+
+    async def query(
+        self,
+        prompt: Union[str, AsyncIterable[Dict[str, Any]]],
+        options: Optional[ClaudeAgentOptions] = None,
+    ) -> AsyncGenerator[Any, None]:
+        """
+        Wrapped Claude query that auto-tracks all streamed messages.
+
+        This keeps user code close to native SDK usage while ensuring
+        hooks and message events are exported to Respan.
+        """
+        instrumented_options = self.with_options(options=options)
+        active_session_id: Optional[str] = None
+
+        # Capture prompt for input tracking on child spans.
+        if isinstance(prompt, str):
+            self._last_prompt = prompt
+
+        async for message in query(prompt=prompt, options=instrumented_options):
+            if isinstance(message, SystemMessage):
+                detected_session_id = extract_session_id_from_system_message(
+                    system_message=message
+                )
+                if detected_session_id:
+                    active_session_id = detected_session_id
+            if isinstance(message, ResultMessage):
+                active_session_id = message.session_id
+            await self.track_message(
+                message=message,
+                session_id=active_session_id,
+            )
+            yield message
+
+    async def track_message(
+        self,
+        message: Any,
+        session_id: Optional[str] = None,
+        prompt: Optional[str] = None,
+    ) -> None:
+        """Track a single SDK message and export equivalent Respan spans.
+
+        Args:
+            message: An SDK message (SystemMessage, AssistantMessage, etc.).
+            session_id: Optional session ID override.
+            prompt: Optional user prompt string. If provided, stored for use
+                as input on assistant_message and result spans.
+        """
+        if prompt is not None:
+            self._last_prompt = prompt
+        if isinstance(message, SystemMessage):
+            self._handle_system_message(
+                system_message=message,
+                explicit_session_id=session_id,
+            )
+            return
+
+        if isinstance(message, AssistantMessage):
+            self._handle_assistant_message(
+                assistant_message=message,
+                explicit_session_id=session_id,
+            )
+            return
+
+        if isinstance(message, ResultMessage):
+            self._handle_result_message(result_message=message)
+            return
+
+        if isinstance(message, UserMessage):
+            self._handle_user_message(
+                user_message=message,
+                explicit_session_id=session_id,
+            )
+            return
+
+        if isinstance(message, StreamEvent):
+            self._handle_stream_event(stream_event=message)
+
+    def _append_hook(
+        self,
+        hooks: Dict[str, List[HookMatcher]],
+        event_name: str,
+        matcher: Optional[str],
+        callback: Any,
+    ) -> None:
+        event_hooks = list(hooks.get(event_name, []))
+        callback_name = getattr(callback, "__name__", None)
+        for existing_hook in event_hooks:
+            existing_matcher = getattr(existing_hook, "matcher", None)
+            existing_callbacks = getattr(existing_hook, "hooks", [])
+            if existing_matcher != matcher:
+                continue
+            for existing_callback in existing_callbacks:
+                existing_callback_name = getattr(existing_callback, "__name__", None)
+                if existing_callback_name == callback_name:
+                    return
+
+        hook_matcher = HookMatcher(matcher=matcher, hooks=[callback])
+        event_hooks.append(hook_matcher)
+        hooks[event_name] = event_hooks
+
+    async def _on_user_prompt_submit(
+        self,
+        input_data: Dict[str, Any],
+        tool_use_id: Optional[str],
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session_id = self._extract_session_id_from_hook_input(input_data=input_data)
+        prompt = input_data.get("prompt")
+        self._last_prompt = prompt
+        trace_name = build_trace_name_from_prompt(prompt=prompt)
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=trace_name,
+        )
+
+        now = utc_now()
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=str(uuid.uuid4()),
+            span_parent_id=session_state.trace_id,
+            span_name="user_prompt",
+            log_type=LOG_TYPE_TASK,
+            start_time=now,
+            timestamp=now,
+            input_value=input_data,
+            output_value=None,
+            metadata={"hook_event_name": "UserPromptSubmit"},
+            status_code=200,
+        )
+        self._send_payloads(payloads=[payload])
+        return {}
+
+    async def _on_pre_tool_use(
+        self,
+        input_data: Dict[str, Any],
+        tool_use_id: Optional[str],
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session_id = self._extract_session_id_from_hook_input(input_data=input_data)
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=None,
+        )
+
+        resolved_tool_use_id = str(
+            input_data.get("tool_use_id") or tool_use_id or str(uuid.uuid4())
+        )
+        session_state.pending_tools[resolved_tool_use_id] = PendingToolState(
+            span_unique_id=str(uuid.uuid4()),
+            started_at=utc_now(),
+            tool_name=input_data.get("tool_name") or "tool",
+            tool_input=input_data.get("tool_input"),
+        )
+        return {}
+
+    async def _on_post_tool_use(
+        self,
+        input_data: Dict[str, Any],
+        tool_use_id: Optional[str],
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session_id = self._extract_session_id_from_hook_input(input_data=input_data)
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=None,
+        )
+        resolved_tool_use_id = str(
+            input_data.get("tool_use_id") or tool_use_id or str(uuid.uuid4())
+        )
+
+        pending_tool_state = session_state.pending_tools.pop(
+            resolved_tool_use_id,
+            None,
+        )
+        now = utc_now()
+        if pending_tool_state is None:
+            pending_tool_state = PendingToolState(
+                span_unique_id=str(uuid.uuid4()),
+                started_at=now,
+                tool_name=input_data.get("tool_name") or "tool",
+                tool_input=input_data.get("tool_input"),
+            )
+
+        tool_name = str(
+            input_data.get("tool_name") or pending_tool_state.tool_name
+        )
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=pending_tool_state.span_unique_id,
+            span_parent_id=session_state.trace_id,
+            span_name=tool_name,
+            log_type=LOG_TYPE_TOOL,
+            start_time=pending_tool_state.started_at,
+            timestamp=now,
+            input_value=pending_tool_state.tool_input,
+            output_value=input_data.get("tool_response"),
+            metadata={
+                "hook_event_name": "PostToolUse",
+                "tool_use_id": resolved_tool_use_id,
+            },
+            span_tools=[tool_name],
+            status_code=200,
+        )
+        self._send_payloads(payloads=[payload])
+        return {}
+
+    async def _on_subagent_stop(
+        self,
+        input_data: Dict[str, Any],
+        tool_use_id: Optional[str],
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        session_id = self._extract_session_id_from_hook_input(input_data=input_data)
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=None,
+        )
+        now = utc_now()
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=str(uuid.uuid4()),
+            span_parent_id=session_state.trace_id,
+            span_name="subagent_stop",
+            log_type=LOG_TYPE_TASK,
+            start_time=now,
+            timestamp=now,
+            metadata={
+                "hook_event_name": "SubagentStop",
+                "agent_id": input_data.get("agent_id"),
+                "agent_type": input_data.get("agent_type"),
+            },
+            status_code=200,
+        )
+        self._send_payloads(payloads=[payload])
+        return {}
+
+    async def _on_stop(
+        self,
+        input_data: Dict[str, Any],
+        tool_use_id: Optional[str],
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        return {}
+
+    def _handle_system_message(
+        self,
+        system_message: SystemMessage,
+        explicit_session_id: Optional[str],
+    ) -> None:
+        session_id = explicit_session_id or extract_session_id_from_system_message(
+            system_message=system_message
+        )
+        if not session_id:
+            return
+
+        self._last_session_id = session_id
+        self._ensure_session_state(session_id=session_id, trace_name=None)
+
+    def _handle_user_message(
+        self,
+        user_message: UserMessage,
+        explicit_session_id: Optional[str],
+    ) -> None:
+        session_id = explicit_session_id or self._last_session_id
+        if not session_id:
+            return
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=None,
+        )
+        now = utc_now()
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=str(uuid.uuid4()),
+            span_parent_id=session_state.trace_id,
+            span_name="user_message",
+            log_type=LOG_TYPE_TASK,
+            start_time=now,
+            timestamp=now,
+            input_value=user_message,
+            output_value=None,
+            status_code=200,
+        )
+        self._send_payloads(payloads=[payload])
+
+    def _handle_assistant_message(
+        self,
+        assistant_message: AssistantMessage,
+        explicit_session_id: Optional[str],
+    ) -> None:
+        session_id = explicit_session_id or self._last_session_id
+        if not session_id:
+            return
+        session_state = self._ensure_session_state(
+            session_id=session_id,
+            trace_name=None,
+        )
+        now = utc_now()
+
+        model = getattr(assistant_message, "model", None)
+        if model:
+            self._last_model = model
+
+        # SDK uses typed dataclasses (TextBlock, ToolUseBlock), not dicts.
+        content_blocks = getattr(assistant_message, "content", None) or []
+        text_parts: List[str] = []
+        tool_calls: List[Dict[str, Any]] = []
+        for block in content_blocks:
+            if isinstance(block, TextBlock):
+                text_parts.append(block.text)
+            elif isinstance(block, ToolUseBlock):
+                tool_calls.append({
+                    "id": block.id,
+                    "name": block.name,
+                    "input": block.input,
+                })
+
+        output_text = "\n".join(text_parts) if text_parts else None
+
+        # AssistantMessage has no usage field; tokens live on ResultMessage.
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=getattr(assistant_message, "id", None) or str(uuid.uuid4()),
+            span_parent_id=session_state.trace_id,
+            span_name="assistant_message",
+            log_type=LOG_TYPE_GENERATION,
+            start_time=session_state.started_at,
+            timestamp=now,
+            input_value=self._last_prompt,
+            output_value=output_text,
+            model=model,
+            tool_calls=tool_calls if tool_calls else None,
+            status_code=200,
+        )
+        self._send_payloads(payloads=[payload])
+
+    def _handle_result_message(self, result_message: ResultMessage) -> None:
+        session_state = self._ensure_session_state(
+            session_id=result_message.session_id,
+            trace_name=None,
+        )
+
+        usage = result_message.usage or {}
+        now = utc_now()
+        status_code = 500 if result_message.is_error else 200
+        error_message = (
+            f"agent_result_error:{result_message.subtype}"
+            if result_message.is_error
+            else None
+        )
+
+        result_output = getattr(result_message, "result", None)
+        if result_output is None:
+            result_output = getattr(result_message, "structured_output", None)
+
+        metadata = {}
+        num_turns = getattr(result_message, "num_turns", None)
+        if num_turns is not None:
+            metadata["num_turns"] = num_turns
+        total_cost = getattr(result_message, "total_cost_usd", None)
+        if total_cost is not None:
+            metadata["sdk_total_cost_usd"] = total_cost
+
+        payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=str(uuid.uuid4()),
+            span_parent_id=session_state.trace_id,
+            span_name=f"result:{result_message.subtype}",
+            log_type=LOG_TYPE_AGENT,
+            start_time=session_state.started_at,
+            timestamp=now,
+            input_value=self._last_prompt,
+            output_value=result_output,
+            model=self._last_model,
+            metadata=metadata if metadata else None,
+            prompt_tokens=coerce_int(usage.get("input_tokens")),
+            completion_tokens=coerce_int(usage.get("output_tokens")),
+            prompt_cache_hit_tokens=coerce_int(usage.get("cache_read_input_tokens")),
+            prompt_cache_creation_tokens=coerce_int(usage.get("cache_creation_input_tokens")),
+            status_code=status_code,
+            error_message=error_message,
+        )
+        self._send_payloads(payloads=[payload])
+        session_state.pending_tools.clear()
+
+    def _handle_stream_event(self, stream_event: StreamEvent) -> None:
+        self._last_session_id = stream_event.session_id
+
+    def _extract_session_id_from_hook_input(self, input_data: Dict[str, Any]) -> str:
+        raw_session_id = input_data.get("session_id") or input_data.get("sessionId")
+        if raw_session_id:
+            normalized_session_id = str(raw_session_id)
+            self._last_session_id = normalized_session_id
+            return normalized_session_id
+
+        if self._last_session_id:
+            return self._last_session_id
+        generated_session_id = str(uuid.uuid4())
+        self._last_session_id = generated_session_id
+        return generated_session_id
+
+    def _ensure_session_state(
+        self,
+        session_id: str,
+        trace_name: Optional[str],
+    ) -> ExporterSessionState:
+        existing_state = self._sessions.get(session_id)
+        if existing_state is not None:
+            if (
+                trace_name
+                and existing_state.trace_name.startswith("anthropic-session-")
+            ):
+                existing_state.trace_name = trace_name
+            self._last_session_id = session_id
+            return existing_state
+
+        resolved_trace_name = trace_name or f"anthropic-session-{session_id[:12]}"
+        now = utc_now()
+        state = ExporterSessionState(
+            session_id=session_id,
+            trace_id=session_id,
+            trace_name=resolved_trace_name,
+            started_at=now,
+            pending_tools={},
+            is_root_emitted=False,
+        )
+        self._sessions[session_id] = state
+        self._last_session_id = session_id
+        self._emit_root_span(session_state=state)
+        return state
+
+    def _emit_root_span(self, session_state: ExporterSessionState) -> None:
+        if session_state.is_root_emitted:
+            return
+        root_payload = self._create_payload(
+            session_state=session_state,
+            span_unique_id=session_state.trace_id,
+            span_parent_id=None,
+            span_name=session_state.trace_name,
+            log_type=LOG_TYPE_AGENT,
+            start_time=session_state.started_at,
+            timestamp=session_state.started_at,
+            input_value=None,
+            output_value=None,
+            metadata={"source": "session_root"},
+            status_code=200,
+        )
+        self._send_payloads(payloads=[root_payload])
+        session_state.is_root_emitted = True
+
+    def _create_payload(
+        self,
+        session_state: ExporterSessionState,
+        span_unique_id: str,
+        span_parent_id: Optional[str],
+        span_name: str,
+        log_type: str,
+        start_time: Optional[datetime],
+        timestamp: Optional[datetime],
+        input_value: Any = None,
+        output_value: Any = None,
+        model: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        span_tools: Optional[List[str]] = None,
+        tool_calls: Optional[List[Dict[str, Any]]] = None,
+        prompt_tokens: Optional[int] = None,
+        completion_tokens: Optional[int] = None,
+        total_request_tokens: Optional[int] = None,
+        prompt_cache_hit_tokens: Optional[int] = None,
+        prompt_cache_creation_tokens: Optional[int] = None,
+        status_code: int = 200,
+        error_message: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        resolved_start_time = start_time or utc_now()
+        resolved_timestamp = timestamp or resolved_start_time
+        latency_seconds = max(
+            (resolved_timestamp - resolved_start_time).total_seconds(),
+            0.0,
+        )
+
+        payload = RespanTextLogParams(
+            trace_unique_id=session_state.trace_id,
+            span_unique_id=span_unique_id,
+            span_parent_id=span_parent_id,
+            trace_name=session_state.trace_name,
+            session_identifier=session_state.session_id,
+            span_name=span_name,
+            span_workflow_name=session_state.trace_name,
+            log_type=log_type,
+            start_time=resolved_start_time,
+            timestamp=resolved_timestamp,
+            latency=latency_seconds,
+            status_code=status_code,
+            error_bit=1 if error_message else 0,
+            error_message=error_message,
+            input=serialize_value(input_value),
+            output=serialize_value(output_value),
+            model=model,
+            metadata=serialize_metadata(metadata),
+            span_tools=span_tools,
+            tool_calls=serialize_tool_calls(tool_calls),
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_request_tokens=total_request_tokens,
+            prompt_cache_hit_tokens=prompt_cache_hit_tokens,
+            prompt_cache_creation_tokens=prompt_cache_creation_tokens,
+        )
+        return payload.model_dump(mode="json", exclude_none=True)
+
+    def _send_payloads(self, payloads: List[Dict[str, Any]]) -> None:
+        if not payloads:
+            return
+
+        if not self.api_key:
+            logger.warning("Respan API key is not set; skipping exporter upload")
+            return
+
+        request_body = json.dumps({"data": payloads}, default=str).encode("utf-8")
+        request_headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        def _do_request() -> None:
+            request = urllib.request.Request(
+                url=self.endpoint,
+                data=request_body,
+                headers=request_headers,
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(
+                    url=request,
+                    timeout=self.timeout_seconds,
+                ) as response:
+                    if response.status < 300:
+                        return
+                    response_body = response.read().decode("utf-8", errors="replace")
+                    if 400 <= response.status < 500:
+                        logger.error(
+                            "Respan export client error %s: %s",
+                            response.status,
+                            response_body,
+                        )
+                        return
+                    logger.warning(
+                        "Respan export server error %s: %s",
+                        response.status,
+                        response_body,
+                    )
+                    raise RuntimeError(
+                        "Respan export server error %s: %s"
+                        % (response.status, response_body)
+                    )
+            except urllib.error.HTTPError as error:
+                error_body = error.read().decode("utf-8", errors="replace")
+                if 400 <= error.code < 500:
+                    logger.error(
+                        "Respan export client error %s: %s",
+                        error.code,
+                        error_body,
+                    )
+                    return
+                logger.warning(
+                    "Respan export server error %s: %s",
+                    error.code,
+                    error_body,
+                )
+                raise
+            except urllib.error.URLError as error:
+                logger.warning("Respan export network error: %s", error)
+                raise
+
+        def _run_export_sync() -> None:
+            self._retry_handler.execute(
+                _do_request,
+                context="Respan export ingest",
+            )
+
+        try:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop is not None:
+                future = loop.run_in_executor(None, _run_export_sync)
+                future.add_done_callback(
+                    lambda f: (
+                        logger.warning(
+                            "Respan export failed: %s", f.exception()
+                        )
+                        if f.exception()
+                        else None
+                    )
+                )
+            else:
+                _run_export_sync()
+        except Exception:
+            logger.warning("Respan export failed", exc_info=True)
+
+
+class RespanSpanExporter(RespanAnthropicAgentsExporter):
+    """Compatibility alias that mirrors OpenAI exporter naming."""
+
+
+def instrument_options(
+    exporter: RespanAnthropicAgentsExporter,
+    options: Optional[ClaudeAgentOptions] = None,
+) -> ClaudeAgentOptions:
+    """Helper for attaching Respan hooks onto existing ClaudeAgentOptions."""
+    return exporter.with_options(options=options)

@@ -94,9 +94,9 @@ class LogAPI(BaseAPI[RespanFullLogParams, LogList, RespanLogParams, None]):
 
         Args:
             api_key (str, optional): Your Respan API key for authentication.
-                If not provided, reads from KEYWORDSAI_API_KEY environment variable.
+                If not provided, reads from RESPAN_API_KEY environment variable.
             base_url (str, optional): Custom base URL for the API. If not provided,
-                reads from KEYWORDSAI_BASE_URL environment variable or uses default.
+                reads from RESPAN_BASE_URL environment variable or uses default.
         """
         super().__init__(api_key, base_url)
 
@@ -343,8 +343,8 @@ def create_log_client(api_key: str = None, base_url: str = None) -> LogAPI:
     Create a log API client
 
     Args:
-        api_key: Respan API key (optional, reads from KEYWORDSAI_API_KEY env var if not provided)
-        base_url: Base URL for the API (optional, reads from KEYWORDSAI_BASE_URL env var or uses default)
+        api_key: Respan API key (optional, reads from RESPAN_API_KEY env var if not provided)
+        base_url: Base URL for the API (optional, reads from RESPAN_BASE_URL env var or uses default)
 
     Returns:
         LogAPI client instance

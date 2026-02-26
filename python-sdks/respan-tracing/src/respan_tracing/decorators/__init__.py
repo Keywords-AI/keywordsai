@@ -9,7 +9,7 @@ def workflow(
     method_name: Optional[str] = None,
     processors: Optional[Union[str, List[str]]] = None,
 ):
-    """Keywords AI workflow decorator
+    """Respan workflow decorator
     
     Args:
         name: Optional name for the workflow
@@ -33,7 +33,7 @@ def task(
     method_name: Optional[str] = None,
     processors: Optional[Union[str, List[str]]] = None,
 ):
-    """Keywords AI task decorator
+    """Respan task decorator
     
     Args:
         name: Optional name for the task
@@ -57,7 +57,7 @@ def agent(
     method_name: Optional[str] = None,
     processors: Optional[Union[str, List[str]]] = None,
 ):
-    """Keywords AI agent decorator
+    """Respan agent decorator
     
     Args:
         name: Optional name for the agent
@@ -81,7 +81,7 @@ def tool(
     method_name: Optional[str] = None,
     processors: Optional[Union[str, List[str]]] = None,
 ):
-    """Keywords AI tool decorator
+    """Respan tool decorator
     
     Args:
         name: Optional name for the tool

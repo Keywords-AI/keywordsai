@@ -40,7 +40,7 @@ class RespanGenerator:
         # Basic usage
         generator = RespanGenerator(
             model="gpt-4o-mini",
-            api_key="your-respan-key"
+            api_key="your-respan-api-key"
         )
         result = generator.run(messages=[{"role": "user", "content": "Hello!"}])
         
@@ -48,7 +48,7 @@ class RespanGenerator:
         generator = RespanGenerator(
             model="gpt-4o-mini",
             prompt_id="042f5f",  # Prompt from Respan platform
-            api_key="your-respan-key"
+            api_key="your-respan-api-key"
         )
         result = generator.run(prompt_variables={"customer_name": "John"})
         ```
@@ -245,7 +245,7 @@ class RespanChatGenerator:
         
         generator = RespanChatGenerator(
             model="gpt-4",
-            api_key="your-respan-key"
+            api_key="your-respan-api-key"
         )
         
         messages = [
