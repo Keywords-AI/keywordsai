@@ -7,7 +7,8 @@ from dify_client import AsyncClient, Client
 from dify_client.models import ResponseMode
 from respan_sdk.constants import RESPAN_TRACING_INGEST_ENDPOINT
 from respan_sdk.respan_types import RespanParams
-from respan_exporter_dify.utils import export_dify_call, now_utc
+from respan_sdk.utils.time import now_utc
+from respan_exporter_dify.utils import export_dify_call
 
 
 logger = logging.getLogger(__name__)

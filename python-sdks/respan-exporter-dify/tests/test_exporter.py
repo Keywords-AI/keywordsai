@@ -4,8 +4,9 @@ import pytest
 from dify_client import AsyncClient, Client
 from dify_client.models import ResponseMode
 from respan_sdk.respan_types import RespanParams
+from respan_sdk.utils.time import now_utc
 from respan_exporter_dify.exporter import create_async_client, create_client
-from respan_exporter_dify.utils import _build_export_payloads, now_utc
+from respan_exporter_dify.utils import _build_export_payloads
 
 
 class AssistantMessage:
