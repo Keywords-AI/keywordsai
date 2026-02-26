@@ -358,6 +358,14 @@ class RespanChatGenerator:
                 "meta": meta,
             }
             
+        except requests.exceptions.HTTPError as e:
+            error_msg = f"HTTP error from Respan: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        except requests.exceptions.Timeout:
+            error_msg = "Request to Respan timed out"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
         except Exception as e:
             error_msg = f"Error calling Respan gateway: {str(e)}"
             logger.error(error_msg)

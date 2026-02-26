@@ -78,7 +78,7 @@ class RespanConnector:
         
         # Enable content tracing if in tracing mode
         if self.mode == "tracing":
-            if not os.getenv("HAYSTACK_CONTENT_TRACING_ENABLED"):
+            if os.getenv("HAYSTACK_CONTENT_TRACING_ENABLED") != "true":
                 logger.warning(
                     "HAYSTACK_CONTENT_TRACING_ENABLED is not set. "
                     "Set it to 'true' to enable full tracing capabilities."

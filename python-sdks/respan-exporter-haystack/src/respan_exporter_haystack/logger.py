@@ -1,12 +1,12 @@
 """Respan Logger for sending trace data to the API."""
 
-import time
 from typing import Any, Dict, List, Optional
 
 import requests
 from haystack import logging
 
 from respan_sdk.constants import resolve_tracing_ingest_endpoint
+from respan_sdk.utils import RetryHandler
 
 logger = logging.getLogger(__name__)
 
@@ -59,38 +59,34 @@ class RespanLogger:
             "Content-Type": "application/json",
         }
 
-        for attempt in range(self.max_retries + 1):
-            try:
-                logger.debug(f"Sending {len(spans)} spans to Respan (attempt {attempt + 1})")
-                response = requests.post(
-                    url=self.traces_endpoint,
-                    headers=headers,
-                    json=spans,
-                    timeout=10,
-                )
+        handler = RetryHandler(
+            max_retries=self.max_retries,
+            retry_delay=self.base_delay,
+            backoff_multiplier=2.0,
+            max_delay=self.max_delay,
+        )
 
-                if response.status_code in [200, 201]:
-                    logger.debug("Successfully sent trace to Respan")
-                    return response.json()
-                if response.status_code >= 500 and attempt < self.max_retries:
-                    delay = min(self.base_delay * (2 ** attempt), self.max_delay)
-                    logger.debug(f"Retrying in {delay:.1f}s after {response.status_code}")
-                    time.sleep(delay)
-                    continue
-                logger.warning(
-                    f"Failed to send trace to Respan: {response.status_code} - {response.text}"
-                )
-                return None
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-                if attempt < self.max_retries:
-                    delay = min(self.base_delay * (2 ** attempt), self.max_delay)
-                    logger.debug(f"Retrying in {delay:.1f}s after {type(e).__name__}")
-                    time.sleep(delay)
-                else:
-                    logger.warning(f"Request to Respan failed after {self.max_retries + 1} attempts: {e}")
-                    return None
-            except Exception as e:
-                logger.warning(f"Error sending trace to Respan: {e}")
-                return None
+        def _post() -> Optional[Dict[str, Any]]:
+            logger.debug(f"Sending {len(spans)} spans to Respan")
+            response = requests.post(
+                url=self.traces_endpoint,
+                headers=headers,
+                json=spans,
+                timeout=10,
+            )
 
-        return None
+            if response.status_code >= 500:
+                raise RuntimeError(f"Respan ingest server error status_code={response.status_code}")
+
+            if response.status_code in [200, 201]:
+                logger.debug("Successfully sent trace to Respan")
+                return response.json()
+
+            logger.warning(f"Failed to send trace to Respan: {response.status_code} - {response.text}")
+            return None
+
+        try:
+            return handler.execute(func=_post, context="respan haystack exporter")
+        except Exception as e:
+            logger.warning(f"Error sending trace to Respan after retries: {e}")
+            return None
