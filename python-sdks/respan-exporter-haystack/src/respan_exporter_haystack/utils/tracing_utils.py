@@ -1,9 +1,15 @@
 """Tracing payload transformation helper utilities."""
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+from respan_sdk.constants.llm_logging import LOG_TYPE_CHAT, LOG_TYPE_TASK, LOG_TYPE_WORKFLOW
+from respan_sdk.respan_types.log_types import RespanFullLogParams
+
 from respan_exporter_haystack.utils.serialization_utils import serialize_data
+
+logger = logging.getLogger(__name__)
 
 
 def format_span_for_api(
@@ -36,13 +42,13 @@ def format_span_for_api(
         span_name = operation_name
 
     if "Generator" in component_type or "llm" in component_name.lower():
-        log_type = "chat"
+        log_type = LOG_TYPE_CHAT
     elif "Builder" in component_type or "prompt" in component_name.lower():
-        log_type = "task"
+        log_type = LOG_TYPE_TASK
     elif operation_name == "haystack.pipeline.run":
-        log_type = "workflow"
+        log_type = LOG_TYPE_WORKFLOW
     else:
-        log_type = "task"
+        log_type = LOG_TYPE_TASK
 
     metadata = {**workflow_metadata}
     if component_name:
@@ -98,10 +104,10 @@ def format_span_for_api(
                     first_reply = replies[0]
                     if hasattr(first_reply, "text"):
                         payload["output"] = first_reply.text
-                        payload["log_type"] = "chat"
+                        payload["log_type"] = LOG_TYPE_CHAT
                     elif hasattr(first_reply, "content"):
                         payload["output"] = first_reply.content
-                        payload["log_type"] = "chat"
+                        payload["log_type"] = LOG_TYPE_CHAT
                     elif isinstance(first_reply, str):
                         payload["output"] = first_reply
                     else:
@@ -138,4 +144,14 @@ def format_span_for_api(
         payload["warnings"] = span_data["error"]
 
     payload["status_code"] = span_data.get("status_code", 200)
-    return payload
+
+    try:
+        validated = RespanFullLogParams.model_validate(payload).model_dump(
+            mode="json", exclude_none=True
+        )
+        return validated
+    except Exception as e:
+        logger.warning(
+            "Haystack span payload failed RespanFullLogParams validation: %s", e
+        )
+        return None
