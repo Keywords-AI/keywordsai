@@ -113,24 +113,23 @@ class RespanGenerator:
                 - meta: List of metadata dicts (model, tokens, cost, etc.)
         """
         # Handle prompt management mode
-        if self.prompt_id:
-            # Using platform-managed prompt
-            # Messages are placeholder when using prompts
-            messages = [{"role": "user", "content": "placeholder"}]
-        else:
+        if not self.prompt_id:
             # Convert prompt to messages format if provided
             if prompt is not None:
                 messages = [{"role": "user", "content": prompt}]
             elif messages is None:
                 raise ValueError("Either 'prompt' or 'messages' must be provided")
+        
         # Merge generation kwargs
         kwargs = {**self.generation_kwargs, **(generation_kwargs or {})}
         
         # Build the request payload
         payload = {
-            "messages": messages,
             **kwargs,
         }
+        
+        if messages is not None:
+            payload["messages"] = messages
         
         # Add model if provided (optional when using prompt_id)
         if self.model:
@@ -256,15 +255,17 @@ class RespanChatGenerator:
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
+        model: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
+        prompt_id: Optional[str] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the chat generator."""
         self.model = model
         self.api_key = resolve_api_key(api_key=api_key)
         self.base_url = resolve_base_url(base_url=base_url)
+        self.prompt_id = prompt_id
         self.generation_kwargs = generation_kwargs or {}
         
         if not self.api_key:
@@ -272,42 +273,70 @@ class RespanChatGenerator:
                 "Respan API key is required. Set RESPAN_API_KEY environment variable "
                 "or pass api_key parameter."
             )
+            
+        if not self.model and not self.prompt_id:
+            raise ValueError(
+                "Either 'model' or 'prompt_id' must be provided. "
+                "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
+            )
         
         self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
 
     @component.output_types(replies=List[ChatMessage], meta=List[Dict[str, Any]])
     def run(
         self,
-        messages: List[ChatMessage],
+        messages: Optional[List[ChatMessage]] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
+        prompt_variables: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Generate chat responses using Respan gateway.
         
         Args:
-            messages: List of ChatMessage objects
+            messages: List of ChatMessage objects (optional if using prompt_id)
             generation_kwargs: Additional generation parameters
+            prompt_variables: Variables for platform-managed prompt (requires prompt_id in init)
             
         Returns:
             Dictionary with:
                 - replies: List of ChatMessage objects
                 - meta: List of metadata dicts
         """
-        # Convert ChatMessage to dict format
-        messages_dict = [
-            to_request_message(message=msg)
-            for msg in messages
-        ]
+        # Handle prompt management mode
+        messages_dict = None
+        if not self.prompt_id:
+            if messages is None:
+                raise ValueError("Either 'messages' must be provided or 'prompt_id' must be set during initialization")
+            # Convert ChatMessage to dict format
+            messages_dict = [
+                to_request_message(message=msg)
+                for msg in messages
+            ]
         
         # Merge generation kwargs
         kwargs = {**self.generation_kwargs, **(generation_kwargs or {})}
         
         # Build payload
         payload = {
-            "model": self.model,
-            "messages": messages_dict,
             **kwargs,
         }
+        
+        if messages_dict is not None:
+            payload["messages"] = messages_dict
+        
+        # Add model if provided (optional when using prompt_id)
+        if self.model:
+            payload["model"] = self.model
+            
+        # Add prompt management if prompt_id is set
+        if self.prompt_id:
+            prompt_config = {
+                "prompt_id": self.prompt_id,
+                "override": True,  # Use prompt config from platform
+            }
+            if prompt_variables:
+                prompt_config["variables"] = prompt_variables
+            payload["prompt"] = prompt_config
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -378,6 +407,7 @@ class RespanChatGenerator:
             model=self.model,
             api_key=self.api_key,
             base_url=self.base_url,
+            prompt_id=self.prompt_id,
             generation_kwargs=self.generation_kwargs,
         )
 

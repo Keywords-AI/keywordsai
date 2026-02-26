@@ -48,6 +48,7 @@ class RespanTracer(Tracer):
         # Trace state
         self.trace_id = str(uuid.uuid4())
         self.spans: Dict[str, Dict[str, Any]] = {}
+        self.span_objects: Dict[str, "RespanSpan"] = {}  # Registry of active span objects
         self.completed_spans: List[Dict[str, Any]] = []  # Collect spans for batch submission
         self.trace_url: Optional[str] = None
         self.start_time = None
@@ -90,21 +91,16 @@ class RespanTracer(Tracer):
             "data": {},
         }
         
+        self.span_objects[span_id] = span
+        
         return span
 
     def current_span(self) -> Optional["RespanSpan"]:
         """Get the current active span."""
-        # Return the most recently created span
-        if self.spans:
-            span_id = list(self.spans.keys())[-1]
-            span_data = self.spans[span_id]
-            return RespanSpan(
-                tracer=self,
-                operation_name=span_data["operation_name"],
-                span_id=span_id,
-                trace_id=self.trace_id,
-                tags=span_data.get("tags", {}),
-            )
+        # Return reference to existing span object if available
+        if self.span_objects:
+            span_id = list(self.span_objects.keys())[-1]
+            return self.span_objects[span_id]
         return None
 
     def finalize_span(
@@ -149,11 +145,19 @@ class RespanTracer(Tracer):
                 self.completed_spans.append(formatted_span)
             
             # If this is the root span (no parent), send the entire trace
-            if span_data.get("parent_id") is None and span_data["operation_name"] == "haystack.pipeline.run":
+            # We use a loose check on operation_name to be resilient to Haystack internal changes
+            op_name = span_data.get("operation_name", "")
+            if span_data.get("parent_id") is None and ("pipeline" in op_name.lower() or "run" in op_name.lower()):
                 logger.debug(f"Root span complete - sending trace with {len(self.completed_spans)} spans")
                 self.send_trace()
         except Exception as e:
             logger.warning(f"Failed to format span: {e}")
+            
+        # Clean up references to prevent memory leaks in long-running pipelines
+        if span_id in self.spans:
+            del self.spans[span_id]
+        if span_id in self.span_objects:
+            del self.span_objects[span_id]
 
     def send_trace(self):
         """Send all collected spans to Respan as a batch."""
@@ -177,6 +181,7 @@ class RespanTracer(Tracer):
                     self.trace_url = f"https://platform.respan.ai/logs?trace_id={trace_id}"
                     
             self.pipeline_finished = True
+            self.completed_spans.clear()  # Free memory after sending
         except Exception as e:
             logger.warning(f"Failed to send trace to Respan: {e}")
 
