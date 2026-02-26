@@ -36,6 +36,9 @@ class RespanLogger:
         Args:
             api_key: Respan API key
             base_url: Base URL for the Respan API
+            max_retries: Maximum number of attempts for sending traces
+            base_delay: Base delay in seconds between retries
+            max_delay: Maximum delay in seconds between retries
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")

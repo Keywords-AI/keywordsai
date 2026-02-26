@@ -54,6 +54,9 @@ class RespanConnector:
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+        max_delay: float = 30.0,
     ):
         """Initialize the Respan connector."""
         self.name = name
@@ -61,6 +64,9 @@ class RespanConnector:
         self.api_key = resolve_api_key(api_key=api_key)
         self.base_url = resolve_base_url(base_url=base_url, include_api_path=True)
         self.metadata = metadata or {}
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.max_delay = max_delay
         
         if not self.api_key:
             raise ValueError(
@@ -74,6 +80,9 @@ class RespanConnector:
             api_key=self.api_key,
             base_url=self.base_url,
             metadata=self.metadata,
+            max_retries=self.max_retries,
+            base_delay=self.base_delay,
+            max_delay=self.max_delay,
         )
         
         # Enable content tracing if in tracing mode
@@ -119,6 +128,9 @@ class RespanConnector:
             api_key=self.api_key,
             base_url=self.base_url,
             metadata=self.metadata,
+            max_retries=self.max_retries,
+            base_delay=self.base_delay,
+            max_delay=self.max_delay,
         )
 
     @classmethod

@@ -27,6 +27,9 @@ class RespanTracer(Tracer):
         api_key: str,
         base_url: str,
         metadata: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+        max_delay: float = 30.0,
     ):
         """
         Initialize the Respan tracer.
@@ -36,6 +39,9 @@ class RespanTracer(Tracer):
             api_key: Respan API key
             base_url: Respan API base URL
             metadata: Additional metadata to attach to traces
+            max_retries: Maximum number of attempts for sending traces
+            base_delay: Base delay in seconds between retries
+            max_delay: Maximum delay in seconds between retries
         """
         self.name = name
         self.api_key = api_key
@@ -43,7 +49,13 @@ class RespanTracer(Tracer):
         self.metadata = metadata or {}
         
         # Initialize the logger for sending data
-        self.kw_logger = RespanLogger(api_key=api_key, base_url=base_url)
+        self.kw_logger = RespanLogger(
+            api_key=api_key,
+            base_url=base_url,
+            max_retries=max_retries,
+            base_delay=base_delay,
+            max_delay=max_delay,
+        )
         
         # Trace state
         self.trace_id = str(uuid.uuid4())
