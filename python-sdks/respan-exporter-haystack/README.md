@@ -336,8 +336,8 @@ python examples/combined_example.py
 ## Support
 
 - **Documentation:** https://docs.respan.ai/
-- **Dashboard:** https://platform.respan.co/
-- **Issues:** [GitHub Issues](https://github.com/Keywords-AI/keywordai_sdks/issues)
+- **Dashboard:** https://platform.respan.ai/
+- **Issues:** [GitHub Issues](https://github.com/respan-ai/respan-sdks/issues)
 
 ---
 
