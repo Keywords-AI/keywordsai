@@ -1,6 +1,6 @@
 """Respan Gateway Generator for Haystack pipelines."""
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from haystack import component, default_from_dict, default_to_dict, logging
@@ -59,7 +59,6 @@ class RespanGenerator:
         base_url: Respan API base URL (defaults to https://api.respan.ai)
         prompt_id: Optional prompt ID from Respan platform for prompt management
         generation_kwargs: Additional parameters (temperature, max_tokens, etc.)
-        streaming_callback: Optional callback for streaming responses
     """
 
     def __init__(
@@ -69,7 +68,6 @@ class RespanGenerator:
         base_url: Optional[str] = None,
         prompt_id: Optional[str] = None,
         generation_kwargs: Optional[Dict[str, Any]] = None,
-        streaming_callback: Optional[Callable[..., None]] = None,
     ):
         """Initialize the Respan gateway generator."""
         self.model = model
@@ -77,7 +75,6 @@ class RespanGenerator:
         self.base_url = resolve_base_url(base_url=base_url)
         self.prompt_id = prompt_id
         self.generation_kwargs = generation_kwargs or {}
-        self.streaming_callback = streaming_callback
         
         if not self.api_key:
             raise ValueError(
