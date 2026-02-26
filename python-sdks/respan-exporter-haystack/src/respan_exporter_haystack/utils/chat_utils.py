@@ -1,8 +1,11 @@
 """Chat payload conversion helper utilities."""
 
+import logging
 from typing import Any, Dict, List
 
 from haystack.dataclasses import ChatMessage
+
+logger = logging.getLogger(__name__)
 
 
 def extract_response_text(content: Any) -> str:
@@ -53,8 +56,8 @@ def chat_message_text(message: ChatMessage) -> str:
     try:
         if message.text is not None:
             return str(message.text)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Could not read message.text, falling back to to_dict: %s", e)
 
     message_dict = message.to_dict()
     content_parts = message_dict.get("content", [])

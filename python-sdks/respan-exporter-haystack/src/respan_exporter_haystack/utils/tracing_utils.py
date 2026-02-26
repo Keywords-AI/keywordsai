@@ -70,11 +70,15 @@ def format_span_for_api(
         "disable_log": False,
     }
 
-    input_data = data.get("haystack.component.input") or tags.get("haystack.pipeline.input_data")
+    input_data = data.get("haystack.component.input")
+    if input_data is None:
+        input_data = tags.get("haystack.pipeline.input_data")
     if input_data is not None:
         payload["input"] = serialize_data(data=input_data)
 
-    output_data = data.get("haystack.component.output") or tags.get("haystack.pipeline.output_data")
+    output_data = data.get("haystack.component.output")
+    if output_data is None:
+        output_data = tags.get("haystack.pipeline.output_data")
 
     if output_data is not None:
         if operation_name == "haystack.pipeline.run" and isinstance(output_data, dict):
