@@ -122,8 +122,8 @@ class RespanConnector:
                 - name: The pipeline/trace name
                 - trace_url: URL to view the trace in Respan dashboard (if available)
         """
-        # Don't send here - it will be sent automatically when the root span finishes
-        # Just return the trace info
+        # Don't send here - it will be sent automatically when the root span finishes.
+        # Ensure we return the name so that other pipeline components can use it if desired.
         return {
             "name": self.name,
             "trace_url": self.tracer.get_trace_url(),

@@ -227,16 +227,29 @@ class RespanGenerator(_BaseRespanGenerator):
                 - replies: List of generated texts
                 - meta: List of metadata dicts (model, tokens, cost, etc.)
         """
+        # Set up default messages
+        _messages = messages
+        if _messages is None:
+            _messages = []
+        
         # Handle prompt management mode
         if not self.prompt_id:
             # Convert prompt to messages format if provided
             if prompt is not None:
-                messages = [{"role": "user", "content": prompt}]
-            elif messages is None:
+                _messages = [{"role": "user", "content": prompt}]
+            elif not _messages:
                 raise ValueError("Either 'prompt' or 'messages' must be provided")
+        else:
+            if prompt is not None:
+                logger.warning("Prompt ID provided alongside 'prompt' arg. The explicit 'prompt' will be ignored.")
+            if messages:
+                logger.warning("Prompt ID provided alongside 'messages' arg. Explicit messages will be appended/ignored according to platform rules.")
+                _messages = messages
+            else:
+                _messages = None
         
         payload = self._build_payload(
-            messages=messages,
+            messages=_messages,
             generation_kwargs=generation_kwargs,
             prompt_variables=prompt_variables,
         )
@@ -333,13 +346,22 @@ class RespanChatGenerator(_BaseRespanGenerator):
         # Handle prompt management mode
         messages_dict = None
         if not self.prompt_id:
-            if messages is None:
+            if not messages:
                 raise ValueError("Either 'messages' must be provided or 'prompt_id' must be set during initialization")
             # Convert ChatMessage to dict format
             messages_dict = [
                 to_request_message(message=msg)
                 for msg in messages
             ]
+        else:
+            if messages:
+                logger.warning("Prompt ID provided alongside 'messages' arg. Explicit messages will be appended/ignored according to platform rules.")
+                messages_dict = [
+                    to_request_message(message=msg)
+                    for msg in messages
+                ]
+            else:
+                messages_dict = None
         
         payload = self._build_payload(
             messages=messages_dict,

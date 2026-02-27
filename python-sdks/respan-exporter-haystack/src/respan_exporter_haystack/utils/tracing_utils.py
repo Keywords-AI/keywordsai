@@ -30,9 +30,9 @@ def format_span_for_api(
         return None
 
     start_time = datetime.fromtimestamp(
-        span_data["start_time"], tz=timezone.utc
+        timestamp=span_data["start_time"], tz=timezone.utc
     ).isoformat()
-    end_time = datetime.fromtimestamp(span_data["end_time"], tz=timezone.utc).isoformat()
+    end_time = datetime.fromtimestamp(timestamp=span_data["end_time"], tz=timezone.utc).isoformat()
 
     if component_name:
         span_name = component_name
@@ -150,7 +150,7 @@ def format_span_for_api(
     payload["status_code"] = span_data.get("status_code", 200)
 
     try:
-        validated = RespanFullLogParams.model_validate(payload).model_dump(
+        validated = RespanFullLogParams.model_validate(obj=payload).model_dump(
             mode="json", exclude_none=True
         )
         return validated

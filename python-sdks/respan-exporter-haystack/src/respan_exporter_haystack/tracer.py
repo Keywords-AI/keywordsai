@@ -91,6 +91,7 @@ class RespanTracer(Tracer):
         span_id = str(uuid.uuid4())
         parent_id = parent_span.span_id if parent_span else None
         
+        # Keep track of component name if available, often added via tag later but initializing it 
         span = RespanSpan(
             tracer=self,
             operation_name=operation_name,
@@ -164,16 +165,19 @@ class RespanTracer(Tracer):
                 self.completed_spans.append(formatted_span)
             
             # If this is the root span (no parent), send the entire trace
-            op_name = span_data.get("operation_name", "")
-            if span_data.get("parent_id") is None and op_name == "haystack.pipeline.run":
+            # Components nested in a pipeline will have a parent_id, but if run isolated,
+            # they might have no parent. We send the trace when the top-level span finishes.
+            is_root = span_data.get("parent_id") is None
+            if is_root:
                 logger.debug(f"Root span complete - sending trace with {len(self.completed_spans)} spans")
                 self.send_trace()
         except Exception as e:
             logger.warning(f"Failed to format span: {e}")
             
         # Clean up references to prevent memory leaks in long-running pipelines
-        if span_id in self.spans:
-            del self.spans[span_id]
+        # BUT DO NOT remove from self.spans here since they are needed for formatting
+        # later or when formatting the root span that sends the batch.
+        # Spans are cleared in `self.send_trace()`
         if span_id in self.span_objects:
             del self.span_objects[span_id]
 
@@ -189,7 +193,7 @@ class RespanTracer(Tracer):
             
         try:
             logger.debug(f"Sending trace with {len(self.completed_spans)} spans to Respan")
-            response = self.kw_logger.send_trace(self.completed_spans)
+            response = self.kw_logger.send_trace(spans=self.completed_spans)
             
             if response:
                 logger.debug(f"Trace sent successfully: {response}")
@@ -200,6 +204,7 @@ class RespanTracer(Tracer):
                     
             self.pipeline_finished = True
             self.completed_spans.clear()  # Free memory after sending
+            self.spans.clear() # Free span lookup memory
         except Exception as e:
             logger.warning(f"Failed to send trace to Respan: {e}")
 
@@ -264,11 +269,17 @@ class RespanSpan(Span):
     def finish(self, output: Any = None, error: Optional[Exception] = None):
         """Finish the span and send to Respan."""
         if not self._is_finished:
-            self.tracer.finalize_span(span_id=self.span_id, output=output, error=error)
-            self._is_finished = True
+            try:
+                self.tracer.finalize_span(span_id=self.span_id, output=output, error=error)
+            except Exception as e:
+                logger.warning(f"Error finalizing span {self.span_id}: {e}")
+            finally:
+                self._is_finished = True
 
     def __enter__(self) -> "RespanSpan":
         """Context manager entry."""
+        # NOTE: Do NOT use RespanSpan as a context manager natively if you don't control the flow,
+        # but since Haystack controls it we just yield it back as the active context if requested.
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

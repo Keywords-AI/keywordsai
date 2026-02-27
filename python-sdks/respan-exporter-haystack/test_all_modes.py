@@ -20,10 +20,10 @@ from respan_exporter_haystack import RespanConnector, RespanGenerator
 
 def check_env():
     """Check required environment variables."""
-    if not os.getenv("RESPAN_API_KEY"):
+    if not os.getenv(key="RESPAN_API_KEY"):
         print("ERROR: RESPAN_API_KEY not set")
         return False
-    if not os.getenv("OPENAI_API_KEY"):
+    if not os.getenv(key="OPENAI_API_KEY"):
         print("ERROR: OPENAI_API_KEY not set")
         return False
     return True

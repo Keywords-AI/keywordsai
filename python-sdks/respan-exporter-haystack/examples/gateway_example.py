@@ -10,7 +10,7 @@ pipeline = Pipeline()
 pipeline.add_component(name="prompt", instance=PromptBuilder(template="Tell me about {{topic}}."))
 pipeline.add_component(name="llm", instance=RespanGenerator(
     model="gpt-4o-mini",
-    api_key=os.getenv("RESPAN_API_KEY")
+    api_key=os.getenv(key="RESPAN_API_KEY")
 ))
 pipeline.connect(sender="prompt", receiver="llm")
 
