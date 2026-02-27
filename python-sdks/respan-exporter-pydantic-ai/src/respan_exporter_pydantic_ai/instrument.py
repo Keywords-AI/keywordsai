@@ -32,6 +32,10 @@ def instrument_pydantic_ai(
     
     tracer = RespanTracer()
     
+    if not getattr(tracer, "is_enabled", True):
+        logger.info("Respan tracing is disabled, skipping Pydantic AI instrumentation")
+        return
+    
     settings = InstrumentationSettings(
         tracer_provider=getattr(tracer, "tracer_provider", None),
         include_content=include_content,
