@@ -54,9 +54,9 @@ def extract_response_text(content: Any) -> str:
 def chat_message_text(message: ChatMessage) -> str:
     """Extract plain text from Haystack ChatMessage."""
     try:
-        if message.text is not None:
+        if getattr(message, "text", None) is not None:
             return str(message.text)
-    except Exception as e:
+    except (AttributeError, ValueError) as e:
         logger.debug("Could not read message.text, falling back to to_dict: %s", e)
 
     message_dict = message.to_dict()

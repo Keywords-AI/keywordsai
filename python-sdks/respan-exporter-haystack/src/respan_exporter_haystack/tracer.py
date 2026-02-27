@@ -264,7 +264,7 @@ class RespanSpan(Span):
     def finish(self, output: Any = None, error: Optional[Exception] = None):
         """Finish the span and send to Respan."""
         if not self._is_finished:
-            self.tracer.finalize_span(self.span_id, output=output, error=error)
+            self.tracer.finalize_span(span_id=self.span_id, output=output, error=error)
             self._is_finished = True
 
     def __enter__(self) -> "RespanSpan":

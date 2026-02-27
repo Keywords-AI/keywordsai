@@ -102,8 +102,9 @@ class RespanConnector:
             # Register the tracer with Haystack's content tracing system
             try:
                 # Only set it if it's not already our tracer to avoid conflicts in multi-connector setups
-                if not isinstance(tracing.tracer.actual_tracer, RespanTracer):
-                    tracing.tracer.actual_tracer = self.tracer
+                current_tracer = getattr(tracing.tracer, "actual_tracer", None)
+                if not isinstance(current_tracer, RespanTracer):
+                    tracing.enable_tracing(self.tracer)
                     logger.info(f"Respan tracer registered for '{self.name}'")
             except Exception as e:
                 logger.warning(f"Could not register tracer: {e}")

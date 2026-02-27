@@ -20,7 +20,7 @@ class _DummyResponse:
 
 
 def test_chat_generator_supports_latest_haystack_chat_message_api(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("RESPAN_API_KEY", "test-api-key")
+    monkeypatch.setenv(name="RESPAN_API_KEY", value="test-api-key")
 
     def _mock_post(*args, **kwargs):
         return _DummyResponse(
@@ -36,10 +36,10 @@ def test_chat_generator_supports_latest_haystack_chat_message_api(monkeypatch: p
             }
         )
 
-    monkeypatch.setattr("respan_exporter_haystack.gateway.requests.post", _mock_post)
+    monkeypatch.setattr(target="respan_exporter_haystack.gateway.requests.post", name=_mock_post)
 
     generator = RespanChatGenerator(model="gpt-4o-mini")
-    result = generator.run(messages=[ChatMessage.from_user("hello")])
+    result = generator.run(messages=[ChatMessage.from_user(text="hello")])
 
     assert len(result["replies"]) == 1
     assert result["replies"][0].text == "hello from respan"
