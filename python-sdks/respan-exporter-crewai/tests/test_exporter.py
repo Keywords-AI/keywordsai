@@ -82,6 +82,7 @@ def test_send_calls_requests_post():
         call_kw = mock_post.call_args[1]
         assert call_kw["json"] == payloads
         assert call_kw["headers"].get("Authorization") == "Bearer key123"
+        assert call_kw["headers"].get("X-Respan-Dogfood") == "1"
 
 
 def test_send_handles_http_error():

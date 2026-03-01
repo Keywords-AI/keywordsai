@@ -1,11 +1,14 @@
 """Respan CrewAI Exporter - Export CrewAI traces to Respan tracing endpoint."""
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import requests
+
+from respan_sdk.constants import RESPAN_DOGFOOD_HEADER
 
 from respan_exporter_crewai.types import TraceContext
 from respan_exporter_crewai.utils import (
@@ -583,22 +586,55 @@ class RespanCrewAIExporter:
         return "task"
 
     def send(self, payloads: List[Dict[str, Any]]) -> None:
-        """Send payloads to Respan endpoint."""
-        try:
-            response = requests.post(
-                url=self.endpoint,
-                json=payloads,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=self.timeout,
-            )
-            if response.status_code not in (200, 201):
-                logger.warning(
-                    "Respan export failed with status %s: %s",
-                    response.status_code,
-                    response.text,
+        """Send payloads to Respan endpoint with retries and anti-recursion header.
+
+        Uses inline retry (same policy as respan_sdk.utils.RetryHandler). Prefer
+        RetryHandler when respan-sdk exports it for consistency with other exporters.
+        """
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            RESPAN_DOGFOOD_HEADER: "1",
+        }
+        max_retries = 3
+        retry_delay = 1.0
+        backoff_multiplier = 2.0
+        max_delay = 30.0
+        last_exc: Optional[Exception] = None
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    url=self.endpoint,
+                    json=payloads,
+                    headers=headers,
+                    timeout=self.timeout,
                 )
-        except Exception as exc:
-            logger.warning("Respan export request failed: %s", exc)
+                if response.status_code >= 500:
+                    raise RuntimeError(
+                        "Respan ingest server error status_code=%s"
+                        % (response.status_code,)
+                    )
+                if response.status_code not in (200, 201):
+                    logger.warning(
+                        "Respan export failed with status %s: %s",
+                        response.status_code,
+                        response.text,
+                    )
+                return
+            except Exception as exc:
+                last_exc = exc
+                if attempt == max_retries - 1:
+                    logger.warning("Respan export request failed: %s", exc)
+                    return
+                delay = min(
+                    retry_delay * (backoff_multiplier ** attempt),
+                    max_delay,
+                )
+                logger.warning(
+                    "Respan export retry %s/%s in %.1fs: %s",
+                    attempt + 1,
+                    max_retries,
+                    delay,
+                    exc,
+                )
+                time.sleep(delay)
