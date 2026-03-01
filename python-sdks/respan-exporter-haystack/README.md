@@ -124,6 +124,20 @@ print(f"Tokens: {result['llm']['meta'][0]['usage']['total_tokens']}")
 - A/B testing
 - Team collaboration
 
+**RespanChatGenerator** supports the same pattern: pass `prompt_id` when creating the component, then use `prompt_variables` in `run()` to fill template variables. Example:
+
+```python
+from haystack.dataclasses import ChatMessage
+from respan_exporter_haystack import RespanChatGenerator
+
+generator = RespanChatGenerator(
+    prompt_id="1210b368ce2f4e5599d307bc591d9b7a",
+    api_key=os.getenv("RESPAN_API_KEY")
+)
+result = generator.run(prompt_variables={"user_input": "Hello"})
+# Or with messages: generator.run(messages=[...], prompt_variables={...})
+```
+
 **See:** [`examples/prompt_example.py`](examples/prompt_example.py)
 
 ---
@@ -242,23 +256,64 @@ All logs and traces appear in your Respan dashboard:
 
 ## API Reference
 
+**Important:** There is **no default model**. You must pass either `model` or `prompt_id`. Code that relied on a previous default (e.g. `gpt-3.5-turbo`) will raise `ValueError: Either 'model' or 'prompt_id' must be provided` — pass `model` explicitly or use `prompt_id` for platform-managed prompts.
+
+---
+
 ### `RespanGenerator`
 
-Gateway component for LLM calls.
+Gateway component for LLM calls (text completion / non-chat).
 
 ```python
 RespanGenerator(
-    model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini") - optional if using prompt_id
-    api_key: Optional[str] = None,       # Respan API key (defaults to RESPAN_API_KEY env var)
+    model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini"); required unless prompt_id is set
+    api_key: Optional[str] = None,      # Respan API key (defaults to RESPAN_API_KEY env var)
     base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
-    prompt_id: Optional[str] = None,     # Platform prompt ID for prompt management
-    generation_kwargs: Optional[Dict] = None
+    prompt_id: Optional[str] = None,     # Platform prompt ID; required unless model is set
+    generation_kwargs: Optional[Dict] = None,
+    timeout: float = 60.0,
 )
 ```
 
-**Replaces:** `OpenAIGenerator` with gateway routing
+**Replaces:** `OpenAIGenerator` with gateway routing.
 
-**Note:** When using `prompt_id`, model config comes from the platform - no need to specify `model`
+**Note:** Either `model` or `prompt_id` is required. When using `prompt_id`, model config comes from the platform — no need to specify `model`.
+
+**Migration:** `streaming_callback` has been removed from the constructor. Passing it will raise a `TypeError`. Remove any `streaming_callback` argument when upgrading.
+
+**Serialization:** The API key is never written when saving pipelines (e.g. `to_dict`); it is resolved from `RESPAN_API_KEY` when the pipeline is loaded.
+
+---
+
+### `RespanChatGenerator`
+
+Chat-oriented gateway component with `ChatMessage` support. Same constructor contract as `RespanGenerator`: **no default model** — you must pass either `model` or `prompt_id`. Supports **prompt management** via `prompt_id` (see [Prompt Management](#prompt-management)).
+
+```python
+RespanChatGenerator(
+    model: Optional[str] = None,         # Model name (e.g., "gpt-4o-mini"); required unless prompt_id is set
+    api_key: Optional[str] = None,      # Respan API key (defaults to RESPAN_API_KEY env var)
+    base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
+    prompt_id: Optional[str] = None,     # Platform prompt ID; required unless model is set
+    generation_kwargs: Optional[Dict] = None,
+    timeout: float = 60.0,
+)
+```
+
+**run(messages=..., generation_kwargs=..., prompt_variables=...)**  
+Returns `{"replies": List[ChatMessage], "meta": List[Dict]}`.
+
+| Parameter | Description |
+|-----------|-------------|
+| `messages` | List of `ChatMessage` objects. Optional if using `prompt_id` (then use `prompt_variables` instead). |
+| `generation_kwargs` | Optional overrides (e.g. `temperature`, `max_tokens`). |
+| `prompt_variables` | Variables for platform-managed prompt. Requires `prompt_id` set at init. Pass at run time to fill the prompt template. |
+
+**Replaces:** Chat-style usage of `OpenAIGenerator` with gateway routing.
+
+**Note:** Either `model` or `prompt_id` is required. If you previously relied on a default model (e.g. `gpt-3.5-turbo`), pass `model="gpt-3.5-turbo"` (or another model) or use `prompt_id` for platform-managed prompts.
+
+**Serialization:** The API key is never written when saving pipelines; it is resolved from `RESPAN_API_KEY` when the pipeline is loaded.
 
 ---
 
@@ -269,15 +324,23 @@ Tracing component for workflow monitoring.
 ```python
 RespanConnector(
     name: str,                           # Pipeline name for dashboard
+    mode: str = "tracing",                # "tracing" (default) or "gateway"
     api_key: Optional[str] = None,       # Respan API key (defaults to RESPAN_API_KEY env var)
     base_url: Optional[str] = None,      # API base URL (defaults to https://api.respan.ai)
-    metadata: Optional[Dict] = None      # Custom metadata for all spans
+    metadata: Optional[Dict] = None,      # Custom metadata for all spans
+    max_retries: int = 3,                 # Max retries for sending traces
+    base_delay: float = 1.0,              # Base delay in seconds between retries
+    max_delay: float = 30.0,              # Max delay in seconds between retries
+    platform_url: Optional[str] = None,  # URL for logs UI (defaults derived from base_url)
+    timeout: float = 10.0,               # Request timeout in seconds
 )
 ```
 
 **Returns:** `{"name": str, "trace_url": str}`
 
-**Requires:** `HAYSTACK_CONTENT_TRACING_ENABLED=true` environment variable
+**Requires:** `HAYSTACK_CONTENT_TRACING_ENABLED=true` environment variable (when `mode="tracing"`)
+
+**Serialization:** The API key is never written when saving pipelines; it is resolved from `RESPAN_API_KEY` when the pipeline is loaded.
 
 ---
 
@@ -306,11 +369,21 @@ python examples/combined_example.py
 
 ---
 
+## Breaking changes
+
+- **`RespanChatGenerator` / `RespanGenerator`: no default model.** Either `model` or `prompt_id` must be provided. If you previously relied on a default (e.g. `gpt-3.5-turbo`), pass `model` explicitly or use `prompt_id` for platform-managed prompts.
+- **`RespanGenerator`: `streaming_callback` removed.** The constructor no longer accepts `streaming_callback`. Passing it will raise a `TypeError`. Remove the argument when upgrading.
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+---
+
 ## Requirements
 
-- Python 3.9+
-- `haystack-ai >= 2.0.0`
-- `requests >= 2.31.0`
+- Python 3.10+
+- `haystack-ai >= 2.24.1`
+- `requests >= 2.32.5`
+- `respan-sdk >= 2.3.1`
 
 ---
 
