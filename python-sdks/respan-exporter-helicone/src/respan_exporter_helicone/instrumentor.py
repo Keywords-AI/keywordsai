@@ -20,9 +20,10 @@ from respan_sdk.respan_types.log_types import RespanFullLogParams
 from respan_sdk.utils.time import format_timestamp
 
 try:
-    from helicone_helpers import HeliconeManualLogger
+    from helicone_helpers import HeliconeManualLogger, manual_logger
 except ImportError:
     HeliconeManualLogger = None
+    manual_logger = None
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class HeliconeInstrumentor:
         self._endpoint: Optional[str] = None
         self._timeout = DEFAULT_TIMEOUT_SECONDS
         self._is_patched = False
+        self._original_send_log: Optional[Any] = None
 
     def instrument(
         self,
@@ -85,19 +87,18 @@ class HeliconeInstrumentor:
         logger.info("Helicone instrumentation enabled for Respan")
 
     def uninstrument(self) -> None:
-        """Disable instrumentation by removing wrappers."""
-        if self._is_patched and hasattr(wrapt, "unwrap_function_wrapper"):
+        """Disable instrumentation by restoring the original send_log."""
+        if self._is_patched and manual_logger is not None:
             try:
-                wrapt.unwrap_function_wrapper(
-                    module=HELICONE_LOGGER_MODULE,
-                    name=HELICONE_SEND_LOG_FUNCTION,
-                )
+                if (
+                    self._original_send_log is not None
+                    and hasattr(manual_logger.HeliconeManualLogger, "send_log")
+                ):
+                    manual_logger.HeliconeManualLogger.send_log = self._original_send_log
             except Exception as exc:
-                logger.warning(
-                    "Failed to unwrap Helicone instrumentation cleanly: %s",
-                    exc,
-                )
+                logger.warning("Failed to restore Helicone send_log: %s", exc)
         self._is_patched = False
+        self._original_send_log = None
         logger.info("Helicone instrumentation disabled")
 
     def _patch(self) -> None:
@@ -105,8 +106,15 @@ class HeliconeInstrumentor:
         if self._is_patched:
             return
 
-        if HeliconeManualLogger is None:
+        if HeliconeManualLogger is None or manual_logger is None:
             logger.error("helicone-helpers is not installed. Cannot instrument Helicone.")
+            return
+
+        self._original_send_log = getattr(
+            manual_logger.HeliconeManualLogger, "send_log", None
+        )
+        if self._original_send_log is None:
+            logger.error("HeliconeManualLogger.send_log not found. Cannot instrument.")
             return
 
         def send_log_wrapper(
@@ -168,7 +176,12 @@ class HeliconeInstrumentor:
         args: Tuple[Any, ...],
         kwargs: JsonDict,
     ) -> Tuple[Optional[str], Optional[JsonDict], ResponsePayload, Optional[JsonDict]]:
-        """Resolve `send_log` args for positional and keyword invocation styles."""
+        """Resolve `send_log` args for positional and keyword invocation styles.
+
+        Tightly coupled to HeliconeManualLogger.send_log(provider, request, response, options).
+        Tested with helicone-helpers >=1.0.0. Update this resolver if Helicone changes the
+        send_log signature.
+        """
         provider = kwargs.get("provider", args[0] if len(args) > 0 else None)
         request = kwargs.get("request", args[1] if len(args) > 1 else None)
         response = kwargs.get("response", args[2] if len(args) > 2 else None)
@@ -259,11 +272,6 @@ class HeliconeInstrumentor:
             mode="json",
             exclude_none=True,
         )
-
-        # Keep backward-compatible top-level provider while also setting provider_id.
-        if provider is not None:
-            validated_payload["provider"] = provider
-
         return validated_payload
 
     @staticmethod
@@ -288,12 +296,24 @@ class HeliconeInstrumentor:
 
     @staticmethod
     def _extract_input(request: JsonDict) -> Optional[str]:
-        """Extract request input for Respan payload."""
+        """Extract request input for Respan payload.
+
+        Prefers "messages" or "prompt" when present. Fallback serializes the entire
+        request with json.dumps(); this can produce very large payloads (e.g. base64
+        images). Output is truncated to 100k chars to avoid oversized ingest.
+        """
         if "messages" in request:
-            return json.dumps(request["messages"], default=str)
-        if "prompt" in request:
-            return request.get("prompt")
-        return json.dumps(request, default=str)
+            out = json.dumps(request["messages"], default=str)
+        elif "prompt" in request:
+            out = request.get("prompt")
+            if out is None:
+                return None
+        else:
+            out = json.dumps(request, default=str)
+        max_len = 100_000
+        if len(out) > max_len:
+            return out[:max_len] + f"... [truncated, total {len(out)} chars]"
+        return out
 
     @staticmethod
     def _extract_output(response: ResponsePayload) -> Optional[str]:

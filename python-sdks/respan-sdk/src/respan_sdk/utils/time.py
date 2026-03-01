@@ -1,5 +1,8 @@
+import logging
 from datetime import datetime, timezone
-from typing import Union, Optional
+from typing import Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 def parse_datetime(v: Union[str, datetime]) -> datetime:
@@ -32,5 +35,10 @@ def format_timestamp(ts: Optional[float]) -> str:
         return now_iso()
     try:
         return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
-    except Exception:
+    except (TypeError, ValueError, OSError) as exc:
+        logger.warning(
+            "Invalid timestamp %r, falling back to now(): %s",
+            ts,
+            exc,
+        )
         return now_iso()

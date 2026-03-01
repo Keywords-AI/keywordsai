@@ -1,5 +1,6 @@
-"""Respan Helicone exporter package.
+"""Respan Helicone exporter package."""
 
-Import directly from submodules:
-    from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
-"""
+from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
+
+__version__ = "0.1.0"
+__all__ = ["HeliconeInstrumentor"]

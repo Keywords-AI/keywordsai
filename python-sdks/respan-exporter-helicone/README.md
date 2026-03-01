@@ -12,16 +12,26 @@ pip install respan-exporter-helicone
 
 ## Quick Start
 
+Add two lines to your existing Helicone code:
+
+```python
+from respan_exporter_helicone import HeliconeInstrumentor
+HeliconeInstrumentor().instrument(api_key="your-respan-api-key")
+```
+
+That's it. All Helicone logs are now also sent to Respan.
+
+## Full Example
+
 ```python
 import json
 import openai
 
-from respan_exporter_helicone.instrumentor import HeliconeInstrumentor
+from respan_exporter_helicone import HeliconeInstrumentor
 from helicone_helpers import HeliconeManualLogger
 
-# Setup instrumentation
-instrumentor = HeliconeInstrumentor()
-instrumentor.instrument(api_key="your-respan-api-key")
+# Add Respan instrumentation (your only addition)
+HeliconeInstrumentor().instrument(api_key="your-respan-api-key")
 
 # Initialize Helicone logger
 logger = HeliconeManualLogger(api_key="your-helicone-api-key")
@@ -44,6 +54,22 @@ logger.log_request(
     operation=chat_operation
 )
 ```
+
+## Configuration
+
+| Env Var | Required | Default |
+|---------|----------|---------|
+| `RESPAN_API_KEY` | Yes (or pass `api_key=`) | — |
+| `RESPAN_ENDPOINT` | No | `https://api.respan.ai/api/v1/traces/ingest` |
+
+## What gets captured
+
+- Model name & provider
+- Input messages / prompt
+- Output / completion
+- Token usage (prompt, completion, total)
+- Latency
+- Helicone metadata (user ID, session ID, custom headers)
 
 ## License
 
