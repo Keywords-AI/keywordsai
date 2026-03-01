@@ -130,12 +130,12 @@ class RespanConnector:
         }
 
     def to_dict(self) -> Dict[str, Any]:
-        """Serialize component to dictionary."""
+        """Serialize component to dictionary. API key is never serialized to avoid leaking secrets."""
         return default_to_dict(
             obj=self,
             name=self.name,
             mode=self.mode,
-            api_key=self.api_key,
+            api_key=None,  # Never serialize; resolved from env on from_dict
             base_url=self.base_url,
             metadata=self.metadata,
             max_retries=self.max_retries,

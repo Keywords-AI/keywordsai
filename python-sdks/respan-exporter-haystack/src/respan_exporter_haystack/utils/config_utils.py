@@ -37,11 +37,3 @@ def resolve_base_url(base_url: Optional[str] = None, include_api_path: bool = Fa
     if include_api_path:
         return DEFAULT_RESPAN_API_BASE_URL
     return DEFAULT_RESPAN_BASE_URL
-
-
-def build_chat_completions_endpoint(base_url: str) -> str:
-    """Build the chat completions endpoint from a Respan base URL."""
-    normalized_base_url = base_url.rstrip("/")
-    if normalized_base_url.endswith("/api"):
-        return f"{normalized_base_url}/chat/completions"
-    return f"{normalized_base_url}/api/chat/completions"

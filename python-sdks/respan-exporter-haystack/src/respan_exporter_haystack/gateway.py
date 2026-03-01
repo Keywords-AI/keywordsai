@@ -6,16 +6,14 @@ import requests
 from haystack import component, default_from_dict, default_to_dict, logging
 from haystack.dataclasses import ChatMessage
 
+from respan_sdk.constants import resolve_chat_completions_endpoint
+
 from respan_exporter_haystack.utils.chat_utils import (
     extract_response_text,
     to_chat_message,
     to_request_message,
 )
-from respan_exporter_haystack.utils.config_utils import (
-    build_chat_completions_endpoint,
-    resolve_api_key,
-    resolve_base_url,
-)
+from respan_exporter_haystack.utils.config_utils import resolve_api_key, resolve_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class _BaseRespanGenerator(object):
                 "Use 'model' for direct model calls, or 'prompt_id' to use platform-managed prompts."
             )
         
-        self.endpoint = build_chat_completions_endpoint(base_url=self.base_url)
+        self.endpoint = resolve_chat_completions_endpoint(base_url=self.base_url)
 
     def _build_payload(
         self,
@@ -131,11 +129,11 @@ class _BaseRespanGenerator(object):
         return meta
 
     def to_dict(self) -> Dict[str, Any]:
-        """Serialize component to dictionary."""
+        """Serialize component to dictionary. API key is never serialized to avoid leaking secrets."""
         return default_to_dict(
             obj=self,
             model=self.model,
-            api_key=self.api_key,
+            api_key=None,  # Never serialize; resolved from env on from_dict
             base_url=self.base_url,
             prompt_id=self.prompt_id,
             generation_kwargs=self.generation_kwargs,
@@ -194,7 +192,8 @@ class RespanGenerator(_BaseRespanGenerator):
         timeout: float = 60.0,
     ):
         """Initialize the Respan gateway generator."""
-        # Explicit base call: Haystack's @component changes MRO so super() does not resolve to _BaseRespanGenerator
+        # Explicit base call required: Haystack's @component decorator changes MRO, so super()
+        # would not resolve to _BaseRespanGenerator. Do not replace with super().
         _BaseRespanGenerator.__init__(
             self,
             model=model,
@@ -312,7 +311,8 @@ class RespanChatGenerator(_BaseRespanGenerator):
         timeout: float = 60.0,
     ):
         """Initialize the chat generator."""
-        # Explicit base call: Haystack's @component changes MRO so super() does not resolve to _BaseRespanGenerator
+        # Explicit base call required: Haystack's @component decorator changes MRO, so super()
+        # would not resolve to _BaseRespanGenerator. Do not replace with super().
         _BaseRespanGenerator.__init__(
             self,
             model=model,

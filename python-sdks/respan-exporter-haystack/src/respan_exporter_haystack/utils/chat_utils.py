@@ -9,7 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 def extract_response_text(content: Any) -> str:
-    """Extract normalized text from response content payload."""
+    """Extract normalized text from response content payload.
+
+    Safely handles None and malformed payloads (e.g. missing keys); callers should use
+    .get() when passing choice/message data to avoid KeyError on bad API responses.
+    """
     if content is None:
         return ""
     if isinstance(content, str):
