@@ -6,7 +6,7 @@ from dify_client.models import ResponseMode
 from respan_sdk.respan_types import RespanParams
 from respan_sdk.utils.time import now_utc
 from respan_exporter_dify.exporter import create_async_client, create_client
-from respan_exporter_dify.utils import _build_export_payloads
+from respan_exporter_dify.utils import export_dify_call
 
 
 class AssistantMessage:
@@ -56,16 +56,22 @@ def test_build_export_payloads_prefers_message_usage_and_session():
         }
     ]
 
-    payloads = _build_export_payloads(
-        method_name="chat_messages",
-        start_time=start_time,
-        end_time=end_time,
-        status="success",
-        kwargs={"req": {"conversation_id": "session-from-hook"}},
-        result=result,
-        error_message=None,
-        params=params,
-    )
+    with patch("respan_exporter_dify.utils.send_payloads") as send_mock:
+        export_dify_call(
+            api_key="test-key",
+            endpoint="https://test",
+            timeout=10,
+            method_name="chat_messages",
+            start_time=start_time,
+            end_time=end_time,
+            status="success",
+            kwargs={"req": {"conversation_id": "session-from-hook"}},
+            result=result,
+            error_message=None,
+            params=params,
+        )
+        send_mock.assert_called_once()
+        payloads = send_mock.call_args.kwargs["payloads"]
 
     assert len(payloads) == 1
     payload = payloads[0]
@@ -91,16 +97,22 @@ def test_build_export_payloads_falls_back_to_result_usage_and_hook_session():
         "messages": [{"type": "assistant", "content": "final answer"}],
     }
 
-    payloads = _build_export_payloads(
-        method_name="chat_messages",
-        start_time=start_time,
-        end_time=end_time,
-        status="success",
-        kwargs={"req": {"conversation_id": "session-from-hook"}},
-        result=result,
-        error_message=None,
-        params=params,
-    )
+    with patch("respan_exporter_dify.utils.send_payloads") as send_mock:
+        export_dify_call(
+            api_key="test-key",
+            endpoint="https://test",
+            timeout=10,
+            method_name="chat_messages",
+            start_time=start_time,
+            end_time=end_time,
+            status="success",
+            kwargs={"req": {"conversation_id": "session-from-hook"}},
+            result=result,
+            error_message=None,
+            params=params,
+        )
+        send_mock.assert_called_once()
+        payloads = send_mock.call_args.kwargs["payloads"]
 
     assert len(payloads) == 1
     payload = payloads[0]
@@ -139,16 +151,22 @@ def test_build_export_payloads_uses_assistant_message_usage_and_dedupes_by_id():
         usage={"prompt_tokens": 100, "completion_tokens": 100, "total_tokens": 200},
     )
 
-    payloads = _build_export_payloads(
-        method_name="chat_messages",
-        start_time=start_time,
-        end_time=end_time,
-        status="success",
-        kwargs={"req": {"conversation_id": "session-from-hook"}},
-        result=result,
-        error_message=None,
-        params=params,
-    )
+    with patch("respan_exporter_dify.utils.send_payloads") as send_mock:
+        export_dify_call(
+            api_key="test-key",
+            endpoint="https://test",
+            timeout=10,
+            method_name="chat_messages",
+            start_time=start_time,
+            end_time=end_time,
+            status="success",
+            kwargs={"req": {"conversation_id": "session-from-hook"}},
+            result=result,
+            error_message=None,
+            params=params,
+        )
+        send_mock.assert_called_once()
+        payloads = send_mock.call_args.kwargs["payloads"]
 
     assert len(payloads) == 2
 

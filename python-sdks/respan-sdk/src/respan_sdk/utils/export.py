@@ -37,6 +37,12 @@ def send_payloads(
     """
     POST payloads to Respan ingest in a daemon thread (fire-and-forget).
 
+    Callers build and pass payloads on their own thread (e.g. the Dify client
+    calls export_dify_call from the main thread; payload construction runs there).
+    Only the HTTP POST is offloaded: this function spawns a daemon thread that
+    performs the request. So payload building is synchronous from the caller's
+    perspective; only the network send is fire-and-forget.
+
     Uses RetryHandler for backoff and sends RESPAN_DOGFOOD_HEADER so the server
     can skip emitting traces for the ingest request (anti-recursion).
     """

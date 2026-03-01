@@ -8,6 +8,9 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# NOTE: PR #46 adds now_iso and format_timestamp; merge order may cause conflicts here.
+
+
 def parse_datetime(v: Union[str, datetime]) -> datetime:
     if isinstance(v, str):
         # Lazy import to improve import speed

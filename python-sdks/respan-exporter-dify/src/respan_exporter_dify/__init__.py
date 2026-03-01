@@ -1,7 +1,19 @@
 """
 Respan exporter for Dify Python SDK.
-
-Import directly from the implementation module:
-    from respan_exporter_dify.exporter import RespanDifyClient, RespanAsyncDifyClient
-    from respan_exporter_dify.exporter import create_client, create_async_client
 """
+
+from respan_exporter_dify.exporter import (
+    RespanDifyClient,
+    RespanAsyncDifyClient,
+    create_client,
+    create_async_client,
+)
+
+__version__ = "0.1.0"
+
+__all__ = [
+    "RespanDifyClient",
+    "RespanAsyncDifyClient",
+    "create_client",
+    "create_async_client",
+]

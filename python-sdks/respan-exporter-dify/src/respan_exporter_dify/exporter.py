@@ -38,6 +38,10 @@ class _BaseDifyClient:
             raise RuntimeError(f"Must provide a {client_cls.__name__} or dify_api_key")
 
     def _get_export_func(self, method_name: str, start_time: datetime, kwargs: Any, params: RespanParams):
+        # Capture only the minimal kwargs needed for export (payload building uses "req").
+        # Avoids holding other keys from the caller's kwargs in the closure until export runs.
+        export_kwargs = {k: kwargs[k] for k in ("req",) if k in kwargs}
+
         def _export(
             *,
             end_time: datetime,
@@ -53,7 +57,7 @@ class _BaseDifyClient:
                 start_time=start_time,
                 end_time=end_time,
                 status=status,
-                kwargs=kwargs,
+                kwargs=export_kwargs,
                 result=result,
                 error_message=error_message,
                 params=params,
@@ -69,6 +73,11 @@ class RespanDifyClient(_BaseDifyClient):
     block and therefore only when the stream is consumed (iterated to completion or
     closed). If the caller never iterates the returned stream, no export is sent.
     This is acceptable when callers always consume or explicitly close streams.
+
+    **Streaming memory:** All stream chunks are accumulated in memory and passed to
+    export when the stream ends. For long streams this can use significant memory;
+    an alternative would be to export only a final aggregated result (e.g. summary
+    or last chunk) instead of the full list of chunks.
     """
 
     def __init__(
@@ -115,6 +124,7 @@ class RespanDifyClient(_BaseDifyClient):
 
             if is_stream:
                 def stream_generator():
+                    # Accumulate all chunks for export in finally; long streams use more memory.
                     events = []
                     status = "success"
                     error_msg = None
@@ -172,6 +182,11 @@ class RespanAsyncDifyClient(_BaseDifyClient):
     completion or closed). If the caller never iterates the returned stream, no
     export is sent. This is acceptable when callers always consume or explicitly
     close streams.
+
+    **Streaming memory:** All stream chunks are accumulated in memory and passed to
+    export when the stream ends. For long streams this can use significant memory;
+    an alternative would be to export only a final aggregated result (e.g. summary
+    or last chunk) instead of the full list of chunks.
     """
 
     def __init__(
@@ -218,6 +233,7 @@ class RespanAsyncDifyClient(_BaseDifyClient):
 
             if is_stream:
                 async def stream_generator():
+                    # Accumulate all chunks for export in finally; long streams use more memory.
                     events = []
                     status = "success"
                     error_msg = None

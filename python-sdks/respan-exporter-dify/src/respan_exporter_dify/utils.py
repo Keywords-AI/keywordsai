@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 from respan_sdk.constants.llm_logging import LOG_TYPE_GENERATION
 from respan_sdk.respan_types import RespanParams
@@ -23,30 +23,51 @@ from respan_exporter_dify.constants import (
 
 logger = logging.getLogger(__name__)
 
+# Max recursion depth for _to_serializable to avoid hitting Python's recursion limit
+# on deeply nested Dify responses (e.g. long conversation histories).
+_TO_SERIALIZABLE_MAX_DEPTH = 50
 
-def _to_serializable(value: Any) -> Any:
+
+def _to_serializable(value: Any, max_depth: int = _TO_SERIALIZABLE_MAX_DEPTH) -> Any:
+    """
+    Convert value to JSON-serializable form (dict/list/primitives).
+
+    Recursion is capped at max_depth to avoid stack overflow on deeply nested
+    structures; beyond that, containers are stringified.
+    """
+    if max_depth <= 0:
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, dict):
+            return {str(k): str(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple, set)):
+            return [str(item) for item in value]
+        return str(value)
+
     if value is None:
         return None
     if isinstance(value, (str, int, float, bool)):
         return value
     if isinstance(value, dict):
-        return {k: _to_serializable(v) for k, v in value.items()}
+        return {k: _to_serializable(v, max_depth - 1) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):
-        return [_to_serializable(item) for item in value]
+        return [_to_serializable(item, max_depth - 1) for item in value]
     if hasattr(value, "model_dump"):
         try:
-            return value.model_dump(mode="json", exclude_none=True)
+            d = value.model_dump(mode="json", exclude_none=True)
+            return _to_serializable(d, max_depth - 1)
         except Exception:
             pass
     if hasattr(value, "dict"):
         try:
-            return value.dict()
+            d = value.dict()
+            return _to_serializable(d, max_depth - 1)
         except Exception:
             pass
     if hasattr(value, "__dict__"):
         try:
             return {
-                key: _to_serializable(val)
+                key: _to_serializable(val, max_depth - 1)
                 for key, val in vars(value).items()
                 if not key.startswith("_")
             }
@@ -353,7 +374,7 @@ def _build_export_payloads(
     messages = _extract_messages(result=result, kwargs={**kwargs, "method_name": method_name})
 
     payloads: List[Dict[str, Any]] = []
-    seen_turn_ids: set[str] = set()
+    seen_turn_ids: Set[str] = set()
     for message in messages:
         is_assistant_message_with_usage = _is_assistant_message_with_usage(message)
         message_id = _extract_message_id(message)
@@ -407,6 +428,13 @@ def export_dify_call(
     error_message: Optional[str],
     params: RespanParams,
 ) -> None:
+    """
+    Build Respan payloads and send them to ingest (fire-and-forget).
+
+    Called synchronously from the Dify client's _call_and_export (main thread).
+    Payload building runs here on the caller's thread; only the HTTP POST is
+    offloaded to a daemon thread inside send_payloads.
+    """
     if not api_key:
         return
 
