@@ -305,9 +305,15 @@ class HeliconeInstrumentor:
         if "messages" in request:
             out = json.dumps(request["messages"], default=str)
         elif "prompt" in request:
-            out = request.get("prompt")
-            if out is None:
+            prompt_value = request.get("prompt")
+            if prompt_value is None:
                 return None
+            # Ensure prompt is a string for truncation (OpenAI allows string or array)
+            out = (
+                prompt_value
+                if isinstance(prompt_value, str)
+                else json.dumps(prompt_value, default=str)
+            )
         else:
             out = json.dumps(request, default=str)
         max_len = 100_000
