@@ -13,27 +13,24 @@ def reset_tracer():
     RespanTracer.reset_instance()
 
 def test_instrument_global():
-    # Initialize telemetry
+    """Verify global instrumentation: after instrument_pydantic_ai(), the default used for agents has a tracer."""
     telemetry = RespanTelemetry(app_name="test-app", api_key="test-key", is_enabled=True)
-    
-    # Instrument globally
+
     instrument_pydantic_ai()
-    
-    # Check that Agent._instrument_default is set to InstrumentationSettings
-    assert Agent._instrument_default is not False
-    assert hasattr(Agent._instrument_default, "tracer")
-    
-    # We just ensure it runs without exception
-    assert Agent._instrument_default.tracer is not None
+
+    # Behavior: the global default (used for agents that don't set their own) must have a tracer
+    default_instrument = Agent._instrument_default
+    assert default_instrument is not False
+    assert hasattr(default_instrument, "tracer")
+    assert default_instrument.tracer is not None
 
 def test_instrument_disabled():
-    # Initialize telemetry with is_enabled=False
+    """Tests the telemetry-disabled path: when RespanTelemetry(is_enabled=False), instrumentation is skipped."""
     telemetry = RespanTelemetry(app_name="test-app", api_key="test-key", is_enabled=False)
-    
-    # Try to instrument globally
+
     instrument_pydantic_ai()
-    
-    # Check that Agent._instrument_default remains False
+
+    # When disabled, global default is not set (instrumentation was skipped)
     assert Agent._instrument_default is False
 
 def test_instrument_specific_agent():

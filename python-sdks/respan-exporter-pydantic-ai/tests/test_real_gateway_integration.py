@@ -3,9 +3,19 @@
 
 import os
 import sys
+import urllib.request
 import unittest
 from typing import List
 from unittest.mock import patch
+
+try:
+    from pydantic_ai import Agent
+except ImportError:
+    Agent = None  # type: ignore[misc, assignment]
+
+from respan_exporter_pydantic_ai import instrument_pydantic_ai
+from respan_tracing import RespanTelemetry
+from respan_tracing.core.tracer import RespanTracer
 
 REPO_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..")
@@ -68,23 +78,17 @@ class RespanPydanticAIGatewayIntegrationTests(unittest.IsolatedAsyncioTestCase):
         if not respan_api_key:
             self.skipTest("Set RESPAN_API_KEY for real integration test.")
 
-        try:
-            from pydantic_ai import Agent
-        except ImportError:
+        if Agent is None:
             self.skipTest("pydantic_ai is not installed in this environment.")
 
-        # Import after skip checks
-        from respan_tracing import RespanTelemetry
-        from respan_tracing.core.tracer import RespanTracer
-        from respan_exporter_pydantic_ai import instrument_pydantic_ai
-        
         # Make sure tracing is clean
         RespanTracer.reset_instance()
 
         gateway_base_url = _resolve_gateway_base_url()
 
-        # We patch the underlying export mechanism to capture status codes
-        import urllib.request
+        # Patch the export mechanism to capture HTTP status codes for assertions.
+        # Note: This targets urllib.request.urlopen; if the SDK switches to another
+        # client (e.g. requests or httpx), this test will need to be updated.
         response_statuses: List[int] = []
         original_urlopen = urllib.request.urlopen
 
