@@ -123,7 +123,8 @@ def _make_batch_export_wrapper(
             return wrapped(*args, **kwargs)
 
         if other_spans:
-            return wrapped(other_spans, **kwargs)
+            kwargs_without_spans = {k: v for k, v in kwargs.items() if k != "spans"}
+            return wrapped(other_spans, **kwargs_without_spans)
 
         return export_result
 
