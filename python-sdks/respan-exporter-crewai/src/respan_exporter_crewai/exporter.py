@@ -10,6 +10,7 @@ import requests
 from respan_exporter_crewai.types import TraceContext
 from respan_exporter_crewai.utils import (
     as_dict,
+    build_traces_ingest_url,
     clean_payload,
     coerce_datetime,
     coerce_token_count,
@@ -78,16 +79,7 @@ class RespanCrewAIExporter:
 
     def _build_endpoint(self, base_url: Optional[str]) -> str:
         """Build the ingest endpoint URL from base URL."""
-        if not base_url:
-            return DEFAULT_ENDPOINT
-        base = base_url.rstrip("/")
-        if base.endswith("/v1/traces/ingest"):
-            return base
-        if base.endswith("/v1/traces"):
-            return f"{base}/ingest"
-        if base.endswith("/api"):
-            return f"{base}/v1/traces/ingest"
-        return f"{base}/api/v1/traces/ingest"
+        return build_traces_ingest_url(base_url=base_url, default_endpoint=DEFAULT_ENDPOINT)
 
     def export(self, trace_or_spans: Any) -> List[Dict[str, Any]]:
         """Export trace or spans to Respan."""
@@ -96,10 +88,11 @@ class RespanCrewAIExporter:
             return payloads
         if not self.api_key:
             logger.warning(
-                f"Respan API key is not set; skipping export to {self.endpoint}"
+                "Respan API key is not set; skipping export to %s",
+                self.endpoint,
             )
             return payloads
-        self._send(payloads=payloads)
+        self.send(payloads=payloads)
         return payloads
 
     def export_trace(self, trace_or_spans: Any) -> List[Dict[str, Any]]:
@@ -136,7 +129,12 @@ class RespanCrewAIExporter:
         return payloads
 
     def _propagate_trace_output(self, payloads: List[Dict[str, Any]]) -> None:
-        """Propagate output from generation spans to workflow/agent/task spans."""
+        """Propagate output from generation spans to workflow/agent/task spans.
+
+        Intentional: only the first generation span's output is propagated to
+        workflow/agent/task spans that lack output. Later generations are not
+        merged so the trace reflects the first completion as the trace-level result.
+        """
         trace_output: Optional[str] = None
         for payload in payloads:
             output_value = payload.get("output")
@@ -556,17 +554,15 @@ class RespanCrewAIExporter:
 
         cleaned_payload = clean_payload(payload=payload)
 
-        # Validate payload through the canonical SDK log schema for type-checking.
-        # We keep the original payload structure to preserve ingest-specific fields
-        # (trace_id, span_id, parent_id, etc.) that the tracing endpoint requires.
         try:
-            RespanFullLogParams(**cleaned_payload)
+            validated = RespanFullLogParams(**cleaned_payload)
+            return validated.model_dump(mode="json", exclude_none=True)
         except Exception as exc:
             logger.warning(
-                f"CrewAI span payload failed RespanFullLogParams validation: {exc}"
+                "CrewAI span payload failed RespanFullLogParams validation: %s; skipping span",
+                exc,
             )
-
-        return cleaned_payload
+            return None
 
     def _map_log_type(
         self,
@@ -586,7 +582,7 @@ class RespanCrewAIExporter:
             return "workflow"
         return "task"
 
-    def _send(self, payloads: List[Dict[str, Any]]) -> None:
+    def send(self, payloads: List[Dict[str, Any]]) -> None:
         """Send payloads to Respan endpoint."""
         try:
             response = requests.post(
@@ -600,7 +596,9 @@ class RespanCrewAIExporter:
             )
             if response.status_code not in (200, 201):
                 logger.warning(
-                    f"Respan export failed with status {response.status_code}: {response.text}"
+                    "Respan export failed with status %s: %s",
+                    response.status_code,
+                    response.text,
                 )
         except Exception as exc:
-            logger.warning(f"Respan export request failed: {exc}")
+            logger.warning("Respan export request failed: %s", exc)

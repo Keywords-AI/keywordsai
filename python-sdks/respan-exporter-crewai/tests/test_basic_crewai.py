@@ -16,6 +16,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 
 from respan_exporter_crewai import RespanCrewAIInstrumentor
+from respan_exporter_crewai.utils import normalize_respan_base_url_for_gateway
 
 
 def test_crewai_tracing_exporter_basic():
@@ -31,14 +32,7 @@ def test_crewai_tracing_exporter_basic():
             or os.getenv("RESPAN_BASE_URL")
             or "https://api.respan.ai"
         )
-        base = base_url.rstrip("/")
-        for suffix in ("/v1/traces/ingest", "/v1/traces", "/v1"):
-            if base.endswith(suffix):
-                base = base[: -len(suffix)]
-                break
-        if not base.endswith("/api"):
-            base = f"{base}/api"
-        return base
+        return normalize_respan_base_url_for_gateway(base_url)
 
     tracer_provider = trace.get_tracer_provider()
     if not isinstance(tracer_provider, TracerProvider):

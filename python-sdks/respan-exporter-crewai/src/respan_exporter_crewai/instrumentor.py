@@ -12,6 +12,7 @@ from typing import Collection, Dict, Iterable, List, Optional, Sequence
 
 import wrapt
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
+from opentelemetry.instrumentation.utils import unwrap
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.sdk.trace import export
 
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 _INSTRUMENTS = ("crewai >= 1.5.2", "openinference-instrumentation-crewai >= 0.1.0")
 
 _PATCHED = False
+# Which BatchSpanProcessor method was patched: "_export" or "on_end" (for unwrapping).
+_PATCHED_BATCH_NAME: Optional[str] = None
 
 
 class _SpanDedupeCache:
@@ -47,15 +50,12 @@ class _SpanDedupeCache:
         return True
 
 
-_ACTIVE_EXPORTER: Optional[RespanCrewAIExporter] = None
-_ACTIVE_DEDUPE = _SpanDedupeCache()
-_ACTIVE_PASSTHROUGH = False
-
-
-def _export_crewai_spans(spans: Iterable[object]) -> SpanExportResult:
-    """Export CrewAI spans to Respan."""
-    exporter = _ACTIVE_EXPORTER
-    dedupe = _ACTIVE_DEDUPE
+def _export_crewai_spans(
+    spans: Iterable[object],
+    exporter: Optional[RespanCrewAIExporter],
+    dedupe: _SpanDedupeCache,
+) -> SpanExportResult:
+    """Export CrewAI spans to Respan using the given exporter and dedupe cache."""
     if exporter is None:
         return SpanExportResult.SUCCESS
 
@@ -86,56 +86,72 @@ def _export_crewai_spans(spans: Iterable[object]) -> SpanExportResult:
         logger.warning("Respan API key is not set; skipping CrewAI export")
         return SpanExportResult.SUCCESS
 
-    exporter._send(payloads=payloads)
+    exporter.send(payloads=payloads)
     return SpanExportResult.SUCCESS
 
 
-def _batch_export_wrapper(wrapped, instance, args, kwargs):
-    """Wrapper for BatchSpanProcessor._export method."""
-    spans = list(args[0]) if args else list(kwargs.get("spans", []))
-    if not spans:
-        return wrapped(*args, **kwargs)
+def _make_batch_export_wrapper(
+    exporter: Optional[RespanCrewAIExporter],
+    dedupe: _SpanDedupeCache,
+    passthrough: bool,
+):
+    """Return a wrapper for BatchSpanProcessor._export that closes over exporter config."""
 
-    crewai_spans = []
-    other_spans = []
-    for span in spans:
-        if is_crewai_span(span=span):
-            crewai_spans.append(span)
-        else:
-            other_spans.append(span)
+    def _batch_export_wrapper(wrapped, instance, args, kwargs):
+        spans = list(args[0]) if args else list(kwargs.get("spans", []))
+        if not spans:
+            return wrapped(*args, **kwargs)
 
-    if not crewai_spans:
-        return wrapped(*args, **kwargs)
+        crewai_spans = []
+        other_spans = []
+        for span in spans:
+            if is_crewai_span(span=span):
+                crewai_spans.append(span)
+            else:
+                other_spans.append(span)
 
-    try:
-        export_result = _export_crewai_spans(spans=crewai_spans)
-    except Exception as exc:
-        logger.warning(f"Failed to export CrewAI spans: {exc}", exc_info=True)
-        export_result = SpanExportResult.FAILURE
+        if not crewai_spans:
+            return wrapped(*args, **kwargs)
 
-    if _ACTIVE_PASSTHROUGH:
-        return wrapped(*args, **kwargs)
+        try:
+            export_result = _export_crewai_spans(spans=crewai_spans, exporter=exporter, dedupe=dedupe)
+        except Exception as exc:
+            logger.warning("Failed to export CrewAI spans: %s", exc, exc_info=True)
+            export_result = SpanExportResult.FAILURE
 
-    if other_spans:
-        return wrapped(other_spans, **kwargs)
+        if passthrough:
+            return wrapped(*args, **kwargs)
 
-    return export_result
+        if other_spans:
+            return wrapped(other_spans, **kwargs)
+
+        return export_result
+
+    return _batch_export_wrapper
 
 
-def _on_end_wrapper(wrapped, instance, args, kwargs):
-    """Wrapper for SimpleSpanProcessor.on_end method."""
-    span = args[0] if args else kwargs.get("span")
-    if span is None or not is_crewai_span(span=span):
-        return wrapped(*args, **kwargs)
+def _make_on_end_wrapper(
+    exporter: Optional[RespanCrewAIExporter],
+    dedupe: _SpanDedupeCache,
+    passthrough: bool,
+):
+    """Return a wrapper for SimpleSpanProcessor.on_end that closes over exporter config."""
 
-    try:
-        _export_crewai_spans(spans=[span])
-    except Exception as exc:
-        logger.warning(f"Failed to export CrewAI span: {exc}", exc_info=True)
+    def _on_end_wrapper(wrapped, instance, args, kwargs):
+        span = args[0] if args else kwargs.get("span")
+        if span is None or not is_crewai_span(span=span):
+            return wrapped(*args, **kwargs)
 
-    if _ACTIVE_PASSTHROUGH:
-        return wrapped(*args, **kwargs)
-    return None
+        try:
+            _export_crewai_spans(spans=[span], exporter=exporter, dedupe=dedupe)
+        except Exception as exc:
+            logger.warning("Failed to export CrewAI span: %s", exc, exc_info=True)
+
+        if passthrough:
+            return wrapped(*args, **kwargs)
+        return None
+
+    return _on_end_wrapper
 
 
 class RespanCrewAIInstrumentor(BaseInstrumentor):
@@ -162,42 +178,66 @@ class RespanCrewAIInstrumentor(BaseInstrumentor):
         self._passthrough = bool(kwargs.get("passthrough", False))
         self._dedupe = _SpanDedupeCache(max_size=kwargs.get("dedupe_max_size", 10000))
 
-        global _ACTIVE_EXPORTER, _ACTIVE_DEDUPE, _ACTIVE_PASSTHROUGH
-        _ACTIVE_EXPORTER = self._exporter
-        _ACTIVE_DEDUPE = self._dedupe
-        _ACTIVE_PASSTHROUGH = self._passthrough
-
         self._patch_span_processors()
         logger.info("Respan CrewAI instrumentation enabled")
 
     def _uninstrument(self, **kwargs) -> None:
+        global _PATCHED, _PATCHED_BATCH_NAME
+
+        if _PATCHED:
+            if _PATCHED_BATCH_NAME is not None:
+                try:
+                    unwrap(export.BatchSpanProcessor, _PATCHED_BATCH_NAME)
+                except Exception as exc:
+                    logger.debug("Failed to unwrap BatchSpanProcessor: %s", exc)
+            try:
+                unwrap(export.SimpleSpanProcessor, "on_end")
+            except Exception as exc:
+                logger.debug("Failed to unwrap SimpleSpanProcessor.on_end: %s", exc)
+            _PATCHED = False
+            _PATCHED_BATCH_NAME = None
+
         logger.info("Respan CrewAI instrumentation disabled")
 
     def _patch_span_processors(self) -> None:
-        global _PATCHED
+        global _PATCHED, _PATCHED_BATCH_NAME
         if _PATCHED:
             return
+
+        batch_wrapper = _make_batch_export_wrapper(
+            exporter=self._exporter,
+            dedupe=self._dedupe,
+            passthrough=self._passthrough,
+        )
+        on_end_wrapper = _make_on_end_wrapper(
+            exporter=self._exporter,
+            dedupe=self._dedupe,
+            passthrough=self._passthrough,
+        )
 
         try:
             if hasattr(export.BatchSpanProcessor, "_export"):
                 wrapt.wrap_function_wrapper(
                     module="opentelemetry.sdk.trace.export",
                     name="BatchSpanProcessor._export",
-                    wrapper=_batch_export_wrapper,
+                    wrapper=batch_wrapper,
                 )
+                _PATCHED_BATCH_NAME = "_export"
             else:
                 wrapt.wrap_function_wrapper(
                     module="opentelemetry.sdk.trace.export",
                     name="BatchSpanProcessor.on_end",
-                    wrapper=_on_end_wrapper,
+                    wrapper=on_end_wrapper,
                 )
+                _PATCHED_BATCH_NAME = "on_end"
         except Exception as exc:
-            logger.warning(f"Failed to patch BatchSpanProcessor: {exc}")
+            logger.warning("Failed to patch BatchSpanProcessor: %s", exc)
+            _PATCHED_BATCH_NAME = None
 
         wrapt.wrap_function_wrapper(
             module="opentelemetry.sdk.trace.export",
             name="SimpleSpanProcessor.on_end",
-            wrapper=_on_end_wrapper,
+            wrapper=on_end_wrapper,
         )
 
         _PATCHED = True

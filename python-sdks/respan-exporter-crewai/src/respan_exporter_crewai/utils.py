@@ -22,19 +22,20 @@ def format_span_id(span_id: int) -> str:
 
 
 def is_crewai_span(span: object) -> bool:
-    """Check if span is from CrewAI instrumentation."""
+    """Check if span is from CrewAI instrumentation.
+
+    Only returns True for CrewAI-specific signals (scope name or crewai.* attributes)
+    so that we do not intercept spans from other OpenInference instrumentors (e.g.
+    LlamaIndex) which also set openinference.span.kind and graph.node.id.
+    """
     scope = getattr(span, "instrumentation_scope", None) or getattr(
         span, "instrumentation_library", None
     )
     scope_name = getattr(scope, "name", "") or ""
-    if "crewai" in scope_name:
+    if "crewai" in scope_name.lower():
         return True
     attributes = getattr(span, "attributes", None) or {}
     if any(key.startswith("crewai.") for key in attributes):
-        return True
-    if "openinference.span.kind" in attributes:
-        return True
-    if "graph.node.id" in attributes:
         return True
     return False
 
@@ -273,6 +274,42 @@ def normalize_span_id(span_id: str, trace_id: str) -> str:
     return uuid.uuid5(namespace=uuid.NAMESPACE_DNS, name=stable_seed).hex[:16]
 
 
+def build_traces_ingest_url(
+    base_url: Optional[str],
+    default_endpoint: str = "https://api.respan.ai/api/v1/traces/ingest",
+) -> str:
+    """Build Respan traces ingest URL from a base URL (shared normalization).
+
+    Handles base URLs that already end with /v1/traces/ingest, /v1/traces, /api,
+    or a bare host so callers do not need to branch locally.
+    """
+    if not base_url:
+        return default_endpoint
+    base = base_url.rstrip("/")
+    if base.endswith("/v1/traces/ingest"):
+        return base
+    if base.endswith("/v1/traces"):
+        return f"{base}/ingest"
+    if base.endswith("/api"):
+        return f"{base}/v1/traces/ingest"
+    return f"{base}/api/v1/traces/ingest"
+
+
+def normalize_respan_base_url_for_gateway(url: str) -> str:
+    """Strip traces path from a Respan URL to get the API base for gateway use.
+
+    E.g. https://api.respan.ai/api/v1/traces/ingest -> https://api.respan.ai/api.
+    """
+    base = url.rstrip("/")
+    for suffix in ("/v1/traces/ingest", "/v1/traces", "/v1"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
+    if not base.endswith("/api"):
+        base = f"{base}/api"
+    return base
+
+
 def clean_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Remove None, empty dict, and empty list values from payload."""
     return {key: value for key, value in payload.items() if value not in (None, {}, [])}
@@ -426,12 +463,13 @@ def extract_openinference_choice_texts(
         if not isinstance(key, str) or not key.startswith(prefix_token):
             continue
         parts = key.split(".")
-        if len(parts) < 4:
+        if len(parts) < 5:
             continue
-        index_str = parts[1]
+        # Key format: llm.choices.<index>.completion.text
+        index_str = parts[2]
         if not index_str.isdigit():
             continue
-        if parts[2] != "completion" or parts[3] != "text":
+        if parts[3] != "completion" or parts[4] != "text":
             continue
         choices[int(index_str)] = str(value)
     if not choices:
